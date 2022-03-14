@@ -102,6 +102,14 @@ class Lootbox:
         contract_class = contract_from_build(self.contract_name)
         contract_class.publish_source(self.contract)
 
+    def erc1155_reward_type(self) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.ERC1155_REWARD_TYPE.call()
+
+    def erc20_reward_type(self) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.ERC20_REWARD_TYPE.call()
+
     def add_lootbox_item(self, lootbox_id: int, item: Any, transaction_config) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.addLootboxItem(lootbox_id, item, transaction_config)
@@ -307,6 +315,20 @@ def handle_verify_contract(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Lootbox(args.address)
     result = contract.verify_contract()
+    print(result)
+
+
+def handle_erc1155_reward_type(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Lootbox(args.address)
+    result = contract.erc1155_reward_type()
+    print(result)
+
+
+def handle_erc20_reward_type(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Lootbox(args.address)
+    result = contract.erc20_reward_type()
     print(result)
 
 
@@ -547,6 +569,14 @@ def generate_cli() -> argparse.ArgumentParser:
     verify_contract_parser = subcommands.add_parser("verify-contract")
     add_default_arguments(verify_contract_parser, False)
     verify_contract_parser.set_defaults(func=handle_verify_contract)
+
+    erc1155_reward_type_parser = subcommands.add_parser("erc1155-reward-type")
+    add_default_arguments(erc1155_reward_type_parser, False)
+    erc1155_reward_type_parser.set_defaults(func=handle_erc1155_reward_type)
+
+    erc20_reward_type_parser = subcommands.add_parser("erc20-reward-type")
+    add_default_arguments(erc20_reward_type_parser, False)
+    erc20_reward_type_parser.set_defaults(func=handle_erc20_reward_type)
 
     add_lootbox_item_parser = subcommands.add_parser("add-lootbox-item")
     add_default_arguments(add_lootbox_item_parser, True)

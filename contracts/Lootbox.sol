@@ -25,17 +25,16 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
     address public terminusAddress;
     uint256 private _totalLootboxCount;
 
-    enum RewardType {
-        ERC20, //0
-        ERC1155 //1
-    }
+    uint256 public ERC20_REWARD_TYPE = 20;
+    uint256 public ERC1155_REWARD_TYPE = 1155;
+
     /**
      * @dev Lootbox item structure
      * @notice Only for erc20 and erc1155 tokens
      */
 
     struct LootboxItem {
-        RewardType rewardType;
+        uint256 rewardType;
         address tokenAddress; // address of the token
         uint256 tokenId;
         uint256 amount;
@@ -207,12 +206,12 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         terminusContract.burn(msg.sender, terminusPoolForLootbox, count);
         for (uint256 i = 0; i < lootboxItemCounts[lootboxId]; i++) {
             LootboxItem memory item = lootboxItems[lootboxId][i];
-            if (item.rewardType == RewardType.ERC20) {
+            if (item.rewardType == ERC20_REWARD_TYPE) {
                 IERC20(item.tokenAddress).transfer(
                     msg.sender,
                     item.amount * count
                 );
-            } else if (item.rewardType == RewardType.ERC1155) {
+            } else if (item.rewardType == ERC1155_REWARD_TYPE) {
                 IERC1155(item.tokenAddress).safeTransferFrom(
                     address(this),
                     msg.sender,
