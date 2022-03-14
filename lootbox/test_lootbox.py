@@ -32,13 +32,13 @@ class LootboxTestCase(unittest.TestCase):
         )
 
         cls.terminus.create_pool_v1(
-            10,
+            10 ** 18,
             True,
             True,
             {"from": accounts[0]},
         )
 
-        cls.terminus.mint(accounts[0].address, 1, 10 ** 18, "", {"from": accounts[0]})
+        cls.terminus.mint(accounts[0].address, 1, 1, "", {"from": accounts[0]})
 
         cls.admin_token_pool_id = 1
 
