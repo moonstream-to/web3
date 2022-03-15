@@ -81,6 +81,63 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         _;
     }
 
+    function grantAdminRole(address to) public onlyOwner {
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+        require(
+            msg.sender ==
+                terminusContract.terminusPoolController(administratorPoolId),
+            "The contract is not the pool controller for the administrator pool. Please transfer the controller role to the contract."
+        );
+        terminusContract.mint(to, administratorPoolId, 1, "");
+    }
+
+    function revokeAdminRole(address from) public onlyOwner {
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+        require(
+            msg.sender ==
+                terminusContract.terminusPoolController(administratorPoolId),
+            "The contract is not the pool controller for the administrator pool. Please transfer the controller role to the contract."
+        );
+
+        uint256 balance = terminusContract.balanceOf(from, administratorPoolId);
+        terminusContract.burn(from, administratorPoolId, balance);
+    }
+
+    function batchMintLootboxes(
+        uint256 lootboxId,
+        address[] memory toAddresses,
+        uint256[] memory amounts
+    ) public onlyAdministrator {
+        uint256 lootboxTerminusPoolId = terminusPoolIdbyLootboxId[lootboxId];
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+
+        terminusContract.poolMintBatch(
+            lootboxTerminusPoolId,
+            toAddresses,
+            amounts
+        );
+    }
+
+    function getLootboxURI(uint256 lootboxId)
+        public
+        view
+        returns (string memory)
+    {
+        uint256 lootboxTerminusPoolId = terminusPoolIdbyLootboxId[lootboxId];
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+        return terminusContract.uri(lootboxTerminusPoolId);
+    }
+
+    function getLootboxBalace(uint256 lootboxId, address owner)
+        public
+        view
+        returns (uint256)
+    {
+        uint256 lootboxTerminusPoolId = terminusPoolIdbyLootboxId[lootboxId];
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+        return terminusContract.balanceOf(owner, lootboxTerminusPoolId);
+    }
+
     /**
      * @dev Returns a initialized Terminus contract from the terminusAddress
      */
@@ -118,20 +175,38 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
 
     /**
      * @dev creates a new lootbox with the given terminus pool id and lootbox items
-     * @param terminusPoolId The id of the terminus pool that represents the given pool
      * @param items The lootbox items
      */
-    function createLootbox(uint256 terminusPoolId, LootboxItem[] memory items)
+    function createLootbox(LootboxItem[] memory items)
         public
         onlyAdministrator
     {
         uint256 lootboxId = _totalLootboxCount;
         _totalLootboxCount++;
 
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+        IERC20 terminusPaymentToken = IERC20(terminusContract.paymentToken());
+
+        uint256 poolBaseFee = terminusContract.poolBasePrice();
+
+        require(
+            (terminusPaymentToken.balanceOf(address(this)) >= poolBaseFee),
+            "Not enough funds to create a new lootbox. Please transfer more funds to the contract."
+        );
+
+        terminusPaymentToken.approve(terminusAddress, poolBaseFee);
+
+        uint256 terminusPoolId = terminusContract.createPoolV1(
+            10**18 * 10**18,
+            true,
+            true
+        );
+
         require(
             lootboxIdbyTerminusPoolId[terminusPoolId] == 0,
             "Another lootbox already exists formeaning this terminus pool"
         );
+
         lootboxIdbyTerminusPoolId[terminusPoolId] = lootboxId;
         terminusPoolIdbyLootboxId[lootboxId] = terminusPoolId;
         emit LootboxCreated(lootboxId);
@@ -198,7 +273,7 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         TerminusFacet terminusContract = getTerminusContract();
 
         require(
-            terminusContract.balanceOf(msg.sender, terminusPoolForLootbox) >
+            terminusContract.balanceOf(msg.sender, terminusPoolForLootbox) >=
                 count,
             "You don't have enough tokens in your terminus pool"
         );
