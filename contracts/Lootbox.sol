@@ -73,10 +73,13 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
 
     /**
      * @dev throws if called by account that doesn't hold the administrator pool token
+     * or is the contract owner
      */
     modifier onlyAdministrator() {
         require(
-            getTerminusContract().balanceOf(msg.sender, administratorPoolId) > 0
+            getTerminusContract().balanceOf(msg.sender, administratorPoolId) >
+                0 ||
+                msg.sender == owner()
         );
         _;
     }
@@ -255,7 +258,7 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         ];
 
         lootboxItems[lootboxId][itemIndex] = lastItem;
-        //TODO: delete from mapping?
+        delete lootboxItems[lootboxId][lastItemIndex]; //10k gas refund
         lootboxItemCounts[lootboxId]--;
     }
 

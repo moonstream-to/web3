@@ -118,15 +118,33 @@ class Lootbox:
         self.assert_contract_is_instantiated()
         return self.contract.administratorPoolId.call()
 
-    def create_lootbox(
-        self, terminus_pool_id: int, items: List, transaction_config
+    def batch_mint_lootboxes(
+        self, lootbox_id: int, to_addresses: List, amounts: List, transaction_config
     ) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.createLootbox(terminus_pool_id, items, transaction_config)
+        return self.contract.batchMintLootboxes(
+            lootbox_id, to_addresses, amounts, transaction_config
+        )
+
+    def create_lootbox(self, items: List, transaction_config) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.createLootbox(items, transaction_config)
+
+    def get_lootbox_balace(self, lootbox_id: int, owner: ChecksumAddress) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.getLootboxBalace.call(lootbox_id, owner)
 
     def get_lootbox_item_by_index(self, lootbox_id: int, item_index: int) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.getLootboxItemByIndex.call(lootbox_id, item_index)
+
+    def get_lootbox_uri(self, lootbox_id: int) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.getLootboxURI.call(lootbox_id)
+
+    def grant_admin_role(self, to: ChecksumAddress, transaction_config) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.grantAdminRole(to, transaction_config)
 
     def lootbox_idby_terminus_pool_id(self, arg1: int) -> Any:
         self.assert_contract_is_instantiated()
@@ -191,6 +209,10 @@ class Lootbox:
     def renounce_ownership(self, transaction_config) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.renounceOwnership(transaction_config)
+
+    def revoke_admin_role(self, from_: ChecksumAddress, transaction_config) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.revokeAdminRole(from_, transaction_config)
 
     def supports_interface(self, interface_id: bytes) -> Any:
         self.assert_contract_is_instantiated()
@@ -351,15 +373,33 @@ def handle_administrator_pool_id(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_batch_mint_lootboxes(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Lootbox(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.batch_mint_lootboxes(
+        lootbox_id=args.lootbox_id,
+        to_addresses=args.to_addresses,
+        amounts=args.amounts,
+        transaction_config=transaction_config,
+    )
+    print(result)
+
+
 def handle_create_lootbox(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Lootbox(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.create_lootbox(
-        terminus_pool_id=args.terminus_pool_id,
-        items=args.items,
-        transaction_config=transaction_config,
+        items=args.items, transaction_config=transaction_config
     )
+    print(result)
+
+
+def handle_get_lootbox_balace(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Lootbox(args.address)
+    result = contract.get_lootbox_balace(lootbox_id=args.lootbox_id, owner=args.owner)
     print(result)
 
 
@@ -368,6 +408,23 @@ def handle_get_lootbox_item_by_index(args: argparse.Namespace) -> None:
     contract = Lootbox(args.address)
     result = contract.get_lootbox_item_by_index(
         lootbox_id=args.lootbox_id, item_index=args.item_index
+    )
+    print(result)
+
+
+def handle_get_lootbox_uri(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Lootbox(args.address)
+    result = contract.get_lootbox_uri(lootbox_id=args.lootbox_id)
+    print(result)
+
+
+def handle_grant_admin_role(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Lootbox(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.grant_admin_role(
+        to=args.to, transaction_config=transaction_config
     )
     print(result)
 
@@ -467,6 +524,16 @@ def handle_renounce_ownership(args: argparse.Namespace) -> None:
     contract = Lootbox(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.renounce_ownership(transaction_config=transaction_config)
+    print(result)
+
+
+def handle_revoke_admin_role(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Lootbox(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.revoke_admin_role(
+        from_=args.from_arg, transaction_config=transaction_config
+    )
     print(result)
 
 
@@ -590,15 +657,35 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(administrator_pool_id_parser, False)
     administrator_pool_id_parser.set_defaults(func=handle_administrator_pool_id)
 
+    batch_mint_lootboxes_parser = subcommands.add_parser("batch-mint-lootboxes")
+    add_default_arguments(batch_mint_lootboxes_parser, True)
+    batch_mint_lootboxes_parser.add_argument(
+        "--lootbox-id", required=True, help="Type: uint256", type=int
+    )
+    batch_mint_lootboxes_parser.add_argument(
+        "--to-addresses", required=True, help="Type: address[]", nargs="+"
+    )
+    batch_mint_lootboxes_parser.add_argument(
+        "--amounts", required=True, help="Type: uint256[]", nargs="+"
+    )
+    batch_mint_lootboxes_parser.set_defaults(func=handle_batch_mint_lootboxes)
+
     create_lootbox_parser = subcommands.add_parser("create-lootbox")
     add_default_arguments(create_lootbox_parser, True)
-    create_lootbox_parser.add_argument(
-        "--terminus-pool-id", required=True, help="Type: uint256", type=int
-    )
     create_lootbox_parser.add_argument(
         "--items", required=True, help="Type: tuple[]", nargs="+"
     )
     create_lootbox_parser.set_defaults(func=handle_create_lootbox)
+
+    get_lootbox_balace_parser = subcommands.add_parser("get-lootbox-balace")
+    add_default_arguments(get_lootbox_balace_parser, False)
+    get_lootbox_balace_parser.add_argument(
+        "--lootbox-id", required=True, help="Type: uint256", type=int
+    )
+    get_lootbox_balace_parser.add_argument(
+        "--owner", required=True, help="Type: address"
+    )
+    get_lootbox_balace_parser.set_defaults(func=handle_get_lootbox_balace)
 
     get_lootbox_item_by_index_parser = subcommands.add_parser(
         "get-lootbox-item-by-index"
@@ -611,6 +698,18 @@ def generate_cli() -> argparse.ArgumentParser:
         "--item-index", required=True, help="Type: uint256", type=int
     )
     get_lootbox_item_by_index_parser.set_defaults(func=handle_get_lootbox_item_by_index)
+
+    get_lootbox_uri_parser = subcommands.add_parser("get-lootbox-uri")
+    add_default_arguments(get_lootbox_uri_parser, False)
+    get_lootbox_uri_parser.add_argument(
+        "--lootbox-id", required=True, help="Type: uint256", type=int
+    )
+    get_lootbox_uri_parser.set_defaults(func=handle_get_lootbox_uri)
+
+    grant_admin_role_parser = subcommands.add_parser("grant-admin-role")
+    add_default_arguments(grant_admin_role_parser, True)
+    grant_admin_role_parser.add_argument("--to", required=True, help="Type: address")
+    grant_admin_role_parser.set_defaults(func=handle_grant_admin_role)
 
     lootbox_idby_terminus_pool_id_parser = subcommands.add_parser(
         "lootbox-idby-terminus-pool-id"
@@ -705,6 +804,13 @@ def generate_cli() -> argparse.ArgumentParser:
     renounce_ownership_parser = subcommands.add_parser("renounce-ownership")
     add_default_arguments(renounce_ownership_parser, True)
     renounce_ownership_parser.set_defaults(func=handle_renounce_ownership)
+
+    revoke_admin_role_parser = subcommands.add_parser("revoke-admin-role")
+    add_default_arguments(revoke_admin_role_parser, True)
+    revoke_admin_role_parser.add_argument(
+        "--from-arg", required=True, help="Type: address"
+    )
+    revoke_admin_role_parser.set_defaults(func=handle_revoke_admin_role)
 
     supports_interface_parser = subcommands.add_parser("supports-interface")
     add_default_arguments(supports_interface_parser, False)

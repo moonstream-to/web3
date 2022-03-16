@@ -1,3 +1,4 @@
+from inspect import trace
 import unittest
 
 from brownie import accounts, network
@@ -31,29 +32,22 @@ class LootboxTestCase(unittest.TestCase):
             cls.terminus.address, 100 * 10 ** 18, {"from": accounts[0]}
         )
 
-        cls.terminus.create_pool_v1(
-            10 ** 18,
-            True,
-            True,
-            {"from": accounts[0]},
-        )
+        cls.admin_token_pool_id = cls._create_terminus_pool()
 
-        cls.terminus.mint(accounts[0].address, 1, 1, "", {"from": accounts[0]})
-
-        cls.admin_token_pool_id = 1
+        cls.terminus.set_pool_controller(cls.admin_token_pool_id)
 
         cls.lootbox = Lootbox.Lootbox(None)
         cls.lootbox.deploy(
             cls.terminus.address, cls.admin_token_pool_id, {"from": accounts[0]}
         )
 
-
-class LootboxBaseTest(LootboxTestCase):
-    def _create_terminus_pool(self) -> int:
+    def _create_terminus_pool(
+        self, capacity=10 ** 18, transferable=True, burnable=True
+    ) -> int:
         self.terminus.create_pool_v1(
-            1000,
-            True,
-            True,
+            capacity,
+            transferable,
+            burnable,
             {"from": accounts[0]},
         )
 
@@ -112,23 +106,25 @@ class LootboxBaseTest(LootboxTestCase):
                 count,
             )
 
-    def test_lootbox_create_with_single_item(self):
 
-        lootbox_pool_id = self._create_terminus_pool()
+class LootboxBaseTest(LootboxTestCase):
+    def test_lootbox_create_with_single_item(self):
 
         lootboxes_count_0 = self.lootbox.total_lootbox_count()
 
         self.lootbox.create_lootbox(
-            lootbox_pool_id,
             [
                 lootbox_item_to_tuple(
-                    20, self.erc20_contracts[0].address, 0, 10 * 10 ** 18
+                    reward_type=20,
+                    token_address=self.erc20_contracts[1].address,
+                    token_id=0,
+                    token_amount=10 * 10 ** 18,
                 )
             ],
             {"from": accounts[0]},
         )
 
-        self.erc20_contracts[0].mint(
+        self.erc20_contracts[1].mint(
             self.lootbox.address, 100 * 10 ** 18, {"from": accounts[0]}
         )
 
@@ -144,8 +140,10 @@ class LootboxBaseTest(LootboxTestCase):
             (20, self.erc20_contracts[0].address, 0, 10 * 10 ** 18),
         )
 
-        self.terminus.mint(accounts[1], lootbox_pool_id, 1, "", {"from": accounts[0]})
-        self.terminus.approve_for_pool()
+        lootbox_id = self.lootbox.total_lootbox_count() - 1
+        self.lootbox.batch_mint_lootboxes(
+            lootbox_id, [accounts[1].address], [1], {"from": accounts[0]}
+        )
 
         self._open_lootbox(accounts[1], created_lootbox_id, 1)
 
