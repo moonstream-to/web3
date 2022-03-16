@@ -1,7 +1,7 @@
 import argparse
 
 
-from . import Lootbox
+from . import Lootbox, core
 
 
 def main():
@@ -13,6 +13,9 @@ def main():
 
     lootbox_parser = Lootbox.generate_cli()
     subparsers.add_parser("lootbox", parents=[lootbox_parser], add_help=False)
+
+    core_parser = core.generate_cli()
+    subparsers.add_parser("core", parents=[core_parser], add_help=False)
 
     args = parser.parse_args()
     args.func(args)

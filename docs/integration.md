@@ -3,7 +3,7 @@
 After user connects wallet:
 1. Get the total number of the lootboxes: `totalLootboxCount()`
 2. Iterate on `lootboxIds` from `0 -> lootboxesCount`, 
-    1. To get user's lootbox balance: `getLootboxBalace(lootboxId, userAddress)`
+    1. To get user's lootbox balance: `getLootboxBalance(lootboxId, userAddress)`
     2. To get lootbox uri: `getLootboxURI(lootboxId)`
 
 # **Note**:
