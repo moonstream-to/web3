@@ -84,6 +84,13 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         _;
     }
 
+    function changeAdministratorPoolId(uint256 _administratorPoolId)
+        public
+        onlyOwner
+    {
+        administratorPoolId = _administratorPoolId;
+    }
+
     function grantAdminRole(address to) public onlyOwner {
         TerminusFacet terminusContract = TerminusFacet(terminusAddress);
         require(
@@ -131,7 +138,16 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         return terminusContract.uri(lootboxTerminusPoolId);
     }
 
-    function getLootboxBalace(uint256 lootboxId, address owner)
+    function setLootboxURI(uint256 lootboxId, string memory uri)
+        public
+        onlyAdministrator
+    {
+        uint256 lootboxTerminusPoolId = terminusPoolIdbyLootboxId[lootboxId];
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+        terminusContract.setURI(lootboxTerminusPoolId, uri);
+    }
+
+    function getLootboxBalance(uint256 lootboxId, address owner)
         public
         view
         returns (uint256)
@@ -275,10 +291,11 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         uint256 terminusPoolForLootbox = terminusPoolIdbyLootboxId[lootboxId];
         TerminusFacet terminusContract = getTerminusContract();
 
+        require(count > 0, "Count must be greater than 0");
         require(
             terminusContract.balanceOf(msg.sender, terminusPoolForLootbox) >=
                 count,
-            "You don't have enough tokens in your terminus pool"
+            "You don't have enough lootbox tokens"
         );
 
         terminusContract.burn(msg.sender, terminusPoolForLootbox, count);
