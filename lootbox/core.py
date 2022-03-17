@@ -75,7 +75,7 @@ def create_lootboxes_from_config(
 
     if contract_payment_balance < pool_creation_fee * len(config):
         raise Exception(
-            f"Deployer does not have enough tokens to create terminus pool."
+            f"Lootbox contract does not have enough tokens to create terminus pool."
             f"Need {pool_creation_fee * len(config)} but only have {contract_payment_balance}"
         )
 
@@ -98,7 +98,7 @@ def create_lootboxes_from_config(
         )
 
     print(f"Giving Terminus control to Lootbox contract: {lootbox_contract.address}")
-    terminus.set_controller(lootbox.address, tx_config)
+    terminus.set_controller(lootbox_contract.address, tx_config)
 
     try:
         current_lootbox_id = lootbox_contract.total_lootbox_count() - 1
@@ -136,7 +136,9 @@ def create_lootboxes_from_config(
                     print("Invalid input")
                     continue
 
-            terminus_pool_id = lootbox_contract.terminus_pool_idby_lootbox_id(lootbox_id)
+            terminus_pool_id = lootbox_contract.terminus_pool_idby_lootbox_id(
+                lootbox_id
+            )
             results.append(
                 {
                     "name": lootbox["name"],
@@ -151,7 +153,9 @@ def create_lootboxes_from_config(
             lootbox_contract.set_lootbox_uri(lootbox_id, lootbox["tokenUri"], tx_config)
             print("\n")
     finally:
-        print(f"Surrendering Terminus control back to caller: {tx_config['from'].address}")
+        print(
+            f"Surrendering Terminus control back to caller: {tx_config['from'].address}"
+        )
         lootbox_contract.surrender_terminus_control(tx_config)
 
     return results
