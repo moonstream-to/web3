@@ -714,18 +714,28 @@ class LootboxACLTests(LootboxTestCase):
                     token_address=self.erc20_contracts[-1].address,
                     token_id=0,
                     token_amount=1,
+                ),
+                lootbox_item_to_tuple(
+                    reward_type=20,
+                    token_address=self.erc20_contracts[-1].address,
+                    token_id=0,
+                    token_amount=2,
                 )
             ],
             {"from": accounts[0]},
         )
-        pool_id = self.terminus.total_pools()
+        last_pool_id = self.terminus.total_pools()
+        pool_ids = [last_pool_id - 1, last_pool_id]
 
-        controller_0 = self.terminus.terminus_pool_controller(pool_id)
-        self.assertEqual(controller_0, self.lootbox.address)
+        for pool_id in pool_ids:
+            controller_0 = self.terminus.terminus_pool_controller(pool_id)
+            self.assertEqual(controller_0, self.lootbox.address)
 
-        self.lootbox.surrender_terminus_pools([pool_id], {"from": accounts[0]})
-        controller_1 = self.terminus.terminus_pool_controller(pool_id)
-        self.assertEqual(controller_1, accounts[0].address)
+        self.lootbox.surrender_terminus_pools(pool_ids, {"from": accounts[0]})
+
+        for pool_id in pool_ids:
+            controller_1 = self.terminus.terminus_pool_controller(pool_id)
+            self.assertEqual(controller_1, accounts[0].address)
 
     def test_admin_cannot_surrender_terminus_pools(self):
         self.lootbox.create_lootbox(
