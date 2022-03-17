@@ -683,7 +683,9 @@ def generate_cli() -> argparse.ArgumentParser:
     add_lootbox_item_parser.add_argument(
         "--lootbox-id", required=True, help="Type: uint256", type=int
     )
-    add_lootbox_item_parser.add_argument("--item", required=True, help="Type: tuple")
+    add_lootbox_item_parser.add_argument(
+        "--item", required=True, help="", type=load_lootbox_item_from_json_file
+    )
     add_lootbox_item_parser.set_defaults(func=handle_add_lootbox_item)
 
     administrator_pool_id_parser = subcommands.add_parser("administrator-pool-id")
@@ -717,7 +719,10 @@ def generate_cli() -> argparse.ArgumentParser:
     create_lootbox_parser = subcommands.add_parser("create-lootbox")
     add_default_arguments(create_lootbox_parser, True)
     create_lootbox_parser.add_argument(
-        "--items", required=True, help="Type: tuple[]", nargs="+"
+        "--items",
+        required=True,
+        help="path to json file",
+        type=load_lootbox_items_from_json_file,
     )
     create_lootbox_parser.set_defaults(func=handle_create_lootbox)
 

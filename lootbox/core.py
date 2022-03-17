@@ -26,11 +26,28 @@ def lootbox_item_tuple_to_json_file(tuple_item, file_path: str):
         json.dump(item, f)
 
 
+def load_lootbox_items_from_json_file(file_path: str):
+    with open(file_path, "r") as f:
+        items = json.load(f)
+    return [
+        lootbox_item_to_tuple(
+            item["rewardType"],
+            item["tokenAddress"],
+            item["tokenId"],
+            item["tokenAmount"],
+        )
+        for item in items
+    ]
+
+
 def load_lootbox_item_from_json_file(file_path: str):
     with open(file_path, "r") as f:
         item = json.load(f)
     return lootbox_item_to_tuple(
-        item["rewardType"], item["tokenAddress"], item["tokenId"], item["tokenAmount"]
+        item["rewardType"],
+        item["tokenAddress"],
+        item["tokenId"],
+        item["tokenAmount"],
     )
 
 

@@ -1,7 +1,7 @@
 import argparse
 
 
-from . import Lootbox, core
+from . import Lootbox, core, MockErc20
 
 
 def main():
@@ -16,6 +16,9 @@ def main():
 
     core_parser = core.generate_cli()
     subparsers.add_parser("core", parents=[core_parser], add_help=False)
+
+    erc20_parser = MockErc20.generate_cli()
+    subparsers.add_parser("mock-erc20", parents=[erc20_parser], add_help=False)
 
     args = parser.parse_args()
     args.func(args)
