@@ -118,7 +118,7 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         uint256 lootboxId,
         address[] memory toAddresses,
         uint256[] memory amounts
-    ) public onlyAdministrator {
+    ) public onlyAdministrator nonReentrant {
         uint256 lootboxTerminusPoolId = terminusPoolIdbyLootboxId[lootboxId];
         TerminusFacet terminusContract = TerminusFacet(terminusAddress);
 
@@ -127,6 +127,24 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
             toAddresses,
             amounts
         );
+    }
+
+    function batchMintLootboxesConstant(
+        uint256 lootboxId,
+        address[] memory toAddresses,
+        uint256 amount
+    ) public onlyAdministrator nonReentrant {
+        uint256 lootboxTerminusPoolId = terminusPoolIdbyLootboxId[lootboxId];
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+
+        for (uint256 i = 0; i < toAddresses.length; i++) {
+            terminusContract.mint(
+                toAddresses[i],
+                lootboxTerminusPoolId,
+                amount,
+                ""
+            );
+        }
     }
 
     function getLootboxURI(uint256 lootboxId)
@@ -346,10 +364,11 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         uint256 tokenId,
         uint256 amount
     ) external onlyOwner {
+        address _owner = owner();
         IERC1155 erc1155Contract = IERC1155(tokenAddress);
         erc1155Contract.safeTransferFrom(
             address(this),
-            _msgSender(),
+            _owner,
             tokenId,
             amount,
             ""
@@ -369,6 +388,18 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         for (uint256 i = 0; i < poolIds.length; i++) {
             terminusContract.setPoolController(poolIds[i], _owner);
         }
+    }
+
+    /**
+     * @dev Transfer control of the terminus contract from contract to owner
+     */
+    function surrenderTerminusControl()
+        external
+        onlyOwner
+    {
+        address _owner = owner();
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+        terminusContract.setController(_owner);
     }
 
     /**
