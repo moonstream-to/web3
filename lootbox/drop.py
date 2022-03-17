@@ -5,6 +5,7 @@ Lootbox drop operations
 import argparse
 import csv
 import json
+import os
 import sys
 
 from brownie import network
@@ -87,10 +88,18 @@ def load_drop_matrix_from_csv(infile, checkpoint_file):
 
     return result
 
-def execute_drop(job_spec, checkpoint_file, lootbox: Lootbox.Lootbox, batch_size, transaction_config):
+def execute_drop(job_spec, checkpoint_file, errors_file, lootbox: Lootbox.Lootbox, batch_size, transaction_config):
     checkpoint = {}
     with open(checkpoint_file, "r") as ifp:
         checkpoint = json.load(ifp)
+
+    errors = []
+    if not os.path.isfile(errors_file):
+        with open(errors_file, "w") as ofp:
+            json.dump(errors, ofp)
+    else:
+        with open(errors_file, "r") as ifp:
+            errors = json.load(ifp)
 
     for lootbox_id, item in job_spec.items():
         jobs_by_amount = {}
@@ -107,16 +116,21 @@ def execute_drop(job_spec, checkpoint_file, lootbox: Lootbox.Lootbox, batch_size
             current_index = 0
             for _ in tqdm(range(num_batches), desc=f"Processing amount: {amount} for lootbox: {lootbox_id} with batch size: {batch_size}"):
                 batch = addresses[current_index : current_index + batch_size]
-                receipt = lootbox.batch_mint_lootboxes_constant(lootbox_id, batch, amount, transaction_config)
-                transaction_hash = receipt.txid
+                try:
+                    receipt = lootbox.batch_mint_lootboxes_constant(lootbox_id, batch, amount, transaction_config)
+                    transaction_hash = receipt.txid
 
-                for address in batch:
-                    key = checkpoint_key(address, lootbox_id)
-                    if checkpoint.get(key) is None:
-                        checkpoint[key] = []
-                    checkpoint[key].append([amount, transaction_hash])
-                with open(checkpoint_file, "w") as ofp:
-                    json.dump(checkpoint, ofp)
+                    for address in batch:
+                        key = checkpoint_key(address, lootbox_id)
+                        if checkpoint.get(key) is None:
+                            checkpoint[key] = []
+                        checkpoint[key].append([amount, transaction_hash])
+                    with open(checkpoint_file, "w") as ofp:
+                        json.dump(checkpoint, ofp)
+                except:
+                    errors.append([lootbox_id, batch, amount])
+                    with open(errors_file, "w") as ofp:
+                        json.dump(errors, ofp)
                 current_index = current_index + batch_size
 
     return checkpoint
@@ -133,7 +147,7 @@ def handle_execute(args: argparse.Namespace) -> None:
 
     with args.infile:
         job_spec = json.load(args.infile)
-    execute_drop(job_spec, args.checkpoint, lootbox, args.batch_size, transaction_config)
+    execute_drop(job_spec, args.checkpoint, args.errors, lootbox, args.batch_size, transaction_config)
 
 def generate_cli() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Manage Lootbox drops")
@@ -150,6 +164,7 @@ def generate_cli() -> argparse.ArgumentParser:
     Lootbox.add_default_arguments(execute_parser, transact=True)
     execute_parser.add_argument("-i", "--infile", type=argparse.FileType("r"), required=True, help="Job file (JSON)")
     execute_parser.add_argument("-c", "--checkpoint", type=str, required=True, help="Path to checkpoint file (JSON format); file will be created if it does not exist")
+    execute_parser.add_argument("-e", "--errors", type=str, required=True, help="Path to errors file (JSON format); file will be created if it does not exist")
     execute_parser.add_argument("-N", "--batch-size", type=int, required=True, help="Number of addresses to process per transaction")
     execute_parser.set_defaults(func=handle_execute)
 
