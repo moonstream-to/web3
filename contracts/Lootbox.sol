@@ -79,7 +79,8 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         require(
             getTerminusContract().balanceOf(msg.sender, administratorPoolId) >
                 0 ||
-                msg.sender == owner()
+                msg.sender == owner(),
+            "Lootbox.sol: Sender is not an administrator"
         );
         _;
     }
@@ -94,7 +95,7 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
     function grantAdminRole(address to) public onlyOwner {
         TerminusFacet terminusContract = TerminusFacet(terminusAddress);
         require(
-            msg.sender ==
+            address(this) ==
                 terminusContract.terminusPoolController(administratorPoolId),
             "The contract is not the pool controller for the administrator pool. Please transfer the controller role to the contract."
         );
@@ -104,7 +105,7 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
     function revokeAdminRole(address from) public onlyOwner {
         TerminusFacet terminusContract = TerminusFacet(terminusAddress);
         require(
-            msg.sender ==
+            address(this) ==
                 terminusContract.terminusPoolController(administratorPoolId),
             "The contract is not the pool controller for the administrator pool. Please transfer the controller role to the contract."
         );

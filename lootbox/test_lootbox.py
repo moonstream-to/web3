@@ -1,8 +1,8 @@
 import unittest
+from venv import create
 
 from brownie import accounts, network
-import brownie
-from brownie.test import given, strategy
+from brownie.exceptions import VirtualMachineError
 from . import Lootbox, MockTerminus, MockErc20
 from .core import lootbox_item_to_tuple, gogogo
 
@@ -29,14 +29,14 @@ class LootboxTestCase(unittest.TestCase):
         )
         cls.terminus.set_pool_base_price(1, {"from": accounts[0]})
 
-        gogogo_result = gogogo(cls.terminus.address, accounts[0])
+        gogogo_result = gogogo(cls.terminus.address, {"from": accounts[0]})
         cls.lootbox = Lootbox.Lootbox(gogogo_result["Lootbox"])
         cls.admin_token_pool_id = gogogo_result["adminTokenPoolId"]
 
         for i in range(5):
             cls.erc20_contracts[i].mint(
                 cls.lootbox.address,
-                100 ** 18 * 10 ** 18,
+                (100 ** 18) * (10 ** 18),
                 {"from": accounts[0]},
             )
 
@@ -238,6 +238,99 @@ class LootboxBaseTest(LootboxTestCase):
         # with self.assertRaises(Exception):
         #    self._open_lootbox(accounts[3], lootbox_id, 1)
 
+
+class LootboxACLTests(LootboxTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.lootbox.grant_admin_role(accounts[1].address, {"from": accounts[0]})
+
+    def test_nonadmin_cannot_create_lootbox(self):
+        lootboxes_count_0 = self.lootbox.total_lootbox_count()
+        with self.assertRaises(VirtualMachineError):
+            self.lootbox.create_lootbox(
+                [
+                    lootbox_item_to_tuple(
+                        reward_type=20,
+                        token_address=self.erc20_contracts[1].address,
+                        token_id=0,
+                        token_amount=10 * 10 ** 18,
+                    )
+                ],
+                {"from": accounts[2]},
+            )
+        lootboxes_count_1 = self.lootbox.total_lootbox_count()
+        self.assertEqual(lootboxes_count_1, lootboxes_count_0)
+
+    def test_admin_can_create_and_mint_working_lootbox(self):
+        lootboxes_count_0 = self.lootbox.total_lootbox_count()
+
+        self.lootbox.create_lootbox(
+            [
+                lootbox_item_to_tuple(
+                    reward_type=20,
+                    token_address=self.erc20_contracts[1].address,
+                    token_id=0,
+                    token_amount=10 * 10 ** 18,
+                )
+            ],
+            {"from": accounts[1]},
+        )
+
+        self.erc20_contracts[1].mint(
+            self.lootbox.address, 100 * 10 ** 18, {"from": accounts[0]}
+        )
+
+        lootboxes_count_1 = self.lootbox.total_lootbox_count()
+        created_lootbox_id = self.lootbox.total_lootbox_count() - 1
+
+        self.assertEqual(lootboxes_count_1, lootboxes_count_0 + 1)
+
+        self.assertEqual(self.lootbox.lootbox_item_count(created_lootbox_id), 1)
+
+        self.assertEqual(
+            self.lootbox.get_lootbox_item_by_index(created_lootbox_id, 0),
+            (20, self.erc20_contracts[1].address, 0, 10 * 10 ** 18),
+        )
+
+        self.lootbox.batch_mint_lootboxes(
+            created_lootbox_id, [accounts[3].address], [1], {"from": accounts[1]}
+        )
+
+        recipient_erc20_balance_0 = self.erc20_contracts[1].balance_of(accounts[3].address)
+        self.lootbox.open_lootbox(created_lootbox_id, 1, {"from": accounts[3]})
+        recipient_erc20_balance_1 = self.erc20_contracts[1].balance_of(accounts[3].address)
+        self.assertEqual(recipient_erc20_balance_1, recipient_erc20_balance_0 + (10 * (10**18)))
+
+    def test_nonadmin_cannot_mint_lootbox_created_by_admin(self):
+        lootboxes_count_0 = self.lootbox.total_lootbox_count()
+
+        self.lootbox.create_lootbox(
+            [
+                lootbox_item_to_tuple(
+                    reward_type=20,
+                    token_address=self.erc20_contracts[1].address,
+                    token_id=0,
+                    token_amount=10 * 10 ** 18,
+                )
+            ],
+            {"from": accounts[1]},
+        )
+
+        self.erc20_contracts[1].mint(
+            self.lootbox.address, 100 * 10 ** 18, {"from": accounts[0]}
+        )
+
+        lootboxes_count_1 = self.lootbox.total_lootbox_count()
+        created_lootbox_id = self.lootbox.total_lootbox_count() - 1
+
+        self.assertEqual(lootboxes_count_1, lootboxes_count_0 + 1)
+        self.assertEqual(self.lootbox.lootbox_item_count(created_lootbox_id), 1)
+
+        with self.assertRaises(VirtualMachineError):
+            self.lootbox.batch_mint_lootboxes(
+                created_lootbox_id, [accounts[3].address], [1], {"from": accounts[2]}
+            )
 
 if __name__ == "__main__":
     unittest.main()
