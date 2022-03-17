@@ -35,7 +35,6 @@ def load_lootbox_item_from_json_file(file_path: str):
 
 
 def gogogo(terminus_address, tx_config) -> Dict[str, Any]:
-
     deployer = tx_config["from"]
     terminus_contract = MockTerminus.MockTerminus(terminus_address)
 
