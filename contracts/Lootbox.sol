@@ -364,10 +364,11 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         uint256 tokenId,
         uint256 amount
     ) external onlyOwner {
+        address _owner = owner();
         IERC1155 erc1155Contract = IERC1155(tokenAddress);
         erc1155Contract.safeTransferFrom(
             address(this),
-            _msgSender(),
+            _owner,
             tokenId,
             amount,
             ""
@@ -387,6 +388,18 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         for (uint256 i = 0; i < poolIds.length; i++) {
             terminusContract.setPoolController(poolIds[i], _owner);
         }
+    }
+
+    /**
+     * @dev Transfer control of the terminus contract from contract to owner
+     */
+    function surrenderTerminusControl()
+        external
+        onlyOwner
+    {
+        address _owner = owner();
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+        terminusContract.setController(_owner);
     }
 
     /**

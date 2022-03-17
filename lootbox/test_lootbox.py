@@ -37,6 +37,8 @@ class LootboxTestCase(unittest.TestCase):
         cls.lootbox = Lootbox.Lootbox(gogogo_result["Lootbox"])
         cls.admin_token_pool_id = gogogo_result["adminTokenPoolId"]
 
+        cls.terminus.set_controller(cls.lootbox.address, {"from": accounts[0]})
+
         for i in range(5):
             cls.erc20_contracts[i].mint(
                 cls.lootbox.address,
@@ -47,12 +49,14 @@ class LootboxTestCase(unittest.TestCase):
     def _create_terminus_pool(
         self, capacity=10 ** 18, transferable=True, burnable=True
     ) -> int:
+        self.lootbox.surrender_terminus_control({"from": accounts[0]})
         self.terminus.create_pool_v1(
             capacity,
             transferable,
             burnable,
             {"from": accounts[0]},
         )
+        self.terminus.set_controller(self.lootbox.address, {"from": accounts[0]})
 
         return self.terminus.total_pools()
 
@@ -342,6 +346,52 @@ class LootboxBaseTest(LootboxTestCase):
 
         self.assertEqual(self.lootbox.lootbox_item_count(lootbox_id), 0)
 
+    def test_withdraw_erc20(self):
+        token_amount = 43
+        lootbox_balance_0 = self.erc20_contracts[0].balance_of(self.lootbox.address)
+        account_balance_0 = self.erc20_contracts[0].balance_of(accounts[0].address)
+        self.erc20_contracts[0].mint(
+            self.lootbox.address, token_amount, {"from": accounts[0]}
+        )
+        lootbox_balance_1 = self.erc20_contracts[0].balance_of(self.lootbox.address)
+        account_balance_1 = self.erc20_contracts[0].balance_of(accounts[0].address)
+        self.assertEqual(lootbox_balance_1, lootbox_balance_0 + token_amount)
+        self.assertEqual(account_balance_1, account_balance_0)
+        self.lootbox.withdraw_erc20(
+            self.erc20_contracts[0].address, token_amount, {"from": accounts[0]}
+        )
+        lootbox_balance_2 = self.erc20_contracts[0].balance_of(self.lootbox.address)
+        account_balance_2 = self.erc20_contracts[0].balance_of(accounts[0].address)
+        self.assertEqual(lootbox_balance_2, lootbox_balance_1 - token_amount)
+        self.assertEqual(account_balance_2, account_balance_1 + token_amount)
+
+    def test_withdraw_erc1155(self):
+        token_amount = 53
+        withdraw_amount = 47
+        fresh_erc1155 = MockTerminus.MockTerminus(None)
+        fresh_erc1155.deploy({"from": accounts[0]})
+        fresh_erc1155.set_payment_token(self.erc20_contracts[0].address, {"from": accounts[0]})
+
+        fresh_erc1155.create_pool_v1(
+            10 * token_amount, True, True, {"from": accounts[0]}
+        )
+        pool_id = fresh_erc1155.total_pools()
+        lootbox_balance_0 = fresh_erc1155.balance_of(self.lootbox.address, pool_id)
+        account_balance_0 = fresh_erc1155.balance_of(accounts[0].address, pool_id)
+        fresh_erc1155.mint(
+            self.lootbox.address, pool_id, token_amount, b"", {"from": accounts[0]}
+        )
+        lootbox_balance_1 = fresh_erc1155.balance_of(self.lootbox.address, pool_id)
+        account_balance_1 = fresh_erc1155.balance_of(accounts[0].address, pool_id)
+        self.assertEqual(lootbox_balance_1, lootbox_balance_0 + token_amount)
+        self.assertEqual(account_balance_1, account_balance_0)
+        self.lootbox.withdraw_erc1155(
+            fresh_erc1155.address, pool_id, withdraw_amount, {"from": accounts[0]}
+        )
+        lootbox_balance_2 = fresh_erc1155.balance_of(self.lootbox.address, pool_id)
+        account_balance_2 = fresh_erc1155.balance_of(accounts[0].address, pool_id)
+        self.assertEqual(lootbox_balance_2, lootbox_balance_1 - withdraw_amount)
+        self.assertEqual(account_balance_2, account_balance_1 + withdraw_amount)
 
 class LootboxACLTests(LootboxTestCase):
     @classmethod
@@ -517,6 +567,137 @@ class LootboxACLTests(LootboxTestCase):
             self.lootbox.batch_mint_lootboxes_constant(
                 created_lootbox_id, [accounts[3].address], 1, {"from": accounts[2]}
             )
+
+    def test_admin_cannot_withdraw_erc20(self):
+        token_amount = 43
+        lootbox_balance_0 = self.erc20_contracts[0].balance_of(self.lootbox.address)
+        account_balance_0 = self.erc20_contracts[0].balance_of(accounts[1].address)
+        self.erc20_contracts[0].mint(
+            self.lootbox.address, token_amount, {"from": accounts[0]}
+        )
+        lootbox_balance_1 = self.erc20_contracts[0].balance_of(self.lootbox.address)
+        account_balance_1 = self.erc20_contracts[0].balance_of(accounts[1].address)
+        self.assertEqual(lootbox_balance_1, lootbox_balance_0 + token_amount)
+        self.assertEqual(account_balance_1, account_balance_0)
+        with self.assertRaises(VirtualMachineError):
+            self.lootbox.withdraw_erc20(
+                self.erc20_contracts[0].address, token_amount, {"from": accounts[1]}
+            )
+        lootbox_balance_2 = self.erc20_contracts[0].balance_of(self.lootbox.address)
+        account_balance_2 = self.erc20_contracts[0].balance_of(accounts[1].address)
+        self.assertEqual(lootbox_balance_2, lootbox_balance_1)
+        self.assertEqual(account_balance_2, account_balance_1)
+
+    def test_admin_cannot_withdraw_erc1155(self):
+        token_amount = 53
+        withdraw_amount = 47
+        fresh_erc1155 = MockTerminus.MockTerminus(None)
+        fresh_erc1155.deploy({"from": accounts[1]})
+        fresh_erc1155.set_payment_token(self.erc20_contracts[0].address, {"from": accounts[1]})
+
+        fresh_erc1155.create_pool_v1(
+            10 * token_amount, True, True, {"from": accounts[1]}
+        )
+        pool_id = fresh_erc1155.total_pools()
+        lootbox_balance_0 = fresh_erc1155.balance_of(self.lootbox.address, pool_id)
+        account_balance_0 = fresh_erc1155.balance_of(accounts[1].address, pool_id)
+        fresh_erc1155.mint(
+            self.lootbox.address, pool_id, token_amount, b"", {"from": accounts[1]}
+        )
+        lootbox_balance_1 = fresh_erc1155.balance_of(self.lootbox.address, pool_id)
+        account_balance_1 = fresh_erc1155.balance_of(accounts[1].address, pool_id)
+        self.assertEqual(lootbox_balance_1, lootbox_balance_0 + token_amount)
+        self.assertEqual(account_balance_1, account_balance_0)
+        with self.assertRaises(VirtualMachineError):
+            self.lootbox.withdraw_erc1155(
+                fresh_erc1155.address, pool_id, withdraw_amount, {"from": accounts[1]}
+            )
+        lootbox_balance_2 = fresh_erc1155.balance_of(self.lootbox.address, pool_id)
+        account_balance_2 = fresh_erc1155.balance_of(accounts[1].address, pool_id)
+        self.assertEqual(lootbox_balance_2, lootbox_balance_1)
+        self.assertEqual(account_balance_2, account_balance_1)
+
+    def test_nonadmin_cannot_withdraw_erc20(self):
+        token_amount = 43
+        lootbox_balance_0 = self.erc20_contracts[0].balance_of(self.lootbox.address)
+        account_balance_0 = self.erc20_contracts[0].balance_of(accounts[2].address)
+        self.erc20_contracts[0].mint(
+            self.lootbox.address, token_amount, {"from": accounts[0]}
+        )
+        lootbox_balance_1 = self.erc20_contracts[0].balance_of(self.lootbox.address)
+        account_balance_1 = self.erc20_contracts[0].balance_of(accounts[2].address)
+        self.assertEqual(lootbox_balance_1, lootbox_balance_0 + token_amount)
+        self.assertEqual(account_balance_1, account_balance_0)
+        with self.assertRaises(VirtualMachineError):
+            self.lootbox.withdraw_erc20(
+                self.erc20_contracts[0].address, token_amount, {"from": accounts[2]}
+            )
+        lootbox_balance_2 = self.erc20_contracts[0].balance_of(self.lootbox.address)
+        account_balance_2 = self.erc20_contracts[0].balance_of(accounts[2].address)
+        self.assertEqual(lootbox_balance_2, lootbox_balance_1)
+        self.assertEqual(account_balance_2, account_balance_1)
+
+    def test_nonadmin_cannot_withdraw_erc1155(self):
+        token_amount = 53
+        withdraw_amount = 47
+        fresh_erc1155 = MockTerminus.MockTerminus(None)
+        fresh_erc1155.deploy({"from": accounts[2]})
+        fresh_erc1155.set_payment_token(self.erc20_contracts[0].address, {"from": accounts[2]})
+
+        fresh_erc1155.create_pool_v1(
+            10 * token_amount, True, True, {"from": accounts[2]}
+        )
+        pool_id = fresh_erc1155.total_pools()
+        lootbox_balance_0 = fresh_erc1155.balance_of(self.lootbox.address, pool_id)
+        account_balance_0 = fresh_erc1155.balance_of(accounts[2].address, pool_id)
+        fresh_erc1155.mint(
+            self.lootbox.address, pool_id, token_amount, b"", {"from": accounts[2]}
+        )
+        lootbox_balance_1 = fresh_erc1155.balance_of(self.lootbox.address, pool_id)
+        account_balance_1 = fresh_erc1155.balance_of(accounts[2].address, pool_id)
+        self.assertEqual(lootbox_balance_1, lootbox_balance_0 + token_amount)
+        self.assertEqual(account_balance_1, account_balance_0)
+        with self.assertRaises(VirtualMachineError):
+            self.lootbox.withdraw_erc1155(
+                fresh_erc1155.address, pool_id, withdraw_amount, {"from": accounts[2]}
+            )
+        lootbox_balance_2 = fresh_erc1155.balance_of(self.lootbox.address, pool_id)
+        account_balance_2 = fresh_erc1155.balance_of(accounts[2].address, pool_id)
+        self.assertEqual(lootbox_balance_2, lootbox_balance_1)
+        self.assertEqual(account_balance_2, account_balance_1)
+
+    def test_owner_can_surrender_terminus_control(self):
+        controller_0 = self.terminus.terminus_controller()
+        self.assertEqual(controller_0, self.lootbox.address)
+
+        self.lootbox.surrender_terminus_control({"from": accounts[0]})
+
+        controller_1 = self.terminus.terminus_controller()
+        self.assertEqual(controller_1, accounts[0].address)
+
+        self.terminus.set_controller(self.lootbox.address, {"from": accounts[0]})
+        controller_2 = self.terminus.terminus_controller()
+        self.assertEqual(controller_2, self.lootbox.address)
+
+    def test_admin_cannot_surrender_terminus_control(self):
+        controller_0 = self.terminus.terminus_controller()
+        self.assertEqual(controller_0, self.lootbox.address)
+
+        with self.assertRaises(VirtualMachineError):
+            self.lootbox.surrender_terminus_control({"from": accounts[1]})
+
+        controller_1 = self.terminus.terminus_controller()
+        self.assertEqual(controller_1, self.lootbox.address)
+
+    def test_nonadmin_cannot_surrender_terminus_control(self):
+        controller_0 = self.terminus.terminus_controller()
+        self.assertEqual(controller_0, self.lootbox.address)
+
+        with self.assertRaises(VirtualMachineError):
+            self.lootbox.surrender_terminus_control({"from": accounts[2]})
+
+        controller_1 = self.terminus.terminus_controller()
+        self.assertEqual(controller_1, self.lootbox.address)
 
 
 if __name__ == "__main__":

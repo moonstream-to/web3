@@ -238,6 +238,10 @@ class Lootbox:
         self.assert_contract_is_instantiated()
         return self.contract.supportsInterface.call(interface_id)
 
+    def surrender_terminus_control(self, transaction_config) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.surrenderTerminusControl(transaction_config)
+
     def surrender_terminus_pools(self, pool_ids: List, transaction_config) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.surrenderTerminusPools(pool_ids, transaction_config)
@@ -598,6 +602,14 @@ def handle_supports_interface(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_surrender_terminus_control(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Lootbox(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.surrender_terminus_control(transaction_config=transaction_config)
+    print(result)
+
+
 def handle_surrender_terminus_pools(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Lootbox(args.address)
@@ -910,6 +922,14 @@ def generate_cli() -> argparse.ArgumentParser:
         "--interface-id", required=True, help="Type: bytes4", type=bytes_argument_type
     )
     supports_interface_parser.set_defaults(func=handle_supports_interface)
+
+    surrender_terminus_control_parser = subcommands.add_parser(
+        "surrender-terminus-control"
+    )
+    add_default_arguments(surrender_terminus_control_parser, True)
+    surrender_terminus_control_parser.set_defaults(
+        func=handle_surrender_terminus_control
+    )
 
     surrender_terminus_pools_parser = subcommands.add_parser("surrender-terminus-pools")
     add_default_arguments(surrender_terminus_pools_parser, True)
