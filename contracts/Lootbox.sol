@@ -118,7 +118,7 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         uint256 lootboxId,
         address[] memory toAddresses,
         uint256[] memory amounts
-    ) public onlyAdministrator {
+    ) public onlyAdministrator nonReentrant {
         uint256 lootboxTerminusPoolId = terminusPoolIdbyLootboxId[lootboxId];
         TerminusFacet terminusContract = TerminusFacet(terminusAddress);
 
@@ -127,6 +127,24 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
             toAddresses,
             amounts
         );
+    }
+
+    function batchMintLootboxesConstant(
+        uint256 lootboxId,
+        address[] memory toAddresses,
+        uint256 amount
+    ) public onlyAdministrator nonReentrant {
+        uint256 lootboxTerminusPoolId = terminusPoolIdbyLootboxId[lootboxId];
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+
+        for (uint256 i = 0; i < toAddresses.length; i++) {
+            terminusContract.mint(
+                toAddresses[i],
+                lootboxTerminusPoolId,
+                amount,
+                ""
+            );
+        }
     }
 
     function getLootboxURI(uint256 lootboxId)

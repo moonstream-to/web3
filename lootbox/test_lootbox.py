@@ -205,13 +205,43 @@ class LootboxBaseTest(LootboxTestCase):
             {"from": accounts[0]},
         )
 
-        balances = [
+        balances = (
             self.lootbox.get_lootbox_balance(lootbox_id, accounts[1].address),
             self.lootbox.get_lootbox_balance(lootbox_id, accounts[2].address),
             self.lootbox.get_lootbox_balance(lootbox_id, accounts[3].address),
-        ]
+        )
 
-        self.assertEqual(balances, [1, 2, 3])
+        self.assertEqual(balances, (1, 2, 3))
+
+    def test_test_batch_mint_lootboxes_constant(self):
+        self.lootbox.create_lootbox(
+            [
+                lootbox_item_to_tuple(
+                    reward_type=20,
+                    token_address=self.erc20_contracts[1].address,
+                    token_id=0,
+                    token_amount=10 * 10 ** 18,
+                )
+            ],
+            {"from": accounts[0]},
+        )
+
+        lootbox_id = self.lootbox.total_lootbox_count() - 1
+
+        self.lootbox.batch_mint_lootboxes_constant(
+            lootbox_id,
+            [accounts[1].address, accounts[2].address, accounts[3].address],
+            2,
+            {"from": accounts[0]},
+        )
+
+        balances = (
+            self.lootbox.get_lootbox_balance(lootbox_id, accounts[1].address),
+            self.lootbox.get_lootbox_balance(lootbox_id, accounts[2].address),
+            self.lootbox.get_lootbox_balance(lootbox_id, accounts[3].address),
+        )
+
+        self.assertEqual(balances, (2, 2, 2))
 
     def test_lootbox_create_with_multiple_items(self):
 
@@ -273,7 +303,6 @@ class LootboxBaseTest(LootboxTestCase):
         #    self._open_lootbox(accounts[3], lootbox_id, 1)
 
     def test_add_and_remove_lootbox(self):
-
         self.lootbox.create_lootbox(
             [
                 lootbox_item_to_tuple(
