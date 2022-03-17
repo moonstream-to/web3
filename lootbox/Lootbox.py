@@ -16,6 +16,48 @@ PROJECT_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."
 BUILD_DIRECTORY = os.path.join(PROJECT_DIRECTORY, "build", "contracts")
 
 
+def lootbox_item_to_tuple(
+    reward_type: int, token_address: str, token_id: int, token_amount: int
+):
+    return (reward_type, token_address, token_id, token_amount)
+
+
+def lootbox_item_tuple_to_json_file(tuple_item, file_path: str):
+    item = {
+        "rewardType": tuple_item[0],
+        "tokenAddress": tuple_item[1],
+        "tokenId": tuple_item[2],
+        "tokenAmount": tuple_item[3],
+    }
+    with open(file_path, "w") as f:
+        json.dump(item, f)
+
+
+def load_lootbox_items_from_json_file(file_path: str):
+    with open(file_path, "r") as f:
+        items = json.load(f)
+    return [
+        lootbox_item_to_tuple(
+            item["rewardType"],
+            item["tokenAddress"],
+            item["tokenId"],
+            item["tokenAmount"],
+        )
+        for item in items
+    ]
+
+
+def load_lootbox_item_from_json_file(file_path: str):
+    with open(file_path, "r") as f:
+        item = json.load(f)
+    return lootbox_item_to_tuple(
+        item["rewardType"],
+        item["tokenAddress"],
+        item["tokenId"],
+        item["tokenAmount"],
+    )
+
+
 def boolean_argument_type(raw_value: str) -> bool:
     TRUE_VALUES = ["1", "t", "y", "true", "yes"]
     FALSE_VALUES = ["0", "f", "n", "false", "no"]

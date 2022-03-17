@@ -1,0 +1,194 @@
+[
+    {
+        "name": "Lootbox with 5 rbw",
+        "tokenUri": "https://arweave.net/hn4VcW_pxqTGWT1eMbIwRCnwE7R6apVTPEsodekoROc",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
+                "tokenId": 0,
+                "tokenAmount": 5
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 25 rbw",
+        "tokenUri": "https://arweave.net/XSQXZkTmG6rli_mOffKc2USMgzLC5f9fZP2rR6R1PfY",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
+                "tokenId": 0,
+                "tokenAmount": 25
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 50 rbw",
+        "tokenUri": "https://arweave.net/T9OoIQKS-_S1kKBPxtFauZKdWQOH8m3tKKcmFUWcCY4",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
+                "tokenId": 0,
+                "tokenAmount": 50
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 100 rbw",
+        "tokenUri": "https://arweave.net/JRcV-qzmeqt62CipvcA5clZCPO-dEKgiIcqdnGluQKk",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
+                "tokenId": 0,
+                "tokenAmount": 100
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 250 rbw",
+        "tokenUri": "https://arweave.net/6xTnkIR5C9ARys_tWWC5SSJSQsSmBBsAfAEQVa2B6no",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
+                "tokenId": 0,
+                "tokenAmount": 250
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 500 rbw",
+        "tokenUri": "https://arweave.net/w3_5bNIQqR6M7jU_cVFHIIURxYgJJGbNH5ZzS8v7AKk",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
+                "tokenId": 0,
+                "tokenAmount": 500
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 750 rbw",
+        "tokenUri": "https://arweave.net/_xlPX0NSEFer_s1cv7YBlhxYN-OSaY0WlMFZExrS_ps",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
+                "tokenId": 0,
+                "tokenAmount": 750
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 1000 rbw",
+        "tokenUri": "https://arweave.net/87dZgCZg7iJ_WLYNREY17_FEpICHT52hQYEApzymFJ4",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
+                "tokenId": 0,
+                "tokenAmount": 1000
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 1500 rbw",
+        "tokenUri": "https://arweave.net/ZJfWi64VxYNHBVQ3XbXtW3Vs_dvP3nH4SjsVqc8cUdI",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
+                "tokenId": 0,
+                "tokenAmount": 1500
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 2000 rbw",
+        "tokenUri": "https://arweave.net/LPot3rd0vsjbgVNPASz93GCtBK9idYThM5Z5QBSpD1w",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
+                "tokenId": 0,
+                "tokenAmount": 2000
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 2500 rbw",
+        "tokenUri": "https://arweave.net/VHlLG0nYrt_xFyOyDtZnIUCOwxudI9EBDELNdhJJtvo",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
+                "tokenId": 0,
+                "tokenAmount": 2500
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 3000 rbw",
+        "tokenUri": "https://arweave.net/UlrSATjKK6z22kyp4TfdItqU1FpKZJBdCDotmgkFv5k",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
+                "tokenId": 0,
+                "tokenAmount": 3000
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 4000 rbw",
+        "tokenUri": "https://arweave.net/0ZIL43v82rHr1I1GzYZs5ERR5YY2yQVYEsbNQy3-Lxc",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
+                "tokenId": 0,
+                "tokenAmount": 4000
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 5000 rbw",
+        "tokenUri": "https://arweave.net/xVMV3Fbw4TUeCwmJzioZhnpVLeACMk-b8HE_TQ9EqH8",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
+                "tokenId": 0,
+                "tokenAmount": 5000
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 7500 rbw",
+        "tokenUri": "https://arweave.net/oikOoFIZCOxwR26sYOyGHJ49i3qKYiRYFxH1n_u_HNA",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
+                "tokenId": 0,
+                "tokenAmount": 7500
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 10000 rbw",
+        "tokenUri": "https://arweave.net/u3X_xtRXbKawb9TR7b4OY9eUHdFP0PIdsdDxQFgspms",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
+                "tokenId": 0,
+                "tokenAmount": 10000
+            }
+        ]
+    }
+]

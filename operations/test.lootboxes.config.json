@@ -1,0 +1,86 @@
+[
+    {
+        "name": "Lootbox with 5 rbw",
+        "tokenUri": "https://arweave.net/hn4VcW_pxqTGWT1eMbIwRCnwE7R6apVTPEsodekoROc",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x44b43b762E15Fb3dFC132030672Ca47caD5aa68c",
+                "tokenId": 0,
+                "tokenAmount": 5
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 25 rbw",
+        "tokenUri": "https://arweave.net/XSQXZkTmG6rli_mOffKc2USMgzLC5f9fZP2rR6R1PfY",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x44b43b762E15Fb3dFC132030672Ca47caD5aa68c",
+                "tokenId": 0,
+                "tokenAmount": 25
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 50 rbw",
+        "tokenUri": "https://arweave.net/T9OoIQKS-_S1kKBPxtFauZKdWQOH8m3tKKcmFUWcCY4",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x44b43b762E15Fb3dFC132030672Ca47caD5aa68c",
+                "tokenId": 0,
+                "tokenAmount": 50
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 100 rbw",
+        "tokenUri": "https://arweave.net/JRcV-qzmeqt62CipvcA5clZCPO-dEKgiIcqdnGluQKk",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x44b43b762E15Fb3dFC132030672Ca47caD5aa68c",
+                "tokenId": 0,
+                "tokenAmount": 100
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 250 rbw",
+        "tokenUri": "https://arweave.net/6xTnkIR5C9ARys_tWWC5SSJSQsSmBBsAfAEQVa2B6no",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x44b43b762E15Fb3dFC132030672Ca47caD5aa68c",
+                "tokenId": 0,
+                "tokenAmount": 250
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 500 rbw",
+        "tokenUri": "https://arweave.net/w3_5bNIQqR6M7jU_cVFHIIURxYgJJGbNH5ZzS8v7AKk",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x44b43b762E15Fb3dFC132030672Ca47caD5aa68c",
+                "tokenId": 0,
+                "tokenAmount": 500
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 750 rbw",
+        "tokenUri": "https://arweave.net/_xlPX0NSEFer_s1cv7YBlhxYN-OSaY0WlMFZExrS_ps",
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x44b43b762E15Fb3dFC132030672Ca47caD5aa68c",
+                "tokenId": 0,
+                "tokenAmount": 750
+            }
+        ]
+    }
+]

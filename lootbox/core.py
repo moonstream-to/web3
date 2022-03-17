@@ -2,7 +2,8 @@ import argparse
 from ast import arg
 import json
 import sys
-from typing import Any, Dict
+import time
+from typing import Any, Dict, Optional
 
 from lootbox.MockErc20 import MockErc20
 from brownie import network
@@ -26,18 +27,19 @@ def lootbox_item_tuple_to_json_file(tuple_item, file_path: str):
         json.dump(item, f)
 
 
+def _lootbox_item_from_json_object(item: Dict[str, Any]) -> Any:
+    return lootbox_item_to_tuple(
+        item["rewardType"],
+        item["tokenAddress"],
+        item["tokenId"],
+        item["tokenAmount"],
+    )
+
+
 def load_lootbox_items_from_json_file(file_path: str):
     with open(file_path, "r") as f:
         items = json.load(f)
-    return [
-        lootbox_item_to_tuple(
-            item["rewardType"],
-            item["tokenAddress"],
-            item["tokenId"],
-            item["tokenAmount"],
-        )
-        for item in items
-    ]
+    return [_lootbox_item_from_json_object(item) for item in items]
 
 
 def load_lootbox_item_from_json_file(file_path: str):
@@ -49,6 +51,102 @@ def load_lootbox_item_from_json_file(file_path: str):
         item["tokenId"],
         item["tokenAmount"],
     )
+
+
+def create_lootboxes_from_config(
+    lootbox_address: str, filepath: str, tx_config, yes: Optional[bool] = False
+) -> Dict[str, Any]:
+    with open(filepath, "r") as f:
+        config = json.load(f)
+
+    if type(config) is not list:
+        raise Exception("Config must be a list of lootboxes")
+
+    lootboxes = []
+    lootbox_contract = Lootbox.Lootbox(lootbox_address)
+    terminus_address = lootbox_contract.terminus_address()
+
+    terminus = MockTerminus.MockTerminus(terminus_address)
+
+    pool_creation_fee = terminus.pool_base_price()
+    contract_payment_balance = MockErc20(terminus.payment_token()).balance_of(
+        lootbox_address
+    )
+
+    if contract_payment_balance < pool_creation_fee * len(config):
+        raise Exception(
+            f"Deployer does not have enough tokens to create terminus pool."
+            f"Need {pool_creation_fee * len(config)} but only have {contract_payment_balance}"
+        )
+
+    for lootbox in config:  # This is for validating data
+
+        lootbox_items = []
+        for item in lootbox["items"]:
+            if item["rewardType"] == 20:
+                erc20_contract = MockErc20(item["tokenAddress"])
+                erc20_decimals = erc20_contract.decimals()
+                item["tokenAmount"] *= 10 ** erc20_decimals
+            lootbox_items.append(_lootbox_item_from_json_object(item))
+
+        lootboxes.append(
+            {
+                "name": lootbox["name"],
+                "tokenUri": lootbox["tokenUri"],
+                "items": lootbox_items,
+            }
+        )
+
+    current_lootbox_id = lootbox_contract.total_lootbox_count() - 1
+    print(
+        f"There are already {current_lootbox_id + 1} lootboxes created on this contract."
+    )
+
+    results = []
+    for lootbox in lootboxes:
+        print(f"Creating lootbox {lootbox['name']}...")
+        print(f"Items: {lootbox['items']}")
+
+        lootbox_contract.create_lootbox(
+            lootbox["items"],
+            tx_config,
+        )
+
+        current_lootbox_id += 1
+        lootbox_id = lootbox_contract.total_lootbox_count() - 1
+
+        while True:
+            if yes:
+                break
+            lootbox_id = lootbox_contract.total_lootbox_count() - 1
+            is_ok = input(
+                f"lootboxId is {lootbox_id}. Should be {current_lootbox_id} Continue? (y/n)"
+            )
+            if is_ok == "y":
+                break
+            elif is_ok == "n":
+                print("Waiting 30 secs...")
+                time.sleep(30)
+                continue
+            else:
+                print("Invalid input")
+                continue
+
+        terminus_pool_id = lootbox_contract.terminus_pool_idby_lootbox_id(lootbox_id)
+        results.append(
+            {
+                "name": lootbox["name"],
+                "tokenUri": lootbox["tokenUri"],
+                "lootboxId": lootbox_id,
+                "items": lootbox["items"],
+                "terminusPoolId": terminus_pool_id,
+            }
+        )
+
+        print(f"Setting lootbox {lootbox['name']} lootbox URI...")
+        lootbox_contract.set_lootbox_uri(lootbox_id, lootbox["tokenUri"], tx_config)
+        print("\n")
+    return results
 
 
 def gogogo(terminus_address, tx_config) -> Dict[str, Any]:
@@ -103,6 +201,19 @@ def handle_gogogo(args: argparse.Namespace) -> None:
     json.dump(result, sys.stdout, indent=4)
 
 
+def handle_create_lootboxes_from_config(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    transaction_config = MockTerminus.get_transaction_config(args)
+
+    result = create_lootboxes_from_config(
+        args.address, args.config_file, transaction_config, args.yes
+    )
+    if args.outfile is not None:
+        with args.outfile:
+            json.dump(result, args.outfile)
+    json.dump(result, sys.stdout, indent=4)
+
+
 def generate_cli():
     parser = argparse.ArgumentParser(
         description="CLI to manage Lootbox contract",
@@ -135,5 +246,41 @@ def generate_cli():
     MockTerminus.add_default_arguments(gogogo_parser, transact=True)
 
     gogogo_parser.set_defaults(func=handle_gogogo)
+
+    create_lootboxes_from_config_parser = subcommands.add_parser(
+        "create-lootboxes-from-config",
+        help="Creates lootboxes from config",
+        description="Creates lootboxes from config",
+    )
+
+    create_lootboxes_from_config_parser.add_argument(
+        "-o",
+        "--outfile",
+        type=argparse.FileType("w"),
+        default=None,
+        help="(Optional) file to write deployed addresses to",
+    )
+
+    create_lootboxes_from_config_parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Not verify lootboxId",
+    )
+
+    create_lootboxes_from_config_parser.add_argument(
+        "--config-file",
+        type=str,
+        required=True,
+        help="Path to the config file",
+    )
+
+    MockTerminus.add_default_arguments(
+        create_lootboxes_from_config_parser, transact=True
+    )
+
+    create_lootboxes_from_config_parser.set_defaults(
+        func=handle_create_lootboxes_from_config
+    )
 
     return parser
