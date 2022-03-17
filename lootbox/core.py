@@ -97,55 +97,63 @@ def create_lootboxes_from_config(
             }
         )
 
-    current_lootbox_id = lootbox_contract.total_lootbox_count() - 1
-    print(
-        f"There are already {current_lootbox_id + 1} lootboxes created on this contract."
-    )
+    print(f"Giving Terminus control to Lootbox contract: {lootbox_contract.address}")
+    terminus.set_controller(lootbox.address, tx_config)
 
-    results = []
-    for lootbox in lootboxes:
-        print(f"Creating lootbox {lootbox['name']}...")
-        print(f"Items: {lootbox['items']}")
-
-        lootbox_contract.create_lootbox(
-            lootbox["items"],
-            tx_config,
+    try:
+        current_lootbox_id = lootbox_contract.total_lootbox_count() - 1
+        print(
+            f"There are already {current_lootbox_id + 1} lootboxes created on this contract."
         )
 
-        current_lootbox_id += 1
-        lootbox_id = lootbox_contract.total_lootbox_count() - 1
+        results = []
+        for lootbox in lootboxes:
+            print(f"Creating lootbox {lootbox['name']}...")
+            print(f"Items: {lootbox['items']}")
 
-        while True:
-            if yes:
-                break
-            lootbox_id = lootbox_contract.total_lootbox_count() - 1
-            is_ok = input(
-                f"lootboxId is {lootbox_id}. Should be {current_lootbox_id} Continue? (y/n)"
+            lootbox_contract.create_lootbox(
+                lootbox["items"],
+                tx_config,
             )
-            if is_ok == "y":
-                break
-            elif is_ok == "n":
-                print("Waiting 30 secs...")
-                time.sleep(30)
-                continue
-            else:
-                print("Invalid input")
-                continue
 
-        terminus_pool_id = lootbox_contract.terminus_pool_idby_lootbox_id(lootbox_id)
-        results.append(
-            {
-                "name": lootbox["name"],
-                "tokenUri": lootbox["tokenUri"],
-                "lootboxId": lootbox_id,
-                "items": lootbox["items"],
-                "terminusPoolId": terminus_pool_id,
-            }
-        )
+            current_lootbox_id += 1
+            lootbox_id = lootbox_contract.total_lootbox_count() - 1
 
-        print(f"Setting lootbox {lootbox['name']} lootbox URI...")
-        lootbox_contract.set_lootbox_uri(lootbox_id, lootbox["tokenUri"], tx_config)
-        print("\n")
+            while True:
+                if yes:
+                    break
+                lootbox_id = lootbox_contract.total_lootbox_count() - 1
+                is_ok = input(
+                    f"lootboxId is {lootbox_id}. Should be {current_lootbox_id} Continue? (y/n)"
+                )
+                if is_ok == "y":
+                    break
+                elif is_ok == "n":
+                    print("Waiting 30 secs...")
+                    time.sleep(30)
+                    continue
+                else:
+                    print("Invalid input")
+                    continue
+
+            terminus_pool_id = lootbox_contract.terminus_pool_idby_lootbox_id(lootbox_id)
+            results.append(
+                {
+                    "name": lootbox["name"],
+                    "tokenUri": lootbox["tokenUri"],
+                    "lootboxId": lootbox_id,
+                    "items": lootbox["items"],
+                    "terminusPoolId": terminus_pool_id,
+                }
+            )
+
+            print(f"Setting lootbox {lootbox['name']} lootbox URI...")
+            lootbox_contract.set_lootbox_uri(lootbox_id, lootbox["tokenUri"], tx_config)
+            print("\n")
+    finally:
+        print(f"Surrendering Terminus control back to caller: {tx_config['from'].address}")
+        lootbox_contract.surrender_terminus_control(tx_config)
+
     return results
 
 
