@@ -127,7 +127,9 @@ def execute_drop(job_spec, checkpoint_file, errors_file, lootbox: Lootbox.Lootbo
                         checkpoint[key].append([amount, transaction_hash])
                     with open(checkpoint_file, "w") as ofp:
                         json.dump(checkpoint, ofp)
-                except:
+                except Exception as e:
+                    print("Error submitting transaction:")
+                    print(e)
                     errors.append([lootbox_id, batch, amount])
                     with open(errors_file, "w") as ofp:
                         json.dump(errors, ofp)
