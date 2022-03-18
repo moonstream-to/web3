@@ -182,5 +182,53 @@ time lootbox drop execute --network $NETWORK \
     -N 200
 ```
 
+```
+lootbox drop make -i data/rbw.mainnet.2000-2500.csv -c data/rbw.mainnet.2000-2500.checkpoint.json -o data/rbw.mainnet.2000-2500.jobs.json
+```
+
+```
+time lootbox drop execute --network $NETWORK \
+    --address $LOOTBOX_ADDRESS \
+    --sender $SENDER_KEYFILE \
+    --gas-price "$GAS_PRICE" \
+    --confirmations 2 \
+    -c data/rbw.mainnet.2000-2500.checkpoint.json \
+    -e data/rbw.mainnet.2000-2500.errors.json \
+    -i data/rbw.mainnet.2000-2500.jobs.json \
+    -N 200
+```
+
+```
+lootbox drop make -i data/rbw.mainnet.3000-4000.csv -c data/rbw.mainnet.3000-4000.checkpoint.json -o data/rbw.mainnet.3000-4000.jobs.json
+```
+
+```
+time lootbox drop execute --network $NETWORK \
+    --address $LOOTBOX_ADDRESS \
+    --sender $SENDER_KEYFILE \
+    --gas-price "$GAS_PRICE" \
+    --confirmations 2 \
+    -c data/rbw.mainnet.3000-4000.checkpoint.json \
+    -e data/rbw.mainnet.3000-4000.errors.json \
+    -i data/rbw.mainnet.3000-4000.jobs.json \
+    -N 200
+```
+
+```
+lootbox drop make -i data/rbw.mainnet.5000-10000.csv -c data/rbw.mainnet.5000-10000.checkpoint.json -o data/rbw.mainnet.5000-10000.jobs.json
+```
+
+```
+time lootbox drop execute --network $NETWORK \
+    --address $LOOTBOX_ADDRESS \
+    --sender $SENDER_KEYFILE \
+    --gas-price "$GAS_PRICE" \
+    --confirmations 2 \
+    -c data/rbw.mainnet.5000-10000.checkpoint.json \
+    -e data/rbw.mainnet.5000-10000.errors.json \
+    -i data/rbw.mainnet.5000-10000.jobs.json \
+    -N 200
+```
+
 
 ## **GG, WP!**
