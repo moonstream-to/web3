@@ -298,6 +298,39 @@ def retry_drop(
                 current_index = current_index + batch_size
 
 
+def create_diff(job_spec, checkpoint_file, diff_file):
+    checkpoint = {}
+    with open(checkpoint_file, "r") as ifp:
+        checkpoint = json.load(ifp)
+
+    for lootbox_id, item in job_spec.items():
+        jobs_by_amount = {}
+        for address, amount in item.items():
+
+            # if not check_address(address):
+            #     continue
+
+            # Get checkpointed part of drop balance
+            checkpoint_ops = checkpoint.get(checkpoint_key(address, lootbox_id))
+            if checkpoint_ops is None:
+                checkpoint_ops = []
+            checkpoint_amount = 0
+
+            for _amount, _ in checkpoint_ops:
+                checkpoint_amount += _amount
+
+            # Real drop amount
+            drop_amount = amount - checkpoint_amount
+
+            if drop_amount > 0:
+                print("amount > 0")
+                if jobs_by_amount.get(drop_amount) is None:
+                    jobs_by_amount[drop_amount] = []
+                jobs_by_amount[drop_amount].append(address)
+    with open(diff_file, "w") as diff:
+        json.dump(jobs_by_amount, diff)
+
+
 def handle_make(args: argparse.Namespace) -> None:
     network.connect(args.network)
     result = load_drop_matrix_from_csv(args.infile, args.checkpoint)
@@ -339,13 +372,11 @@ def handle_retry(args: argparse.Namespace) -> None:
     )
 
 
-def handle_address_check(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    lootbox = Lootbox.Lootbox(args.address)
-    transaction_config = Lootbox.get_transaction_config(args)
+def handle_show_diff(args: argparse.Namespace):
 
-    smartcontract = is_contract(args.smartcontract)
-    print(smartcontract)
+    with args.infile:
+        job_spec = json.load(args.infile)
+    create_diff(job_spec, args.checkpoint, args.diff_file)
 
 
 def generate_cli() -> argparse.ArgumentParser:
@@ -438,14 +469,29 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     retry_parser.set_defaults(func=handle_retry)
 
-    # testing SC check
-
-    address_parser = subparsers.add_parser("check")
-    Lootbox.add_default_arguments(address_parser, transact=True)
-    address_parser.add_argument(
-        "-s", "--smartcontract", type=str, required=True, help="Job file (JSON)",
+    diff_parser = subparsers.add_parser("diff")
+    diff_parser.add_argument(
+        "-i",
+        "--infile",
+        type=argparse.FileType("r"),
+        required=True,
+        help="Job file (JSON)",
     )
-    address_parser.set_defaults(func=handle_address_check)
+    diff_parser.add_argument(
+        "-c",
+        "--checkpoint",
+        type=str,
+        required=True,
+        help="Path to checkpoint file (JSON format); file will be created if it does not exist",
+    )
+    diff_parser.add_argument(
+        "-d",
+        "--diff-file",
+        type=str,
+        required=True,
+        help="Number of addresses to process per transaction",
+    )
+    diff_parser.set_defaults(func=handle_show_diff)
 
     return parser
 
