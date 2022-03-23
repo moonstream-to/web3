@@ -3,7 +3,6 @@ Lootbox drop operations
 """
 
 import argparse
-from audioop import add
 import csv
 import json
 import os
