@@ -58,6 +58,7 @@ time lootbox drop execute --network $NETWORK \
 ```
 
 After adding `--errors` option to `lootbox drop execute` command:
+
 ```
 time lootbox drop execute --network $NETWORK \
     --address $LOOTBOX_ADDRESS \
@@ -86,9 +87,7 @@ export GAS_PRICE="100 gwei"
 export CONFIG_FILE=operations/rbw.lootboxes.config.json
 ```
 
-
 We did a bunch of withdraw ERC20 operations on Lootbox and Terminus contract.
-
 
 ```
 lootbox core gogogo  --terminus-address $TERMINUS_ADDRESS --sender $SENDER_KEYFILE --network $NETWORK --gas-price "$GAS_PRICE" --confirmations $CONFIRMATIONS
@@ -230,5 +229,78 @@ time lootbox drop execute --network $NETWORK \
     -N 200
 ```
 
-
 ## **GG, WP!**
+
+## **GG, WP!** PART 2
+
+### retry operations
+
+## 100-250
+
+```
+drop retry --network $NETWORK \
+    --address $LOOTBOX_ADDRESS \
+    --sender $SENDER_KEYFILE \
+    --gas-price "$GAS_PRICE" \
+    --confirmations 2 \
+    -c data/rbw.mainnet.100-250.checkpoint.json \
+    -e data/rbw.mainnet.100-250.errors.json \
+    -i data/rbw.mainnet.100-250.jobs.json \
+    -N 200
+```
+
+## 500-750
+
+```
+drop retry --network $NETWORK \
+    --address $LOOTBOX_ADDRESS \
+    --sender $SENDER_KEYFILE \
+    --gas-price "$GAS_PRICE" \
+    --confirmations 2 \
+    -c data/rbw.mainnet.500-750.checkpoint.json \
+    -e data/rbw.mainnet.500-750.errors.json \
+    -i data/rbw.mainnet.500-750.jobs.json \
+    -N 200
+```
+
+## 1000-1500
+
+```
+drop retry --network $NETWORK \
+    --address $LOOTBOX_ADDRESS \
+    --sender $SENDER_KEYFILE \
+    --gas-price "$GAS_PRICE" \
+    --confirmations 2 \
+    -c data/rbw.mainnet.1000-1500.checkpoint.json \
+    -e data/rbw.mainnet.1000-1500.errors.json \
+    -i data/rbw.mainnet.1000-1500.jobs.json \
+    -N 200
+```
+
+## 2000-2500
+
+```
+drop retry --network $NETWORK \
+    --address $LOOTBOX_ADDRESS \
+    --sender $SENDER_KEYFILE \
+    --gas-price "$GAS_PRICE" \
+    --confirmations 2 \
+    -c data/rbw.mainnet.2000-2500.checkpoint.json \
+    -e data/rbw.mainnet.2000-2500.errors.json \
+    -i data/rbw.mainnet.2000-2500.jobs.json \
+    -N 200
+```
+
+## 5000-10000
+
+```
+drop retry --network $NETWORK \
+    --address $LOOTBOX_ADDRESS \
+    --sender $SENDER_KEYFILE \
+    --gas-price "$GAS_PRICE" \
+    --confirmations 2 \
+    -c data/rbw.mainnet.5000-10000.checkpoint.json \
+    -e data/rbw.mainnet.5000-10000.errors.json \
+    -i data/rbw.mainnet.5000-10000.jobs.json \
+    -N 200
+```
