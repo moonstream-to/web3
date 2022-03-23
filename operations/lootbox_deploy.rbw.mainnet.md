@@ -58,6 +58,7 @@ time lootbox drop execute --network $NETWORK \
 ```
 
 After adding `--errors` option to `lootbox drop execute` command:
+
 ```
 time lootbox drop execute --network $NETWORK \
     --address $LOOTBOX_ADDRESS \
@@ -86,9 +87,7 @@ export GAS_PRICE="100 gwei"
 export CONFIG_FILE=operations/rbw.lootboxes.config.json
 ```
 
-
 We did a bunch of withdraw ERC20 operations on Lootbox and Terminus contract.
-
 
 ```
 lootbox core gogogo  --terminus-address $TERMINUS_ADDRESS --sender $SENDER_KEYFILE --network $NETWORK --gas-price "$GAS_PRICE" --confirmations $CONFIRMATIONS
@@ -230,5 +229,109 @@ time lootbox drop execute --network $NETWORK \
     -N 200
 ```
 
-
 ## **GG, WP!**
+
+## **GLHF** PART 2
+
+### retry operations
+
+## 100-250
+
+Note errors file had two batches. One batch had in fact successfully been processed:
+https://polygonscan.com/tx/0x13d3c3cb990c18d89dfad80ca8a8320805f7aed95a48b2481269f9baa1b947bd
+
+Modified errors file to only contain failed batch.
+
+- [x] Done
+
+```
+lootbox drop retry --network $NETWORK \
+    --address $LOOTBOX_ADDRESS \
+    --sender $SENDER_KEYFILE \
+    --gas-price "$GAS_PRICE" \
+    --confirmations 2 \
+    -c data/rbw.mainnet.100-250.checkpoint.json \
+    -e data/rbw.mainnet.100-250.errors.json \
+    -i data/rbw.mainnet.100-250.jobs.json \
+    -N 200
+```
+
+## 500-750
+
+Note: The following transactions were incorrectly marked as errors before:
+- https://polygonscan.com/tx/0x85b0cedc62e8887ac8f87ee1d3f39b771b2e3fe1f4cd8cbb7cb7235b67dbaa25
+- https://polygonscan.com/tx/0x9d72343e6411f8b20f910940573cfe1519ea098835597e0f3f2f11344f5db6a6
+
+Removed those arguments from the errors array.
+
+- [x] Done
+
+```
+lootbox drop retry --network $NETWORK \
+    --address $LOOTBOX_ADDRESS \
+    --sender $SENDER_KEYFILE \
+    --gas-price "$GAS_PRICE" \
+    --confirmations 2 \
+    -c data/rbw.mainnet.500-750.checkpoint.json \
+    -e data/rbw.mainnet.500-750.errors.json \
+    -i data/rbw.mainnet.500-750.jobs.json \
+    -N 200
+```
+
+Transactions:
+- https://polygonscan.com/tx/0x4411a763acd24fd57300aef0a942d689a575c25aec3b9d01f4404f60c255ddbb
+- https://polygonscan.com/tx/0xa14e755032568afac6cd711f9c09311b586c9abfb44a786572f7fe6a24c2fec3
+- https://polygonscan.com/tx/0xffc0f2cf099e7826c64ac9a97aa3c2d47a9eb0dca582d83fd4caea83c3d94d9b
+
+## 1000-1500
+
+No work necessary. Errors were incorrectly marked.
+
+Successful transaction: https://polygonscan.com/tx/0x5bd0a5febc8a3d574b17ecf9c5574ad8561422c2966b87f71db1d79f384a524e
+
+- [x] Done
+
+```
+drop retry --network $NETWORK \
+    --address $LOOTBOX_ADDRESS \
+    --sender $SENDER_KEYFILE \
+    --gas-price "$GAS_PRICE" \
+    --confirmations 2 \
+    -c data/rbw.mainnet.1000-1500.checkpoint.json \
+    -e data/rbw.mainnet.1000-1500.errors.json \
+    -i data/rbw.mainnet.1000-1500.jobs.json \
+    -N 200
+```
+
+## 2000-2500
+- [x] Done
+
+```
+lootbox drop retry --network $NETWORK \
+    --address $LOOTBOX_ADDRESS \
+    --sender $SENDER_KEYFILE \
+    --gas-price "$GAS_PRICE" \
+    --confirmations 2 \
+    -c data/rbw.mainnet.2000-2500.checkpoint.json \
+    -e data/rbw.mainnet.2000-2500.errors.json \
+    -i data/rbw.mainnet.2000-2500.jobs.json \
+    -N 200
+```
+
+## 5000-10000
+- [x] Done
+
+```
+lootbox drop retry --network $NETWORK \
+    --address $LOOTBOX_ADDRESS \
+    --sender $SENDER_KEYFILE \
+    --gas-price "$GAS_PRICE" \
+    --confirmations 2 \
+    -c data/rbw.mainnet.5000-10000.checkpoint.json \
+    -e data/rbw.mainnet.5000-10000.errors.json \
+    -i data/rbw.mainnet.5000-10000.jobs.json \
+    -N 200
+```
+
+Transactions:
+- https://polygonscan.com/tx/0xf16500682652f9758958ec3c75c188f02431cf1c4966bba5674d9effa470c798
