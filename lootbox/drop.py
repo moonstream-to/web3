@@ -222,7 +222,7 @@ def retry_drop(
 
     errors = []
     if not os.path.isfile(errors_file):
-        raise "Don't have errors file"
+        raise IOError("Don't have errors file")
     else:
         with open(errors_file, "r") as ifp:
             errors = json.load(ifp)
@@ -292,9 +292,6 @@ def retry_drop(
                 except Exception as e:
                     print("Error submitting transaction:")
                     print(e)
-                    # errors.append([lootbox_id, batch, amount])
-                    # with open(errors_file, "w") as ofp:
-                    #     json.dump(errors, ofp)
                 current_index = current_index + batch_size
 
 
