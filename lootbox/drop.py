@@ -3,6 +3,7 @@ Lootbox drop operations
 """
 
 import argparse
+from audioop import add
 import csv
 import json
 import os
@@ -24,8 +25,25 @@ def is_contract(address):
         return False
     elif address_is_contract == "0x0":  # ganache
         return False
+    elif address_is_contract == b"":
+        return False
     else:
         return True
+
+
+def check_address(address):
+    try:
+        if is_contract(network.web3.toChecksumAddress(address)):
+            print(f" Smart contract found in address: {address} ")
+            return False
+        return True
+
+    except ValueError:
+        print(f"Malformed address: {address} found skip")
+        return False
+    except:
+        print(address)
+        raise
 
 
 def load_drop_matrix_from_csv(infile, checkpoint_file):
@@ -78,6 +96,11 @@ def load_drop_matrix_from_csv(infile, checkpoint_file):
         assert address_index >= 0, "No address column found"
 
         for row in reader:
+
+            address = row[address_index]
+            if not check_address(address):
+                continue
+
             for lootbox_id, index in lootbox_id_indices.items():
                 address = row[address_index]
                 raw_amount = row[index].strip()
@@ -126,6 +149,9 @@ def execute_drop(
         jobs_by_amount = {}
         for address, amount in item.items():
 
+            if not check_address(address):
+                continue
+
             # Get checkpointed part of drop balance
             checkpoint_ops = checkpoint.get(checkpoint_key(address, lootbox_id))
             if checkpoint_ops is None:
@@ -139,7 +165,7 @@ def execute_drop(
             errors_amount = 0
 
             if lootbox_id in failed_jobs:
-                if jobs_by_amount[lootbox_id].get(address) is not None:
+                if failed_jobs[lootbox_id].get(address) is not None:
                     errors_amount += failed_jobs[lootbox_id][address]
 
             # Real drop amount
@@ -214,6 +240,9 @@ def retry_drop(
         jobs_by_amount = {}
         for address, amount in item.items():
 
+            if not check_address(address):
+                continue
+
             # Get checkpointed part of drop balance
             checkpoint_ops = checkpoint.get(checkpoint_key(address, lootbox_id))
             if checkpoint_ops is None:
@@ -223,9 +252,9 @@ def retry_drop(
             for _amount, _ in checkpoint_ops:
                 checkpoint_amount += _amount
 
-            # Get errors part of drop balance
+            # Get tasks part of drop balance
 
-            tasks_amount += job_spec[lootbox_id][address]
+            tasks_amount = job_spec[lootbox_id][address]
 
             # Real drop amount
             drop_amount = tasks_amount - checkpoint_amount
@@ -264,13 +293,14 @@ def retry_drop(
                 except Exception as e:
                     print("Error submitting transaction:")
                     print(e)
-                    errors.append([lootbox_id, batch, amount])
-                    with open(errors_file, "w") as ofp:
-                        json.dump(errors, ofp)
+                    # errors.append([lootbox_id, batch, amount])
+                    # with open(errors_file, "w") as ofp:
+                    #     json.dump(errors, ofp)
                 current_index = current_index + batch_size
 
 
 def handle_make(args: argparse.Namespace) -> None:
+    network.connect(args.network)
     result = load_drop_matrix_from_csv(args.infile, args.checkpoint)
     with args.outfile:
         json.dump(result, args.outfile)
@@ -310,12 +340,22 @@ def handle_retry(args: argparse.Namespace) -> None:
     )
 
 
+def handle_address_check(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    lootbox = Lootbox.Lootbox(args.address)
+    transaction_config = Lootbox.get_transaction_config(args)
+
+    smartcontract = is_contract(args.smartcontract)
+    print(smartcontract)
+
+
 def generate_cli() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Manage Lootbox drops")
     parser.set_defaults(func=lambda _: parser.print_help())
     subparsers = parser.add_subparsers()
 
     make_parser = subparsers.add_parser("make")
+    Lootbox.add_default_arguments(make_parser, transact=True)
     make_parser.add_argument(
         "-i", "--infile", type=str, required=True, help="Path to input CSV"
     )
@@ -367,37 +407,46 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     execute_parser.set_defaults(func=handle_execute)
 
-    execute_parser = subparsers.add_parser("retry")
-    Lootbox.add_default_arguments(execute_parser, transact=True)
-    execute_parser.add_argument(
+    retry_parser = subparsers.add_parser("retry")
+    Lootbox.add_default_arguments(retry_parser, transact=True)
+    retry_parser.add_argument(
         "-i",
         "--infile",
         type=argparse.FileType("r"),
         required=True,
         help="Job file (JSON)",
     )
-    execute_parser.add_argument(
+    retry_parser.add_argument(
         "-e",
         "--errors",
-        type=argparse.FileType("r"),
+        type=str,
         required=True,
         help="Path to errors file (JSON format);",
     )
-    execute_parser.add_argument(
+    retry_parser.add_argument(
         "-c",
         "--checkpoint",
         type=str,
         required=True,
         help="Path to checkpoint file (JSON format); file will be created if it does not exist",
     )
-    execute_parser.add_argument(
+    retry_parser.add_argument(
         "-N",
         "--batch-size",
         type=int,
         required=True,
         help="Number of addresses to process per transaction",
     )
-    execute_parser.set_defaults(func=handle_execute)
+    retry_parser.set_defaults(func=handle_retry)
+
+    # testing SC check
+
+    address_parser = subparsers.add_parser("check")
+    Lootbox.add_default_arguments(address_parser, transact=True)
+    address_parser.add_argument(
+        "-s", "--smartcontract", type=str, required=True, help="Job file (JSON)",
+    )
+    address_parser.set_defaults(func=handle_address_check)
 
     return parser
 
