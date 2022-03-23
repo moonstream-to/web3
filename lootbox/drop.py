@@ -377,7 +377,7 @@ def generate_cli() -> argparse.ArgumentParser:
         help="Job file (JSON)",
     )
     execute_parser.add_argument(
-        "-i",
+        "-e",
         "--errors",
         type=argparse.FileType("r"),
         required=True,
