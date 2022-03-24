@@ -2,7 +2,7 @@
 export NETWORK="polygon-main"
 export TERMINUS_ADDRESS="0x99A558BDBdE247C2B2716f0D4cFb0E246DFB697D"
 export SENDER_KEYFILE="<redacted>"
-export CONFIRMATIONS=8
+export CONFIRMATIONS=5
 export GAS_PRICE="100 gwei"
 
 export CONFIG_FILE=operations/rbw.lootboxes.config.json
@@ -10,6 +10,8 @@ export LOOTBOX_ADDRESS="0x58E38E988ACD620b1f9de314302E897175C5161d"
 ```
 
 # Create jobs file from matrices
+
+- [x] Done
 
 ```
 lootbox drop make --network $NETWORK \
@@ -22,15 +24,18 @@ lootbox drop make --network $NETWORK \
 
 # Execute drops
 
-```
+- [ ] Done
 
-lootbox drop make --network $NETWORK \
+```
+lootbox drop execute \
+    --network $NETWORK \
+    --address $LOOTBOX_ADDRESS \
     --sender $SENDER_KEYFILE \
     --gas-price "$GAS_PRICE" \
- --confirmations 2 \
- -e data/rbw.032422.errors.json \
- -c data/rbw.032422.checkpoint.json \
- -i data/rbw.032422.jobs.json \
- -N 200
+    --confirmations $CONFIRMATIONS \
+    -e data/rbw.032422.errors.json \
+    -c data/rbw.032422.checkpoint.json \
+    -i data/rbw.032422.jobs.json \
+    -N 200
 
 ```
