@@ -136,13 +136,12 @@ def execute_drop(
         with open(errors_file, "r") as ifp:
             errors = json.load(ifp)
 
-    if errors:
-        failed_jobs = {}
-        for lootbox_id, batch, amount in errors:
-            if failed_jobs.get(lootbox_id) is None:
-                failed_jobs[lootbox_id] = {}
-            for address in batch:
-                failed_jobs[lootbox_id][address] = amount
+    failed_jobs = {}
+    for lootbox_id, batch, amount in errors:
+        if failed_jobs.get(lootbox_id) is None:
+            failed_jobs[lootbox_id] = {}
+        for address in batch:
+            failed_jobs[lootbox_id][address] = amount
 
     for lootbox_id, item in job_spec.items():
         jobs_by_amount = {}
