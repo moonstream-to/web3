@@ -381,7 +381,7 @@ def generate_cli() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers()
 
     make_parser = subparsers.add_parser("make")
-    Lootbox.add_default_arguments(make_parser, transact=True)
+    Lootbox.add_default_arguments(make_parser, transact=False)
     make_parser.add_argument(
         "-i", "--infile", type=str, required=True, help="Path to input CSV"
     )
