@@ -24,7 +24,7 @@ lootbox drop make --network $NETWORK \
 
 # Execute drops
 
-- [ ] Done
+- [x] Done
 
 ```
 lootbox drop execute \
