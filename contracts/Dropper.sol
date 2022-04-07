@@ -9,6 +9,7 @@ pragma solidity ^0.8.9;
 
 import "@moonstream/contracts/terminus/TerminusFacet.sol";
 import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin-contracts/contracts/access/Ownable.sol";
 import "@openzeppelin-contracts/contracts/security/Pausable.sol";
@@ -21,9 +22,9 @@ import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol"
  * @notice This contract manages drops for ERC20, ERC1155, and ERC721 tokens.
  */
 contract Dropper is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
-    // - [ ] withdrawERC20Tokens onlyOwner
-    // - [ ] withdrawERC1155Tokens onlyOwner
-    // - [ ] withdrawERC721Tokens onlyOwner
+    // - [x] withdrawERC20Tokens onlyOwner
+    // - [x] withdrawERC1155Tokens onlyOwner
+    // - [x] withdrawERC721Tokens onlyOwner
     // - [ ] claimERC20 (transfer with signature) nonReentrant
     // - [ ] claimERC1155 (transfer with signature) nonReentrant
     // - [ ] claimERC721 (transfer with signature) nonReentrant
@@ -50,7 +51,7 @@ contract Dropper is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
     uint256 public ERC20_REWARD_TYPE = 20;
     uint256 public ERC1155_REWARD_TYPE = 1155;
 
-    struct ClaimableToken{
+    struct ClaimableToken {
         uint256 tokenType;
         address tokenAddress; // address of the token
         uint256 tokenId;
@@ -62,12 +63,22 @@ contract Dropper is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
     mapping(uint256 => address) ClaimSigner;
     mapping(uint256 => ClaimableToken) ClaimToken;
 
-    event ClaimCreated(uint256 claimId, uint256 tokenType, address tokenAddress, uint256 tokenId, uint256 amount);
+    event ClaimCreated(
+        uint256 claimId,
+        uint256 tokenType,
+        address tokenAddress,
+        uint256 tokenId,
+        uint256 amount
+    );
     event ClaimStatusChanged(uint256 claimId, bool status);
     event ClaimSignerChanged(uint256 claimId, address signer);
 
-    function createClaim(uint256 tokenType, address tokenAddress, uint256 tokenId, uint256 amount) external onlyOwner returns (uint256)
-    {
+    function createClaim(
+        uint256 tokenType,
+        address tokenAddress,
+        uint256 tokenId,
+        uint256 amount
+    ) external onlyOwner returns (uint256) {
         NumClaims++;
 
         ClaimableToken memory tokenMetadata;
@@ -88,7 +99,11 @@ contract Dropper is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         return NumClaims;
     }
 
-    function getClaim(uint256 claimId) external view returns (ClaimableToken memory) {
+    function getClaim(uint256 claimId)
+        external
+        view
+        returns (ClaimableToken memory)
+    {
         return ClaimToken[claimId];
     }
 
@@ -101,12 +116,52 @@ contract Dropper is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         return IsClaimActive[claimId];
     }
 
-    function setSignerForClaim(uint256 claimId, address signer) external onlyOwner {
+    function setSignerForClaim(uint256 claimId, address signer)
+        external
+        onlyOwner
+    {
         ClaimSigner[claimId] = signer;
         emit ClaimSignerChanged(claimId, signer);
     }
 
-    function getSignerForClaim(uint256 claimId) external view returns (address) {
+    function getSignerForClaim(uint256 claimId)
+        external
+        view
+        returns (address)
+    {
         return ClaimSigner[claimId];
+    }
+
+    function withdrawERC20(address tokenAddress, uint256 amount)
+        external
+        onlyOwner
+    {
+        IERC20 erc20Contract = IERC20(tokenAddress);
+        erc20Contract.transfer(_msgSender(), amount);
+    }
+
+    function withdrawERC1155(
+        address tokenAddress,
+        uint256 tokenId,
+        uint256 amount
+    ) external onlyOwner {
+        address _owner = owner();
+        IERC1155 erc1155Contract = IERC1155(tokenAddress);
+        erc1155Contract.safeTransferFrom(
+            address(this),
+            _owner,
+            tokenId,
+            amount,
+            ""
+        );
+    }
+
+    function withdrawERC721(address tokenAddress, uint256 tokenId)
+        external
+        onlyOwner
+    {
+        address _owner = owner();
+        IERC721 erc721Contract = IERC721(tokenAddress);
+        erc721Contract.safeTransferFrom(address(this), _owner, tokenId, "");
     }
 }

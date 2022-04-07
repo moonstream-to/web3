@@ -190,6 +190,30 @@ class Dropper:
         self.assert_contract_is_instantiated()
         return self.contract.transferOwnership(new_owner, transaction_config)
 
+    def withdraw_erc1155(
+        self,
+        token_address: ChecksumAddress,
+        token_id: int,
+        amount: int,
+        transaction_config,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.withdrawERC1155(
+            token_address, token_id, amount, transaction_config
+        )
+
+    def withdraw_erc20(
+        self, token_address: ChecksumAddress, amount: int, transaction_config
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.withdrawERC20(token_address, amount, transaction_config)
+
+    def withdraw_erc721(
+        self, token_address: ChecksumAddress, token_id: int, transaction_config
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.withdrawERC721(token_address, token_id, transaction_config)
+
 
 def get_transaction_config(args: argparse.Namespace) -> Dict[str, Any]:
     signer = network.accounts.load(args.sender, args.password)
@@ -415,6 +439,43 @@ def handle_transfer_ownership(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_withdraw_erc1155(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Dropper(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.withdraw_erc1155(
+        token_address=args.token_address,
+        token_id=args.token_id,
+        amount=args.amount,
+        transaction_config=transaction_config,
+    )
+    print(result)
+
+
+def handle_withdraw_erc20(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Dropper(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.withdraw_erc20(
+        token_address=args.token_address,
+        amount=args.amount,
+        transaction_config=transaction_config,
+    )
+    print(result)
+
+
+def handle_withdraw_erc721(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Dropper(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.withdraw_erc721(
+        token_address=args.token_address,
+        token_id=args.token_id,
+        transaction_config=transaction_config,
+    )
+    print(result)
+
+
 def generate_cli() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="CLI for Dropper")
     parser.set_defaults(func=lambda _: parser.print_help())
@@ -562,6 +623,39 @@ def generate_cli() -> argparse.ArgumentParser:
         "--new-owner", required=True, help="Type: address"
     )
     transfer_ownership_parser.set_defaults(func=handle_transfer_ownership)
+
+    withdraw_erc1155_parser = subcommands.add_parser("withdraw-erc1155")
+    add_default_arguments(withdraw_erc1155_parser, True)
+    withdraw_erc1155_parser.add_argument(
+        "--token-address", required=True, help="Type: address"
+    )
+    withdraw_erc1155_parser.add_argument(
+        "--token-id", required=True, help="Type: uint256", type=int
+    )
+    withdraw_erc1155_parser.add_argument(
+        "--amount", required=True, help="Type: uint256", type=int
+    )
+    withdraw_erc1155_parser.set_defaults(func=handle_withdraw_erc1155)
+
+    withdraw_erc20_parser = subcommands.add_parser("withdraw-erc20")
+    add_default_arguments(withdraw_erc20_parser, True)
+    withdraw_erc20_parser.add_argument(
+        "--token-address", required=True, help="Type: address"
+    )
+    withdraw_erc20_parser.add_argument(
+        "--amount", required=True, help="Type: uint256", type=int
+    )
+    withdraw_erc20_parser.set_defaults(func=handle_withdraw_erc20)
+
+    withdraw_erc721_parser = subcommands.add_parser("withdraw-erc721")
+    add_default_arguments(withdraw_erc721_parser, True)
+    withdraw_erc721_parser.add_argument(
+        "--token-address", required=True, help="Type: address"
+    )
+    withdraw_erc721_parser.add_argument(
+        "--token-id", required=True, help="Type: uint256", type=int
+    )
+    withdraw_erc721_parser.set_defaults(func=handle_withdraw_erc721)
 
     return parser
 
