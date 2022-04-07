@@ -186,6 +186,52 @@ class LootboxBaseTest(LootboxTestCase):
 
         self._open_lootbox(accounts[1], created_lootbox_id, 1)
 
+    def test_lootbox_create_with_existing_terminus_pool(self):
+
+        lootboxes_count_0 = self.lootbox.total_lootbox_count()
+        terminus_pool = self._create_terminus_pool()
+
+        self.terminus.set_pool_controller(
+            terminus_pool, self.lootbox.address, {"from": accounts[0]}
+        )
+        self.lootbox.create_lootbox_with_terminus_pool(
+            [
+                lootbox_item_to_tuple(
+                    reward_type=20,
+                    token_address=self.erc20_contracts[1].address,
+                    token_id=0,
+                    token_amount=10 * 10 ** 18,
+                )
+            ],
+            terminus_pool,
+            {"from": accounts[0]},
+        )
+
+        self.erc20_contracts[1].mint(
+            self.lootbox.address, 100 * 10 ** 18, {"from": accounts[0]}
+        )
+
+        lootboxes_count_1 = self.lootbox.total_lootbox_count()
+        created_lootbox_id = self.lootbox.total_lootbox_count()
+
+        self.assertEqual(lootboxes_count_1, lootboxes_count_0 + 1)
+
+        self.assertEqual(self.lootbox.lootbox_item_count(created_lootbox_id), 1)
+
+        self.assertEqual(
+            self.lootbox.get_lootbox_item_by_index(created_lootbox_id, 0),
+            (20, self.erc20_contracts[1].address, 0, 10 * 10 ** 18),
+        )
+
+        self.lootbox.set_lootbox_uri(created_lootbox_id, "lol", {"from": accounts[0]})
+        self.assertEquals(self.lootbox.get_lootbox_uri(created_lootbox_id), "lol")
+
+        self.lootbox.batch_mint_lootboxes(
+            created_lootbox_id, [accounts[1].address], [1], {"from": accounts[0]}
+        )
+
+        self._open_lootbox(accounts[1], created_lootbox_id, 1)
+
     def test_mint_lootboxes(self):
         self.lootbox.create_lootbox(
             [
@@ -213,7 +259,7 @@ class LootboxBaseTest(LootboxTestCase):
 
         self.assertEqual(balance, 5)
 
-    def test_batch_mint_lootboxes(self):
+    def test_test_batch_mint_lootboxes(self):
 
         self.lootbox.create_lootbox(
             [
