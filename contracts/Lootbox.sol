@@ -114,6 +114,17 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         terminusContract.burn(from, administratorPoolId, balance);
     }
 
+    function mintLootbox(
+        uint256 lootboxId,
+        address recipient,
+        uint256 amount,
+        bytes memory data
+    ) public onlyAdministrator nonReentrant {
+        uint256 lootboxTerminusPoolId = terminusPoolIdbyLootboxId[lootboxId];
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+        terminusContract.mint(recipient, lootboxTerminusPoolId, amount, data);
+    }
+
     function batchMintLootboxes(
         uint256 lootboxId,
         address[] memory toAddresses,
