@@ -41,6 +41,8 @@ class DropperTestCase(unittest.TestCase):
         cls.erc20_contract.approve(
             cls.terminus.address, 100 * 10 ** 18, {"from": accounts[0]}
         )
+        cls.terminus.create_pool_v1(2 ** 256 - 1, True, True, {"from": accounts[0]})
+        cls.terminus_pool_id = cls.terminus.total_pools()
 
         # Dropper deployment
         cls.dropper = Dropper.Dropper(None)
@@ -205,3 +207,73 @@ class DropperWithdrawalTests(DropperTestCase):
         )
 
         self.assertEqual(self.nft_contract.owner_of(token_id), accounts[0].address)
+
+    def test_non_owner_cannot_withdraw_erc721(self):
+        num_tokens = self.nft_contract.total_supply()
+        token_id = num_tokens + 1
+        self.nft_contract.mint(accounts[0].address, token_id, {"from": accounts[0]})
+
+        self.assertEqual(self.nft_contract.owner_of(token_id), accounts[0].address)
+
+        self.nft_contract.transfer_from(
+            accounts[0].address, self.dropper.address, token_id, {"from": accounts[0]}
+        )
+
+        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+
+        with self.assertRaises(VirtualMachineError):
+            self.dropper.withdraw_erc721(
+                self.nft_contract.address, token_id, {"from": accounts[1]}
+            )
+
+        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+
+    def test_withdraw_erc1155(self):
+        amount = 34
+
+        self.terminus.mint(
+            self.dropper.address, self.terminus_pool_id, amount, "", {"from": accounts[0]}
+        )
+
+        balance_owner_0 = self.terminus.balance_of(accounts[0], self.terminus_pool_id)
+        balance_dropper_0 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        self.dropper.withdraw_erc1155(
+            self.terminus.address, self.terminus_pool_id, amount, {"from": accounts[0]}
+        )
+
+        balance_owner_1 = self.terminus.balance_of(accounts[0], self.terminus_pool_id)
+        balance_dropper_1 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        self.assertEqual(balance_owner_1, balance_owner_0 + amount)
+        self.assertEqual(balance_dropper_1, balance_dropper_0 - amount)
+
+    def test_non_owner_cannot_withdraw_erc1155(self):
+        self.terminus.mint(
+            self.dropper.address, self.terminus_pool_id, 1, "", {"from": accounts[0]}
+        )
+
+        balance_owner_0 = self.terminus.balance_of(accounts[0], self.terminus_pool_id)
+        balance_dropper_0 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+        balance_attacker_0 = self.terminus.balance_of(accounts[1], self.terminus_pool_id)
+
+        with self.assertRaises(VirtualMachineError):
+            self.dropper.withdraw_erc1155(
+                self.terminus.address, self.terminus_pool_id, 1, {"from": accounts[1]}
+            )
+
+        balance_owner_1 = self.terminus.balance_of(accounts[0], self.terminus_pool_id)
+        balance_dropper_1 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+        balance_attacker_1 = self.terminus.balance_of(accounts[1], self.terminus_pool_id)
+
+        self.assertEqual(balance_owner_1, balance_owner_0)
+        self.assertEqual(balance_dropper_1, balance_dropper_0)
+        self.assertEqual(balance_attacker_1, balance_attacker_0)
