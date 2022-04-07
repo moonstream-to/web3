@@ -141,7 +141,7 @@ class DropperClaimConfirmationTests(DropperTestCase):
         self.assertEqual(self.dropper.get_signer_for_claim(claim_id), ZERO_ADDRESS)
 
 
-class DropperERC20Tests(DropperTestCase):
+class DropperWithdrawalTests(DropperTestCase):
     def test_withdraw_erc20(self):
         balance_funder_0 = self.erc20_contract.balance_of(accounts[0].address)
         balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
@@ -166,13 +166,34 @@ class DropperERC20Tests(DropperTestCase):
         self.assertEqual(balance_funder_2, balance_funder_1 + 1)
         self.assertEqual(balance_dropper_2, balance_dropper_1 - 1)
 
-
-class DropperERC721Tests(DropperTestCase):
-    def test_withdraw_erc721(self):
-        balance_funder_0 = self.nft_contract.balance_of(accounts[0].address)
+    def test_non_owner_cannot_withdraw_erc20(self):
+        balance_funder_0 = self.erc20_contract.balance_of(accounts[0].address)
         self.assertGreaterEqual(balance_funder_0, 1)
 
-        token_id = self.nft_contract.token_of_owner_by_index(accounts[0].address, 0)
+        balance_attacker_0 = self.erc20_contract.balance_of(accounts[1].address)
+
+        self.erc20_contract.transfer(self.dropper.address, 2, {"from": accounts[0]})
+
+        balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
+
+        with self.assertRaises(VirtualMachineError):
+            self.dropper.withdraw_erc20(
+                self.erc20_contract.address, 1, {"from": accounts[1]}
+            )
+
+        balance_attacker_1 = self.erc20_contract.balance_of(accounts[1].address)
+        balance_dropper_1 = self.erc20_contract.balance_of(self.dropper.address)
+
+        self.assertEqual(balance_attacker_1, balance_attacker_0)
+        self.assertEqual(balance_dropper_1, balance_dropper_0)
+
+    def test_withdraw_erc721(self):
+        num_tokens = self.nft_contract.total_supply()
+        token_id = num_tokens + 1
+        self.nft_contract.mint(accounts[0].address, token_id, {"from": accounts[0]})
+
+        self.assertEqual(self.nft_contract.owner_of(token_id), accounts[0].address)
+
         self.nft_contract.transfer_from(
             accounts[0].address, self.dropper.address, token_id, {"from": accounts[0]}
         )
