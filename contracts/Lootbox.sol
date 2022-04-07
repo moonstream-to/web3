@@ -214,17 +214,48 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
     /**
      * @dev creates a new lootbox with the given terminus pool id and lootbox items
      * @param items The lootbox items
+     * @param terminusPoolId The terminus pool id
      */
+    function createLootboxWithTerminusPool(
+        LootboxItem[] memory items,
+        uint256 terminusPoolId
+    ) public {
+        uint256 lootboxId = _totalLootboxCount + 1;
+        _totalLootboxCount++;
+
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+
+        require(
+            lootboxIdbyTerminusPoolId[terminusPoolId] == 0,
+            "Another lootbox already exists formeaning this terminus pool"
+        );
+
+        require(
+            terminusContract.terminusPoolController(terminusPoolId) ==
+                address(this),
+            "The terminus pool is not controlled by Lootbox contract, please transfer the control to the contract."
+        );
+
+        lootboxIdbyTerminusPoolId[terminusPoolId] = lootboxId;
+        terminusPoolIdbyLootboxId[lootboxId] = terminusPoolId;
+        emit LootboxCreated(lootboxId);
+
+        // Add the lootbox items
+        for (uint256 i = 0; i < items.length; i++) {
+            lootboxItems[lootboxId][i] = items[i];
+            emit LootboxItemAdded(lootboxId, items[i]);
+        }
+
+        // Add the lootbox item count
+        lootboxItemCounts[lootboxId] = items.length;
+    }
+
     function createLootbox(LootboxItem[] memory items)
         public
         onlyAdministrator
     {
-        uint256 lootboxId = _totalLootboxCount;
-        _totalLootboxCount++;
-
         TerminusFacet terminusContract = TerminusFacet(terminusAddress);
         IERC20 terminusPaymentToken = IERC20(terminusContract.paymentToken());
-
         uint256 poolBaseFee = terminusContract.poolBasePrice();
 
         require(
@@ -240,23 +271,7 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
             true
         );
 
-        require(
-            lootboxIdbyTerminusPoolId[terminusPoolId] == 0,
-            "Another lootbox already exists formeaning this terminus pool"
-        );
-
-        lootboxIdbyTerminusPoolId[terminusPoolId] = lootboxId;
-        terminusPoolIdbyLootboxId[lootboxId] = terminusPoolId;
-        emit LootboxCreated(lootboxId);
-
-        // Add the lootbox items
-        for (uint256 i = 0; i < items.length; i++) {
-            lootboxItems[lootboxId][i] = items[i];
-            emit LootboxItemAdded(lootboxId, items[i]);
-        }
-
-        // Add the lootbox item count
-        lootboxItemCounts[lootboxId] = items.length;
+        createLootboxWithTerminusPool(items, terminusPoolId);
     }
 
     /**
@@ -393,10 +408,7 @@ contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
     /**
      * @dev Transfer control of the terminus contract from contract to owner
      */
-    function surrenderTerminusControl()
-        external
-        onlyOwner
-    {
+    function surrenderTerminusControl() external onlyOwner {
         address _owner = owner();
         TerminusFacet terminusContract = TerminusFacet(terminusAddress);
         terminusContract.setController(_owner);
