@@ -37,8 +37,8 @@ contract Dropper is
     // - [x] withdrawERC20Tokens onlyOwner
     // - [x] withdrawERC1155Tokens onlyOwner
     // - [x] withdrawERC721Tokens onlyOwner
-    // - [ ] claim (transfer with signature) nonReentrant
-    // - [ ] claimMessageHash public view
+    // - [x] claim (transfer with signature) nonReentrant
+    // - [x] claimMessageHash public view
     // - [x] onERC1155BatchReceived nonReentrant (implemented by ERC1155Holder)
     // - [x] claimStatus view method
     // - [x] setSignerForClaim onlyOwner
