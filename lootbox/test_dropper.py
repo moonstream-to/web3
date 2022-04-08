@@ -3,11 +3,24 @@ from typing import Dict, Any
 
 from brownie import accounts, network, web3 as web3_client
 from brownie.exceptions import VirtualMachineError
+from brownie.network import chain
+from eth_account._utils.signing import sign_message_hash
+import eth_keys
+from hexbytes import HexBytes
 from moonworm.watch import _fetch_events_chunk
 
 from . import Dropper, MockTerminus, MockErc20, MockERC721
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
+
+def sign_message(message_hash, signer):
+    eth_private_key = eth_keys.keys.PrivateKey(HexBytes(signer.private_key))
+    message_hash_bytes = HexBytes(message_hash)
+    _, _, _, signed_message_bytes = sign_message_hash(
+        eth_private_key, message_hash_bytes
+    )
+    return signed_message_bytes.hex()
 
 
 class DropperTestCase(unittest.TestCase):
@@ -295,3 +308,36 @@ class DropperWithdrawalTests(DropperTestCase):
         self.assertEqual(balance_owner_1, balance_owner_0)
         self.assertEqual(balance_dropper_1, balance_dropper_0)
         self.assertEqual(balance_attacker_1, balance_attacker_0)
+
+
+class DropperClaimTests(DropperTestCase):
+    def test_claim_erc20(self):
+        reward = 3
+        self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
+        claim_id = self.create_claim_and_return_claim_id(
+            20, self.erc20_contract.address, 0, reward, {"from": accounts[0]}
+        )
+        self.dropper.set_signer_for_claim(
+            claim_id, self.signer_0.address, {"from": accounts[0]}
+        )
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, accounts[1].address, block_deadline
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        balance_claimant_0 = self.erc20_contract.balance_of(accounts[1].address)
+        balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
+
+        self.dropper.claim(
+            claim_id, block_deadline, signed_message, {"from": accounts[1]}
+        )
+
+        balance_claimant_1 = self.erc20_contract.balance_of(accounts[1].address)
+        balance_dropper_1 = self.erc20_contract.balance_of(self.dropper.address)
+
+        self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
+        self.assertEqual(balance_dropper_1, balance_dropper_0 - reward)
