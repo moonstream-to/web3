@@ -14,6 +14,7 @@ import "@openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin-contracts/contracts/access/Ownable.sol";
 import "@openzeppelin-contracts/contracts/security/Pausable.sol";
 import "@openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin-contracts/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 
 /**
@@ -21,7 +22,13 @@ import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol"
  * @author Moonstream Engineering (engineering@moonstream.to)
  * @notice This contract manages drops for ERC20, ERC1155, and ERC721 tokens.
  */
-contract Dropper is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
+contract Dropper is
+    IERC721Receiver,
+    ERC1155Holder,
+    Ownable,
+    Pausable,
+    ReentrancyGuard
+{
     // - [x] withdrawERC20Tokens onlyOwner
     // - [x] withdrawERC1155Tokens onlyOwner
     // - [x] withdrawERC721Tokens onlyOwner
@@ -31,7 +38,7 @@ contract Dropper is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
     // - [ ] claimERC20MessageHash
     // - [ ] claimERC1155MessageHash
     // - [ ] claimERC721MessageHash
-    // - [ ] onERC721Received nonReentrant
+    // - [x] onERC721Received nonReentrant
     // - [x] onERC1155Received nonReentrant (implemented by ERC1155Holder)
     // - [x] onERC1155BatchReceived nonReentrant (implemented by ERC1155Holder)
     // - [x] claimStatus view method
@@ -80,6 +87,15 @@ contract Dropper is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         uint256 tokenId,
         uint256 amount
     );
+
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes calldata data
+    ) external returns (bytes4) {
+        return IERC721Receiver.onERC721Received.selector;
+    }
 
     function createClaim(
         uint256 tokenType,
