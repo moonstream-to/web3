@@ -799,3 +799,399 @@ class DropperClaimERC721Tests(DropperTestCase):
 
         self.assertNotEqual(self.nft_contract.owner_of(token_id), accounts[1].address)
         self.assertNotEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+
+
+class DropperClaimERC1155Tests(DropperTestCase):
+    def test_claim_erc1155(self):
+        reward = 3
+        self.terminus.mint(
+            self.dropper.address,
+            self.terminus_pool_id,
+            10 * reward,
+            "",
+            {"from": accounts[0]},
+        )
+        claim_id = self.create_claim_and_return_claim_id(
+            1155,
+            self.terminus.address,
+            self.terminus_pool_id,
+            reward,
+            {"from": accounts[0]},
+        )
+        self.dropper.set_signer_for_claim(
+            claim_id, self.signer_0.address, {"from": accounts[0]}
+        )
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, accounts[1].address, block_deadline
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        balance_claimant_0 = self.terminus.balance_of(
+            accounts[0].address, self.terminus_pool_id
+        )
+        balance_dropper_0 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        self.dropper.claim(
+            claim_id, block_deadline, signed_message, {"from": accounts[1]}
+        )
+
+        balance_claimant_1 = self.terminus.balance_of(
+            accounts[1].address, self.terminus_pool_id
+        )
+        balance_dropper_1 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
+        self.assertEqual(balance_dropper_1, balance_dropper_0 - reward)
+
+    def test_claim_erc1155_fails_if_block_deadline_exceeded(self):
+        reward = 5
+        self.terminus.mint(
+            self.dropper.address,
+            self.terminus_pool_id,
+            10 * reward,
+            "",
+            {"from": accounts[0]},
+        )
+        claim_id = self.create_claim_and_return_claim_id(
+            1155,
+            self.terminus.address,
+            self.terminus_pool_id,
+            reward,
+            {"from": accounts[0]},
+        )
+        self.dropper.set_signer_for_claim(
+            claim_id, self.signer_0.address, {"from": accounts[0]}
+        )
+
+        current_block = len(chain)
+        block_deadline = current_block - 1
+
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, accounts[1].address, block_deadline
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        balance_claimant_0 = self.terminus.balance_of(
+            accounts[1].address, self.terminus_pool_id
+        )
+        balance_dropper_0 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        with self.assertRaises(VirtualMachineError):
+            self.dropper.claim(
+                claim_id, block_deadline, signed_message, {"from": accounts[1]}
+            )
+
+        balance_claimant_1 = self.terminus.balance_of(
+            accounts[1].address, self.terminus_pool_id
+        )
+        balance_dropper_1 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        self.assertEqual(balance_claimant_1, balance_claimant_0)
+        self.assertEqual(balance_dropper_1, balance_dropper_0)
+
+    def test_claim_erc1155_fails_if_wrong_claimant(self):
+        reward = 6
+        self.terminus.mint(
+            self.dropper.address,
+            self.terminus_pool_id,
+            10 * reward,
+            "",
+            {"from": accounts[0]},
+        )
+        claim_id = self.create_claim_and_return_claim_id(
+            1155,
+            self.terminus.address,
+            self.terminus_pool_id,
+            reward,
+            {"from": accounts[0]},
+        )
+        self.dropper.set_signer_for_claim(
+            claim_id, self.signer_0.address, {"from": accounts[0]}
+        )
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, accounts[1].address, block_deadline
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        balance_attacker_0 = self.terminus.balance_of(
+            accounts[2].address, self.terminus_pool_id
+        )
+        balance_claimant_0 = self.terminus.balance_of(
+            accounts[1].address, self.terminus_pool_id
+        )
+        balance_dropper_0 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        with self.assertRaises(VirtualMachineError):
+            self.dropper.claim(
+                claim_id, block_deadline, signed_message, {"from": accounts[2]}
+            )
+
+        balance_attacker_1 = self.terminus.balance_of(
+            accounts[2].address, self.terminus_pool_id
+        )
+        balance_claimant_1 = self.terminus.balance_of(
+            accounts[1].address, self.terminus_pool_id
+        )
+        balance_dropper_1 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        self.assertEqual(balance_attacker_1, balance_attacker_0)
+        self.assertEqual(balance_claimant_1, balance_claimant_0)
+        self.assertEqual(balance_dropper_1, balance_dropper_0)
+
+    def test_claim_erc1155_fails_if_wrong_signer(self):
+        reward = 7
+        self.terminus.mint(
+            self.dropper.address,
+            self.terminus_pool_id,
+            10 * reward,
+            "",
+            {"from": accounts[0]},
+        )
+        claim_id = self.create_claim_and_return_claim_id(
+            1155,
+            self.terminus.address,
+            self.terminus_pool_id,
+            reward,
+            {"from": accounts[0]},
+        )
+        self.dropper.set_signer_for_claim(
+            claim_id, self.signer_0.address, {"from": accounts[0]}
+        )
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, accounts[1].address, block_deadline
+        )
+        signed_message = sign_message(message_hash, self.signer_1)
+
+        balance_claimant_0 = self.terminus.balance_of(
+            accounts[1].address, self.terminus_pool_id
+        )
+        balance_dropper_0 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        with self.assertRaises(VirtualMachineError):
+            self.dropper.claim(
+                claim_id, block_deadline, signed_message, {"from": accounts[2]}
+            )
+
+        balance_claimant_1 = self.terminus.balance_of(
+            accounts[1].address, self.terminus_pool_id
+        )
+        balance_dropper_1 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        self.assertEqual(balance_claimant_1, balance_claimant_0)
+        self.assertEqual(balance_dropper_1, balance_dropper_0)
+
+    def test_claim_erc1155_fails_on_repeated_attempts_with_same_signed_message(self):
+        reward = 9
+        self.terminus.mint(
+            self.dropper.address,
+            self.terminus_pool_id,
+            10 * reward,
+            "",
+            {"from": accounts[0]},
+        )
+        claim_id = self.create_claim_and_return_claim_id(
+            1155,
+            self.terminus.address,
+            self.terminus_pool_id,
+            reward,
+            {"from": accounts[0]},
+        )
+        self.dropper.set_signer_for_claim(
+            claim_id, self.signer_0.address, {"from": accounts[0]}
+        )
+
+        current_block = len(chain)
+        block_deadline = current_block + 1000
+
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, accounts[1].address, block_deadline
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        balance_claimant_0 = self.terminus.balance_of(
+            accounts[1].address, self.terminus_pool_id
+        )
+        balance_dropper_0 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        self.dropper.claim(
+            claim_id, block_deadline, signed_message, {"from": accounts[1]}
+        )
+
+        balance_claimant_1 = self.terminus.balance_of(
+            accounts[1].address, self.terminus_pool_id
+        )
+        balance_dropper_1 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
+        self.assertEqual(balance_dropper_1, balance_dropper_0 - reward)
+
+        with self.assertRaises(VirtualMachineError):
+            self.dropper.claim(
+                claim_id, block_deadline, signed_message, {"from": accounts[1]}
+            )
+
+        balance_claimant_2 = self.terminus.balance_of(
+            accounts[1].address, self.terminus_pool_id
+        )
+        balance_dropper_2 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        self.assertEqual(balance_claimant_2, balance_claimant_1)
+        self.assertEqual(balance_dropper_2, balance_dropper_1)
+
+    def test_claim_erc1155_fails_on_repeated_attempts_with_different_signed_messages(
+        self,
+    ):
+        reward = 9
+        self.terminus.mint(
+            self.dropper.address,
+            self.terminus_pool_id,
+            10 * reward,
+            "",
+            {"from": accounts[0]},
+        )
+        claim_id = self.create_claim_and_return_claim_id(
+            1155,
+            self.terminus.address,
+            self.terminus_pool_id,
+            reward,
+            {"from": accounts[0]},
+        )
+        self.dropper.set_signer_for_claim(
+            claim_id, self.signer_0.address, {"from": accounts[0]}
+        )
+
+        current_block = len(chain)
+        block_deadline = current_block
+
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, accounts[1].address, block_deadline
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        balance_claimant_0 = self.terminus.balance_of(
+            accounts[1].address, self.terminus_pool_id
+        )
+        balance_dropper_0 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        self.dropper.claim(
+            claim_id, block_deadline, signed_message, {"from": accounts[1]}
+        )
+
+        balance_claimant_1 = self.terminus.balance_of(
+            accounts[1].address, self.terminus_pool_id
+        )
+        balance_dropper_1 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
+        self.assertEqual(balance_dropper_1, balance_dropper_0 - reward)
+
+        current_block = len(chain)
+        block_deadline = current_block
+
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, accounts[1].address, block_deadline
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        with self.assertRaises(VirtualMachineError):
+            self.dropper.claim(
+                claim_id, block_deadline, signed_message, {"from": accounts[1]}
+            )
+
+        balance_claimant_2 = self.terminus.balance_of(
+            accounts[1].address, self.terminus_pool_id
+        )
+        balance_dropper_2 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        self.assertEqual(balance_claimant_2, balance_claimant_1)
+        self.assertEqual(balance_dropper_2, balance_dropper_1)
+
+    def test_claim_erc1155_fails_when_insufficient_balance(self):
+        reward = 33
+        # Drain Dropper of ERC1155 tokens
+        self.dropper.withdraw_erc1155(
+            self.terminus.address,
+            self.terminus_pool_id,
+            self.terminus.balance_of(self.dropper.address, self.terminus_pool_id),
+            {"from": accounts[0]},
+        )
+        claim_id = self.create_claim_and_return_claim_id(
+            1155,
+            self.terminus.address,
+            self.terminus_pool_id,
+            reward,
+            {"from": accounts[0]},
+        )
+        self.dropper.set_signer_for_claim(
+            claim_id, self.signer_0.address, {"from": accounts[0]}
+        )
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, accounts[1].address, block_deadline
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        balance_claimant_0 = self.terminus.balance_of(
+            accounts[1].address, self.terminus_pool_id
+        )
+        balance_dropper_0 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        with self.assertRaises(VirtualMachineError):
+            self.dropper.claim(
+                claim_id, block_deadline, signed_message, {"from": accounts[1]}
+            )
+
+        balance_claimant_1 = self.terminus.balance_of(
+            accounts[1].address, self.terminus_pool_id
+        )
+        balance_dropper_1 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
+        self.assertEqual(balance_claimant_1, balance_claimant_0)
+        self.assertEqual(balance_dropper_1, balance_dropper_0)
