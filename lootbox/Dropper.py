@@ -95,13 +95,17 @@ class Dropper:
         contract_class = contract_from_build(self.contract_name)
         contract_class.publish_source(self.contract)
 
-    def erc1155_reward_type(self) -> Any:
+    def erc1155_type(self) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.ERC1155_REWARD_TYPE.call()
+        return self.contract.ERC1155_TYPE.call()
 
-    def erc20_reward_type(self) -> Any:
+    def erc20_type(self) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.ERC20_REWARD_TYPE.call()
+        return self.contract.ERC20_TYPE.call()
+
+    def erc721_type(self) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.ERC721_TYPE.call()
 
     def claim_status(self, claim_id: int) -> Any:
         self.assert_contract_is_instantiated()
@@ -290,17 +294,24 @@ def handle_verify_contract(args: argparse.Namespace) -> None:
     print(result)
 
 
-def handle_erc1155_reward_type(args: argparse.Namespace) -> None:
+def handle_erc1155_type(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
-    result = contract.erc1155_reward_type()
+    result = contract.erc1155_type()
     print(result)
 
 
-def handle_erc20_reward_type(args: argparse.Namespace) -> None:
+def handle_erc20_type(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
-    result = contract.erc20_reward_type()
+    result = contract.erc20_type()
+    print(result)
+
+
+def handle_erc721_type(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Dropper(args.address)
+    result = contract.erc721_type()
     print(result)
 
 
@@ -489,13 +500,17 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(verify_contract_parser, False)
     verify_contract_parser.set_defaults(func=handle_verify_contract)
 
-    erc1155_reward_type_parser = subcommands.add_parser("erc1155-reward-type")
-    add_default_arguments(erc1155_reward_type_parser, False)
-    erc1155_reward_type_parser.set_defaults(func=handle_erc1155_reward_type)
+    erc1155_type_parser = subcommands.add_parser("erc1155-type")
+    add_default_arguments(erc1155_type_parser, False)
+    erc1155_type_parser.set_defaults(func=handle_erc1155_type)
 
-    erc20_reward_type_parser = subcommands.add_parser("erc20-reward-type")
-    add_default_arguments(erc20_reward_type_parser, False)
-    erc20_reward_type_parser.set_defaults(func=handle_erc20_reward_type)
+    erc20_type_parser = subcommands.add_parser("erc20-type")
+    add_default_arguments(erc20_type_parser, False)
+    erc20_type_parser.set_defaults(func=handle_erc20_type)
+
+    erc721_type_parser = subcommands.add_parser("erc721-type")
+    add_default_arguments(erc721_type_parser, False)
+    erc721_type_parser.set_defaults(func=handle_erc721_type)
 
     claim_status_parser = subcommands.add_parser("claim-status")
     add_default_arguments(claim_status_parser, False)

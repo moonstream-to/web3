@@ -69,7 +69,7 @@ class DropperTestCase(unittest.TestCase):
         return events[0]["args"]["claimId"]
 
 
-class DropperClaimConfirmationTests(DropperTestCase):
+class DropperClaimTests(DropperTestCase):
     def test_claim_creation(self):
         num_claims_0 = self.dropper.num_claims()
         claim_id = self.create_claim_and_return_claim_id(
@@ -81,6 +81,16 @@ class DropperClaimConfirmationTests(DropperTestCase):
 
         claim_info = self.dropper.get_claim(claim_id)
         self.assertEqual(claim_info, (20, self.erc20_contract.address, 0, 1))
+
+    def test_claim_creation_fails_if_unknown_token_type(self):
+        UNKNOWN_TOKEN_TYPE = 43
+        num_claims_0 = self.dropper.num_claims()
+        with self.assertRaises(VirtualMachineError):
+            self.dropper.create_claim(
+                43, self.erc20_contract.address, 0, 1, {"from": accounts[0]}
+            )
+        num_claims_1 = self.dropper.num_claims()
+        self.assertEqual(num_claims_1, num_claims_0)
 
     def test_claim_creation_fails_from_non_owner(self):
         num_claims_0 = self.dropper.num_claims()
@@ -232,7 +242,11 @@ class DropperWithdrawalTests(DropperTestCase):
         amount = 34
 
         self.terminus.mint(
-            self.dropper.address, self.terminus_pool_id, amount, "", {"from": accounts[0]}
+            self.dropper.address,
+            self.terminus_pool_id,
+            amount,
+            "",
+            {"from": accounts[0]},
         )
 
         balance_owner_0 = self.terminus.balance_of(accounts[0], self.terminus_pool_id)
@@ -261,7 +275,9 @@ class DropperWithdrawalTests(DropperTestCase):
         balance_dropper_0 = self.terminus.balance_of(
             self.dropper.address, self.terminus_pool_id
         )
-        balance_attacker_0 = self.terminus.balance_of(accounts[1], self.terminus_pool_id)
+        balance_attacker_0 = self.terminus.balance_of(
+            accounts[1], self.terminus_pool_id
+        )
 
         with self.assertRaises(VirtualMachineError):
             self.dropper.withdraw_erc1155(
@@ -272,7 +288,9 @@ class DropperWithdrawalTests(DropperTestCase):
         balance_dropper_1 = self.terminus.balance_of(
             self.dropper.address, self.terminus_pool_id
         )
-        balance_attacker_1 = self.terminus.balance_of(accounts[1], self.terminus_pool_id)
+        balance_attacker_1 = self.terminus.balance_of(
+            accounts[1], self.terminus_pool_id
+        )
 
         self.assertEqual(balance_owner_1, balance_owner_0)
         self.assertEqual(balance_dropper_1, balance_dropper_0)

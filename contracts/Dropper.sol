@@ -48,8 +48,9 @@ contract Dropper is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
     // Signer data structure
     // token address -> signer address
 
-    uint256 public ERC20_REWARD_TYPE = 20;
-    uint256 public ERC1155_REWARD_TYPE = 1155;
+    uint256 public ERC20_TYPE = 20;
+    uint256 public ERC721_TYPE = 721;
+    uint256 public ERC1155_TYPE = 1155;
 
     struct ClaimableToken {
         uint256 tokenType;
@@ -72,6 +73,13 @@ contract Dropper is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
     );
     event ClaimStatusChanged(uint256 claimId, bool status);
     event ClaimSignerChanged(uint256 claimId, address signer);
+    event Withdrawal(
+        address recipient,
+        uint256 tokenType,
+        address tokenAddress,
+        uint256 tokenId,
+        uint256 amount
+    );
 
     function createClaim(
         uint256 tokenType,
@@ -79,6 +87,12 @@ contract Dropper is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
         uint256 tokenId,
         uint256 amount
     ) external onlyOwner returns (uint256) {
+        require(
+            tokenType == ERC20_TYPE ||
+                tokenType == ERC721_TYPE ||
+                tokenType == ERC1155_TYPE,
+            "Dropper: createClaim -- Unknown token type"
+        );
         NumClaims++;
 
         ClaimableToken memory tokenMetadata;
@@ -138,6 +152,17 @@ contract Dropper is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
     {
         IERC20 erc20Contract = IERC20(tokenAddress);
         erc20Contract.transfer(_msgSender(), amount);
+        emit Withdrawal(msg.sender, ERC20_TYPE, tokenAddress, 0, amount);
+    }
+
+    function withdrawERC721(address tokenAddress, uint256 tokenId)
+        external
+        onlyOwner
+    {
+        address _owner = owner();
+        IERC721 erc721Contract = IERC721(tokenAddress);
+        erc721Contract.safeTransferFrom(address(this), _owner, tokenId, "");
+        emit Withdrawal(msg.sender, ERC721_TYPE, tokenAddress, tokenId, 1);
     }
 
     function withdrawERC1155(
@@ -154,14 +179,12 @@ contract Dropper is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
             amount,
             ""
         );
-    }
-
-    function withdrawERC721(address tokenAddress, uint256 tokenId)
-        external
-        onlyOwner
-    {
-        address _owner = owner();
-        IERC721 erc721Contract = IERC721(tokenAddress);
-        erc721Contract.safeTransferFrom(address(this), _owner, tokenId, "");
+        emit Withdrawal(
+            msg.sender,
+            ERC1155_TYPE,
+            tokenAddress,
+            tokenId,
+            amount
+        );
     }
 }
