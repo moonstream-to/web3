@@ -107,6 +107,20 @@ class Dropper:
         self.assert_contract_is_instantiated()
         return self.contract.ERC721_TYPE.call()
 
+    def claim(
+        self, claim_id: int, block_deadline: int, signature: bytes, transaction_config
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.claim(
+            claim_id, block_deadline, signature, transaction_config
+        )
+
+    def claim_message_hash(
+        self, claim_id: int, claimant: ChecksumAddress, block_deadline: int
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.claimMessageHash.call(claim_id, claimant, block_deadline)
+
     def claim_status(self, claim_id: int) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.claimStatus.call(claim_id)
@@ -162,6 +176,19 @@ class Dropper:
         self.assert_contract_is_instantiated()
         return self.contract.onERC1155Received(
             arg1, arg2, arg3, arg4, arg5, transaction_config
+        )
+
+    def on_erc721_received(
+        self,
+        operator: ChecksumAddress,
+        from_: ChecksumAddress,
+        token_id: int,
+        data: bytes,
+        transaction_config,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.onERC721Received(
+            operator, from_, token_id, data, transaction_config
         )
 
     def owner(self) -> Any:
@@ -315,6 +342,30 @@ def handle_erc721_type(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_claim(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Dropper(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.claim(
+        claim_id=args.claim_id,
+        block_deadline=args.block_deadline,
+        signature=args.signature,
+        transaction_config=transaction_config,
+    )
+    print(result)
+
+
+def handle_claim_message_hash(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Dropper(args.address)
+    result = contract.claim_message_hash(
+        claim_id=args.claim_id,
+        claimant=args.claimant,
+        block_deadline=args.block_deadline,
+    )
+    print(result)
+
+
 def handle_claim_status(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
@@ -382,6 +433,20 @@ def handle_on_erc1155_received(args: argparse.Namespace) -> None:
         arg3=args.arg3,
         arg4=args.arg4,
         arg5=args.arg5,
+        transaction_config=transaction_config,
+    )
+    print(result)
+
+
+def handle_on_erc721_received(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Dropper(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.on_erc721_received(
+        operator=args.operator,
+        from_=args.from_arg,
+        token_id=args.token_id,
+        data=args.data,
         transaction_config=transaction_config,
     )
     print(result)
@@ -512,6 +577,32 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(erc721_type_parser, False)
     erc721_type_parser.set_defaults(func=handle_erc721_type)
 
+    claim_parser = subcommands.add_parser("claim")
+    add_default_arguments(claim_parser, True)
+    claim_parser.add_argument(
+        "--claim-id", required=True, help="Type: uint256", type=int
+    )
+    claim_parser.add_argument(
+        "--block-deadline", required=True, help="Type: uint256", type=int
+    )
+    claim_parser.add_argument(
+        "--signature", required=True, help="Type: bytes", type=bytes_argument_type
+    )
+    claim_parser.set_defaults(func=handle_claim)
+
+    claim_message_hash_parser = subcommands.add_parser("claim-message-hash")
+    add_default_arguments(claim_message_hash_parser, False)
+    claim_message_hash_parser.add_argument(
+        "--claim-id", required=True, help="Type: uint256", type=int
+    )
+    claim_message_hash_parser.add_argument(
+        "--claimant", required=True, help="Type: address"
+    )
+    claim_message_hash_parser.add_argument(
+        "--block-deadline", required=True, help="Type: uint256", type=int
+    )
+    claim_message_hash_parser.set_defaults(func=handle_claim_message_hash)
+
     claim_status_parser = subcommands.add_parser("claim-status")
     add_default_arguments(claim_status_parser, False)
     claim_status_parser.add_argument(
@@ -592,6 +683,22 @@ def generate_cli() -> argparse.ArgumentParser:
         "--arg5", required=True, help="Type: bytes", type=bytes_argument_type
     )
     on_erc1155_received_parser.set_defaults(func=handle_on_erc1155_received)
+
+    on_erc721_received_parser = subcommands.add_parser("on-erc721-received")
+    add_default_arguments(on_erc721_received_parser, True)
+    on_erc721_received_parser.add_argument(
+        "--operator", required=True, help="Type: address"
+    )
+    on_erc721_received_parser.add_argument(
+        "--from-arg", required=True, help="Type: address"
+    )
+    on_erc721_received_parser.add_argument(
+        "--token-id", required=True, help="Type: uint256", type=int
+    )
+    on_erc721_received_parser.add_argument(
+        "--data", required=True, help="Type: bytes", type=bytes_argument_type
+    )
+    on_erc721_received_parser.set_defaults(func=handle_on_erc721_received)
 
     owner_parser = subcommands.add_parser("owner")
     add_default_arguments(owner_parser, False)
