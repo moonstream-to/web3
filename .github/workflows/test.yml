@@ -1,7 +1,9 @@
 name: Test code
 
-# should be pull_request
-on: [push]
+on:
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
