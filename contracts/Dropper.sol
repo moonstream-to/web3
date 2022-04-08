@@ -16,6 +16,8 @@ import "@openzeppelin-contracts/contracts/security/Pausable.sol";
 import "@openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin-contracts/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import "@openzeppelin-contracts/contracts/utils/cryptography/draft-EIP712.sol";
+import "@openzeppelin-contracts/contracts/utils/cryptography/SignatureChecker.sol";
 
 /**
  * @title Moonstream Dropper
@@ -25,21 +27,18 @@ import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol"
 contract Dropper is
     IERC721Receiver,
     ERC1155Holder,
+    EIP712,
     Ownable,
     Pausable,
     ReentrancyGuard
 {
+    // - [x] onERC721Received
+    // - [x] onERC1155Received (implemented by ERC1155Holder)
     // - [x] withdrawERC20Tokens onlyOwner
     // - [x] withdrawERC1155Tokens onlyOwner
     // - [x] withdrawERC721Tokens onlyOwner
-    // - [ ] claimERC20 (transfer with signature) nonReentrant
-    // - [ ] claimERC1155 (transfer with signature) nonReentrant
-    // - [ ] claimERC721 (transfer with signature) nonReentrant
-    // - [ ] claimERC20MessageHash
-    // - [ ] claimERC1155MessageHash
-    // - [ ] claimERC721MessageHash
-    // - [x] onERC721Received nonReentrant
-    // - [x] onERC1155Received nonReentrant (implemented by ERC1155Holder)
+    // - [ ] claim (transfer with signature) nonReentrant
+    // - [ ] claimMessageHash public view
     // - [x] onERC1155BatchReceived nonReentrant (implemented by ERC1155Holder)
     // - [x] claimStatus view method
     // - [x] setSignerForClaim onlyOwner
@@ -50,7 +49,7 @@ contract Dropper is
     // - [x] getClaim external view
 
     // Claim data structure:
-    // (player address, claimId, requestId) -> true/false
+    // (claimId, playerAddress) -> true/false
 
     // Signer data structure
     // token address -> signer address
@@ -70,23 +69,27 @@ contract Dropper is
     mapping(uint256 => bool) IsClaimActive;
     mapping(uint256 => address) ClaimSigner;
     mapping(uint256 => ClaimableToken) ClaimToken;
+    mapping(uint256 => mapping(address => bool)) ClaimCompleted;
 
+    event Claimed(uint256 indexed claimId, address indexed claimant);
     event ClaimCreated(
         uint256 claimId,
-        uint256 tokenType,
-        address tokenAddress,
-        uint256 tokenId,
+        uint256 indexed tokenType,
+        address indexed tokenAddress,
+        uint256 indexed tokenId,
         uint256 amount
     );
-    event ClaimStatusChanged(uint256 claimId, bool status);
-    event ClaimSignerChanged(uint256 claimId, address signer);
+    event ClaimStatusChanged(uint256 indexed claimId, bool status);
+    event ClaimSignerChanged(uint256 indexed claimId, address signer);
     event Withdrawal(
         address recipient,
-        uint256 tokenType,
-        address tokenAddress,
-        uint256 tokenId,
+        uint256 indexed tokenType,
+        address indexed tokenAddress,
+        uint256 indexed tokenId,
         uint256 amount
     );
+
+    constructor() EIP712("Moonstream Dropper", "0.0.1") {}
 
     function onERC721Received(
         address operator,
@@ -162,8 +165,80 @@ contract Dropper is
         return ClaimSigner[claimId];
     }
 
+    function claimMessageHash(
+        uint256 claimId,
+        address claimant,
+        uint256 blockDeadline
+    ) public view returns (bytes32) {
+        bytes32 structHash = keccak256(
+            abi.encode(
+                keccak256(
+                    "ClaimPayload(uint256 claimId,address claimant,uint256 blockDeadline)"
+                ),
+                claimId,
+                claimant,
+                blockDeadline
+            )
+        );
+        bytes32 digest = _hashTypedDataV4(structHash);
+        return digest;
+    }
+
+    function claim(
+        uint256 claimId,
+        uint256 blockDeadline,
+        bytes memory signature
+    ) external whenNotPaused nonReentrant {
+        require(
+            block.number <= blockDeadline,
+            "Dropper: claim -- Block deadline exceeded."
+        );
+        require(
+            !ClaimCompleted[claimId][msg.sender],
+            "Dropper: claim -- That claim has already been completed."
+        );
+        bytes32 hash = claimMessageHash(claimId, msg.sender, blockDeadline);
+        require(
+            SignatureChecker.isValidSignatureNow(
+                ClaimSigner[claimId],
+                hash,
+                signature
+            ),
+            "Dropper: claim -- Invalid signer for claim."
+        );
+
+        ClaimableToken memory claimToken = ClaimToken[claimId];
+        if (claimToken.tokenType == ERC20_TYPE) {
+            IERC20 erc20Contract = IERC20(claimToken.tokenAddress);
+            erc20Contract.transfer(msg.sender, claimToken.amount);
+        } else if (claimToken.tokenType == ERC721_TYPE) {
+            IERC721 erc721Contract = IERC721(claimToken.tokenAddress);
+            erc721Contract.safeTransferFrom(
+                address(this),
+                msg.sender,
+                claimToken.tokenId,
+                ""
+            );
+        } else if (claimToken.tokenType == ERC1155_TYPE) {
+            IERC1155 erc1155Contract = IERC1155(claimToken.tokenAddress);
+            erc1155Contract.safeTransferFrom(
+                address(this),
+                msg.sender,
+                claimToken.tokenId,
+                claimToken.amount,
+                ""
+            );
+        } else {
+            revert("Dropper -- claim: Unknown token type in claim");
+        }
+
+        ClaimCompleted[claimId][msg.sender] = true;
+
+        emit Claimed(claimId, msg.sender);
+    }
+
     function withdrawERC20(address tokenAddress, uint256 amount)
-        external
+        public
         onlyOwner
     {
         IERC20 erc20Contract = IERC20(tokenAddress);
@@ -172,7 +247,7 @@ contract Dropper is
     }
 
     function withdrawERC721(address tokenAddress, uint256 tokenId)
-        external
+        public
         onlyOwner
     {
         address _owner = owner();
@@ -185,7 +260,7 @@ contract Dropper is
         address tokenAddress,
         uint256 tokenId,
         uint256 amount
-    ) external onlyOwner {
+    ) public onlyOwner {
         address _owner = owner();
         IERC1155 erc1155Contract = IERC1155(tokenAddress);
         erc1155Contract.safeTransferFrom(
