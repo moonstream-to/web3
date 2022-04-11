@@ -178,6 +178,19 @@ class Lootbox:
         self.assert_contract_is_instantiated()
         return self.contract.lootboxItemCount.call(lootbox_id)
 
+    def mint_lootbox(
+        self,
+        lootbox_id: int,
+        recipient: ChecksumAddress,
+        amount: int,
+        data: bytes,
+        transaction_config,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.mintLootbox(
+            lootbox_id, recipient, amount, data, transaction_config
+        )
+
     def on_erc1155_batch_received(
         self,
         arg1: ChecksumAddress,
@@ -508,6 +521,20 @@ def handle_lootbox_item_count(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Lootbox(args.address)
     result = contract.lootbox_item_count(lootbox_id=args.lootbox_id)
+    print(result)
+
+
+def handle_mint_lootbox(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Lootbox(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.mint_lootbox(
+        lootbox_id=args.lootbox_id,
+        recipient=args.recipient,
+        amount=args.amount,
+        data=args.data,
+        transaction_config=transaction_config,
+    )
     print(result)
 
 
@@ -856,6 +883,20 @@ def generate_cli() -> argparse.ArgumentParser:
         "--lootbox-id", required=True, help="Type: uint256", type=int
     )
     lootbox_item_count_parser.set_defaults(func=handle_lootbox_item_count)
+
+    mint_lootbox_parser = subcommands.add_parser("mint-lootbox")
+    add_default_arguments(mint_lootbox_parser, True)
+    mint_lootbox_parser.add_argument(
+        "--lootbox-id", required=True, help="Type: uint256", type=int
+    )
+    mint_lootbox_parser.add_argument("--recipient", required=True, help="Type: address")
+    mint_lootbox_parser.add_argument(
+        "--amount", required=True, help="Type: uint256", type=int
+    )
+    mint_lootbox_parser.add_argument(
+        "--data", required=True, help="Type: bytes", type=bytes_argument_type
+    )
+    mint_lootbox_parser.set_defaults(func=handle_mint_lootbox)
 
     on_erc1155_batch_received_parser = subcommands.add_parser(
         "on-erc1155-batch-received"

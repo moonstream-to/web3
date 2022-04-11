@@ -212,7 +212,12 @@ def execute_drop(
 
 
 def retry_drop(
-    job_spec, checkpoint_file, errors_file, lootbox, batch_size, transaction_config,
+    job_spec,
+    checkpoint_file,
+    errors_file,
+    lootbox,
+    batch_size,
+    transaction_config,
 ):
 
     checkpoint = {}

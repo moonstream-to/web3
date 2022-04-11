@@ -1,7 +1,7 @@
 import argparse
 
 
-from . import Lootbox, core, drop, MockErc20
+from . import Lootbox, core, drop, MockErc20, Dropper
 
 
 def main():
@@ -13,6 +13,9 @@ def main():
 
     lootbox_parser = Lootbox.generate_cli()
     subparsers.add_parser("lootbox", parents=[lootbox_parser], add_help=False)
+
+    dropper_parser = Dropper.generate_cli()
+    subparsers.add_parser("dropper", parents=[dropper_parser], add_help=False)
 
     core_parser = core.generate_cli()
     subparsers.add_parser("core", parents=[core_parser], add_help=False)

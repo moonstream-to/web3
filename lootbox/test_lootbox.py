@@ -232,6 +232,33 @@ class LootboxBaseTest(LootboxTestCase):
 
         self._open_lootbox(accounts[1], created_lootbox_id, 1)
 
+    def test_mint_lootboxes(self):
+        self.lootbox.create_lootbox(
+            [
+                lootbox_item_to_tuple(
+                    reward_type=20,
+                    token_address=self.erc20_contracts[1].address,
+                    token_id=0,
+                    token_amount=10 * 10 ** 18,
+                )
+            ],
+            {"from": accounts[0]},
+        )
+
+        lootbox_id = self.lootbox.total_lootbox_count()
+
+        self.lootbox.mint_lootbox(
+            lootbox_id,
+            accounts[1].address,
+            5,
+            "",
+            {"from": accounts[0]},
+        )
+
+        balance = self.lootbox.get_lootbox_balance(lootbox_id, accounts[1].address)
+
+        self.assertEqual(balance, 5)
+
     def test_test_batch_mint_lootboxes(self):
 
         self.lootbox.create_lootbox(
@@ -263,7 +290,7 @@ class LootboxBaseTest(LootboxTestCase):
 
         self.assertEqual(balances, (1, 2, 3))
 
-    def test_test_batch_mint_lootboxes_constant(self):
+    def test_batch_mint_lootboxes_constant(self):
         self.lootbox.create_lootbox(
             [
                 lootbox_item_to_tuple(
