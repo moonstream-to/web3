@@ -2,24 +2,20 @@
 Lootbox API.
 """
 import logging
+from typing import Dict
 
-import boto3
-from fastapi import FastAPI
+from fastapi import Body, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import data
-from .middleware import MoonstreamHTTPException
+from .middleware import BroodAuthMiddleware
 from .settings import (
     DOCS_TARGET_PATH,
     ORIGINS,
 )
 
-signer_instances = []
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-aws_client = boto3.client("ec2", region_name="<region_name>")
 
 tags_metadata = [
     {"name": "test", "description": "Test."},
@@ -34,6 +30,9 @@ app = FastAPI(
     docs_url=None,
     redoc_url=f"/{DOCS_TARGET_PATH}",
 )
+
+unauthenticated_paths: Dict[str, str] = {"/ping": "GET"}
+app.add_middleware(BroodAuthMiddleware, whitelist=unauthenticated_paths)
 
 app.add_middleware(
     CORSMiddleware,
@@ -52,34 +51,13 @@ async def ping_handler() -> data.PingResponse:
     return data.PingResponse(status="ok")
 
 
-@app.get("/wakeup", response_model=data.WakeupResponse)
-async def wakeup_handler():
-    global signer_instance
-    try:
-        response = aws_client.run_instances(
-            LaunchTemplate={"LaunchTemplateId": "<lt_id>"},
-            MinCount=1,
-            MaxCount=1,
-            DryRun=True,
-        )
-        signer_instances.extend(response["Instances"])
-    except Exception as err:
-        logger.error(f"Unhandled /wakeup exception, error: {err}")
-        raise MoonstreamHTTPException(status_code=500)
-
-    return data.SleepResponse(instances=signer_instances)
+# POST /drops - upload CSV file and register a claim for that CSV file on Dropper contract at a given address
+# GET /drops/<dropper_address>/<claim_id>/<address> - get signed transaction for user with the given address [SIGNATURE WORKFLOW]
+# GET /drops?dropper_address=<dropper_address>&claim_id=<claim_id>&address=<address> - list all drops with the given filters
 
 
-@app.get("/sleep", response_model=data.SleepResponse)
-async def sleep_handler():
-    try:
-        instance_ids = [i["InstanceId"] for i in signer_instances]
-        response = aws_client.terminate_instances(
-            InstanceIds=instance_ids,
-            DryRun=True,
-        )
-    except Exception as err:
-        logger.error(f"Unhandled /wakeup exception, error: {err}")
-        raise MoonstreamHTTPException(status_code=500)
-
-    return data.SleepResponse(instances=signer_instances)
+@app.post("/drops/")
+async def create_drop(register_request: data.DropRegisterRequest = Body(...)) -> None:
+    print("Dropper address:", register_request.dropper_address)
+    print("Claim ID:", register_request.claim_id)
+    print("Addresses:", register_request.addresses)

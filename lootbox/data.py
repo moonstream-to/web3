@@ -17,3 +17,9 @@ class SleepResponse(BaseModel):
 
 class WakeupResponse(BaseModel):
     instances: List[str] = Field(default_factory=list)
+
+
+class DropRegisterRequest(BaseModel):
+    dropper_address: str
+    claim_id: str
+    addresses: List[str]
