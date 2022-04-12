@@ -16,6 +16,15 @@ if MOONSTREAM_ENGINE_APPLICATION_ID == "":
         "MOONSTREAM_ENGINE_APPLICATION_ID environment variable must be set"
     )
 
+MOONSTREAM_ENGINE_ADMIN_ACCESS_TOKEN = os.environ.get(
+    "MOONSTREAM_ENGINE_ADMIN_ACCESS_TOKEN", ""
+)
+if MOONSTREAM_ENGINE_ADMIN_ACCESS_TOKEN == "":
+    raise ValueError(
+        "MOONSTREAM_ENGINE_ADMIN_ACCESS_TOKEN environment variable must be set"
+    )
+
+
 # Origin
 RAW_ORIGINS = os.environ.get("MOONSTREAM_CORS_ALLOWED_ORIGINS")
 if RAW_ORIGINS is None:

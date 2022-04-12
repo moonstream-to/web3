@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 
 from pydantic import BaseModel, Field
 
@@ -20,6 +20,16 @@ class WakeupResponse(BaseModel):
 
 
 class DropRegisterRequest(BaseModel):
+    drop_name: str
     dropper_address: str
     claim_id: str
     addresses: List[str]
+
+
+class DropResponse(BaseModel):
+    signed_transaction: str
+
+
+class DropListResponse(BaseModel):
+    drops: List[Any] = Field(default_factory=list)
+

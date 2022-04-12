@@ -11,7 +11,7 @@ from .settings import bugout_client as bc, MOONSTREAM_ENGINE_APPLICATION_ID
 logger = logging.getLogger(__name__)
 
 
-class MoonstreamHTTPException(HTTPException):
+class DropperHTTPException(HTTPException):
     """
     Extended HTTPException to handle 500 Internal server errors
     and send crash reports.
@@ -26,7 +26,7 @@ class MoonstreamHTTPException(HTTPException):
     ):
         super().__init__(status_code, detail, headers)
         if internal_error is not None:
-            pass
+            print(internal_error)
             # reporter.error_report(internal_error)
 
 
