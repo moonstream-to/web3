@@ -20,16 +20,18 @@ class WakeupResponse(BaseModel):
 
 
 class DropRegisterRequest(BaseModel):
-    drop_name: str
+    name: str
     dropper_address: str
     claim_id: str
     addresses: List[str]
 
 
 class DropResponse(BaseModel):
-    signed_transaction: str
+    claimant: str
+    claim_id: int
+    block_deadline: int
+    signature: str
 
 
 class DropListResponse(BaseModel):
     drops: List[Any] = Field(default_factory=list)
-
