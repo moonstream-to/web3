@@ -16,10 +16,14 @@ AWS_REGION_NAME = os.environ.get("AWS_REGION_NAME")
 if AWS_REGION_NAME is None:
     raise ValueError("AWS_REGION_NAME environment variable must be set")
 
-AWS_SIGNER_LAUNCH_TEMPLATE_ID = os.environ.get("AWS_SIGNER_LAUNCH_TEMPLATE_ID")
-if AWS_SIGNER_LAUNCH_TEMPLATE_ID is None:
-    raise ValueError("AWS_SIGNER_LAUNCH_TEMPLATE_ID environment variable must be set")
+MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID = os.environ.get(
+    "MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID"
+)
+if MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID is None:
+    raise ValueError(
+        "MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID environment variable must be set"
+    )
 
-AWS_SIGNER_IMAGE_ID = os.environ.get("AWS_SIGNER_IMAGE_ID")
-if AWS_SIGNER_IMAGE_ID is None:
-    raise ValueError("AWS_SIGNER_IMAGE_ID environment variable must be set")
+MOONSTREAM_AWS_SIGNER_IMAGE_ID = os.environ.get("MOONSTREAM_AWS_SIGNER_IMAGE_ID")
+if MOONSTREAM_AWS_SIGNER_IMAGE_ID is None:
+    raise ValueError("MOONSTREAM_AWS_SIGNER_IMAGE_ID environment variable must be set")

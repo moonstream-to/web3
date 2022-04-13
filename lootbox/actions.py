@@ -5,8 +5,8 @@ import boto3
 
 from .settings import (
     AWS_REGION_NAME,
-    AWS_SIGNER_LAUNCH_TEMPLATE_ID,
-    AWS_SIGNER_IMAGE_ID,
+    MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID,
+    MOONSTREAM_AWS_SIGNER_IMAGE_ID,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,9 @@ def wakeup_instances(run_confirmed=False, dry_run=True) -> List[str]:
     if run_confirmed:
         try:
             run_instances_response = aws_client.run_instances(
-                LaunchTemplate={"LaunchTemplateId": AWS_SIGNER_LAUNCH_TEMPLATE_ID},
+                LaunchTemplate={
+                    "LaunchTemplateId": MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID
+                },
                 MinCount=1,
                 MaxCount=1,
                 DryRun=dry_run,
@@ -78,7 +80,7 @@ def sleep_instances(
     described_instances = []
     try:
         described_instances_response = aws_client.describe_instances(
-            Filters=[{"Name": "image-id", "Values": [AWS_SIGNER_IMAGE_ID]}],
+            Filters=[{"Name": "image-id", "Values": [MOONSTREAM_AWS_SIGNER_IMAGE_ID]}],
             InstanceIds=signing_instances,
         )
         for r in described_instances_response["Reservations"]:

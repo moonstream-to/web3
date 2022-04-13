@@ -11,8 +11,8 @@ from . import actions
 from .middleware import MoonstreamHTTPException
 from .settings import (
     AWS_REGION_NAME,
-    AWS_SIGNER_LAUNCH_TEMPLATE_ID,
-    AWS_SIGNER_IMAGE_ID,
+    MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID,
+    MOONSTREAM_AWS_SIGNER_IMAGE_ID,
     DOCS_TARGET_PATH,
     ORIGINS,
 )
