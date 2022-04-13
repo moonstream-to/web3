@@ -32,12 +32,12 @@ if [ ! -d "$SECRETS_DIR" ]; then
   mkdir "$SECRETS_DIR"
   echo -e "${PREFIX_WARN} Created new secrets directory" 
 fi
-AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION}" /root/go/bin/checkenv show aws_ssm+Product:moonstream,signing_api:true >> "${PARAMETERS_ENV_PATH}"
+AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION}" /root/go/bin/checkenv show aws_ssm+Product:moonstream,signing_api:true > "${PARAMETERS_ENV_PATH}"
 
 echo
 echo
 echo -e "${PREFIX_INFO} Add AWS default region to parameters"
-echp "AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}" >> "${PARAMETERS_ENV_PATH}"
+echo "AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}" >> "${PARAMETERS_ENV_PATH}"
 
 echo
 echo
