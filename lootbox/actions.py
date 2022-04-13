@@ -4,14 +4,14 @@ from typing import List
 import boto3
 
 from .settings import (
-    AWS_REGION_NAME,
+    AWS_DEFAULT_REGION,
     MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID,
     MOONSTREAM_AWS_SIGNER_IMAGE_ID,
 )
 
 logger = logging.getLogger(__name__)
 
-aws_client = boto3.client("ec2", region_name=AWS_REGION_NAME)
+aws_client = boto3.client("ec2", region_name=AWS_DEFAULT_REGION)
 
 
 class AWSDescribeInstancesFail(Exception):

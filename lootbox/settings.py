@@ -12,9 +12,9 @@ ORIGINS = RAW_ORIGINS.split(",")
 DOCS_TARGET_PATH = "docs"
 
 # AWS signer
-AWS_REGION_NAME = os.environ.get("AWS_REGION_NAME")
-if AWS_REGION_NAME is None:
-    raise ValueError("AWS_REGION_NAME environment variable must be set")
+AWS_DEFAULT_REGION = os.environ.get("AWS_DEFAULT_REGION")
+if AWS_DEFAULT_REGION is None:
+    raise ValueError("AWS_DEFAULT_REGION environment variable must be set")
 
 MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID = os.environ.get(
     "MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID"
