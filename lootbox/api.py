@@ -137,7 +137,7 @@ async def get_drop_list_handler(
     """
     token = request.state.token
 
-    query_list = [f"tad:dropper_address:{DROPPER_ADDRESS}"]
+    query_list = [f"tag:dropper_address:{DROPPER_ADDRESS}"]
 
     if claim_id is not None:
         query_list.append(f"tag:claim_id:{claim_id}")
@@ -164,7 +164,7 @@ async def get_drop_list_handler(
             if address not in addresses:
                 response.results.remove(result)
             else:
-                response.results[entry_index]["content"]
+                response.results[entry_index].content = []
         return data.DropListResponse(drops=response.results)
 
     return data.DropListResponse(drops=response.results)
