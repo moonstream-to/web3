@@ -180,7 +180,7 @@ async def create_drop(
     example:
     curl -X POST -H "Content-Type: application/json" -H "authorization: bearer <token>" -d '{"name":"test", "dropper_address": "", "claim_id": "1", "addresses": ["0x1", "0x2"]}' http://localhost:8000/drops
     """
-    logger.info(f"Creating drop for {register_request.dropper_address}")
+    logger.info(f"Creating drop for {DROPPER_ADDRESS}")
 
     # Us bugout entry as storage for the whitelist
 
@@ -191,7 +191,7 @@ async def create_drop(
         response = bc.search(
             token=token,
             journal_id=DROP_JOURNAL_ID,
-            query=f"tag:claim_id:{register_request.claim_id} tag:dropper_address:{register_request.dropper_address}",
+            query=f"tag:claim_id:{register_request.claim_id} tag:dropper_address:{DROPPER_ADDRESS}",
             limit=1,
             content=False,
             timeout=10.0,
@@ -209,7 +209,7 @@ async def create_drop(
                 title=register_request.name,
                 tags=[
                     f"claim_id:{register_request.claim_id}",
-                    f"dropper_address:{register_request.dropper_address}",
+                    f"dropper_address:{DROPPER_ADDRESS}",
                 ],
                 content=content,
                 timeout=10.0,
@@ -234,7 +234,7 @@ async def create_drop(
                 title=register_request.name,
                 tags=[
                     f"claim_id:{register_request.claim_id}",
-                    f"dropper_address:{register_request.dropper_address}",
+                    f"dropper_address:{DROPPER_ADDRESS}",
                 ],
                 content=content,
                 timeout=10.0,
