@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import Any, List
 
 import boto3
 
@@ -44,7 +44,37 @@ class SigningInstancesTerminationLimitExceeded(Exception):
     """
 
 
-def wakeup_instances(run_confirmed=False, dry_run=True) -> List[str]:
+def list_signing_instances(
+    signing_instances: List[str],
+) -> List[Any]:
+    """
+    Return a list of signing instances with IPs.
+    """
+    described_instances = []
+    try:
+        described_instances_response = aws_client.describe_instances(
+            Filters=[
+                {"Name": "image-id", "Values": [MOONSTREAM_AWS_SIGNER_IMAGE_ID]},
+                {"Name": "tag:Application", "Values": ["signer"]},
+            ],
+            InstanceIds=signing_instances,
+        )
+        for r in described_instances_response["Reservations"]:
+            for i in r["Instances"]:
+                described_instances.append(
+                    {
+                        "instance_id": i["InstanceId"],
+                        "private_ip_address": i["PrivateIpAddress"],
+                    }
+                )
+    except Exception as err:
+        logger.error(f"AWS describe instances command failed: {err}")
+        raise AWSDescribeInstancesFail("AWS describe instances command failed.")
+
+    return described_instances
+
+
+def wakeup_signing_instances(run_confirmed=False, dry_run=True) -> List[str]:
     """
     Run new signing instances.
     """
@@ -68,7 +98,7 @@ def wakeup_instances(run_confirmed=False, dry_run=True) -> List[str]:
     return run_instances
 
 
-def sleep_instances(
+def sleep_signing_instances(
     signing_instances: List[str], termination_confirmed=False, dry_run=True
 ) -> List[str]:
     """
@@ -79,13 +109,9 @@ def sleep_instances(
 
     described_instances = []
     try:
-        described_instances_response = aws_client.describe_instances(
-            Filters=[{"Name": "image-id", "Values": [MOONSTREAM_AWS_SIGNER_IMAGE_ID]}],
-            InstanceIds=signing_instances,
-        )
-        for r in described_instances_response["Reservations"]:
-            for i in r["Instances"]:
-                described_instances.append(i["InstanceId"])
+        described_instances_response = list_signing_instances(signing_instances)
+        for i in described_instances_response:
+            described_instances.append(i["instance_id"])
     except Exception as err:
         logger.error(f"AWS describe instances command failed: {err}")
         raise AWSDescribeInstancesFail("AWS describe instances command failed.")

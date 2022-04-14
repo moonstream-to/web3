@@ -1,47 +1,59 @@
 import argparse
 import logging
 
-from . import actions
+from . import signing
 from . import data
 from . import Lootbox, core, drop, MockErc20, Dropper
 
 logger = logging.getLogger(__name__)
 
 
+def signing_server_list_handler(args: argparse.Namespace) -> None:
+    try:
+        instances = signing.list_signing_instances(
+            signing_instances=[] if args.instance is None else [args.instance]
+        )
+    except Exception as err:
+        logger.error(f"Unhandled /list exception: {err}")
+        return
+
+    print(data.SignerListResponse(instances=instances).json())
+
+
 def signing_server_wakeup_handler(args: argparse.Namespace) -> None:
     try:
-        run_instances = actions.wakeup_instances(
+        run_instances = signing.wakeup_signing_instances(
             run_confirmed=args.confirmed, dry_run=args.dry_run
         )
-    except actions.AWSRunInstancesFail:
+    except signing.AWSRunInstancesFail:
         return
     except Exception as err:
         logger.error(f"Unhandled /wakeup exception: {err}")
         return
 
-    print(data.WakeupResponse(instances=run_instances).json())
+    print(data.SignerWakeupResponse(instances=run_instances).json())
 
 
 def signing_server_sleep_handler(args: argparse.Namespace) -> None:
     try:
-        terminated_instances = actions.sleep_instances(
+        terminated_instances = signing.sleep_signing_instances(
             signing_instances=[args.instance],
             termination_confirmed=args.confirmed,
             dry_run=args.dry_run,
         )
-    except actions.AWSDescribeInstancesFail:
+    except signing.AWSDescribeInstancesFail:
         return
-    except actions.SigningInstancesNotFound:
+    except signing.SigningInstancesNotFound:
         return
-    except actions.SigningInstancesTerminationLimitExceeded:
+    except signing.SigningInstancesTerminationLimitExceeded:
         return
-    except actions.AWSTerminateInstancesFail:
+    except signing.AWSTerminateInstancesFail:
         return
     except Exception as err:
         logger.error(f"Unhandled /sleep exception: {err}")
         return
 
-    print(data.SleepResponse(instances=terminated_instances).json())
+    print(data.SignerSleepResponse(instances=terminated_instances).json())
 
 
 def main():
@@ -76,6 +88,17 @@ def main():
     subparsers_signing_server = parser_signing_server.add_subparsers(
         description="Signing server commands"
     )
+
+    parser_signing_server_list = subparsers_signing_server.add_parser(
+        "list", description="List signing servers"
+    )
+    parser_signing_server_list.add_argument(
+        "-i",
+        "--instance",
+        type=str,
+        help="Instance id to get",
+    )
+    parser_signing_server_list.set_defaults(func=signing_server_list_handler)
 
     parser_signing_server_wakeup = subparsers_signing_server.add_parser(
         "wakeup", description="Run signing server"
