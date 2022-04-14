@@ -22,7 +22,6 @@ from .settings import (
     DOCS_TARGET_PATH,
     ORIGINS,
     DROP_JOURNAL_ID,
-    DROP_SIGNER,
     DROPPER_ADDRESS,
     DROP_DEADLINE,
 )
@@ -121,7 +120,7 @@ async def get_drop_handler(claim_id: int, address: str) -> data.DropResponse:
     )
 
     try:
-        signature = DROP_SIGNER.sign_message(message_hash)
+        signature = signatures.DROP_SIGNER.sign_message(message_hash)
     except signatures.AWSDescribeInstancesFail:
         raise DropperHTTPException(status_code=500)
     except signatures.SignWithInstanceFail:

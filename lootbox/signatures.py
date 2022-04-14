@@ -14,6 +14,9 @@ import requests
 from hexbytes import HexBytes
 
 from .settings import (
+    SIGNER_KEYSTORE,
+    SIGNER_PASSWORD,
+    MOONSTREAM_SIGNING_SERVER_URI,
     AWS_DEFAULT_REGION,
     MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID,
     MOONSTREAM_AWS_SIGNER_IMAGE_ID,
@@ -136,6 +139,11 @@ class InstanceSigner(Signer):
 
         return signed_message
 
+DROP_SIGNER: Optional[Signer] = None
+if SIGNER_KEYSTORE is not None and SIGNER_PASSWORD is not None:
+    DROP_SIGNER = BrownieAccountSigner(SIGNER_KEYSTORE, SIGNER_PASSWORD)
+if DROP_SIGNER is None:
+    DROP_SIGNER = InstanceSigner(MOONSTREAM_SIGNING_SERVER_URI)
 
 def list_signing_instances(
     signing_instances: List[str],

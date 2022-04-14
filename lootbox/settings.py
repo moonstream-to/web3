@@ -1,9 +1,6 @@
 import os
-from typing import Optional
 
 from bugout.app import Bugout
-
-from .signatures import Signer, BrownieAccountSigner, InstanceSigner
 
 # Bugout
 BUGOUT_BROOD_URL = os.environ.get("BUGOUT_BROOD_URL", "https://auth.bugout.dev")
@@ -48,14 +45,10 @@ DROPPER_ADDRESS = os.environ.get("DROPPER_ADDRESS")
 if DROPPER_ADDRESS is None:
     raise ValueError("DROPPER_ADDRESS environment variable must be set")
 
-DROP_SIGNER: Optional[Signer] = None
 SIGNER_KEYSTORE = os.environ.get("SIGNER_KEYSTORE")
 SIGNER_PASSWORD = os.environ.get("SIGNER_PASSWORD")
-if SIGNER_KEYSTORE is not None and SIGNER_PASSWORD is not None:
-    DROP_SIGNER = BrownieAccountSigner(SIGNER_KEYSTORE, SIGNER_PASSWORD)
+
 MOONSTREAM_SIGNING_SERVER_URI = os.environ.get("MOONSTREAM_SIGNING_SERVER_URI", None)
-if DROP_SIGNER is None:
-    DROP_SIGNER = InstanceSigner(MOONSTREAM_SIGNING_SERVER_URI)
 
 DROP_DEADLINE_RAW = os.environ.get("DROP_DEADLINE")
 if DROP_DEADLINE_RAW is None:
