@@ -137,7 +137,7 @@ async def get_drop_list_handler(
     """
     token = request.state.token
 
-    query_list = [f"tad:dropper_address:{DROPPER}"]
+    query_list = [f"tad:dropper_address:{DROPPER_ADDRESS}"]
 
     if claim_id is not None:
         query_list.append(f"tag:claim_id:{claim_id}")
