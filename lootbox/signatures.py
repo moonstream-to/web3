@@ -13,7 +13,6 @@ import eth_keys
 import requests
 from hexbytes import HexBytes
 
-from . import signing
 from .settings import (
     AWS_DEFAULT_REGION,
     MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID,
