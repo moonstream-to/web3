@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from . import signing
+from . import signatures
 from . import data
 from . import Lootbox, core, drop, MockErc20, Dropper
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def signing_server_list_handler(args: argparse.Namespace) -> None:
     try:
-        instances = signing.list_signing_instances(
+        instances = signatures.list_signing_instances(
             signing_instances=[] if args.instance is None else [args.instance]
         )
     except Exception as err:
@@ -22,10 +22,10 @@ def signing_server_list_handler(args: argparse.Namespace) -> None:
 
 def signing_server_wakeup_handler(args: argparse.Namespace) -> None:
     try:
-        run_instances = signing.wakeup_signing_instances(
+        run_instances = signatures.wakeup_signing_instances(
             run_confirmed=args.confirmed, dry_run=args.dry_run
         )
-    except signing.AWSRunInstancesFail:
+    except signatures.AWSRunInstancesFail:
         return
     except Exception as err:
         logger.error(f"Unhandled /wakeup exception: {err}")
@@ -36,18 +36,18 @@ def signing_server_wakeup_handler(args: argparse.Namespace) -> None:
 
 def signing_server_sleep_handler(args: argparse.Namespace) -> None:
     try:
-        terminated_instances = signing.sleep_signing_instances(
+        terminated_instances = signatures.sleep_signing_instances(
             signing_instances=[args.instance],
             termination_confirmed=args.confirmed,
             dry_run=args.dry_run,
         )
-    except signing.AWSDescribeInstancesFail:
+    except signatures.AWSDescribeInstancesFail:
         return
-    except signing.SigningInstancesNotFound:
+    except signatures.SigningInstancesNotFound:
         return
-    except signing.SigningInstancesTerminationLimitExceeded:
+    except signatures.SigningInstancesTerminationLimitExceeded:
         return
-    except signing.AWSTerminateInstancesFail:
+    except signatures.AWSTerminateInstancesFail:
         return
     except Exception as err:
         logger.error(f"Unhandled /sleep exception: {err}")

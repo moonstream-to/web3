@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import data
 from . import Dropper
+from . import signatures
 from .middleware import BearerTokenMiddleware, DropperHTTPException
 from .settings import (
     BROWNIE_NETWORK,
@@ -119,7 +120,14 @@ async def get_drop_handler(claim_id: int, address: str) -> data.DropResponse:
         DROP_DEADLINE,
     )
 
-    signature = DROP_SIGNER.sign_message(message_hash)
+    try:
+        signature = DROP_SIGNER.sign_message(message_hash)
+    except signatures.AWSDescribeInstancesFail:
+        raise DropperHTTPException(status_code=500)
+    except signatures.SignWithInstanceFail:
+        raise DropperHTTPException(status_code=500)
+    except Exception as err:
+        raise DropperHTTPException(status_code=500)
     return data.DropResponse(
         claimant=address,
         claim_id=claim_id,
