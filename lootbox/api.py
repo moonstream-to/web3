@@ -23,7 +23,6 @@ from .settings import (
     DROP_JOURNAL_ID,
     DROP_SIGNER,
     DROPPER_ADDRESS,
-    DROP_DEADLINE,
 )
 
 network.connect(BROWNIE_NETWORK)
@@ -74,20 +73,12 @@ async def ping_handler() -> data.PingResponse:
 # GET /drops?dropper_address=<dropper_address>&claim_id=<claim_id>&address=<address> - list all drops with the given filters
 
 
-def internal_request_to_signer_server(
-    drop_name: str, dropper_address: str, claim_id: str, addresses: List[str]
-) -> str:
-    """
-    Rrquest to signer server.
-    """
-
-    return "signed_transaction"
-
-
 @app.get("/drops", response_model=data.DropResponse)
 async def get_drop_handler(claim_id: int, address: str) -> data.DropResponse:
     """
     Get signed transaction for user with the given address.
+    example:
+    curl -X GET "http://localhost:8000/drops?claim_id=<claim_number>&address=<user_address>"
     """
     try:
         response = bc.search(
@@ -113,51 +104,70 @@ async def get_drop_handler(claim_id: int, address: str) -> data.DropResponse:
             status_code=403, detail=f"Address not in whitelist: {address}"
         )
 
+    drop_deadline = len(network.chain) + 100
+
     message_hash = DROPPER.claim_message_hash(
         claim_id,
         address,
-        DROP_DEADLINE,
+        drop_deadline,
     )
 
     signature = DROP_SIGNER.sign_message(message_hash)
     return data.DropResponse(
         claimant=address,
         claim_id=claim_id,
-        block_deadline=DROP_DEADLINE,
+        block_deadline=drop_deadline,
         signature=signature,
     )
 
 
-# @app.get("/drops", response_model=data.DropListResponse)
-# async def get_drop_list_handler(
-#     request: Request,
-#     claim_id: str = Query(None),
-#     address: str = Query(None),
-# ) -> data.DropListResponse:
-#     """
-#     Get list of drops with the given filters.
-#     """
-#     token = request.state.get("token")
+@app.get("/drops/search", response_model=data.DropListResponse)
+async def get_drop_list_handler(
+    request: Request,
+    drop_name: str = Query(None),
+    claim_id: str = Query(None),
+    address: str = Query(None),
+    limit: int = Query(100),
+    offset: int = Query(0),
+) -> data.DropListResponse:
+    """
+    Get list of drops with the given filters.
+    example:
+    curl -X GET -H "Authorization: Bearer <token>"  http://localhost:8000/drops/search?dropper_address=0x1&drop_name=test&claim_id=1
+    """
+    token = request.state.token
 
-#     if address is not None:
-#         query = (
-#             f"{address} tag:claim_id:{claim_id} tag:dropper_address:{DROPPER_ADDRESS}"
-#         )
-#     else:
-#         query = f"tag:claim_id:{claim_id} tag:dropper_address:{DROPPER_ADDRESS}"
+    query_list = [f"tad:dropper_address:{DROPPER}"]
 
-#     try:
-#         response = bc.search(
-#             token=token,
-#             journal_id=DROP_JOURNAL_ID,
-#             query=query,
-#             limit=100,
-#             offset=0,
-#         )
-#     except BugoutResponseException as e:
-#         raise DropperHTTPException(status_code=e.status_code, detail=e.detail)
+    if claim_id is not None:
+        query_list.append(f"tag:claim_id:{claim_id}")
 
-#     return data.DropListResponse(drops=response.results)
+    if drop_name is not None:
+        query_list.append(drop_name)
+
+    query = " ".join(query_list)
+    try:
+        response = bc.search(
+            token=token,
+            journal_id=DROP_JOURNAL_ID,
+            query=query,
+            limit=limit,
+            offset=offset,
+        )
+    except BugoutResponseException as e:
+        raise DropperHTTPException(status_code=e.status_code, detail=e.detail)
+
+    if len(response.results) > 0 and address is not None:
+        # Filter by address
+        for entry_index, result in enumerate(response.results):
+            addresses = set(result.content.strip().split("\n"))
+            if address not in addresses:
+                response.results.remove(result)
+            else:
+                response.results[entry_index]["content"]
+        return data.DropListResponse(drops=response.results)
+
+    return data.DropListResponse(drops=response.results)
 
 
 @app.post("/drops", response_model=BugoutJournalEntry)
@@ -167,6 +177,8 @@ async def create_drop(
 
     """
     Drops give ability upload whitelisted addresses to a specific claim.
+    example:
+    curl -X POST -H "Content-Type: application/json" -H "authorization: bearer <token>" -d '{"name":"test", "dropper_address": "", "claim_id": "1", "addresses": ["0x1", "0x2"]}' http://localhost:8000/drops
     """
     logger.info(f"Creating drop for {register_request.dropper_address}")
 
