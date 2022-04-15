@@ -298,7 +298,9 @@ contract Dropper is
                 ""
             );
         } else if (claimToken.tokenType == ERC1155_TERMINUS_MINT_TYPE) {
-            TerminusFacet terminusContract = TerminusFacet(tokenAddress);
+            TerminusFacet terminusContract = TerminusFacet(
+                claimToken.tokenAddress
+            );
             terminusContract.mint(
                 msg.sender,
                 claimToken.tokenId,
@@ -394,5 +396,12 @@ contract Dropper is
     function unpause() external onlyOwner {
         require(paused(), "Already unpaused");
         _unpause();
+    }
+
+    /**
+     * @dev Returns a initialized Terminus contract from the terminusAddress
+     */
+    function getTerminusContract() private view returns (TerminusFacet) {
+        return TerminusFacet(terminusAddress);
     }
 }
