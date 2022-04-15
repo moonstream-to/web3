@@ -95,6 +95,10 @@ class Dropper:
         contract_class = contract_from_build(self.contract_name)
         contract_class.publish_source(self.contract)
 
+    def erc1155_terminus_mint_type(self) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.ERC1155_TERMINUS_MINT_TYPE.call()
+
     def erc1155_type(self) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.ERC1155_TYPE.call()
@@ -107,19 +111,34 @@ class Dropper:
         self.assert_contract_is_instantiated()
         return self.contract.ERC721_TYPE.call()
 
+    def administrator_pool_id(self) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.administratorPoolId.call()
+
     def claim(
-        self, claim_id: int, block_deadline: int, signature: bytes, transaction_config
+        self,
+        claim_id: int,
+        block_deadline: int,
+        quantity: int,
+        signature: bytes,
+        transaction_config,
     ) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.claim(
-            claim_id, block_deadline, signature, transaction_config
+            claim_id, block_deadline, quantity, signature, transaction_config
         )
 
     def claim_message_hash(
-        self, claim_id: int, claimant: ChecksumAddress, block_deadline: int
+        self,
+        claim_id: int,
+        claimant: ChecksumAddress,
+        block_deadline: int,
+        quantity: int,
     ) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.claimMessageHash.call(claim_id, claimant, block_deadline)
+        return self.contract.claimMessageHash.call(
+            claim_id, claimant, block_deadline, quantity
+        )
 
     def claim_status(self, claim_id: int) -> Any:
         self.assert_contract_is_instantiated()
@@ -141,6 +160,10 @@ class Dropper:
     def get_claim(self, claim_id: int) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.getClaim.call(claim_id)
+
+    def get_claim_status(self, claim_id: int, claimant: ChecksumAddress) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.getClaimStatus.call(claim_id, claimant)
 
     def get_signer_for_claim(self, claim_id: int) -> Any:
         self.assert_contract_is_instantiated()
@@ -216,6 +239,10 @@ class Dropper:
     def supports_interface(self, interface_id: bytes) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.supportsInterface.call(interface_id)
+
+    def terminus_address(self) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.terminusAddress.call()
 
     def transfer_ownership(self, new_owner: ChecksumAddress, transaction_config) -> Any:
         self.assert_contract_is_instantiated()
@@ -321,6 +348,13 @@ def handle_verify_contract(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_erc1155_terminus_mint_type(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Dropper(args.address)
+    result = contract.erc1155_terminus_mint_type()
+    print(result)
+
+
 def handle_erc1155_type(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
@@ -342,6 +376,13 @@ def handle_erc721_type(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_administrator_pool_id(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Dropper(args.address)
+    result = contract.administrator_pool_id()
+    print(result)
+
+
 def handle_claim(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
@@ -349,6 +390,7 @@ def handle_claim(args: argparse.Namespace) -> None:
     result = contract.claim(
         claim_id=args.claim_id,
         block_deadline=args.block_deadline,
+        quantity=args.quantity,
         signature=args.signature,
         transaction_config=transaction_config,
     )
@@ -362,6 +404,7 @@ def handle_claim_message_hash(args: argparse.Namespace) -> None:
         claim_id=args.claim_id,
         claimant=args.claimant,
         block_deadline=args.block_deadline,
+        quantity=args.quantity,
     )
     print(result)
 
@@ -391,6 +434,13 @@ def handle_get_claim(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
     result = contract.get_claim(claim_id=args.claim_id)
+    print(result)
+
+
+def handle_get_claim_status(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Dropper(args.address)
+    result = contract.get_claim_status(claim_id=args.claim_id, claimant=args.claimant)
     print(result)
 
 
@@ -505,6 +555,13 @@ def handle_supports_interface(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_terminus_address(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Dropper(args.address)
+    result = contract.terminus_address()
+    print(result)
+
+
 def handle_transfer_ownership(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
@@ -565,6 +622,14 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(verify_contract_parser, False)
     verify_contract_parser.set_defaults(func=handle_verify_contract)
 
+    erc1155_terminus_mint_type_parser = subcommands.add_parser(
+        "erc1155-terminus-mint-type"
+    )
+    add_default_arguments(erc1155_terminus_mint_type_parser, False)
+    erc1155_terminus_mint_type_parser.set_defaults(
+        func=handle_erc1155_terminus_mint_type
+    )
+
     erc1155_type_parser = subcommands.add_parser("erc1155-type")
     add_default_arguments(erc1155_type_parser, False)
     erc1155_type_parser.set_defaults(func=handle_erc1155_type)
@@ -577,6 +642,10 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(erc721_type_parser, False)
     erc721_type_parser.set_defaults(func=handle_erc721_type)
 
+    administrator_pool_id_parser = subcommands.add_parser("administrator-pool-id")
+    add_default_arguments(administrator_pool_id_parser, False)
+    administrator_pool_id_parser.set_defaults(func=handle_administrator_pool_id)
+
     claim_parser = subcommands.add_parser("claim")
     add_default_arguments(claim_parser, True)
     claim_parser.add_argument(
@@ -584,6 +653,9 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     claim_parser.add_argument(
         "--block-deadline", required=True, help="Type: uint256", type=int
+    )
+    claim_parser.add_argument(
+        "--quantity", required=True, help="Type: uint256", type=int
     )
     claim_parser.add_argument(
         "--signature", required=True, help="Type: bytes", type=bytes_argument_type
@@ -600,6 +672,9 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     claim_message_hash_parser.add_argument(
         "--block-deadline", required=True, help="Type: uint256", type=int
+    )
+    claim_message_hash_parser.add_argument(
+        "--quantity", required=True, help="Type: uint256", type=int
     )
     claim_message_hash_parser.set_defaults(func=handle_claim_message_hash)
 
@@ -632,6 +707,16 @@ def generate_cli() -> argparse.ArgumentParser:
         "--claim-id", required=True, help="Type: uint256", type=int
     )
     get_claim_parser.set_defaults(func=handle_get_claim)
+
+    get_claim_status_parser = subcommands.add_parser("get-claim-status")
+    add_default_arguments(get_claim_status_parser, False)
+    get_claim_status_parser.add_argument(
+        "--claim-id", required=True, help="Type: uint256", type=int
+    )
+    get_claim_status_parser.add_argument(
+        "--claimant", required=True, help="Type: address"
+    )
+    get_claim_status_parser.set_defaults(func=handle_get_claim_status)
 
     get_signer_for_claim_parser = subcommands.add_parser("get-signer-for-claim")
     add_default_arguments(get_signer_for_claim_parser, False)
@@ -738,6 +823,10 @@ def generate_cli() -> argparse.ArgumentParser:
         "--interface-id", required=True, help="Type: bytes4", type=bytes_argument_type
     )
     supports_interface_parser.set_defaults(func=handle_supports_interface)
+
+    terminus_address_parser = subcommands.add_parser("terminus-address")
+    add_default_arguments(terminus_address_parser, False)
+    terminus_address_parser.set_defaults(func=handle_terminus_address)
 
     transfer_ownership_parser = subcommands.add_parser("transfer-ownership")
     add_default_arguments(transfer_ownership_parser, True)
