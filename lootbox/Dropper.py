@@ -95,10 +95,6 @@ class Dropper:
         contract_class = contract_from_build(self.contract_name)
         contract_class.publish_source(self.contract)
 
-    def erc1155_terminus_mint_type(self) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.ERC1155_TERMINUS_MINT_TYPE.call()
-
     def erc1155_type(self) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.ERC1155_TYPE.call()
@@ -345,13 +341,6 @@ def handle_verify_contract(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
     result = contract.verify_contract()
-    print(result)
-
-
-def handle_erc1155_terminus_mint_type(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = Dropper(args.address)
-    result = contract.erc1155_terminus_mint_type()
     print(result)
 
 
@@ -621,14 +610,6 @@ def generate_cli() -> argparse.ArgumentParser:
     verify_contract_parser = subcommands.add_parser("verify-contract")
     add_default_arguments(verify_contract_parser, False)
     verify_contract_parser.set_defaults(func=handle_verify_contract)
-
-    erc1155_terminus_mint_type_parser = subcommands.add_parser(
-        "erc1155-terminus-mint-type"
-    )
-    add_default_arguments(erc1155_terminus_mint_type_parser, False)
-    erc1155_terminus_mint_type_parser.set_defaults(
-        func=handle_erc1155_terminus_mint_type
-    )
 
     erc1155_type_parser = subcommands.add_parser("erc1155-type")
     add_default_arguments(erc1155_type_parser, False)
