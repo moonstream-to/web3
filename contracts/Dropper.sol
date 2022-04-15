@@ -234,6 +234,10 @@ contract Dropper is
         return ClaimSigner[claimId];
     }
 
+    function getClaimStatus(uint256 claimId) external view returns (address) {
+        return ClaimSigner[claimId][msg.sender];
+    }
+
     function claimMessageHash(
         uint256 claimId,
         address claimant,
