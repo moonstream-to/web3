@@ -47,18 +47,10 @@ contract Dropper is
     // - [x] numClaims public view
     // - [x] setClaimStatus onlyOwner
     // - [x] getClaim external view
-
-    // temp terminus controll logic
-    // - [x] onlyAdministrator
-    // - [x] changeAdministratorPoolId
-    // - [x] grantAdminRole
-    // - [x] revokeAdminRole
-    // - [x] surrenderTerminusPools
-    // - [x] pause
-    // - [x] unpause
+    // - [x] getClaimStatus external view
 
     // Claim data structure:
-    // (claimId, playerAddress) -> true/false
+    // (claimId, playerAddress) -> amount
 
     // Signer data structure
     // token address -> signer address
@@ -82,7 +74,7 @@ contract Dropper is
     mapping(uint256 => bool) IsClaimActive;
     mapping(uint256 => address) ClaimSigner;
     mapping(uint256 => ClaimableToken) ClaimToken;
-    mapping(uint256 => mapping(address => bool)) ClaimCompleted;
+    mapping(uint256 => mapping(address => uint256)) ClaimCompleted;
 
     event Claimed(uint256 indexed claimId, address indexed claimant);
     event ClaimCreated(
@@ -105,59 +97,9 @@ contract Dropper is
     // Terminus Facet contract controller
 
     /**
-     * @dev Initializes the Lootbox contract with the terminus address and administrator pool id.
-     * @param _terminusAddress The address of the Terminus contract.
-     * @param _administratorPoolId The id of the administrator terminus pool.
+     * @dev Initializes the Dropper contract
      */
-    constructor(address _terminusAddress, uint256 _administratorPoolId)
-        EIP712("Moonstream Dropper", "0.0.1")
-    {
-        administratorPoolId = _administratorPoolId;
-        terminusAddress = _terminusAddress;
-    }
-
-    /**
-     * @dev throws if called by account that doesn't hold the administrator pool token
-     * or is the contract owner
-     */
-    modifier onlyAdministrator() {
-        require(
-            getTerminusContract().balanceOf(msg.sender, administratorPoolId) >
-                0 ||
-                msg.sender == owner(),
-            "Lootbox.sol: Sender is not an administrator"
-        );
-        _;
-    }
-
-    function changeAdministratorPoolId(uint256 _administratorPoolId)
-        public
-        onlyOwner
-    {
-        administratorPoolId = _administratorPoolId;
-    }
-
-    function grantAdminRole(address to) public onlyOwner {
-        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
-        require(
-            address(this) ==
-                terminusContract.terminusPoolController(administratorPoolId),
-            "The contract is not the pool controller for the administrator pool. Please transfer the controller role to the contract."
-        );
-        terminusContract.mint(to, administratorPoolId, 1, "");
-    }
-
-    function revokeAdminRole(address from) public onlyOwner {
-        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
-        require(
-            address(this) ==
-                terminusContract.terminusPoolController(administratorPoolId),
-            "The contract is not the pool controller for the administrator pool. Please transfer the controller role to the contract."
-        );
-
-        uint256 balance = terminusContract.balanceOf(from, administratorPoolId);
-        terminusContract.burn(from, administratorPoolId, balance);
-    }
+    constructor() EIP712("Moonstream Dropper", "0.0.1") {}
 
     function onERC721Received(
         address operator,
@@ -173,7 +115,7 @@ contract Dropper is
         address tokenAddress,
         uint256 tokenId,
         uint256 amount
-    ) external onlyAdministrator returns (uint256) {
+    ) external onlyOwner returns (uint256) {
         require(
             tokenType == ERC20_TYPE ||
                 tokenType == ERC721_TYPE ||
@@ -181,6 +123,12 @@ contract Dropper is
                 tokenType == ERC1155_TERMINUS_MINT_TYPE,
             "Dropper: createClaim -- Unknown token type"
         );
+
+        require(
+            amount != 0,
+            "Dropper: createClaim -- Amount must be greater than 0"
+        );
+
         NumClaims++;
 
         ClaimableToken memory tokenMetadata;
@@ -220,7 +168,7 @@ contract Dropper is
 
     function setSignerForClaim(uint256 claimId, address signer)
         external
-        onlyAdministrator
+        onlyOwner
     {
         ClaimSigner[claimId] = signer;
         emit ClaimSignerChanged(claimId, signer);
@@ -234,8 +182,12 @@ contract Dropper is
         return ClaimSigner[claimId];
     }
 
-    function getClaimStatus(uint256 claimId) external view returns (bool) {
-        return ClaimCompleted[claimId][msg.sender];
+    function getClaimStatus(uint256 claimId, address claimant)
+        external
+        view
+        returns (uint256)
+    {
+        return ClaimCompleted[claimId][claimant];
     }
 
     function claimMessageHash(
@@ -262,6 +214,7 @@ contract Dropper is
     function claim(
         uint256 claimId,
         uint256 blockDeadline,
+        uint256 quantity,
         bytes memory signature
     ) external whenNotPaused nonReentrant {
         require(
@@ -269,10 +222,16 @@ contract Dropper is
             "Dropper: claim -- Block deadline exceeded."
         );
         require(
-            !ClaimCompleted[claimId][msg.sender],
+            ClaimCompleted[claimId][msg.sender] == 0,
             "Dropper: claim -- That claim has already been completed."
         );
-        bytes32 hash = claimMessageHash(claimId, msg.sender, blockDeadline, 0);
+
+        bytes32 hash = claimMessageHash(
+            claimId,
+            msg.sender,
+            blockDeadline,
+            quantity
+        );
         require(
             SignatureChecker.isValidSignatureNow(
                 ClaimSigner[claimId],
@@ -283,9 +242,14 @@ contract Dropper is
         );
 
         ClaimableToken memory claimToken = ClaimToken[claimId];
+
+        if (quantity == 0) {
+            quantity = claimToken.amount;
+        }
+
         if (claimToken.tokenType == ERC20_TYPE) {
             IERC20 erc20Contract = IERC20(claimToken.tokenAddress);
-            erc20Contract.transfer(msg.sender, claimToken.amount);
+            erc20Contract.transfer(msg.sender, quantity);
         } else if (claimToken.tokenType == ERC721_TYPE) {
             IERC721 erc721Contract = IERC721(claimToken.tokenAddress);
             erc721Contract.safeTransferFrom(
@@ -300,77 +264,14 @@ contract Dropper is
                 address(this),
                 msg.sender,
                 claimToken.tokenId,
-                claimToken.amount,
-                ""
-            );
-        } else if (claimToken.tokenType == ERC1155_TERMINUS_MINT_TYPE) {
-            TerminusFacet terminusContract = TerminusFacet(
-                claimToken.tokenAddress
-            );
-            terminusContract.mint(
-                msg.sender,
-                claimToken.tokenId,
-                claimToken.amount,
+                quantity,
                 ""
             );
         } else {
             revert("Dropper -- claim: Unknown token type in claim");
         }
 
-        ClaimCompleted[claimId][msg.sender] = true;
-
-        emit Claimed(claimId, msg.sender);
-    }
-
-    function claimCustom(
-        uint256 claimId,
-        uint256 blockDeadline,
-        uint256 amount,
-        bytes memory signature
-    ) external whenNotPaused nonReentrant {
-        require(
-            block.number <= blockDeadline,
-            "Dropper: claim -- Block deadline exceeded."
-        );
-        require(
-            !ClaimCompleted[claimId][msg.sender],
-            "Dropper: claim -- That claim has already been completed."
-        );
-        bytes32 hash = claimMessageHash(
-            claimId,
-            msg.sender,
-            blockDeadline,
-            amount
-        );
-        require(
-            SignatureChecker.isValidSignatureNow(
-                ClaimSigner[claimId],
-                hash,
-                signature
-            ),
-            "Dropper: claim -- Invalid signer for claim."
-        );
-
-        ClaimableToken memory claimToken = ClaimToken[claimId];
-        if (claimToken.tokenType == ERC1155_TYPE) {
-            IERC1155 erc1155Contract = IERC1155(claimToken.tokenAddress);
-            erc1155Contract.safeTransferFrom(
-                address(this),
-                msg.sender,
-                claimToken.tokenId,
-                amount,
-                ""
-            );
-        } else if (claimToken.tokenType == ERC1155_TERMINUS_MINT_TYPE) {
-            TerminusFacet terminusContract = TerminusFacet(
-                claimToken.tokenAddress
-            );
-            terminusContract.mint(msg.sender, claimToken.tokenId, amount, "");
-        } else {
-            revert("Dropper -- claim: Unknown token type in claim");
-        }
-
-        ClaimCompleted[claimId][msg.sender] = true;
+        ClaimCompleted[claimId][msg.sender] = quantity;
 
         emit Claimed(claimId, msg.sender);
     }
@@ -415,53 +316,5 @@ contract Dropper is
             tokenId,
             amount
         );
-    }
-
-    /**
-     * @dev Transfer controll of the terminus pools from contract to owner
-     * @param poolIds The array of terminus pool ids
-     */
-    function surrenderTerminusPools(uint256[] calldata poolIds)
-        external
-        onlyOwner
-    {
-        address _owner = owner();
-        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
-        for (uint256 i = 0; i < poolIds.length; i++) {
-            terminusContract.setPoolController(poolIds[i], _owner);
-        }
-    }
-
-    /**
-     * @dev Transfer control of the terminus contract from contract to owner
-     */
-    function surrenderTerminusControl() external onlyOwner {
-        address _owner = owner();
-        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
-        terminusContract.setController(_owner);
-    }
-
-    /**
-     * @dev pause the contract
-     * @notice only pauses the claim function
-     */
-    function pause() external onlyOwner {
-        require(!paused(), "Already paused");
-        _pause();
-    }
-
-    /**
-     * @dev unpause the contract
-     */
-    function unpause() external onlyOwner {
-        require(paused(), "Already unpaused");
-        _unpause();
-    }
-
-    /**
-     * @dev Returns a initialized Terminus contract from the terminusAddress
-     */
-    function getTerminusContract() private view returns (TerminusFacet) {
-        return TerminusFacet(terminusAddress);
     }
 }

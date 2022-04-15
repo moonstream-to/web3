@@ -80,16 +80,9 @@ class Dropper:
                 self.contract_name, self.address, self.abi
             )
 
-    def deploy(
-        self,
-        _terminus_address: ChecksumAddress,
-        _administrator_pool_id: int,
-        transaction_config,
-    ):
+    def deploy(self, transaction_config):
         contract_class = contract_from_build(self.contract_name)
-        deployed_contract = contract_class.deploy(
-            _terminus_address, _administrator_pool_id, transaction_config
-        )
+        deployed_contract = contract_class.deploy(transaction_config)
         self.address = deployed_contract.address
         self.contract = deployed_contract
 
@@ -122,33 +115,17 @@ class Dropper:
         self.assert_contract_is_instantiated()
         return self.contract.administratorPoolId.call()
 
-    def change_administrator_pool_id(
-        self, _administrator_pool_id: int, transaction_config
-    ) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.changeAdministratorPoolId(
-            _administrator_pool_id, transaction_config
-        )
-
     def claim(
-        self, claim_id: int, block_deadline: int, signature: bytes, transaction_config
-    ) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.claim(
-            claim_id, block_deadline, signature, transaction_config
-        )
-
-    def claim_custom(
         self,
         claim_id: int,
         block_deadline: int,
-        amount: int,
+        quantity: int,
         signature: bytes,
         transaction_config,
     ) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.claimCustom(
-            claim_id, block_deadline, amount, signature, transaction_config
+        return self.contract.claim(
+            claim_id, block_deadline, quantity, signature, transaction_config
         )
 
     def claim_message_hash(
@@ -184,17 +161,13 @@ class Dropper:
         self.assert_contract_is_instantiated()
         return self.contract.getClaim.call(claim_id)
 
-    def get_claim_status(self, claim_id: int) -> Any:
+    def get_claim_status(self, claim_id: int, claimant: ChecksumAddress) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.getClaimStatus.call(claim_id)
+        return self.contract.getClaimStatus.call(claim_id, claimant)
 
     def get_signer_for_claim(self, claim_id: int) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.getSignerForClaim.call(claim_id)
-
-    def grant_admin_role(self, to: ChecksumAddress, transaction_config) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.grantAdminRole(to, transaction_config)
 
     def num_claims(self) -> Any:
         self.assert_contract_is_instantiated()
@@ -245,10 +218,6 @@ class Dropper:
         self.assert_contract_is_instantiated()
         return self.contract.owner.call()
 
-    def pause(self, transaction_config) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.pause(transaction_config)
-
     def paused(self) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.paused.call()
@@ -256,10 +225,6 @@ class Dropper:
     def renounce_ownership(self, transaction_config) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.renounceOwnership(transaction_config)
-
-    def revoke_admin_role(self, from_: ChecksumAddress, transaction_config) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.revokeAdminRole(from_, transaction_config)
 
     def set_claim_status(self, claim_id: int, status: bool, transaction_config) -> Any:
         self.assert_contract_is_instantiated()
@@ -275,14 +240,6 @@ class Dropper:
         self.assert_contract_is_instantiated()
         return self.contract.supportsInterface.call(interface_id)
 
-    def surrender_terminus_control(self, transaction_config) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.surrenderTerminusControl(transaction_config)
-
-    def surrender_terminus_pools(self, pool_ids: List, transaction_config) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.surrenderTerminusPools(pool_ids, transaction_config)
-
     def terminus_address(self) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.terminusAddress.call()
@@ -290,10 +247,6 @@ class Dropper:
     def transfer_ownership(self, new_owner: ChecksumAddress, transaction_config) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.transferOwnership(new_owner, transaction_config)
-
-    def unpause(self, transaction_config) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.unpause(transaction_config)
 
     def withdraw_erc1155(
         self,
@@ -384,11 +337,7 @@ def handle_deploy(args: argparse.Namespace) -> None:
     network.connect(args.network)
     transaction_config = get_transaction_config(args)
     contract = Dropper(None)
-    result = contract.deploy(
-        _terminus_address=args.terminus_address_arg,
-        _administrator_pool_id=args.administrator_pool_id_arg,
-        transaction_config=transaction_config,
-    )
+    result = contract.deploy(transaction_config=transaction_config)
     print(result)
 
 
@@ -434,17 +383,6 @@ def handle_administrator_pool_id(args: argparse.Namespace) -> None:
     print(result)
 
 
-def handle_change_administrator_pool_id(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = Dropper(args.address)
-    transaction_config = get_transaction_config(args)
-    result = contract.change_administrator_pool_id(
-        _administrator_pool_id=args.administrator_pool_id_arg,
-        transaction_config=transaction_config,
-    )
-    print(result)
-
-
 def handle_claim(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
@@ -452,20 +390,7 @@ def handle_claim(args: argparse.Namespace) -> None:
     result = contract.claim(
         claim_id=args.claim_id,
         block_deadline=args.block_deadline,
-        signature=args.signature,
-        transaction_config=transaction_config,
-    )
-    print(result)
-
-
-def handle_claim_custom(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = Dropper(args.address)
-    transaction_config = get_transaction_config(args)
-    result = contract.claim_custom(
-        claim_id=args.claim_id,
-        block_deadline=args.block_deadline,
-        amount=args.amount,
+        quantity=args.quantity,
         signature=args.signature,
         transaction_config=transaction_config,
     )
@@ -515,7 +440,7 @@ def handle_get_claim(args: argparse.Namespace) -> None:
 def handle_get_claim_status(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
-    result = contract.get_claim_status(claim_id=args.claim_id)
+    result = contract.get_claim_status(claim_id=args.claim_id, claimant=args.claimant)
     print(result)
 
 
@@ -523,16 +448,6 @@ def handle_get_signer_for_claim(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
     result = contract.get_signer_for_claim(claim_id=args.claim_id)
-    print(result)
-
-
-def handle_grant_admin_role(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = Dropper(args.address)
-    transaction_config = get_transaction_config(args)
-    result = contract.grant_admin_role(
-        to=args.to, transaction_config=transaction_config
-    )
     print(result)
 
 
@@ -594,14 +509,6 @@ def handle_owner(args: argparse.Namespace) -> None:
     print(result)
 
 
-def handle_pause(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = Dropper(args.address)
-    transaction_config = get_transaction_config(args)
-    result = contract.pause(transaction_config=transaction_config)
-    print(result)
-
-
 def handle_paused(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
@@ -614,16 +521,6 @@ def handle_renounce_ownership(args: argparse.Namespace) -> None:
     contract = Dropper(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.renounce_ownership(transaction_config=transaction_config)
-    print(result)
-
-
-def handle_revoke_admin_role(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = Dropper(args.address)
-    transaction_config = get_transaction_config(args)
-    result = contract.revoke_admin_role(
-        from_=args.from_arg, transaction_config=transaction_config
-    )
     print(result)
 
 
@@ -658,24 +555,6 @@ def handle_supports_interface(args: argparse.Namespace) -> None:
     print(result)
 
 
-def handle_surrender_terminus_control(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = Dropper(args.address)
-    transaction_config = get_transaction_config(args)
-    result = contract.surrender_terminus_control(transaction_config=transaction_config)
-    print(result)
-
-
-def handle_surrender_terminus_pools(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = Dropper(args.address)
-    transaction_config = get_transaction_config(args)
-    result = contract.surrender_terminus_pools(
-        pool_ids=args.pool_ids, transaction_config=transaction_config
-    )
-    print(result)
-
-
 def handle_terminus_address(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
@@ -690,14 +569,6 @@ def handle_transfer_ownership(args: argparse.Namespace) -> None:
     result = contract.transfer_ownership(
         new_owner=args.new_owner, transaction_config=transaction_config
     )
-    print(result)
-
-
-def handle_unpause(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = Dropper(args.address)
-    transaction_config = get_transaction_config(args)
-    result = contract.unpause(transaction_config=transaction_config)
     print(result)
 
 
@@ -745,12 +616,6 @@ def generate_cli() -> argparse.ArgumentParser:
 
     deploy_parser = subcommands.add_parser("deploy")
     add_default_arguments(deploy_parser, True)
-    deploy_parser.add_argument(
-        "--terminus-address-arg", required=True, help="Type: address"
-    )
-    deploy_parser.add_argument(
-        "--administrator-pool-id-arg", required=True, help="Type: uint256", type=int
-    )
     deploy_parser.set_defaults(func=handle_deploy)
 
     verify_contract_parser = subcommands.add_parser("verify-contract")
@@ -781,17 +646,6 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(administrator_pool_id_parser, False)
     administrator_pool_id_parser.set_defaults(func=handle_administrator_pool_id)
 
-    change_administrator_pool_id_parser = subcommands.add_parser(
-        "change-administrator-pool-id"
-    )
-    add_default_arguments(change_administrator_pool_id_parser, True)
-    change_administrator_pool_id_parser.add_argument(
-        "--administrator-pool-id-arg", required=True, help="Type: uint256", type=int
-    )
-    change_administrator_pool_id_parser.set_defaults(
-        func=handle_change_administrator_pool_id
-    )
-
     claim_parser = subcommands.add_parser("claim")
     add_default_arguments(claim_parser, True)
     claim_parser.add_argument(
@@ -801,25 +655,12 @@ def generate_cli() -> argparse.ArgumentParser:
         "--block-deadline", required=True, help="Type: uint256", type=int
     )
     claim_parser.add_argument(
+        "--quantity", required=True, help="Type: uint256", type=int
+    )
+    claim_parser.add_argument(
         "--signature", required=True, help="Type: bytes", type=bytes_argument_type
     )
     claim_parser.set_defaults(func=handle_claim)
-
-    claim_custom_parser = subcommands.add_parser("claim-custom")
-    add_default_arguments(claim_custom_parser, True)
-    claim_custom_parser.add_argument(
-        "--claim-id", required=True, help="Type: uint256", type=int
-    )
-    claim_custom_parser.add_argument(
-        "--block-deadline", required=True, help="Type: uint256", type=int
-    )
-    claim_custom_parser.add_argument(
-        "--amount", required=True, help="Type: uint256", type=int
-    )
-    claim_custom_parser.add_argument(
-        "--signature", required=True, help="Type: bytes", type=bytes_argument_type
-    )
-    claim_custom_parser.set_defaults(func=handle_claim_custom)
 
     claim_message_hash_parser = subcommands.add_parser("claim-message-hash")
     add_default_arguments(claim_message_hash_parser, False)
@@ -872,6 +713,9 @@ def generate_cli() -> argparse.ArgumentParser:
     get_claim_status_parser.add_argument(
         "--claim-id", required=True, help="Type: uint256", type=int
     )
+    get_claim_status_parser.add_argument(
+        "--claimant", required=True, help="Type: address"
+    )
     get_claim_status_parser.set_defaults(func=handle_get_claim_status)
 
     get_signer_for_claim_parser = subcommands.add_parser("get-signer-for-claim")
@@ -880,11 +724,6 @@ def generate_cli() -> argparse.ArgumentParser:
         "--claim-id", required=True, help="Type: uint256", type=int
     )
     get_signer_for_claim_parser.set_defaults(func=handle_get_signer_for_claim)
-
-    grant_admin_role_parser = subcommands.add_parser("grant-admin-role")
-    add_default_arguments(grant_admin_role_parser, True)
-    grant_admin_role_parser.add_argument("--to", required=True, help="Type: address")
-    grant_admin_role_parser.set_defaults(func=handle_grant_admin_role)
 
     num_claims_parser = subcommands.add_parser("num-claims")
     add_default_arguments(num_claims_parser, False)
@@ -950,10 +789,6 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(owner_parser, False)
     owner_parser.set_defaults(func=handle_owner)
 
-    pause_parser = subcommands.add_parser("pause")
-    add_default_arguments(pause_parser, True)
-    pause_parser.set_defaults(func=handle_pause)
-
     paused_parser = subcommands.add_parser("paused")
     add_default_arguments(paused_parser, False)
     paused_parser.set_defaults(func=handle_paused)
@@ -961,13 +796,6 @@ def generate_cli() -> argparse.ArgumentParser:
     renounce_ownership_parser = subcommands.add_parser("renounce-ownership")
     add_default_arguments(renounce_ownership_parser, True)
     renounce_ownership_parser.set_defaults(func=handle_renounce_ownership)
-
-    revoke_admin_role_parser = subcommands.add_parser("revoke-admin-role")
-    add_default_arguments(revoke_admin_role_parser, True)
-    revoke_admin_role_parser.add_argument(
-        "--from-arg", required=True, help="Type: address"
-    )
-    revoke_admin_role_parser.set_defaults(func=handle_revoke_admin_role)
 
     set_claim_status_parser = subcommands.add_parser("set-claim-status")
     add_default_arguments(set_claim_status_parser, True)
@@ -996,21 +824,6 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     supports_interface_parser.set_defaults(func=handle_supports_interface)
 
-    surrender_terminus_control_parser = subcommands.add_parser(
-        "surrender-terminus-control"
-    )
-    add_default_arguments(surrender_terminus_control_parser, True)
-    surrender_terminus_control_parser.set_defaults(
-        func=handle_surrender_terminus_control
-    )
-
-    surrender_terminus_pools_parser = subcommands.add_parser("surrender-terminus-pools")
-    add_default_arguments(surrender_terminus_pools_parser, True)
-    surrender_terminus_pools_parser.add_argument(
-        "--pool-ids", required=True, help="Type: uint256[]", nargs="+"
-    )
-    surrender_terminus_pools_parser.set_defaults(func=handle_surrender_terminus_pools)
-
     terminus_address_parser = subcommands.add_parser("terminus-address")
     add_default_arguments(terminus_address_parser, False)
     terminus_address_parser.set_defaults(func=handle_terminus_address)
@@ -1021,10 +834,6 @@ def generate_cli() -> argparse.ArgumentParser:
         "--new-owner", required=True, help="Type: address"
     )
     transfer_ownership_parser.set_defaults(func=handle_transfer_ownership)
-
-    unpause_parser = subcommands.add_parser("unpause")
-    add_default_arguments(unpause_parser, True)
-    unpause_parser.set_defaults(func=handle_unpause)
 
     withdraw_erc1155_parser = subcommands.add_parser("withdraw-erc1155")
     add_default_arguments(withdraw_erc1155_parser, True)
