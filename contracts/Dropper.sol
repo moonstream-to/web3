@@ -61,7 +61,6 @@ contract Dropper is
     uint256 public ERC20_TYPE = 20;
     uint256 public ERC721_TYPE = 721;
     uint256 public ERC1155_TYPE = 1155;
-    uint256 public ERC1155_TERMINUS_MINT_TYPE = 51;
 
     struct ClaimableToken {
         uint256 tokenType;
@@ -119,8 +118,7 @@ contract Dropper is
         require(
             tokenType == ERC20_TYPE ||
                 tokenType == ERC721_TYPE ||
-                tokenType == ERC1155_TYPE ||
-                tokenType == ERC1155_TERMINUS_MINT_TYPE,
+                tokenType == ERC1155_TYPE,
             "Dropper: createClaim -- Unknown token type"
         );
 
