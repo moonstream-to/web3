@@ -11,6 +11,7 @@ import {
 import useDropperClaim from "../core/hooks/useDropperClaim";
 import Web3Context from "../core/providers/Web3Provider/context";
 import { targetChain } from "../core/providers/Web3Provider";
+import Erc20Card from "./Erc20Card";
 
 const DropCard = ({ drop }) => {
   const web3Provider = useContext(Web3Context);
@@ -40,6 +41,12 @@ const DropCard = ({ drop }) => {
       <Text fontWeight={600} textColor="gray.100" h="min-content">
         {drop.entry.title}
       </Text>
+      {claimer.claimStatus.data && claimer.claimStatus.data[0] == "20" && (
+        <Erc20Card
+          address={claimer.claimStatus.data[1]}
+          amount={web3Provider.web3.utils.fromWei(claimer.claimStatus.data[3])}
+        />
+      )}
       <Button
         onClick={handleClick}
         isLoading={claimer.claimWeb3Drop.isLoading}

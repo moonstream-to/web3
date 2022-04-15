@@ -7,6 +7,7 @@ import { useMutation, useQuery, UseQueryResult } from "react-query";
 import { getState, claimDrop, getClaim } from "../contracts/dropper.contract";
 import DataContext from "../providers/DataProvider/context";
 import { ReactWeb3ProviderInterface } from "../../../types/Moonstream";
+import { useToast } from "../../core/hooks";
 
 const useDropperClaim = ({
   dropperAddress,
@@ -19,11 +20,10 @@ const useDropperClaim = ({
   ctx: ReactWeb3ProviderInterface;
   claimId: string;
 }) => {
+  const toast = useToast();
   const claimStatus = useQuery(
-    ["claimStatus", dropperAddress, claimId, targetChain.chainId],
-    async () => {
-      console.log("TODO: implement this");
-    },
+    ["claimStatus", dropperAddress, targetChain.chainId, claimId],
+    () => getClaim(dropperAddress, ctx)(claimId).then((data) => data.claim),
     {
       onSuccess: () => {},
       enabled:
@@ -41,6 +41,7 @@ const useDropperClaim = ({
         blockDeadline: response.data.block_deadline,
         claimId: claimId,
       });
+      toast("Claim successful", "success");
       //       block_deadline: 25946195
       // claim_id: 2
       // claimant: "0xCA618ea6Adb914B694E2acF1d77fe92894fbfA30"
@@ -55,16 +56,6 @@ const useDropperClaim = ({
   const claim = () => {
     getClaimMessage.mutate(ctx.account);
   };
-
-  const getClaimState = useQuery(
-    ["getClaimState", dropperAddress, targetChain.chainId, claimId],
-    () => getClaim(dropperAddress, ctx)(claimId),
-    {
-      onSuccess: () => {},
-      enabled:
-        ctx.web3?.utils.isAddress(ctx.account) && ctx.chainId === ctx.chainId,
-    }
-  );
 
   return { claimStatus, claim, claimWeb3Drop };
 };
