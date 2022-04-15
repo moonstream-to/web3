@@ -23,7 +23,7 @@ const useDropperClaim = ({
   const toast = useToast();
   const claimStatus = useQuery(
     ["claimStatus", dropperAddress, targetChain.chainId, claimId],
-    () => getClaim(dropperAddress, ctx)(claimId).then((data) => data.claim),
+    () => getClaim(dropperAddress, ctx)(claimId),
     {
       onSuccess: () => {},
       enabled:
@@ -42,14 +42,8 @@ const useDropperClaim = ({
         claimId: claimId,
       });
       toast("Claim successful", "success");
-      //       block_deadline: 25946195
-      // claim_id: 2
-      // claimant: "0xCA618ea6Adb914B694E2acF1d77fe92894fbfA30"
-      // signature: "f6869d03ccdb1482c57d2646ecd3f5b3fe2c8f5c52df2f4b9c6f34751d3a8ad478c3bf67f78ad006093f472b08bd0727f66294dab809766f521e7c5b274754b01b"
     },
-    onError: (error) => {
-      // toast(error, "error");
-    },
+    onError: (error) => {},
     onSettled: () => {},
   });
 
