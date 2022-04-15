@@ -135,7 +135,6 @@ async def get_drop_list_handler(
     example:
     curl -X GET -H "Authorization: Bearer <token>"  http://localhost:8000/drops/search?dropper_address=0x1&drop_name=test&claim_id=1
     """
-    token = request.state.token
 
     query_list = [f"tag:dropper_address:{DROPPER_ADDRESS}"]
 
@@ -148,7 +147,7 @@ async def get_drop_list_handler(
     query = " ".join(query_list)
     try:
         response = bc.search(
-            token=token,
+            token=MOONSTREAM_ENGINE_ADMIN_ACCESS_TOKEN,
             journal_id=DROP_JOURNAL_ID,
             query=query,
             limit=limit,
