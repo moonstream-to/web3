@@ -54,14 +54,17 @@ contract Dropper is
     // - [x] grantAdminRole
     // - [x] revokeAdminRole
     // - [x] surrenderTerminusPools
-    // - [] pause
-    // - [] unpause
+    // - [x] pause
+    // - [x] unpause
 
     // Claim data structure:
     // (claimId, playerAddress) -> true/false
 
     // Signer data structure
     // token address -> signer address
+
+    uint256 public administratorPoolId;
+    address public terminusAddress;
 
     uint256 public ERC20_TYPE = 20;
     uint256 public ERC721_TYPE = 721;
@@ -295,7 +298,7 @@ contract Dropper is
                 ""
             );
         } else if (claimToken.tokenType == ERC1155_TERMINUS_MINT_TYPE) {
-            Terminus terminusContract = Terminus(tokenAddress);
+            TerminusFacet terminusContract = TerminusFacet(tokenAddress);
             terminusContract.mint(
                 msg.sender,
                 claimToken.tokenId,
@@ -351,7 +354,6 @@ contract Dropper is
             amount
         );
     }
-
 
     /**
      * @dev Transfer controll of the terminus pools from contract to owner
