@@ -26,7 +26,7 @@ export const claimDrop =
     // console.log("message after", ctx.web3.utils.hexToBytes(message));
 
     const response = await dropper.methods
-      .claim(claimId, blockDeadline, `0x` + message)
+      .claim(claimId, blockDeadline, "0", `0x` + message)
       // .claim("1", "123", 123)
       .send(txConfig);
     return response;
@@ -53,6 +53,7 @@ export const getClaim = (address: any, ctx: any) => async (claimId: string) => {
   dropper.options.address = address;
 
   const claim = await dropper.methods.getClaim(claimId).call();
+  const status = await dropper.methods.claimStatus(claimId).call();
 
-  return { claim };
+  return { claim, status };
 };
