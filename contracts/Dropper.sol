@@ -111,7 +111,9 @@ contract Dropper is
      * @param _terminusAddress The address of the Terminus contract.
      * @param _administratorPoolId The id of the administrator terminus pool.
      */
-    constructor(address _terminusAddress, uint256 _administratorPoolId) {
+    constructor(address _terminusAddress, uint256 _administratorPoolId)
+        EIP712("Moonstream Dropper", "0.0.1")
+    {
         administratorPoolId = _administratorPoolId;
         terminusAddress = _terminusAddress;
     }
@@ -304,7 +306,8 @@ contract Dropper is
             terminusContract.mint(
                 msg.sender,
                 claimToken.tokenId,
-                claimToken.amount
+                claimToken.amount,
+                ""
             );
         } else {
             revert("Dropper -- claim: Unknown token type in claim");
