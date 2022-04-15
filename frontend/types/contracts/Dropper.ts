@@ -86,22 +86,28 @@ export interface Dropper extends BaseContract {
   ): Dropper;
   clone(): Dropper;
   methods: {
+    ERC1155_TERMINUS_MINT_TYPE(): NonPayableTransactionObject<string>;
+
     ERC1155_TYPE(): NonPayableTransactionObject<string>;
 
     ERC20_TYPE(): NonPayableTransactionObject<string>;
 
     ERC721_TYPE(): NonPayableTransactionObject<string>;
 
+    administratorPoolId(): NonPayableTransactionObject<string>;
+
     claim(
       claimId: number | string | BN,
       blockDeadline: number | string | BN,
+      quantity: number | string | BN,
       signature: string | number[]
     ): NonPayableTransactionObject<void>;
 
     claimMessageHash(
       claimId: number | string | BN,
       claimant: string,
-      blockDeadline: number | string | BN
+      blockDeadline: number | string | BN,
+      quantity: number | string | BN
     ): NonPayableTransactionObject<string>;
 
     claimStatus(
@@ -118,6 +124,11 @@ export interface Dropper extends BaseContract {
     getClaim(
       claimId: number | string | BN
     ): NonPayableTransactionObject<[string, string, string, string]>;
+
+    getClaimStatus(
+      claimId: number | string | BN,
+      claimant: string
+    ): NonPayableTransactionObject<string>;
 
     getSignerForClaim(
       claimId: number | string | BN
@@ -167,6 +178,8 @@ export interface Dropper extends BaseContract {
     supportsInterface(
       interfaceId: string | number[]
     ): NonPayableTransactionObject<boolean>;
+
+    terminusAddress(): NonPayableTransactionObject<string>;
 
     transferOwnership(newOwner: string): NonPayableTransactionObject<void>;
 
