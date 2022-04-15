@@ -106,11 +106,7 @@ async def get_drop_handler(claim_id: int, address: str) -> data.DropResponse:
 
     drop_deadline = len(network.chain) + 100
 
-    message_hash = DROPPER.claim_message_hash(
-        claim_id,
-        address,
-        drop_deadline,
-    )
+    message_hash = DROPPER.claim_message_hash(claim_id, address, drop_deadline, 0)
 
     signature = DROP_SIGNER.sign_message(message_hash)
     return data.DropResponse(
