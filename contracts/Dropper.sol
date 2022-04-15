@@ -102,8 +102,6 @@ contract Dropper is
         uint256 amount
     );
 
-    constructor() EIP712("Moonstream Dropper", "0.0.1") {}
-
     // Terminus Facet contract controller
 
     /**
