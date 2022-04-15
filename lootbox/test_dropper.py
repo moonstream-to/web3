@@ -54,12 +54,35 @@ class DropperTestCase(unittest.TestCase):
         cls.erc20_contract.approve(
             cls.terminus.address, 100 * 10 ** 18, {"from": accounts[0]}
         )
+        pool_base_price = cls.terminus.pool_base_price()
+
         cls.terminus.create_pool_v1(2 ** 256 - 1, True, True, {"from": accounts[0]})
         cls.terminus_pool_id = cls.terminus.total_pools()
 
+        # create admin pool for testing
+        cls.terminus.create_pool_v1(pool_base_price, False, True, {"from": accounts[0]})
+
+        cls.admin_token_pool_id = cls.terminus.total_pools()
+
+        # create dropper own pool
+        cls.terminus.create_pool_v1(pool_base_price, False, True, {"from": accounts[0]})
+
+        cls.mintable_terminus_pool_id = cls.terminus.total_pools()
+
         # Dropper deployment
         cls.dropper = Dropper.Dropper(None)
-        cls.dropper.deploy({"from": accounts[0]})
+        cls.dropper.deploy(
+            cls.terminus.address, cls.admin_token_pool_id, {"from": accounts[0]}
+        )
+
+        # # grant control over polls to dropper contract
+        # cls.terminus.set_pool_controller(
+        #     cls.admin_token_pool_id, cls.dropper.address, {"from": accounts[0]}
+        # )
+
+        # cls.terminus.set_pool_controller(
+        #     cls.mintable_terminus_pool_id, cls.dropper.address, {"from": accounts[0]}
+        # )
 
         # Create signer accounts
         cls.signer_0 = accounts.add()
