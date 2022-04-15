@@ -11,7 +11,7 @@ WorkingDirectory=/home/ubuntu/lootbox
 EnvironmentFile=/home/ubuntu/lootbox-secrets/app.env
 Restart=on-failure
 RestartSec=15s
-ExecStart=/home/ubuntu/lootbox-env/bin/uvicorn --proxy-headers --forwarded-allow-ips='127.0.0.1' --host "${AWS_LOCAL_IPV4}" --port 7181 --workers 4 lootbox.api:app
+ExecStart=/home/ubuntu/lootbox-env/bin/uvicorn --proxy-headers --forwarded-allow-ips='127.0.0.1' --host 127.0.0.1 --port 7181 --workers 4 lootbox.api:app
 SyslogIdentifier=lootbox
 
 [Install]
