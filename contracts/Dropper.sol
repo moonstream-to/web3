@@ -48,15 +48,28 @@ contract Dropper is
     // - [x] setClaimStatus onlyOwner
     // - [x] getClaim external view
 
+    // temp terminus controll logic
+    // - [x] onlyAdministrator
+    // - [x] changeAdministratorPoolId
+    // - [x] grantAdminRole
+    // - [x] revokeAdminRole
+    // - [x] surrenderTerminusPools
+    // - [x] pause
+    // - [x] unpause
+
     // Claim data structure:
     // (claimId, playerAddress) -> true/false
 
     // Signer data structure
     // token address -> signer address
 
+    uint256 public administratorPoolId;
+    address public terminusAddress;
+
     uint256 public ERC20_TYPE = 20;
     uint256 public ERC721_TYPE = 721;
     uint256 public ERC1155_TYPE = 1155;
+    uint256 public ERC1155_TERMINUS_MINT_TYPE = 51;
 
     struct ClaimableToken {
         uint256 tokenType;
@@ -89,7 +102,62 @@ contract Dropper is
         uint256 amount
     );
 
-    constructor() EIP712("Moonstream Dropper", "0.0.1") {}
+    // Terminus Facet contract controller
+
+    /**
+     * @dev Initializes the Lootbox contract with the terminus address and administrator pool id.
+     * @param _terminusAddress The address of the Terminus contract.
+     * @param _administratorPoolId The id of the administrator terminus pool.
+     */
+    constructor(address _terminusAddress, uint256 _administratorPoolId)
+        EIP712("Moonstream Dropper", "0.0.1")
+    {
+        administratorPoolId = _administratorPoolId;
+        terminusAddress = _terminusAddress;
+    }
+
+    /**
+     * @dev throws if called by account that doesn't hold the administrator pool token
+     * or is the contract owner
+     */
+    modifier onlyAdministrator() {
+        require(
+            getTerminusContract().balanceOf(msg.sender, administratorPoolId) >
+                0 ||
+                msg.sender == owner(),
+            "Lootbox.sol: Sender is not an administrator"
+        );
+        _;
+    }
+
+    function changeAdministratorPoolId(uint256 _administratorPoolId)
+        public
+        onlyOwner
+    {
+        administratorPoolId = _administratorPoolId;
+    }
+
+    function grantAdminRole(address to) public onlyOwner {
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+        require(
+            address(this) ==
+                terminusContract.terminusPoolController(administratorPoolId),
+            "The contract is not the pool controller for the administrator pool. Please transfer the controller role to the contract."
+        );
+        terminusContract.mint(to, administratorPoolId, 1, "");
+    }
+
+    function revokeAdminRole(address from) public onlyOwner {
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+        require(
+            address(this) ==
+                terminusContract.terminusPoolController(administratorPoolId),
+            "The contract is not the pool controller for the administrator pool. Please transfer the controller role to the contract."
+        );
+
+        uint256 balance = terminusContract.balanceOf(from, administratorPoolId);
+        terminusContract.burn(from, administratorPoolId, balance);
+    }
 
     function onERC721Received(
         address operator,
@@ -105,11 +173,12 @@ contract Dropper is
         address tokenAddress,
         uint256 tokenId,
         uint256 amount
-    ) external onlyOwner returns (uint256) {
+    ) external onlyAdministrator returns (uint256) {
         require(
             tokenType == ERC20_TYPE ||
                 tokenType == ERC721_TYPE ||
-                tokenType == ERC1155_TYPE,
+                tokenType == ERC1155_TYPE ||
+                tokenType == ERC1155_TERMINUS_MINT_TYPE,
             "Dropper: createClaim -- Unknown token type"
         );
         NumClaims++;
@@ -151,7 +220,7 @@ contract Dropper is
 
     function setSignerForClaim(uint256 claimId, address signer)
         external
-        onlyOwner
+        onlyAdministrator
     {
         ClaimSigner[claimId] = signer;
         emit ClaimSignerChanged(claimId, signer);
@@ -228,6 +297,16 @@ contract Dropper is
                 claimToken.amount,
                 ""
             );
+        } else if (claimToken.tokenType == ERC1155_TERMINUS_MINT_TYPE) {
+            TerminusFacet terminusContract = TerminusFacet(
+                claimToken.tokenAddress
+            );
+            terminusContract.mint(
+                msg.sender,
+                claimToken.tokenId,
+                claimToken.amount,
+                ""
+            );
         } else {
             revert("Dropper -- claim: Unknown token type in claim");
         }
@@ -277,5 +356,53 @@ contract Dropper is
             tokenId,
             amount
         );
+    }
+
+    /**
+     * @dev Transfer controll of the terminus pools from contract to owner
+     * @param poolIds The array of terminus pool ids
+     */
+    function surrenderTerminusPools(uint256[] calldata poolIds)
+        external
+        onlyOwner
+    {
+        address _owner = owner();
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+        for (uint256 i = 0; i < poolIds.length; i++) {
+            terminusContract.setPoolController(poolIds[i], _owner);
+        }
+    }
+
+    /**
+     * @dev Transfer control of the terminus contract from contract to owner
+     */
+    function surrenderTerminusControl() external onlyOwner {
+        address _owner = owner();
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+        terminusContract.setController(_owner);
+    }
+
+    /**
+     * @dev pause the contract
+     * @notice only pauses the claim function
+     */
+    function pause() external onlyOwner {
+        require(!paused(), "Already paused");
+        _pause();
+    }
+
+    /**
+     * @dev unpause the contract
+     */
+    function unpause() external onlyOwner {
+        require(paused(), "Already unpaused");
+        _unpause();
+    }
+
+    /**
+     * @dev Returns a initialized Terminus contract from the terminusAddress
+     */
+    function getTerminusContract() private view returns (TerminusFacet) {
+        return TerminusFacet(terminusAddress);
     }
 }

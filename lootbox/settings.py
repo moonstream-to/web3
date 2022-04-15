@@ -11,13 +11,13 @@ BUGOUT_SPIRE_URL = os.environ.get("BUGOUT_SPIRE_URL", "https://spire.bugout.dev"
 
 bugout_client = Bugout(brood_api_url=BUGOUT_BROOD_URL, spire_api_url=BUGOUT_SPIRE_URL)
 
-MOONSTREAM_ENGINE_APPLICATION_ID = os.environ.get(
-    "MOONSTREAM_ENGINE_APPLICATION_ID", ""
-)
-if MOONSTREAM_ENGINE_APPLICATION_ID == "":
-    raise ValueError(
-        "MOONSTREAM_ENGINE_APPLICATION_ID environment variable must be set"
-    )
+# MOONSTREAM_ENGINE_APPLICATION_ID = os.environ.get(
+#     "MOONSTREAM_ENGINE_APPLICATION_ID", ""
+# )
+# if MOONSTREAM_ENGINE_APPLICATION_ID == "":
+#     raise ValueError(
+#         "MOONSTREAM_ENGINE_APPLICATION_ID environment variable must be set"
+#     )
 
 MOONSTREAM_ENGINE_ADMIN_ACCESS_TOKEN = os.environ.get(
     "MOONSTREAM_ENGINE_ADMIN_ACCESS_TOKEN", ""
@@ -57,10 +57,10 @@ if SIGNER_KEYSTORE is not None and SIGNER_PASSWORD is not None:
 if DROP_SIGNER is None:
     raise ValueError("Could not load signer")
 
-DROP_DEADLINE_RAW = os.environ.get("DROP_DEADLINE")
-if DROP_DEADLINE_RAW is None:
-    raise ValueError("DROP_DEADLINE environment variable must be set")
-DROP_DEADLINE = int(DROP_DEADLINE_RAW)
+# DROP_DEADLINE_RAW = os.environ.get("DROP_DEADLINE")
+# if DROP_DEADLINE_RAW is None:
+#     raise ValueError("DROP_DEADLINE environment variable must be set")
+# DROP_DEADLINE = int(DROP_DEADLINE_RAW)
 
 
 # OpenAPI
