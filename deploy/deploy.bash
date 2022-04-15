@@ -15,8 +15,12 @@ PREFIX_CRIT="${C_RED}[CRIT]${C_RESET} [$(date +%d-%m\ %T)]"
 
 # Main
 AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
+SCRIPT_DIR="$(realpath $(dirname $0))"
 SECRETS_DIR="${SECRETS_DIR:-/home/ubuntu/lootbox-secrets}"
 PARAMETERS_ENV_PATH="${SECRETS_DIR}/app.env"
+
+# API server service file
+LOOTBOX_SERVICE_FILE="lootbox.service"
 
 set -eu
 
@@ -43,3 +47,12 @@ echo
 echo
 echo -e "${PREFIX_INFO} Add instance local IP to parameters"
 echo "AWS_LOCAL_IPV4=$(ec2metadata --local-ipv4)" >> "${PARAMETERS_ENV_PATH}"
+
+echo
+echo
+echo -e "${PREFIX_INFO} Replacing existing Lootbox signing API server service definition with ${LOOTBOX_SERVICE_FILE}"
+chmod 644 "${SCRIPT_DIR}/${LOOTBOX_SERVICE_FILE}"
+cp "${SCRIPT_DIR}/${LOOTBOX_SERVICE_FILE}" "/etc/systemd/system/${LOOTBOX_SERVICE_FILE}"
+systemctl daemon-reload
+systemctl restart "${LOOTBOX_SERVICE_FILE}"
+systemctl status "${LOOTBOX_SERVICE_FILE}"
