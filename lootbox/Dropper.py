@@ -138,11 +138,30 @@ class Dropper:
             claim_id, block_deadline, signature, transaction_config
         )
 
-    def claim_message_hash(
-        self, claim_id: int, claimant: ChecksumAddress, block_deadline: int
+    def claim_custom(
+        self,
+        claim_id: int,
+        block_deadline: int,
+        amount: int,
+        signature: bytes,
+        transaction_config,
     ) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.claimMessageHash.call(claim_id, claimant, block_deadline)
+        return self.contract.claimCustom(
+            claim_id, block_deadline, amount, signature, transaction_config
+        )
+
+    def claim_message_hash(
+        self,
+        claim_id: int,
+        claimant: ChecksumAddress,
+        block_deadline: int,
+        quantity: int,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.claimMessageHash.call(
+            claim_id, claimant, block_deadline, quantity
+        )
 
     def claim_status(self, claim_id: int) -> Any:
         self.assert_contract_is_instantiated()
@@ -164,6 +183,10 @@ class Dropper:
     def get_claim(self, claim_id: int) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.getClaim.call(claim_id)
+
+    def get_claim_status(self, claim_id: int) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.getClaimStatus.call(claim_id)
 
     def get_signer_for_claim(self, claim_id: int) -> Any:
         self.assert_contract_is_instantiated()
@@ -435,6 +458,20 @@ def handle_claim(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_claim_custom(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Dropper(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.claim_custom(
+        claim_id=args.claim_id,
+        block_deadline=args.block_deadline,
+        amount=args.amount,
+        signature=args.signature,
+        transaction_config=transaction_config,
+    )
+    print(result)
+
+
 def handle_claim_message_hash(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
@@ -442,6 +479,7 @@ def handle_claim_message_hash(args: argparse.Namespace) -> None:
         claim_id=args.claim_id,
         claimant=args.claimant,
         block_deadline=args.block_deadline,
+        quantity=args.quantity,
     )
     print(result)
 
@@ -471,6 +509,13 @@ def handle_get_claim(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
     result = contract.get_claim(claim_id=args.claim_id)
+    print(result)
+
+
+def handle_get_claim_status(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Dropper(args.address)
+    result = contract.get_claim_status(claim_id=args.claim_id)
     print(result)
 
 
@@ -760,6 +805,22 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     claim_parser.set_defaults(func=handle_claim)
 
+    claim_custom_parser = subcommands.add_parser("claim-custom")
+    add_default_arguments(claim_custom_parser, True)
+    claim_custom_parser.add_argument(
+        "--claim-id", required=True, help="Type: uint256", type=int
+    )
+    claim_custom_parser.add_argument(
+        "--block-deadline", required=True, help="Type: uint256", type=int
+    )
+    claim_custom_parser.add_argument(
+        "--amount", required=True, help="Type: uint256", type=int
+    )
+    claim_custom_parser.add_argument(
+        "--signature", required=True, help="Type: bytes", type=bytes_argument_type
+    )
+    claim_custom_parser.set_defaults(func=handle_claim_custom)
+
     claim_message_hash_parser = subcommands.add_parser("claim-message-hash")
     add_default_arguments(claim_message_hash_parser, False)
     claim_message_hash_parser.add_argument(
@@ -770,6 +831,9 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     claim_message_hash_parser.add_argument(
         "--block-deadline", required=True, help="Type: uint256", type=int
+    )
+    claim_message_hash_parser.add_argument(
+        "--quantity", required=True, help="Type: uint256", type=int
     )
     claim_message_hash_parser.set_defaults(func=handle_claim_message_hash)
 
@@ -802,6 +866,13 @@ def generate_cli() -> argparse.ArgumentParser:
         "--claim-id", required=True, help="Type: uint256", type=int
     )
     get_claim_parser.set_defaults(func=handle_get_claim)
+
+    get_claim_status_parser = subcommands.add_parser("get-claim-status")
+    add_default_arguments(get_claim_status_parser, False)
+    get_claim_status_parser.add_argument(
+        "--claim-id", required=True, help="Type: uint256", type=int
+    )
+    get_claim_status_parser.set_defaults(func=handle_get_claim_status)
 
     get_signer_for_claim_parser = subcommands.add_parser("get-signer-for-claim")
     add_default_arguments(get_signer_for_claim_parser, False)

@@ -234,23 +234,25 @@ contract Dropper is
         return ClaimSigner[claimId];
     }
 
-    function getClaimStatus(uint256 claimId) external view returns (address) {
-        return ClaimSigner[claimId][msg.sender];
+    function getClaimStatus(uint256 claimId) external view returns (bool) {
+        return ClaimCompleted[claimId][msg.sender];
     }
 
     function claimMessageHash(
         uint256 claimId,
         address claimant,
-        uint256 blockDeadline
+        uint256 blockDeadline,
+        uint256 quantity
     ) public view returns (bytes32) {
         bytes32 structHash = keccak256(
             abi.encode(
                 keccak256(
-                    "ClaimPayload(uint256 claimId,address claimant,uint256 blockDeadline)"
+                    "ClaimPayload(uint256 claimId,address claimant,uint256 blockDeadline,uint256 quantity)"
                 ),
                 claimId,
                 claimant,
-                blockDeadline
+                blockDeadline,
+                quantity
             )
         );
         bytes32 digest = _hashTypedDataV4(structHash);
@@ -270,7 +272,7 @@ contract Dropper is
             !ClaimCompleted[claimId][msg.sender],
             "Dropper: claim -- That claim has already been completed."
         );
-        bytes32 hash = claimMessageHash(claimId, msg.sender, blockDeadline);
+        bytes32 hash = claimMessageHash(claimId, msg.sender, blockDeadline, 0);
         require(
             SignatureChecker.isValidSignatureNow(
                 ClaimSigner[claimId],
@@ -311,6 +313,59 @@ contract Dropper is
                 claimToken.amount,
                 ""
             );
+        } else {
+            revert("Dropper -- claim: Unknown token type in claim");
+        }
+
+        ClaimCompleted[claimId][msg.sender] = true;
+
+        emit Claimed(claimId, msg.sender);
+    }
+
+    function claimCustom(
+        uint256 claimId,
+        uint256 blockDeadline,
+        uint256 amount,
+        bytes memory signature
+    ) external whenNotPaused nonReentrant {
+        require(
+            block.number <= blockDeadline,
+            "Dropper: claim -- Block deadline exceeded."
+        );
+        require(
+            !ClaimCompleted[claimId][msg.sender],
+            "Dropper: claim -- That claim has already been completed."
+        );
+        bytes32 hash = claimMessageHash(
+            claimId,
+            msg.sender,
+            blockDeadline,
+            amount
+        );
+        require(
+            SignatureChecker.isValidSignatureNow(
+                ClaimSigner[claimId],
+                hash,
+                signature
+            ),
+            "Dropper: claim -- Invalid signer for claim."
+        );
+
+        ClaimableToken memory claimToken = ClaimToken[claimId];
+        if (claimToken.tokenType == ERC1155_TYPE) {
+            IERC1155 erc1155Contract = IERC1155(claimToken.tokenAddress);
+            erc1155Contract.safeTransferFrom(
+                address(this),
+                msg.sender,
+                claimToken.tokenId,
+                amount,
+                ""
+            );
+        } else if (claimToken.tokenType == ERC1155_TERMINUS_MINT_TYPE) {
+            TerminusFacet terminusContract = TerminusFacet(
+                claimToken.tokenAddress
+            );
+            terminusContract.mint(msg.sender, claimToken.tokenId, amount, "");
         } else {
             revert("Dropper -- claim: Unknown token type in claim");
         }
