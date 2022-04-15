@@ -24,8 +24,18 @@ const DropCard = ({ drop }) => {
   });
 
   const handleClick = () => {
+    console.log("handleClick");
     claimer.claim(drop.id);
   };
+
+  let shouldDisable = false;
+
+  if (
+    claimer.claimStatus?.data &&
+    (claimer.claimStatus?.data.status > 0 ||
+      claimer.claimStatus?.data.claim[0] == "0")
+  )
+    shouldDisable = true;
 
   return (
     <Flex
@@ -41,13 +51,17 @@ const DropCard = ({ drop }) => {
       <Text fontWeight={600} textColor="gray.100" h="min-content">
         {drop.entry.title}
       </Text>
-      {claimer.claimStatus.data && claimer.claimStatus.data[0] == "20" && (
-        <Erc20Card
-          address={claimer.claimStatus.data[1]}
-          amount={web3Provider.web3.utils.fromWei(claimer.claimStatus.data[3])}
-        />
-      )}
+      {claimer.claimStatus.data &&
+        claimer.claimStatus.data.claim[0] == "20" && (
+          <Erc20Card
+            address={claimer.claimStatus.data.claim[1]}
+            amount={web3Provider.web3.utils.fromWei(
+              claimer.claimStatus.data.claim[3]
+            )}
+          />
+        )}
       <Button
+        isDisabled={shouldDisable}
         onClick={handleClick}
         isLoading={claimer.claimWeb3Drop.isLoading}
         colorScheme={"orange"}

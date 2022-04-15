@@ -31,7 +31,12 @@ const useDropperClaim = ({
     }
   );
 
-  const claimWeb3Drop = useMutation(claimDrop(dropperAddress, ctx), {});
+  const claimWeb3Drop = useMutation(claimDrop(dropperAddress, ctx), {
+    onSuccess: (resonse) => {
+      toast("Claim successful", "success");
+      claimStatus.refetch();
+    },
+  });
 
   const getClaimMessage = useMutation(getDropMessage(claimId), {
     onMutate: () => {},
@@ -41,7 +46,6 @@ const useDropperClaim = ({
         blockDeadline: response.data.block_deadline,
         claimId: claimId,
       });
-      toast("Claim successful", "success");
     },
     onError: (error) => {},
     onSettled: () => {},

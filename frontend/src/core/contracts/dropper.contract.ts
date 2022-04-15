@@ -53,7 +53,9 @@ export const getClaim = (address: any, ctx: any) => async (claimId: string) => {
   dropper.options.address = address;
 
   const claim = await dropper.methods.getClaim(claimId).call();
-  const status = await dropper.methods.claimStatus(claimId).call();
+  const status = await dropper.methods
+    .getClaimStatus(claimId, ctx.account)
+    .call();
 
   return { claim, status };
 };
