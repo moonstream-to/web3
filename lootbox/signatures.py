@@ -122,7 +122,7 @@ class InstanceSigner(Signer):
     def sign_message(self, message: str):
         if self.current_signer_uri is None:
             raise SignWithInstanceFail("Signer url not specified")
-        
+
         signed_message = ""
         try:
             resp = requests.post(
@@ -139,11 +139,13 @@ class InstanceSigner(Signer):
 
         return signed_message
 
+
 DROP_SIGNER: Optional[Signer] = None
 if SIGNER_KEYSTORE is not None and SIGNER_PASSWORD is not None:
     DROP_SIGNER = BrownieAccountSigner(SIGNER_KEYSTORE, SIGNER_PASSWORD)
 if DROP_SIGNER is None:
     DROP_SIGNER = InstanceSigner(MOONSTREAM_SIGNING_SERVER_URI)
+
 
 def list_signing_instances(
     signing_instances: List[str],
