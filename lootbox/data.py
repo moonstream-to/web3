@@ -25,7 +25,6 @@ class SignerWakeupResponse(BaseModel):
 
 class DropRegisterRequest(BaseModel):
     name: str
-    dropper_address: str
     claim_id: str
     addresses: List[str]
 

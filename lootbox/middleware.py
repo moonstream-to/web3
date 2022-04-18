@@ -6,7 +6,7 @@ from bugout.exceptions import BugoutResponseException
 from fastapi import HTTPException, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from .settings import bugout_client as bc, MOONSTREAM_ENGINE_APPLICATION_ID
+from .settings import bugout_client as bc
 
 logger = logging.getLogger(__name__)
 
@@ -42,4 +42,8 @@ class BearerTokenMiddleware(BaseHTTPMiddleware):
                 return Response(status_code=403, content="Wrong authorization header")
             user_token: str = user_token_list[-1]
             request.state.token = user_token
+            return await call_next(request)
+        elif request.method != "GET":
+            return Response(status_code=403, content="No authorization header")
+
         return await call_next(request)
