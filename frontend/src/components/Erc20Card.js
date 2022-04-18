@@ -13,7 +13,7 @@ import useDropperClaim from "../core/hooks/useDropperClaim";
 import Web3Context from "../core/providers/Web3Provider/context";
 import { targetChain } from "../core/providers/Web3Provider";
 import useErc20 from "../core/hooks/useERC20";
-const ERC20Card = ({ address, amount }) => {
+const ERC20Card = ({ address, amount, isLoading }) => {
   const web3Provider = useContext(Web3Context);
 
   const erc20 = useErc20({
@@ -21,7 +21,7 @@ const ERC20Card = ({ address, amount }) => {
     ctx: web3Provider,
     targetChain: targetChain,
   });
-  if (erc20.ERC20State.isLoading) return <Spinner size="sm" />;
+  if (erc20.ERC20State.isLoading || isLoading) return <Spinner size="sm" />;
   if (!erc20.ERC20State.data) return "whops";
   console.log("erc20", erc20.ERC20State.data);
   return (
