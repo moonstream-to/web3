@@ -16,7 +16,7 @@ from hexbytes import HexBytes
 from .settings import (
     SIGNER_KEYSTORE,
     SIGNER_PASSWORD,
-    MOONSTREAM_SIGNING_SERVER_URI,
+    MOONSTREAM_SIGNING_SERVER_IP,
     AWS_DEFAULT_REGION,
     MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID,
     MOONSTREAM_AWS_SIGNER_IMAGE_ID,
@@ -100,14 +100,19 @@ class InstanceSigner(Signer):
     AWS instance server signer.
     """
 
-    def __init__(self, url: Optional[str] = None) -> None:
+    def __init__(self, ip: Optional[str] = None) -> None:
         self.current_signer_uri = None
-        if url is not None:
-            self.current_signer_uri = url
+        if ip is not None:
+            self.current_signer_uri = (
+                f"http://{ip}:{MOONSTREAM_AWS_SIGNER_INSTANCE_PORT}/sign"
+            )
+
+    def clean_signer(self) -> None:
+        self.current_signer_uri = None
 
     def refresh_signer(self) -> None:
         try:
-            instances = list_signing_instances()
+            instances = list_signing_instances([])
         except AWSDescribeInstancesFail:
             raise AWSDescribeInstancesFail("AWS describe instances command failed")
         except Exception as err:
@@ -121,14 +126,14 @@ class InstanceSigner(Signer):
 
     def sign_message(self, message: str):
         if self.current_signer_uri is None:
-            raise SignWithInstanceFail("Signer url not specified")
+            self.current_signer_uri = self.refresh_signer()
 
         signed_message = ""
         try:
             resp = requests.post(
                 self.current_signer_uri,
-                headers={"Content-Type: application/json"},
-                json={"unsigned_data": message},
+                headers={"Content-Type": "application/json"},
+                json={"unsigned_data": str(message)},
             )
             resp.raise_for_status()
             body = resp.json()
@@ -137,14 +142,14 @@ class InstanceSigner(Signer):
             logger.error(f"Failed signing of message with instance server, {err}")
             raise SignWithInstanceFail("Failed signing of message with instance server")
 
-        return signed_message
+        return signed_message[2:-2]
 
 
 DROP_SIGNER: Optional[Signer] = None
 if SIGNER_KEYSTORE is not None and SIGNER_PASSWORD is not None:
     DROP_SIGNER = BrownieAccountSigner(SIGNER_KEYSTORE, SIGNER_PASSWORD)
 if DROP_SIGNER is None:
-    DROP_SIGNER = InstanceSigner(MOONSTREAM_SIGNING_SERVER_URI)
+    DROP_SIGNER = InstanceSigner(MOONSTREAM_SIGNING_SERVER_IP)
 
 
 def list_signing_instances(
