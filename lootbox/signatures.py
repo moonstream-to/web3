@@ -103,12 +103,9 @@ class InstanceSigner(Signer):
     def __init__(self, ip: Optional[str] = None) -> None:
         self.current_signer_uri = None
         if ip is not None:
-            self.current_signer_uri = self._set_signer_url(ip)
-
-    def _set_signer_url(self, ip: str) -> None:
-        self.current_signer_uri = (
-            f"http://{ip}:{MOONSTREAM_AWS_SIGNER_INSTANCE_PORT}/sign"
-        )
+            self.current_signer_uri = (
+                f"http://{ip}:{MOONSTREAM_AWS_SIGNER_INSTANCE_PORT}/sign"
+            )
 
     def clean_signer(self) -> None:
         self.current_signer_uri = None
@@ -125,9 +122,7 @@ class InstanceSigner(Signer):
         if len(instances) != 1:
             raise SignWithInstanceFail("Unsupported number of signing instances")
 
-        self.current_signer_uri = self._set_signer_url(
-            instances[0]["private_ip_address"]
-        )
+        self.current_signer_uri = f"http://{instances[0]['private_ip_address']}:{MOONSTREAM_AWS_SIGNER_INSTANCE_PORT}/sign"
 
     def sign_message(self, message: str):
         if self.current_signer_uri is None:
