@@ -112,7 +112,7 @@ class InstanceSigner(Signer):
 
     def refresh_signer(self) -> None:
         try:
-            instances = list_signing_instances()
+            instances = list_signing_instances([])
         except AWSDescribeInstancesFail:
             raise AWSDescribeInstancesFail("AWS describe instances command failed")
         except Exception as err:
@@ -142,7 +142,7 @@ class InstanceSigner(Signer):
             logger.error(f"Failed signing of message with instance server, {err}")
             raise SignWithInstanceFail("Failed signing of message with instance server")
 
-        return signed_message
+        return signed_message[2:-2]
 
 
 DROP_SIGNER: Optional[Signer] = None
