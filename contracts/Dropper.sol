@@ -47,12 +47,16 @@ contract Dropper is
     // - [x] numClaims public view
     // - [x] setClaimStatus onlyOwner
     // - [x] getClaim external view
+    // - [x] getClaimStatus external view
 
     // Claim data structure:
-    // (claimId, playerAddress) -> true/false
+    // (claimId, playerAddress) -> amount
 
     // Signer data structure
     // token address -> signer address
+
+    uint256 public administratorPoolId;
+    address public terminusAddress;
 
     uint256 public ERC20_TYPE = 20;
     uint256 public ERC721_TYPE = 721;
@@ -69,7 +73,7 @@ contract Dropper is
     mapping(uint256 => bool) IsClaimActive;
     mapping(uint256 => address) ClaimSigner;
     mapping(uint256 => ClaimableToken) ClaimToken;
-    mapping(uint256 => mapping(address => bool)) ClaimCompleted;
+    mapping(uint256 => mapping(address => uint256)) ClaimCompleted;
 
     event Claimed(uint256 indexed claimId, address indexed claimant);
     event ClaimCreated(
@@ -89,6 +93,11 @@ contract Dropper is
         uint256 amount
     );
 
+    // Terminus Facet contract controller
+
+    /**
+     * @dev Initializes the Dropper contract
+     */
     constructor() EIP712("Moonstream Dropper", "0.0.1") {}
 
     function onERC721Received(
@@ -112,6 +121,12 @@ contract Dropper is
                 tokenType == ERC1155_TYPE,
             "Dropper: createClaim -- Unknown token type"
         );
+
+        require(
+            amount != 0,
+            "Dropper: createClaim -- Amount must be greater than 0"
+        );
+
         NumClaims++;
 
         ClaimableToken memory tokenMetadata;
@@ -165,19 +180,29 @@ contract Dropper is
         return ClaimSigner[claimId];
     }
 
+    function getClaimStatus(uint256 claimId, address claimant)
+        external
+        view
+        returns (uint256)
+    {
+        return ClaimCompleted[claimId][claimant];
+    }
+
     function claimMessageHash(
         uint256 claimId,
         address claimant,
-        uint256 blockDeadline
+        uint256 blockDeadline,
+        uint256 quantity
     ) public view returns (bytes32) {
         bytes32 structHash = keccak256(
             abi.encode(
                 keccak256(
-                    "ClaimPayload(uint256 claimId,address claimant,uint256 blockDeadline)"
+                    "ClaimPayload(uint256 claimId,address claimant,uint256 blockDeadline,uint256 quantity)"
                 ),
                 claimId,
                 claimant,
-                blockDeadline
+                blockDeadline,
+                quantity
             )
         );
         bytes32 digest = _hashTypedDataV4(structHash);
@@ -187,6 +212,7 @@ contract Dropper is
     function claim(
         uint256 claimId,
         uint256 blockDeadline,
+        uint256 quantity,
         bytes memory signature
     ) external whenNotPaused nonReentrant {
         require(
@@ -194,10 +220,16 @@ contract Dropper is
             "Dropper: claim -- Block deadline exceeded."
         );
         require(
-            !ClaimCompleted[claimId][msg.sender],
+            ClaimCompleted[claimId][msg.sender] == 0,
             "Dropper: claim -- That claim has already been completed."
         );
-        bytes32 hash = claimMessageHash(claimId, msg.sender, blockDeadline);
+
+        bytes32 hash = claimMessageHash(
+            claimId,
+            msg.sender,
+            blockDeadline,
+            quantity
+        );
         require(
             SignatureChecker.isValidSignatureNow(
                 ClaimSigner[claimId],
@@ -208,9 +240,14 @@ contract Dropper is
         );
 
         ClaimableToken memory claimToken = ClaimToken[claimId];
+
+        if (quantity == 0) {
+            quantity = claimToken.amount;
+        }
+
         if (claimToken.tokenType == ERC20_TYPE) {
             IERC20 erc20Contract = IERC20(claimToken.tokenAddress);
-            erc20Contract.transfer(msg.sender, claimToken.amount);
+            erc20Contract.transfer(msg.sender, quantity);
         } else if (claimToken.tokenType == ERC721_TYPE) {
             IERC721 erc721Contract = IERC721(claimToken.tokenAddress);
             erc721Contract.safeTransferFrom(
@@ -225,14 +262,14 @@ contract Dropper is
                 address(this),
                 msg.sender,
                 claimToken.tokenId,
-                claimToken.amount,
+                quantity,
                 ""
             );
         } else {
             revert("Dropper -- claim: Unknown token type in claim");
         }
 
-        ClaimCompleted[claimId][msg.sender] = true;
+        ClaimCompleted[claimId][msg.sender] = quantity;
 
         emit Claimed(claimId, msg.sender);
     }

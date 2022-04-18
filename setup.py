@@ -8,7 +8,14 @@ setup(
     name="lootbox",
     version="0.0.2",
     packages=find_packages(),
-    install_requires=["eth-brownie", "tqdm", "web3"],
+    install_requires=[
+        "eth-brownie",
+        "tqdm",
+        "web3",
+        "fastapi",
+        "uvicorn",
+        "bugout",
+    ],
     extras_require={
         "dev": [
             "black",
