@@ -11,11 +11,15 @@ class PingResponse(BaseModel):
     status: str
 
 
-class SleepResponse(BaseModel):
+class SignerListResponse(BaseModel):
+    instances: List[Any] = Field(default_factory=list)
+
+
+class SignerSleepResponse(BaseModel):
     instances: List[str] = Field(default_factory=list)
 
 
-class WakeupResponse(BaseModel):
+class SignerWakeupResponse(BaseModel):
     instances: List[str] = Field(default_factory=list)
 
 

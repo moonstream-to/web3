@@ -1,9 +1,6 @@
 import os
-from typing import Optional
 
 from bugout.app import Bugout
-
-from .signatures import Signer, BrownieAccountSigner
 
 # Bugout
 BUGOUT_BROOD_URL = os.environ.get("BUGOUT_BROOD_URL", "https://auth.bugout.dev")
@@ -48,14 +45,10 @@ DROPPER_ADDRESS = os.environ.get("DROPPER_ADDRESS")
 if DROPPER_ADDRESS is None:
     raise ValueError("DROPPER_ADDRESS environment variable must be set")
 
-DROP_SIGNER: Optional[Signer] = None
 SIGNER_KEYSTORE = os.environ.get("SIGNER_KEYSTORE")
 SIGNER_PASSWORD = os.environ.get("SIGNER_PASSWORD")
-if SIGNER_KEYSTORE is not None and SIGNER_PASSWORD is not None:
-    DROP_SIGNER = BrownieAccountSigner(SIGNER_KEYSTORE, SIGNER_PASSWORD)
 
-if DROP_SIGNER is None:
-    raise ValueError("Could not load signer")
+MOONSTREAM_SIGNING_SERVER_URI = os.environ.get("MOONSTREAM_SIGNING_SERVER_URI", None)
 
 # DROP_DEADLINE_RAW = os.environ.get("DROP_DEADLINE")
 # if DROP_DEADLINE_RAW is None:
@@ -65,3 +58,22 @@ if DROP_SIGNER is None:
 
 # OpenAPI
 DOCS_TARGET_PATH = "docs"
+
+# AWS signer
+AWS_DEFAULT_REGION = os.environ.get("AWS_DEFAULT_REGION")
+if AWS_DEFAULT_REGION is None:
+    raise ValueError("AWS_DEFAULT_REGION environment variable must be set")
+
+MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID = os.environ.get(
+    "MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID"
+)
+if MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID is None:
+    raise ValueError(
+        "MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID environment variable must be set"
+    )
+
+MOONSTREAM_AWS_SIGNER_IMAGE_ID = os.environ.get("MOONSTREAM_AWS_SIGNER_IMAGE_ID")
+if MOONSTREAM_AWS_SIGNER_IMAGE_ID is None:
+    raise ValueError("MOONSTREAM_AWS_SIGNER_IMAGE_ID environment variable must be set")
+
+MOONSTREAM_AWS_SIGNER_INSTANCE_PORT = 17181
