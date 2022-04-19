@@ -1,3 +1,4 @@
+from turtle import update
 import uuid
 
 from sqlalchemy.ext.declarative import declarative_base
@@ -5,6 +6,7 @@ from sqlalchemy import (
     BigInteger,
     Column,
     DateTime,
+    Boolean,
     Integer,
     ForeignKey,
     MetaData,
@@ -58,6 +60,18 @@ class Drop(Base):  # type: ignore
         default=uuid.uuid4,
         unique=True,
         nullable=False,
+    )
+    dropper_address = Column(VARCHAR(length=255), nullable=False)
+    claim_id = Column(BigInteger, nullable=False)
+    name = Column(Text, nullable=False)
+    description = Column(Text, nullable=False)
+    is_active = Column(Boolean, nullable=False)
+    claimant_address = Column(VARCHAR(length=255), nullable=False)
+    amount = Column(BigInteger, nullable=False)
+    is_claimed = Column(Boolean, nullable=False) 
+    recheck = Column(Boolean, nullable=False) # We can add ability to frontend request a re-check of the claim.
+    updated_at = Column(
+        DateTime(timezone=True), server_default=utcnow(), nullable=False
     )
     created_at = Column(
         DateTime(timezone=True), server_default=utcnow(), nullable=False
