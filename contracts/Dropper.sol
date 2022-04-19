@@ -185,17 +185,17 @@ contract Dropper is
         uint256 claimId,
         address claimant,
         uint256 blockDeadline,
-        uint256 quantity
+        uint256 amount
     ) public view returns (bytes32) {
         bytes32 structHash = keccak256(
             abi.encode(
                 keccak256(
-                    "ClaimPayload(uint256 claimId,address claimant,uint256 blockDeadline,uint256 quantity)"
+                    "ClaimPayload(uint256 claimId,address claimant,uint256 blockDeadline,uint256 amount)"
                 ),
                 claimId,
                 claimant,
                 blockDeadline,
-                quantity
+                amount
             )
         );
         bytes32 digest = _hashTypedDataV4(structHash);
@@ -205,7 +205,7 @@ contract Dropper is
     function claim(
         uint256 claimId,
         uint256 blockDeadline,
-        uint256 quantity,
+        uint256 amount,
         bytes memory signature
     ) external whenNotPaused nonReentrant {
         require(
@@ -221,7 +221,7 @@ contract Dropper is
             claimId,
             msg.sender,
             blockDeadline,
-            quantity
+            amount
         );
         require(
             SignatureChecker.isValidSignatureNow(
@@ -234,13 +234,13 @@ contract Dropper is
 
         ClaimableToken memory claimToken = ClaimToken[claimId];
 
-        if (quantity == 0) {
-            quantity = claimToken.amount;
+        if (amount == 0) {
+            amount = claimToken.amount;
         }
 
         if (claimToken.tokenType == ERC20_TYPE) {
             IERC20 erc20Contract = IERC20(claimToken.tokenAddress);
-            erc20Contract.transfer(msg.sender, quantity);
+            erc20Contract.transfer(msg.sender, amount);
         } else if (claimToken.tokenType == ERC721_TYPE) {
             IERC721 erc721Contract = IERC721(claimToken.tokenAddress);
             erc721Contract.safeTransferFrom(
@@ -255,7 +255,7 @@ contract Dropper is
                 address(this),
                 msg.sender,
                 claimToken.tokenId,
-                quantity,
+                amount,
                 ""
             );
         } else if (claimToken.tokenType == TERMINUS_FACET_TYPE) {
@@ -265,14 +265,14 @@ contract Dropper is
             terminusFacetContract.mint(
                 msg.sender,
                 claimToken.tokenId,
-                claimToken.amount,
+                amount,
                 ""
             );
         } else {
             revert("Dropper -- claim: Unknown token type in claim");
         }
 
-        ClaimCompleted[claimId][msg.sender] = quantity;
+        ClaimCompleted[claimId][msg.sender] = amount;
 
         emit Claimed(claimId, msg.sender);
     }
