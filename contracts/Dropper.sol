@@ -49,15 +49,6 @@ contract Dropper is
     // - [x] getClaim external view
     // - [x] getClaimStatus external view
 
-    // Claim data structure:
-    // (claimId, playerAddress) -> amount
-
-    // Signer data structure
-    // token address -> signer address
-
-    uint256 public administratorPoolId;
-    address public terminusAddress;
-
     uint256 public ERC20_TYPE = 20;
     uint256 public ERC721_TYPE = 721;
     uint256 public ERC1155_TYPE = 1155;
