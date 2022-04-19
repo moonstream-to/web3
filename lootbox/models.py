@@ -1,22 +1,22 @@
 from turtle import update
 import uuid
 
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (
+    VARCHAR,
     BigInteger,
+    Boolean,
     Column,
     DateTime,
-    Boolean,
-    Integer,
     ForeignKey,
     MetaData,
-    Numeric,
     Text,
-    VARCHAR,
+    String,
+    UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.sql import expression
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import expression
 
 """
 Naming conventions doc
@@ -29,7 +29,7 @@ convention = {
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
     "pk": "pk_%(table_name)s",
 }
-metadata = MetaData(naming_convention=convention, schema="lootbox")
+metadata = MetaData(naming_convention=convention)
 Base = declarative_base(metadata=metadata)
 
 """
@@ -51,8 +51,9 @@ def pg_utcnow(element, compiler, **kwargs):
     return "TIMEZONE('utc', statement_timestamp())"
 
 
-class Drop(Base):  # type: ignore
-    __tablename__ = "drops"
+class DropperContract(Base):  # type: ignore
+    __tablename__ = "dropper_contracts"
+    __table_args__ = (UniqueConstraint("blockchain", "address"),)
 
     id = Column(
         UUID(as_uuid=True),
@@ -61,18 +62,80 @@ class Drop(Base):  # type: ignore
         unique=True,
         nullable=False,
     )
-    dropper_address = Column(VARCHAR(length=255), nullable=False)
-    claim_id = Column(BigInteger, nullable=False)
-    name = Column(Text, nullable=False)
-    description = Column(Text, nullable=False)
-    is_active = Column(Boolean, nullable=False)
-    claimant_address = Column(VARCHAR(length=255), nullable=False)
-    amount = Column(BigInteger, nullable=False)
-    is_claimed = Column(Boolean, nullable=False) 
-    recheck = Column(Boolean, nullable=False) # We can add ability to frontend request a re-check of the claim.
-    updated_at = Column(
-        DateTime(timezone=True), server_default=utcnow(), nullable=False
-    )
+    blockchain = Column(VARCHAR(128), nullable=False)
+    address = Column(VARCHAR(256), index=True)
+
     created_at = Column(
         DateTime(timezone=True), server_default=utcnow(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=utcnow(),
+        onupdate=utcnow(),
+        nullable=False,
+    )
+
+
+class DropperClaim(Base):  # type: ignore
+    __tablename__ = "dropper_claims"
+    __table_args__ = (UniqueConstraint("dropper_contract_id", "claim_id"),)
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    dropper_contract_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("dropper_contracts.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    claim_id = Column(BigInteger, nullable=True)
+    title = Column(VARCHAR(128), nullable=True)
+    description = Column(String, nullable=True)
+    terminus_address = Column(VARCHAR(256), nullable=False, index=True)
+    terminus_pool_id = Column(BigInteger, nullable=False, index=True)
+    claim_block_deadline = Column(BigInteger, nullable=True)
+    active = Column(Boolean, default=False, nullable=False)
+
+    created_at = Column(
+        DateTime(timezone=True), server_default=utcnow(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=utcnow(),
+        onupdate=utcnow(),
+        nullable=False,
+    )
+
+
+class Claimant(Base):  # type: ignore
+    __tablename__ = "claimant"
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    dropper_claim_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("dropper_claims.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    address = Column(VARCHAR(256), nullable=False, index=True)
+    amount = Column(BigInteger, nullable=False)
+    added_by = Column(VARCHAR(256), nullable=False, index=True)
+
+    created_at = Column(
+        DateTime(timezone=True), server_default=utcnow(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=utcnow(),
+        onupdate=utcnow(),
+        nullable=False,
     )

@@ -27,12 +27,6 @@ target_metadata = LootboxBase.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
-def include_name(name, type_, parent_names):
-    if type_ == "schema":
-        return name in [LootboxBase.metadata.schema]
-    else:
-        return True
-
 
 def run_migrations_offline():
     """Run migrations in 'offline' mode.
