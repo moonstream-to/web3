@@ -111,6 +111,19 @@ class Dropper:
         self.assert_contract_is_instantiated()
         return self.contract.administratorPoolId.call()
 
+    def batch_claim(
+        self,
+        claim_ids: List,
+        block_deadlines: List,
+        amounts: List,
+        signatures: List,
+        transaction_config,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.batchClaim(
+            claim_ids, block_deadlines, amounts, signatures, transaction_config
+        )
+
     def claim(
         self,
         claim_id: int,
@@ -157,9 +170,11 @@ class Dropper:
         self.assert_contract_is_instantiated()
         return self.contract.getClaim.call(claim_id)
 
-    def get_claim_status(self, claim_id: int, claimant: ChecksumAddress) -> Any:
+    def get_claimed_amount_of_claiment(
+        self, claim_id: int, claimant: ChecksumAddress
+    ) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.getClaimStatus.call(claim_id, claimant)
+        return self.contract.getClaimedAmountOfClaiment.call(claim_id, claimant)
 
     def get_signer_for_claim(self, claim_id: int) -> Any:
         self.assert_contract_is_instantiated()
@@ -372,6 +387,20 @@ def handle_administrator_pool_id(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_batch_claim(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Dropper(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.batch_claim(
+        claim_ids=args.claim_ids,
+        block_deadlines=args.block_deadlines,
+        amounts=args.amounts,
+        signatures=args.signatures,
+        transaction_config=transaction_config,
+    )
+    print(result)
+
+
 def handle_claim(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
@@ -426,10 +455,12 @@ def handle_get_claim(args: argparse.Namespace) -> None:
     print(result)
 
 
-def handle_get_claim_status(args: argparse.Namespace) -> None:
+def handle_get_claimed_amount_of_claiment(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
-    result = contract.get_claim_status(claim_id=args.claim_id, claimant=args.claimant)
+    result = contract.get_claimed_amount_of_claiment(
+        claim_id=args.claim_id, claimant=args.claimant
+    )
     print(result)
 
 
@@ -627,6 +658,22 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(administrator_pool_id_parser, False)
     administrator_pool_id_parser.set_defaults(func=handle_administrator_pool_id)
 
+    batch_claim_parser = subcommands.add_parser("batch-claim")
+    add_default_arguments(batch_claim_parser, True)
+    batch_claim_parser.add_argument(
+        "--claim-ids", required=True, help="Type: uint256[]", nargs="+"
+    )
+    batch_claim_parser.add_argument(
+        "--block-deadlines", required=True, help="Type: uint256[]", nargs="+"
+    )
+    batch_claim_parser.add_argument(
+        "--amounts", required=True, help="Type: uint256[]", nargs="+"
+    )
+    batch_claim_parser.add_argument(
+        "--signatures", required=True, help="Type: bytes[]", nargs="+"
+    )
+    batch_claim_parser.set_defaults(func=handle_batch_claim)
+
     claim_parser = subcommands.add_parser("claim")
     add_default_arguments(claim_parser, True)
     claim_parser.add_argument(
@@ -689,15 +736,19 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     get_claim_parser.set_defaults(func=handle_get_claim)
 
-    get_claim_status_parser = subcommands.add_parser("get-claim-status")
-    add_default_arguments(get_claim_status_parser, False)
-    get_claim_status_parser.add_argument(
+    get_claimed_amount_of_claiment_parser = subcommands.add_parser(
+        "get-claimed-amount-of-claiment"
+    )
+    add_default_arguments(get_claimed_amount_of_claiment_parser, False)
+    get_claimed_amount_of_claiment_parser.add_argument(
         "--claim-id", required=True, help="Type: uint256", type=int
     )
-    get_claim_status_parser.add_argument(
+    get_claimed_amount_of_claiment_parser.add_argument(
         "--claimant", required=True, help="Type: address"
     )
-    get_claim_status_parser.set_defaults(func=handle_get_claim_status)
+    get_claimed_amount_of_claiment_parser.set_defaults(
+        func=handle_get_claimed_amount_of_claiment
+    )
 
     get_signer_for_claim_parser = subcommands.add_parser("get-signer-for-claim")
     add_default_arguments(get_signer_for_claim_parser, False)

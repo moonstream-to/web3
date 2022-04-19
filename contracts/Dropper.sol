@@ -180,7 +180,7 @@ contract Dropper is
         return ClaimSigner[claimId];
     }
 
-    function getClaimStatus(uint256 claimId, address claimant)
+    function getClaimedAmountOfClaiment(uint256 claimId, address claimant)
         external
         view
         returns (uint256)
@@ -209,12 +209,31 @@ contract Dropper is
         return digest;
     }
 
+    function batchClaim(
+        uint256[] memory claimIds,
+        uint256[] memory blockDeadlines,
+        uint256[] memory amounts,
+        bytes[] memory signatures
+    ) public whenNotPaused {
+        require(
+            claimIds.length > 0 &&
+                claimIds.length == blockDeadlines.length &&
+                claimIds.length == amounts.length &&
+                claimIds.length == signatures.length,
+            "Dropper: batchClaim -- claimIds, blockDeadlines, amounts, and signatures must be the same length and more then 0"
+        );
+
+        for (uint256 i = 0; i < claimIds.length; i++) {
+            claim(claimIds[i], blockDeadlines[i], amounts[i], signatures[i]);
+        }
+    }
+
     function claim(
         uint256 claimId,
         uint256 blockDeadline,
         uint256 quantity,
         bytes memory signature
-    ) external whenNotPaused nonReentrant {
+    ) public whenNotPaused nonReentrant {
         require(
             block.number <= blockDeadline,
             "Dropper: claim -- Block deadline exceeded."
