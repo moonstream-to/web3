@@ -27,7 +27,7 @@ convention = {
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
     "pk": "pk_%(table_name)s",
 }
-metadata = MetaData(naming_convention=convention, schema="lootbox")
+metadata = MetaData(naming_convention=convention)
 Base = declarative_base(metadata=metadata)
 
 """
@@ -49,8 +49,11 @@ def pg_utcnow(element, compiler, **kwargs):
     return "TIMEZONE('utc', statement_timestamp())"
 
 
-class Drop(Base):  # type: ignore
-    __tablename__ = "drops"
+class DropperContract(Base):  # type: ignore
+    __tablename__ = "dropper_contracts"
+    __table_args__ = (
+        UniqueConstraint("blockchain", "address"),
+    )
 
     id = Column(
         UUID(as_uuid=True),
@@ -59,6 +62,48 @@ class Drop(Base):  # type: ignore
         unique=True,
         nullable=False,
     )
+    blockchain = Column(VARCHAR(256), nullable=False)
+    address = Column(VARCHAR(256), index=True)
+
     created_at = Column(
         DateTime(timezone=True), server_default=utcnow(), nullable=False
     )
+    updated_at = Column(DateTime(timezone=True),
+        server_default=utcnow(),
+        onupdate=utcnow(),
+        nullable=False,
+    )
+
+
+class DropperClaim(Base): # type: ignore
+    __tablename__ = "dropper_claims"
+    __table_args__ = (
+        UniqueConstraint("dropper_contract_id", "claim_id"),
+    )
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    dropper_contract_id = Column(UUID(as_uuid=True),
+        ForeignKey("dropper_contracts.id", ondelete="CASCADE"),)
+    claim_id = Column()
+    title = Column()
+    desciption = Column()
+    terminus_pool_id = Column()
+    claim_block_deadline = Column()
+    active = Column()
+    
+    created_at = Column(
+        DateTime(timezone=True), server_default=utcnow(), nullable=False
+    )
+    updated_at = Column(DateTime(timezone=True),
+        server_default=utcnow(),
+        onupdate=utcnow(),
+        nullable=False,
+    )
+
+
