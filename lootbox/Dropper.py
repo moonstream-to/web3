@@ -170,11 +170,11 @@ class Dropper:
         self.assert_contract_is_instantiated()
         return self.contract.getClaim.call(claim_id)
 
-    def get_claimed_amount_of_claiment(
+    def get_claimed_amount_of_claimant(
         self, claim_id: int, claimant: ChecksumAddress
     ) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.getClaimedAmountOfClaiment.call(claim_id, claimant)
+        return self.contract.getClaimedAmountOfClaimant.call(claim_id, claimant)
 
     def get_signer_for_claim(self, claim_id: int) -> Any:
         self.assert_contract_is_instantiated()
@@ -455,10 +455,10 @@ def handle_get_claim(args: argparse.Namespace) -> None:
     print(result)
 
 
-def handle_get_claimed_amount_of_claiment(args: argparse.Namespace) -> None:
+def handle_get_claimed_amount_of_claimant(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
-    result = contract.get_claimed_amount_of_claiment(
+    result = contract.get_claimed_amount_of_claimant(
         claim_id=args.claim_id, claimant=args.claimant
     )
     print(result)
@@ -736,18 +736,18 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     get_claim_parser.set_defaults(func=handle_get_claim)
 
-    get_claimed_amount_of_claiment_parser = subcommands.add_parser(
-        "get-claimed-amount-of-claiment"
+    get_claimed_amount_of_claimant_parser = subcommands.add_parser(
+        "get-claimed-amount-of-claimant"
     )
-    add_default_arguments(get_claimed_amount_of_claiment_parser, False)
-    get_claimed_amount_of_claiment_parser.add_argument(
+    add_default_arguments(get_claimed_amount_of_claimant_parser, False)
+    get_claimed_amount_of_claimant_parser.add_argument(
         "--claim-id", required=True, help="Type: uint256", type=int
     )
-    get_claimed_amount_of_claiment_parser.add_argument(
+    get_claimed_amount_of_claimant_parser.add_argument(
         "--claimant", required=True, help="Type: address"
     )
-    get_claimed_amount_of_claiment_parser.set_defaults(
-        func=handle_get_claimed_amount_of_claiment
+    get_claimed_amount_of_claimant_parser.set_defaults(
+        func=handle_get_claimed_amount_of_claimant
     )
 
     get_signer_for_claim_parser = subcommands.add_parser("get-signer-for-claim")

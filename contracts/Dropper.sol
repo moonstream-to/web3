@@ -180,7 +180,7 @@ contract Dropper is
         return ClaimSigner[claimId];
     }
 
-    function getClaimedAmountOfClaiment(uint256 claimId, address claimant)
+    function getClaimedAmountOfClaimant(uint256 claimId, address claimant)
         external
         view
         returns (uint256)

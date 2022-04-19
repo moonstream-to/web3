@@ -1390,53 +1390,53 @@ class DropperBatchTest(DropperTestCase):
         self.assertEqual(balance_dropper_1, balance_dropper_0 - reward)
 
         self.assertEqual(
-            self.dropper.get_claimed_amount_of_claiment(
+            self.dropper.get_claimed_amount_of_claimant(
                 claim_id_1, accounts[1].address
             ),
             reward,
         )
         self.assertEqual(
-            self.dropper.get_claimed_amount_of_claiment(
+            self.dropper.get_claimed_amount_of_claimant(
                 claim_id_2, accounts[1].address
             ),
             0,
         )
 
-    # def test_batch_claim_repeate_same_claim_erc20(self):
-    #     reward = 30
-    #     self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
-    #     claim_id_1 = self.create_claim_and_return_claim_id(
-    #         20, self.erc20_contract.address, 0, reward, {"from": accounts[0]}
-    #     )
-    #     self.dropper.set_signer_for_claim(
-    #         claim_id_1, self.signer_0.address, {"from": accounts[0]}
-    #     )
+    def test_batch_claim_repeate_same_claim_erc20(self):
+        reward = 30
+        self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
+        claim_id_1 = self.create_claim_and_return_claim_id(
+            20, self.erc20_contract.address, 0, reward, {"from": accounts[0]}
+        )
+        self.dropper.set_signer_for_claim(
+            claim_id_1, self.signer_0.address, {"from": accounts[0]}
+        )
 
-    #     current_block = len(chain)
-    #     block_deadline = current_block  # since blocks are 0-indexed
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
 
-    #     message_hash_1 = self.dropper.claim_message_hash(
-    #         claim_id_1, accounts[1].address, block_deadline, 0
-    #     )
+        message_hash_1 = self.dropper.claim_message_hash(
+            claim_id_1, accounts[1].address, block_deadline, 0
+        )
 
-    #     signed_message_1 = sign_message(message_hash_1, self.signer_0)
+        signed_message_1 = sign_message(message_hash_1, self.signer_0)
 
-    #     balance_claimant_0 = self.erc20_contract.balance_of(accounts[1].address)
-    #     balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
+        balance_claimant_0 = self.erc20_contract.balance_of(accounts[1].address)
+        balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
 
-    #     signed_message_1 = sign_message(message_hash_1, self.signer_0)
+        signed_message_1 = sign_message(message_hash_1, self.signer_0)
 
-    #     with self.assertRaises(VirtualMachineError):
-    #         self.dropper.batch_claim(
-    #             [claim_id_1, claim_id_1],
-    #             [block_deadline, block_deadline],
-    #             [0, 0],
-    #             [signed_message_1, signed_message_1],
-    #             {"from": accounts[1]},
-    #         )
+        with self.assertRaises(VirtualMachineError):
+            self.dropper.batch_claim(
+                [claim_id_1, claim_id_1],
+                [block_deadline, block_deadline],
+                [0, 0],
+                [signed_message_1, signed_message_1],
+                {"from": accounts[1]},
+            )
 
-    #     balance_claimant_1 = self.erc20_contract.balance_of(accounts[1].address)
-    #     balance_dropper_1 = self.erc20_contract.balance_of(self.dropper.address)
+        balance_claimant_1 = self.erc20_contract.balance_of(accounts[1].address)
+        balance_dropper_1 = self.erc20_contract.balance_of(self.dropper.address)
 
-    #     self.assertEqual(balance_claimant_1, balance_claimant_0)
-    #     self.assertEqual(balance_dropper_1, balance_dropper_0)
+        self.assertEqual(balance_claimant_1, balance_claimant_0)
+        self.assertEqual(balance_dropper_1, balance_dropper_0)
