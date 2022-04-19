@@ -107,9 +107,9 @@ class Dropper:
         self.assert_contract_is_instantiated()
         return self.contract.ERC721_TYPE.call()
 
-    def administrator_pool_id(self) -> Any:
+    def terminus_facet_type(self) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.administratorPoolId.call()
+        return self.contract.TERMINUS_FACET_TYPE.call()
 
     def claim(
         self,
@@ -236,9 +236,17 @@ class Dropper:
         self.assert_contract_is_instantiated()
         return self.contract.supportsInterface.call(interface_id)
 
-    def terminus_address(self) -> Any:
+    def surender_pool_control(
+        self,
+        pool_id: int,
+        terminus_address: ChecksumAddress,
+        new_pool_controller: ChecksumAddress,
+        transaction_config,
+    ) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.terminusAddress.call()
+        return self.contract.surenderPoolControl(
+            pool_id, terminus_address, new_pool_controller, transaction_config
+        )
 
     def transfer_ownership(self, new_owner: ChecksumAddress, transaction_config) -> Any:
         self.assert_contract_is_instantiated()
@@ -365,10 +373,10 @@ def handle_erc721_type(args: argparse.Namespace) -> None:
     print(result)
 
 
-def handle_administrator_pool_id(args: argparse.Namespace) -> None:
+def handle_terminus_facet_type(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
-    result = contract.administrator_pool_id()
+    result = contract.terminus_facet_type()
     print(result)
 
 
@@ -544,10 +552,16 @@ def handle_supports_interface(args: argparse.Namespace) -> None:
     print(result)
 
 
-def handle_terminus_address(args: argparse.Namespace) -> None:
+def handle_surender_pool_control(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
-    result = contract.terminus_address()
+    transaction_config = get_transaction_config(args)
+    result = contract.surender_pool_control(
+        pool_id=args.pool_id,
+        terminus_address=args.terminus_address,
+        new_pool_controller=args.new_pool_controller,
+        transaction_config=transaction_config,
+    )
     print(result)
 
 
@@ -623,9 +637,9 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(erc721_type_parser, False)
     erc721_type_parser.set_defaults(func=handle_erc721_type)
 
-    administrator_pool_id_parser = subcommands.add_parser("administrator-pool-id")
-    add_default_arguments(administrator_pool_id_parser, False)
-    administrator_pool_id_parser.set_defaults(func=handle_administrator_pool_id)
+    terminus_facet_type_parser = subcommands.add_parser("terminus-facet-type")
+    add_default_arguments(terminus_facet_type_parser, False)
+    terminus_facet_type_parser.set_defaults(func=handle_terminus_facet_type)
 
     claim_parser = subcommands.add_parser("claim")
     add_default_arguments(claim_parser, True)
@@ -805,9 +819,18 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     supports_interface_parser.set_defaults(func=handle_supports_interface)
 
-    terminus_address_parser = subcommands.add_parser("terminus-address")
-    add_default_arguments(terminus_address_parser, False)
-    terminus_address_parser.set_defaults(func=handle_terminus_address)
+    surender_pool_control_parser = subcommands.add_parser("surender-pool-control")
+    add_default_arguments(surender_pool_control_parser, True)
+    surender_pool_control_parser.add_argument(
+        "--pool-id", required=True, help="Type: uint256", type=int
+    )
+    surender_pool_control_parser.add_argument(
+        "--terminus-address", required=True, help="Type: address"
+    )
+    surender_pool_control_parser.add_argument(
+        "--new-pool-controller", required=True, help="Type: address"
+    )
+    surender_pool_control_parser.set_defaults(func=handle_surender_pool_control)
 
     transfer_ownership_parser = subcommands.add_parser("transfer-ownership")
     add_default_arguments(transfer_ownership_parser, True)

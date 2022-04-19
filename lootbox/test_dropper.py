@@ -1,3 +1,4 @@
+from multiprocessing import pool
 import unittest
 from typing import Dict, Any
 
@@ -54,24 +55,23 @@ class DropperTestCase(unittest.TestCase):
         cls.erc20_contract.approve(
             cls.terminus.address, 100 * 10 ** 18, {"from": accounts[0]}
         )
-        pool_base_price = cls.terminus.pool_base_price()
 
         cls.terminus.create_pool_v1(2 ** 256 - 1, True, True, {"from": accounts[0]})
         cls.terminus_pool_id = cls.terminus.total_pools()
 
-        # create admin pool for testing
-        cls.terminus.create_pool_v1(pool_base_price, False, True, {"from": accounts[0]})
-
-        cls.admin_token_pool_id = cls.terminus.total_pools()
-
         # create dropper own pool
-        cls.terminus.create_pool_v1(2 ** 256 - 1, False, True, {"from": accounts[0]})
+        cls.terminus.create_pool_v1(500000, True, True, {"from": accounts[0]})
 
         cls.mintable_terminus_pool_id = cls.terminus.total_pools()
 
         # Dropper deployment
         cls.dropper = Dropper.Dropper(None)
         cls.dropper.deploy({"from": accounts[0]})
+
+        cls.TERMINUS_FACET_TYPE = int(cls.dropper.terminus_facet_type())
+        cls.terminus.set_pool_controller(
+            cls.mintable_terminus_pool_id, cls.dropper.address, {"from": accounts[0]}
+        )
 
         # Create signer accounts
         cls.signer_0 = accounts.add()
@@ -1157,7 +1157,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
     def test_claim_erc1155(self):
         reward = 3
         claim_id = self.create_claim_and_return_claim_id(
-            self.TERMINUS_MINTABLE_TOKEN_TYPE,
+            self.TERMINUS_FACET_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
             reward,
@@ -1200,12 +1200,13 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
     def test_claim_erc1155_fails_if_block_deadline_exceeded(self):
         reward = 5
         claim_id = self.create_claim_and_return_claim_id(
-            self.TERMINUS_MINTABLE_TOKEN_TYPE,
+            self.TERMINUS_FACET_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
             reward,
             {"from": accounts[0]},
         )
+
         self.dropper.set_signer_for_claim(
             claim_id, self.signer_0.address, {"from": accounts[0]}
         )
@@ -1222,6 +1223,10 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             accounts[1].address, self.mintable_terminus_pool_id
         )
 
+        pool_supply_0 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
+
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
                 claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
@@ -1231,13 +1236,18 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             accounts[1].address, self.mintable_terminus_pool_id
         )
 
+        pool_supply_1 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
+
         self.assertEqual(balance_claimant_1, balance_claimant_0)
+        self.assertEqual(pool_supply_1, pool_supply_0)
 
     def test_claim_erc1155_fails_if_wrong_claimant(self):
         reward = 6
 
         claim_id = self.create_claim_and_return_claim_id(
-            self.TERMINUS_MINTABLE_TOKEN_TYPE,
+            self.TERMINUS_FACET_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
             reward,
@@ -1262,6 +1272,10 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             accounts[1].address, self.mintable_terminus_pool_id
         )
 
+        pool_supply_0 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
+
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
                 claim_id, block_deadline, 0, signed_message, {"from": accounts[2]}
@@ -1273,14 +1287,18 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         balance_claimant_1 = self.terminus.balance_of(
             accounts[1].address, self.mintable_terminus_pool_id
         )
+        pool_supply_1 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
 
         self.assertEqual(balance_attacker_1, balance_attacker_0)
         self.assertEqual(balance_claimant_1, balance_claimant_0)
+        self.assertEqual(pool_supply_1, pool_supply_0)
 
     def test_claim_erc1155_fails_if_wrong_signer(self):
         reward = 7
         claim_id = self.create_claim_and_return_claim_id(
-            self.TERMINUS_MINTABLE_TOKEN_TYPE,
+            self.TERMINUS_FACET_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
             reward,
@@ -1301,6 +1319,9 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         balance_claimant_0 = self.terminus.balance_of(
             accounts[1].address, self.mintable_terminus_pool_id
         )
+        pool_supply_0 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
 
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
@@ -1311,12 +1332,17 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             accounts[1].address, self.mintable_terminus_pool_id
         )
 
+        pool_supply_1 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
+
         self.assertEqual(balance_claimant_1, balance_claimant_0)
+        self.assertEqual(pool_supply_1, pool_supply_0)
 
     def test_claim_erc1155_fails_on_repeated_attempts_with_same_signed_message(self):
         reward = 9
         claim_id = self.create_claim_and_return_claim_id(
-            self.TERMINUS_MINTABLE_TOKEN_TYPE,
+            self.TERMINUS_FACET_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
             reward,
@@ -1337,6 +1363,9 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         balance_claimant_0 = self.terminus.balance_of(
             accounts[1].address, self.mintable_terminus_pool_id
         )
+        pool_supply_0 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
 
         self.dropper.claim(
             claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
@@ -1346,7 +1375,12 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             accounts[1].address, self.mintable_terminus_pool_id
         )
 
+        pool_supply_1 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
+
         self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
+        self.assertEqual(pool_supply_1, pool_supply_0 + reward)
 
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
@@ -1357,14 +1391,19 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             accounts[1].address, self.mintable_terminus_pool_id
         )
 
+        pool_supply_2 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
+
         self.assertEqual(balance_claimant_2, balance_claimant_1)
+        self.assertEqual(pool_supply_2, pool_supply_1)
 
     def test_claim_erc1155_fails_on_repeated_attempts_with_different_signed_messages(
         self,
     ):
         reward = 9
         claim_id = self.create_claim_and_return_claim_id(
-            self.TERMINUS_MINTABLE_TOKEN_TYPE,
+            self.TERMINUS_FACET_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
             reward,
@@ -1386,6 +1425,10 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             accounts[1].address, self.mintable_terminus_pool_id
         )
 
+        pool_supply_0 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
+
         self.dropper.claim(
             claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
         )
@@ -1394,7 +1437,12 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             accounts[1].address, self.mintable_terminus_pool_id
         )
 
+        pool_supply_1 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
+
         self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
+        self.assertEqual(pool_supply_1, pool_supply_0 + reward)
 
         current_block = len(chain)
         block_deadline = current_block
@@ -1412,4 +1460,9 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         balance_claimant_2 = self.terminus.balance_of(
             accounts[1].address, self.mintable_terminus_pool_id
         )
+        pool_supply_2 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
+
         self.assertEqual(balance_claimant_2, balance_claimant_1)
+        self.assertEqual(pool_supply_2, pool_supply_1)

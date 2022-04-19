@@ -52,6 +52,7 @@ contract Dropper is
     uint256 public ERC20_TYPE = 20;
     uint256 public ERC721_TYPE = 721;
     uint256 public ERC1155_TYPE = 1155;
+    uint256 public TERMINUS_FACET_TYPE = 1;
 
     struct ClaimableToken {
         uint256 tokenType;
@@ -109,7 +110,8 @@ contract Dropper is
         require(
             tokenType == ERC20_TYPE ||
                 tokenType == ERC721_TYPE ||
-                tokenType == ERC1155_TYPE,
+                tokenType == ERC1155_TYPE ||
+                tokenType == TERMINUS_FACET_TYPE,
             "Dropper: createClaim -- Unknown token type"
         );
 
@@ -256,6 +258,16 @@ contract Dropper is
                 quantity,
                 ""
             );
+        } else if (claimToken.tokenType == TERMINUS_FACET_TYPE) {
+            TerminusFacet terminusFacetContract = TerminusFacet(
+                claimToken.tokenAddress
+            );
+            terminusFacetContract.mint(
+                msg.sender,
+                claimToken.tokenId,
+                claimToken.amount,
+                ""
+            );
         } else {
             revert("Dropper -- claim: Unknown token type in claim");
         }
@@ -305,5 +317,14 @@ contract Dropper is
             tokenId,
             amount
         );
+    }
+
+    function surenderPoolControl(
+        uint256 poolId,
+        address terminusAddress,
+        address newPoolController
+    ) public onlyOwner {
+        TerminusFacet terminusFacetContract = TerminusFacet(terminusAddress);
+        terminusFacetContract.setPoolController(poolId, newPoolController);
     }
 }
