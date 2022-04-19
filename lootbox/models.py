@@ -1,20 +1,20 @@
 import uuid
 
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (
+    VARCHAR,
     BigInteger,
+    Boolean,
     Column,
     DateTime,
-    Integer,
     ForeignKey,
     MetaData,
-    Numeric,
-    Text,
-    VARCHAR,
+    String,
+    UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.sql import expression
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import expression
 
 """
 Naming conventions doc
@@ -51,9 +51,7 @@ def pg_utcnow(element, compiler, **kwargs):
 
 class DropperContract(Base):  # type: ignore
     __tablename__ = "dropper_contracts"
-    __table_args__ = (
-        UniqueConstraint("blockchain", "address"),
-    )
+    __table_args__ = (UniqueConstraint("blockchain", "address"),)
 
     id = Column(
         UUID(as_uuid=True),
@@ -62,24 +60,23 @@ class DropperContract(Base):  # type: ignore
         unique=True,
         nullable=False,
     )
-    blockchain = Column(VARCHAR(256), nullable=False)
+    blockchain = Column(VARCHAR(128), nullable=False)
     address = Column(VARCHAR(256), index=True)
 
     created_at = Column(
         DateTime(timezone=True), server_default=utcnow(), nullable=False
     )
-    updated_at = Column(DateTime(timezone=True),
+    updated_at = Column(
+        DateTime(timezone=True),
         server_default=utcnow(),
         onupdate=utcnow(),
         nullable=False,
     )
 
 
-class DropperClaim(Base): # type: ignore
+class DropperClaim(Base):  # type: ignore
     __tablename__ = "dropper_claims"
-    __table_args__ = (
-        UniqueConstraint("dropper_contract_id", "claim_id"),
-    )
+    __table_args__ = (UniqueConstraint("dropper_contract_id", "claim_id"),)
 
     id = Column(
         UUID(as_uuid=True),
@@ -88,22 +85,55 @@ class DropperClaim(Base): # type: ignore
         unique=True,
         nullable=False,
     )
-    dropper_contract_id = Column(UUID(as_uuid=True),
-        ForeignKey("dropper_contracts.id", ondelete="CASCADE"),)
-    claim_id = Column()
-    title = Column()
-    desciption = Column()
-    terminus_pool_id = Column()
-    claim_block_deadline = Column()
-    active = Column()
-    
+    dropper_contract_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("dropper_contracts.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    claim_id = Column(BigInteger, nullable=True)
+    title = Column(VARCHAR(128), nullable=True)
+    description = Column(String, nullable=True)
+    terminus_address = Column(VARCHAR(256), nullable=False, index=True)
+    terminus_pool_id = Column(BigInteger, nullable=False, index=True)
+    claim_block_deadline = Column(BigInteger, nullable=True)
+    active = Column(Boolean, default=False, nullable=False)
+
     created_at = Column(
         DateTime(timezone=True), server_default=utcnow(), nullable=False
     )
-    updated_at = Column(DateTime(timezone=True),
+    updated_at = Column(
+        DateTime(timezone=True),
         server_default=utcnow(),
         onupdate=utcnow(),
         nullable=False,
     )
 
 
+class Claimant(Base):  # type: ignore
+    __tablename__ = "claimant"
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    dropper_claim_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("dropper_claims.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    address = Column(VARCHAR(256), nullable=False, index=True)
+    amount = Column(BigInteger, nullable=False)
+    added_by = Column(VARCHAR(256), nullable=False, index=True)
+
+    created_at = Column(
+        DateTime(timezone=True), server_default=utcnow(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=utcnow(),
+        onupdate=utcnow(),
+        nullable=False,
+    )
