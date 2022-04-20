@@ -11,6 +11,8 @@ from bugout.exceptions import BugoutResponseException
 from fastapi import Body, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 
+from . import actions
+from . import db
 from . import data
 from . import Dropper
 from . import signatures
@@ -74,39 +76,33 @@ async def ping_handler() -> data.PingResponse:
 
 
 @app.get("/drops", response_model=data.DropResponse)
-async def get_drop_handler(claim_id: int, address: str) -> data.DropResponse:
+async def get_drop_handler(dropper_claim_id: int, address: str) -> data.DropResponse:
     """
     Get signed transaction for user with the given address.
     example:
     curl -X GET "http://localhost:8000/drops?claim_id=<claim_number>&address=<user_address>"
     """
     try:
-        response = bc.search(
-            token=MOONSTREAM_ENGINE_ADMIN_ACCESS_TOKEN,
-            journal_id=DROP_JOURNAL_ID,
-            query=f"tag:claim_id:{claim_id} tag:dropper_address:{DROPPER_ADDRESS}",
-            content=True,
-            timeout=10.0,
-        )
-    except BugoutResponseException as e:
+        results = actions.get_claimant(dropper_claim_id, address)
+    except Exception as e:
         raise DropperHTTPException(status_code=e.status_code, detail=e.detail)
 
-    if len(response.results) == 0:
-        raise DropperHTTPException(status_code=404, detail="Whitelist not found")
-    elif len(response.results) > 1:
-        # TODO: In the future, this case should not be a failure.
-        raise DropperHTTPException(status_code=409, detail="Too many whitelists found")
-    else:
-        addresses = set(response.results[0].content.strip().split("\n"))
-
-    if address not in addresses:
+    if len(results) == 0:
         raise DropperHTTPException(
-            status_code=403, detail=f"Address not in whitelist: {address}"
+            status_code=404, detail="Whitelist or address not found"
         )
+    elif len(results) > 1:
+        # TODO: In the future, this case should not be a failure.
+        logger.error(
+            f"Multiple whitelists found for claim_id {dropper_claim_id} and address {address}"
+        )
+        raise DropperHTTPException(status_code=409, detail="Too many whitelists found")
+
+    address, amount, claim_id = results[0]
 
     drop_deadline = len(network.chain) + 100
 
-    message_hash = DROPPER.claim_message_hash(claim_id, address, drop_deadline, 0)
+    message_hash = DROPPER.claim_message_hash(claim_id, address, drop_deadline, amount)
 
     try:
         signature = signatures.DROP_SIGNER.sign_message(message_hash)
@@ -124,52 +120,21 @@ async def get_drop_handler(claim_id: int, address: str) -> data.DropResponse:
     )
 
 
-@app.get("/drops/search", response_model=data.DropListResponse)
+@app.get("/drops/claims", response_model=data.DropListResponse)
 async def get_drop_list_handler(
-    request: Request,
-    drop_name: str = Query(None),
-    claim_id: str = Query(None),
-    address: str = Query(None),
-    limit: int = Query(100),
-    offset: int = Query(0),
+    request: Request, dropper_contract_address: str, blockchain: str, address: str
 ) -> data.DropListResponse:
     """
-    Get list of drops with the given filters.
-    example:
-    curl -X GET -H "Authorization: Bearer <token>"  http://localhost:8000/drops/search?dropper_address=0x1&drop_name=test&claim_id=1
+    Get list of drops for a given dropper contract and claimant address.
+    1 address can have multiple contracts?
     """
 
-    query_list = [f"tag:dropper_address:{DROPPER_ADDRESS}"]
-
-    if claim_id is not None:
-        query_list.append(f"tag:claim_id:{claim_id}")
-
-    if drop_name is not None:
-        query_list.append(drop_name)
-
-    query = " ".join(query_list)
     try:
-        response = bc.search(
-            token=MOONSTREAM_ENGINE_ADMIN_ACCESS_TOKEN,
-            journal_id=DROP_JOURNAL_ID,
-            query=query,
-            limit=limit,
-            offset=offset,
-        )
+        results = actions.get_claims(dropper_contract_address, blockchain, address)
     except BugoutResponseException as e:
         raise DropperHTTPException(status_code=e.status_code, detail=e.detail)
 
-    if len(response.results) > 0 and address is not None:
-        # Filter by address
-        for entry_index, result in enumerate(response.results):
-            addresses = set(result.content.strip().split("\n"))
-            if address not in addresses:
-                response.results.remove(result)
-            else:
-                response.results[entry_index].content = []
-        return data.DropListResponse(drops=response.results)
-
-    return data.DropListResponse(drops=response.results)
+    return data.DropListResponse(drops=results)
 
 
 @app.post("/drops", response_model=BugoutJournalEntry)
@@ -190,14 +155,15 @@ async def create_drop(
 
     # search that user's bugout entry if it exists
     try:
-        response = bc.search(
-            token=token,
-            journal_id=DROP_JOURNAL_ID,
-            query=f"tag:claim_id:{register_request.claim_id} tag:dropper_address:{DROPPER_ADDRESS}",
-            limit=1,
-            content=False,
-            timeout=10.0,
-        )
+        response = []
+        # response = actions.create_claim(
+        #     dropper_contract_id=register_request.dropper_contract_id,
+        #     claim_id=register_request.claim_id,
+
+        #     register_request.blockchain,
+        #     register_request.claim_id,
+        #     register_request.title
+        # )
     except BugoutResponseException as e:
         raise DropperHTTPException(status_code=e.status_code, detail=e.detail)
 

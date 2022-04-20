@@ -1,3 +1,4 @@
+from turtle import update
 import uuid
 
 from sqlalchemy import (
@@ -8,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     MetaData,
+    Text,
     String,
     UniqueConstraint,
 )
