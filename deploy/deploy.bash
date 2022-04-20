@@ -14,10 +14,17 @@ PREFIX_WARN="${C_YELLOW}[WARN]${C_RESET} [$(date +%d-%m\ %T)]"
 PREFIX_CRIT="${C_RED}[CRIT]${C_RESET} [$(date +%d-%m\ %T)]"
 
 # Main
+APP_DIR="${APP_DIR:-/home/ubuntu/lootbox}"
 AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
+PYTHON_ENV_DIR="${PYTHON_ENV_DIR:-/home/ubuntu/lootbox-env}"
+PYTHON="${PYTHON_ENV_DIR}/bin/python"
+PIP="${PYTHON_ENV_DIR}/bin/pip"
 SCRIPT_DIR="$(realpath $(dirname $0))"
 SECRETS_DIR="${SECRETS_DIR:-/home/ubuntu/lootbox-secrets}"
 PARAMETERS_ENV_PATH="${SECRETS_DIR}/app.env"
+AWS_SSM_PARAMETER_PATH="${AWS_SSM_PARAMETER_PATH:-/engine/prod}"
+PARAMETERS_SCRIPT="${SCRIPT_DIR}/parameters.py"
+
 
 # API server service file
 LOOTBOX_SERVICE_FILE="lootbox.service"
@@ -26,8 +33,13 @@ set -eu
 
 echo
 echo
-echo -e "${PREFIX_INFO} Install checkenv"
-HOME=/root /usr/local/go/bin/go install github.com/bugout-dev/checkenv@latest
+echo -e "${PREFIX_INFO} Upgrading Python pip and setuptools"
+"${PIP}" install --upgrade pip setuptools
+
+echo
+echo
+echo -e "${PREFIX_INFO} Installing Python dependencies"
+"${PIP}" install -e "${APP_DIR}/"
 
 echo
 echo
@@ -36,7 +48,23 @@ if [ ! -d "$SECRETS_DIR" ]; then
   mkdir "$SECRETS_DIR"
   echo -e "${PREFIX_WARN} Created new secrets directory" 
 fi
-AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION}" /root/go/bin/checkenv show aws_ssm+Product:moonstream,signing_api:true > "${PARAMETERS_ENV_PATH}"
+mkdir -p "${SECRETS_DIR}"
+AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION}" "${PYTHON}" "${PARAMETERS_SCRIPT}" "${AWS_SSM_PARAMETER_PATH}" -o "${PARAMETERS_ENV_PATH}"
+
+echo
+echo
+echo -e "${PREFIX_INFO} Install checkenv"
+HOME=/root /usr/local/go/bin/go install github.com/bugout-dev/checkenv@latest
+
+echo
+echo
+echo -e "${PREFIX_INFO} Retrieving signing API parameters"
+AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION}" /root/go/bin/checkenv show aws_ssm+Product:moonstream,signing_api:true >> "${PARAMETERS_ENV_PATH}"
+
+echo
+echo
+echo -e "${PREFIX_INFO} Retrieving engine parameters"
+AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION}" /root/go/bin/checkenv show aws_ssm+Product:moonstream,Product:engine >> "${PARAMETERS_ENV_PATH}"
 
 echo
 echo
