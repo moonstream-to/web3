@@ -1,5 +1,5 @@
 """
-Moonstream database connection.
+Engine database connection.
 """
 from contextlib import contextmanager
 import os
@@ -7,45 +7,37 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
-
-# engine_database
-
-
-MOONSTREAM_DB_URI = os.environ.get("MOONSTREAM_ENGINE_DB_URI")
-if MOONSTREAM_DB_URI is None:
-    raise ValueError("MOONSTREAM_ENGINE_DB_URI environment variable must be set")
+ENGINE_DB_URI = os.environ.get("ENGINE_DB_URI")
+if ENGINE_DB_URI is None:
+    raise ValueError("ENGINE_DB_URI environment variable must be set")
 
 
-MOONSTREAM_POOL_SIZE_RAW = os.environ.get("MOONSTREAM_POOL_SIZE", 0)
+ENGINE_POOL_SIZE_RAW = os.environ.get("ENGINE_POOL_SIZE", 0)
 try:
-    if MOONSTREAM_POOL_SIZE_RAW is not None:
-        MOONSTREAM_POOL_SIZE = int(MOONSTREAM_POOL_SIZE_RAW)
+    if ENGINE_POOL_SIZE_RAW is not None:
+        ENGINE_POOL_SIZE = int(ENGINE_POOL_SIZE_RAW)
 except:
-    raise Exception(
-        f"Could not parse MOONSTREAM_POOL_SIZE as int: {MOONSTREAM_POOL_SIZE_RAW}"
-    )
+    raise Exception(f"Could not parse ENGINE_POOL_SIZE as int: {ENGINE_POOL_SIZE_RAW}")
 
-MOONSTREAM_DB_STATEMENT_TIMEOUT_MILLIS_RAW = os.environ.get(
-    "MOONSTREAM_DB_STATEMENT_TIMEOUT_MILLIS"
+ENGINE_DB_STATEMENT_TIMEOUT_MILLIS_RAW = os.environ.get(
+    "ENGINE_DB_STATEMENT_TIMEOUT_MILLIS"
 )
-MOONSTREAM_DB_STATEMENT_TIMEOUT_MILLIS = 30000
+ENGINE_DB_STATEMENT_TIMEOUT_MILLIS = 30000
 try:
-    if MOONSTREAM_DB_STATEMENT_TIMEOUT_MILLIS_RAW is not None:
-        MOONSTREAM_DB_STATEMENT_TIMEOUT_MILLIS = int(
-            MOONSTREAM_DB_STATEMENT_TIMEOUT_MILLIS_RAW
-        )
+    if ENGINE_DB_STATEMENT_TIMEOUT_MILLIS_RAW is not None:
+        ENGINE_DB_STATEMENT_TIMEOUT_MILLIS = int(ENGINE_DB_STATEMENT_TIMEOUT_MILLIS_RAW)
 except:
     raise ValueError(
-        f"MOONSTREAM_DB_STATEMENT_TIMEOUT_MILLIOS must be an integer: {MOONSTREAM_DB_STATEMENT_TIMEOUT_MILLIS_RAW}"
+        f"ENGINE_DB_STATEMENT_TIMEOUT_MILLIOS must be an integer: {ENGINE_DB_STATEMENT_TIMEOUT_MILLIS_RAW}"
     )
 
 # Pooling: https://docs.sqlalchemy.org/en/14/core/pooling.html#sqlalchemy.pool.QueuePool
 # Statement timeout: https://stackoverflow.com/a/44936982
 engine = create_engine(
-    MOONSTREAM_DB_URI,
-    pool_size=MOONSTREAM_POOL_SIZE,
+    ENGINE_DB_URI,
+    pool_size=ENGINE_POOL_SIZE,
     connect_args={
-        "options": f"-c statement_timeout={MOONSTREAM_DB_STATEMENT_TIMEOUT_MILLIS}"
+        "options": f"-c statement_timeout={ENGINE_DB_STATEMENT_TIMEOUT_MILLIS}"
     },
 )
 SessionLocal = sessionmaker(bind=engine)
