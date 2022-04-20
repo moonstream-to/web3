@@ -4,7 +4,7 @@ Lootbox API.
 import logging
 from typing import List
 
-from brownie import network
+from brownie import network, web3
 from bugout.data import BugoutJournalEntry
 from bugout.exceptions import BugoutResponseException
 
@@ -72,6 +72,9 @@ async def get_drop_handler(dropper_claim_id: int, address: str) -> data.DropResp
     example:
     curl -X GET "http://localhost:8000/drops?claim_id=<claim_number>&address=<user_address>"
     """
+
+    address = web3.toChecksumAddress(address)
+
     try:
         results = actions.get_claimants(dropper_claim_id, address)
     except Exception as e:
@@ -118,6 +121,8 @@ async def get_drop_list_handler(
     Get list of drops for a given dropper contract and claimant address.
     1 address can have multiple contracts?
     """
+
+    address = web3.toChecksumAddress(address)
 
     try:
         results = actions.get_claims(dropper_contract_address, blockchain, address)
@@ -198,17 +203,18 @@ async def create_claimants(
 
 @app.delete("/drops/claimants", response_model=data.DropResponse)
 async def create_claimants(
-    request: Request, add_claimants_request: data.DropAddClaimantsRequest = Body(...)
+    request: Request,
+    remove_claimants_request: data.DropRemoveClaimantsRequest = Body(...),
 ) -> List[str]:
 
     """
-    Add addresses to particular claim
+    Remove addresses to particular claim
     """
 
     try:
         results = actions.delete_claimants(
-            dropper_claim_id=add_claimants_request.dropper_claim_id,
-            claimants=add_claimants_request.claimants,
+            dropper_claim_id=remove_claimants_request.dropper_claim_id,
+            addresses=remove_claimants_request.addresses,
         )
     except Exception as e:
         raise DropperHTTPException(status_code=500, detail=e.detail)

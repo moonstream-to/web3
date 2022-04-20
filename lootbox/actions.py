@@ -1,4 +1,7 @@
+import re
 from .models import Claimant, DropperContract, DropperClaim, Claimant
+
+import web3
 
 
 def create_dropper_contract(db_session, blockchain, dropper_contract_address):
@@ -71,7 +74,7 @@ def add_claimants(db_session, dropper_claim_id, claimants):
         if claimant.address not in already_added:
             claimant_claim = DropperClaim(
                 dropper_claim_id=dropper_claim_id,
-                address=claimant.address,
+                address=web3.toChecksumAddress(claimant.address),
                 amount=claimant.amount,
                 added_by=claimant.added_by,
             )
@@ -125,3 +128,20 @@ def get_claims(db_session, dropper_contract_id, blockchain, address):
     )
 
     return claims
+
+
+def delete_claimants(db_session, dropper_claim_id, addresses):
+    """
+    Delete all claimants for a claim
+    """
+
+    normalize_addresses = [web3.toChecksumAddress(address) for address in addresses]
+
+    deleted_addresses = (
+        db_session.delete(Claimant)
+        .filter(Claimant.dropper_claim_id == dropper_claim_id)
+        .filter(Claimant.address.in_(normalize_addresses))
+    )
+    db_session.commit()
+
+    return deleted_addresses

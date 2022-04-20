@@ -46,6 +46,11 @@ class DropAddClaimantsRequest(BaseModel):
     claimants: List[Claimant]
 
 
+class DropRemoveClaimantsRequest(BaseModel):
+    dropper_claim_id: UUID
+    addresses: List[str]
+
+
 class DropResponse(BaseModel):
     claimant: str
     claim_id: int
