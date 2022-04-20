@@ -1,12 +1,15 @@
 from setuptools import find_packages, setup
 
+with open("lootbox/version.txt") as ifp:
+    VERSION = ifp.read().strip()
+
 long_description = ""
 with open("README.md") as ifp:
     long_description = ifp.read()
 
 setup(
     name="lootbox",
-    version="0.0.2",
+    version=VERSION,
     packages=find_packages(),
     install_requires=[
         "alembic",
