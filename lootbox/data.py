@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -24,9 +24,15 @@ class SignerWakeupResponse(BaseModel):
 
 
 class DropRegisterRequest(BaseModel):
-    name: str
-    claim_id: str
-    addresses: List[str]
+
+    dropper_contract_id: str
+    blockchain: str
+    title: str
+    description: str
+    claim_block_deadline: int
+    terminus_address: str
+    terminus_pool_id: int
+    claim_id: Optional[int] = None
 
 
 class DropResponse(BaseModel):
