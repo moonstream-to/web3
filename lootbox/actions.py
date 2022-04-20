@@ -59,7 +59,7 @@ def create_claim(
     return dropper_claim
 
 
-def add_claimants(db_session, dropper_claim_id, claimants):
+def add_claimants(db_session, dropper_claim_id, claimants, added_by):
     """
     Add a claimants to a claim
     """
@@ -76,7 +76,7 @@ def add_claimants(db_session, dropper_claim_id, claimants):
                 dropper_claim_id=dropper_claim_id,
                 address=web3.toChecksumAddress(claimant.address),
                 amount=claimant.amount,
-                added_by=claimant.added_by,
+                added_by=added_by,
             )
             db_session.add(claimant_claim)
             db_session.commit()

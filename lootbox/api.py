@@ -190,10 +190,13 @@ async def create_claimants(
     Add addresses to particular claim
     """
 
+    added_by = "me"  # request.state.user.address read from header in auth middleware
+
     try:
         results = actions.add_claimants(
             dropper_claim_id=add_claimants_request.dropper_claim_id,
             claimants=add_claimants_request.claimants,
+            added_by=added_by,
         )
     except Exception as e:
         raise DropperHTTPException(status_code=500, detail=e.detail)
