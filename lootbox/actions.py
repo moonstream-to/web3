@@ -16,7 +16,8 @@ def create_dropper_contract(db_session, blockchain, dropper_contract_address):
 
 def create_claim(
     db_session,
-    dropper_contract_id,
+    dropper_contract_address,
+    blockchain,
     claim_id,
     title,
     description,
@@ -28,8 +29,20 @@ def create_claim(
     Create a new dropper claim.
     """
 
+    # get the dropper contract
+
+    dropper_contract = (
+        db_session.query(DropperContract)
+        .filter(DropperContract.address == dropper_contract_address)
+        .filter(DropperContract.blockchain == blockchain)
+        .one_or_none()
+    )
+
+    if dropper_contract is None:
+        dropper_contract = create_dropper_contract(dropper_contract_address, blockchain)
+
     dropper_claim = DropperClaim(
-        dropper_contract_id=dropper_contract_id,
+        dropper_contract_id=dropper_contract.id,
         claim_id=claim_id,
         title=title,
         description=description,
@@ -39,42 +52,51 @@ def create_claim(
     )
     db_session.add(dropper_claim)
     db_session.commit()
+    db_session.refresh(dropper_claim)  # refresh the object to get the id
     return dropper_claim
 
 
-def add_claimant(db_session, dropper_claim_id, claimants):
+def add_claimants(db_session, dropper_claim_id, claimants):
     """
     Add a claimants to a claim
     """
 
+    # get the claimamants for this dropper claim
+
+    claimants_for_claim = get_claimants(db_session, dropper_claim_id)
+
+    already_added = [address for address, _, _ in claimants_for_claim]
+
     for claimant in claimants:
-        claimant = Claimant(
-            dropper_claim_id=dropper_claim_id,
-            address=claimant.address,
-            amount=claimant.amount,
-            added_by=claimant.added_by,
-        )
-        db_session.add(claimant)
-
-    db_session.commit()
-
+        if claimant.address not in already_added:
+            claimant_claim = ClaimantClaim(
+                dropper_claim_id=dropper_claim_id,
+                address=claimant.address,
+                amount=claimant.amount,
+                added_by=claimant.added_by,
+            )
+            db_session.add(claimant_claim)
+            db_session.commit()
+            db_session.refresh(claimant_claim)  # refresh the object to get the id
+            already_added.append(claimant.address)
     return claimants
 
 
-def get_claimant(db_session, dropper_claim_id, address):
+def get_claimants(db_session, dropper_claim_id, address=None):
     """
     Search for a claimant by address
     """
 
-    claimants = (
+    claimants_query = (
         db_session.query(Claimant.address, Claimant.amount, DropperClaim.claim_id)
         .join(DropperClaim)
         .filter(Claimant.dropper_claim_id == dropper_claim_id)
-        .filter(Claimant.address == address)
-        .all()
     )
 
-    return claimants
+    if address is not None:
+        claimants_query = claimants_query.filter(Claimant.address == address)
+
+    return claimants_query.all()
 
 
 def get_claims(db_session, dropper_contract_id, blockchain, address):

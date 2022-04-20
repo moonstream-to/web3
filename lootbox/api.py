@@ -69,12 +69,6 @@ async def ping_handler() -> data.PingResponse:
     return data.PingResponse(status="ok")
 
 
-# POST /drops - add an address for a drop
-# DELETE /drops - remove an address from a drop
-# GET /drops/<dropper_address>/<claim_id>/<address> - get signed transaction for user with the given address [SIGNATURE WORKFLOW]
-# GET /drops?dropper_address=<dropper_address>&claim_id=<claim_id>&address=<address> - list all drops with the given filters
-
-
 @app.get("/drops", response_model=data.DropResponse)
 async def get_drop_handler(dropper_claim_id: int, address: str) -> data.DropResponse:
     """
@@ -83,7 +77,7 @@ async def get_drop_handler(dropper_claim_id: int, address: str) -> data.DropResp
     curl -X GET "http://localhost:8000/drops?claim_id=<claim_number>&address=<user_address>"
     """
     try:
-        results = actions.get_claimant(dropper_claim_id, address)
+        results = actions.get_claimants(dropper_claim_id, address)
     except Exception as e:
         raise DropperHTTPException(status_code=e.status_code, detail=e.detail)
 
@@ -137,135 +131,90 @@ async def get_drop_list_handler(
     return data.DropListResponse(drops=results)
 
 
-@app.post("/drops", response_model=BugoutJournalEntry)
+@app.post("/drops/claims", response_model=BugoutJournalEntry)
 async def create_drop(
     request: Request, register_request: data.DropRegisterRequest = Body(...)
 ) -> List[str]:
 
     """
-    Drops give ability upload whitelisted addresses to a specific claim.
-    example:
-    curl -X POST -H "Content-Type: application/json" -H "authorization: bearer <token>" -d '{"name":"test", "dropper_address": "", "claim_id": "1", "addresses": ["0x1", "0x2"]}' http://localhost:8000/drops
+    Create a drop for a given dropper contract.
+    required: Web3 verification of signature (middleware probably)
+    body:
+        dropper_contract_address: address of dropper contract
+        claim_id: claim id
+        address: address of claimant
+        amount: amount of drop
+
     """
     logger.info(f"Creating drop for {DROPPER_ADDRESS}")
 
-    # Us bugout entry as storage for the whitelist
-
-    token = request.state.token
-
-    # search that user's bugout entry if it exists
     try:
-        response = []
-        # response = actions.create_claim(
-        #     dropper_contract_id=register_request.dropper_contract_id,
-        #     claim_id=register_request.claim_id,
-
-        #     register_request.blockchain,
-        #     register_request.claim_id,
-        #     register_request.title
-        # )
-    except BugoutResponseException as e:
+        claim = actions.create_claim(
+            dropper_contract_address=register_request.dropper_contract_address,
+            blockchain=register_request.blockchain,
+            title=register_request.title,
+            description=register_request.description,
+            claim_block_deadline=register_request.claim_block_deadline,
+            terminus_address=register_request.terminus_address,
+            terminus_pool_id=register_request.terminus_pool_id,
+            claim_id=register_request.claim_id,
+        )
+    except Exception as e:
         raise DropperHTTPException(status_code=e.status_code, detail=e.detail)
 
-    if len(response.results) == 0:
-        content = "\n".join(list(set(register_request.addresses)))
-        # create a new bugout entry
-        try:
-            drop_entry = bc.create_entry(
-                token=token,
-                journal_id=DROP_JOURNAL_ID,
-                title=register_request.name,
-                tags=[
-                    f"claim_id:{register_request.claim_id}",
-                    f"dropper_address:{DROPPER_ADDRESS}",
-                ],
-                content=content,
-                timeout=10.0,
-                context_type="csv",
-            )
-        except BugoutResponseException as e:
-            raise DropperHTTPException(status_code=e.status_code, detail=e.detail)
-    else:
-        content = "\n".join(list(set(new_addresses)))
-        # update the existing bugout entry
-        new_addresses = (
-            response.results[0]
-            .get("content")
-            .split("\n")
-            .extend(register_request.addresses)
-        )
-        try:
-            drop_entry = bc.update_entry_content(
-                token=token,
-                journal_id=DROP_JOURNAL_ID,
-                entry_id=response.results[0].get("id"),
-                title=register_request.name,
-                tags=[
-                    f"claim_id:{register_request.claim_id}",
-                    f"dropper_address:{DROPPER_ADDRESS}",
-                ],
-                content=content,
-                timeout=10.0,
-            )
-        except BugoutResponseException as e:
-            raise DropperHTTPException(status_code=e.status_code, detail=e.detail)
-
-    return drop_entry
+    return claim
 
 
-@app.delete("/drops", response_model=BugoutJournalEntry)
-async def delete_drop(
-    request: Request, delete_request: data.DropRegisterRequest = Body(...)
+@app.get("/drops/claimants", response_model=data.DropResponse)
+async def get_claimants(
+    dropper_claim_id: str, limit: int = 10, offset: int = 0
+) -> List[str]:
+    """
+    Get list of claimants for a given dropper contract.
+    """
+    try:
+        results = actions.get_claimants(dropper_claim_id, limit, offset)
+    except Exception as e:
+        raise DropperHTTPException(status_code=e.status_code, detail=e.detail)
+
+    return results
+
+
+@app.post("/drops/claimants", response_model=data.DropResponse)
+async def create_claimants(
+    request: Request, add_claimants_request: data.DropAddClaimantsRequest = Body(...)
 ) -> List[str]:
 
     """
-    Drops give ability upload whitelisted addresses to a specific claim.
+    Add addresses to particular claim
     """
-    logger.info(f"Deleting drop for {delete_request.dropper_address}")
 
-    # Us bugout entry as storage for the whitelist
-
-    token = request.state.token
-
-    # search that user's bugout entry if it exists
     try:
-        response = bc.search(
-            token=token,
-            journal_id=DROP_JOURNAL_ID,
-            query=f"tag:claim_id:{delete_request.claim_id} tag:dropper_address:{delete_request.dropper_address}",
-            limit=1,
-            content=False,
-            timeout=10.0,
+        results = actions.add_claimants(
+            dropper_claim_id=add_claimants_request.dropper_claim_id,
+            claimants=add_claimants_request.claimants,
         )
     except Exception as e:
-        logger.error(f"Bugout error: {e}")
-        raise e
+        raise DropperHTTPException(status_code=500, detail=e.detail)
 
-    if len(response.results) == 0:
-        return []
-    else:
-        content = "\n".join(
-            list(
-                set(
-                    [
-                        address
-                        for address in response.results[0].get("content").split("\n")
-                        not in delete_request.addresses
-                    ]
-                )
-            )
+    return results
+
+
+@app.delete("/drops/claimants", response_model=data.DropResponse)
+async def create_claimants(
+    request: Request, add_claimants_request: data.DropAddClaimantsRequest = Body(...)
+) -> List[str]:
+
+    """
+    Add addresses to particular claim
+    """
+
+    try:
+        results = actions.delete_claimants(
+            dropper_claim_id=add_claimants_request.dropper_claim_id,
+            claimants=add_claimants_request.claimants,
         )
-        # delete addresses from existing bugout entry
-        try:
-            drop_entry = bc.update_entry_content(
-                token=token,
-                journal_id=DROP_JOURNAL_ID,
-                entry_id=response.results[0].get("id"),
-                content=content,
-                timeout=10.0,
-            )
-        except Exception as e:
-            logger.error(f"Bugout error: {e}")
-            raise e
+    except Exception as e:
+        raise DropperHTTPException(status_code=500, detail=e.detail)
 
-    return drop_entry
+    return results

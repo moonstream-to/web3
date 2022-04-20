@@ -1,6 +1,7 @@
 from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field
+from uuid import UUID
 
 
 class PingResponse(BaseModel):
@@ -25,14 +26,24 @@ class SignerWakeupResponse(BaseModel):
 
 class DropRegisterRequest(BaseModel):
 
-    dropper_contract_id: str
+    dropper_contract_address: str
     blockchain: str
     title: str
     description: str
-    claim_block_deadline: int
-    terminus_address: str
-    terminus_pool_id: int
+    claim_block_deadline: Optional[int] = None
+    terminus_address: Optional[str] = None
+    terminus_pool_id: Optional[int] = None
     claim_id: Optional[int] = None
+
+
+class Claimant(BaseModel):
+    address: str
+    amount: int
+
+
+class DropAddClaimantsRequest(BaseModel):
+    dropper_claim_id: UUID
+    claimants: List[Claimant]
 
 
 class DropResponse(BaseModel):
