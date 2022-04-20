@@ -1,4 +1,4 @@
-from .models import Claimant, DropperContract, DropperClaim, ClaimantClaim, Claimant
+from .models import Claimant, DropperContract, DropperClaim, Claimant
 
 
 def create_dropper_contract(db_session, blockchain, dropper_contract_address):
@@ -69,7 +69,7 @@ def add_claimants(db_session, dropper_claim_id, claimants):
 
     for claimant in claimants:
         if claimant.address not in already_added:
-            claimant_claim = ClaimantClaim(
+            claimant_claim = DropperClaim(
                 dropper_claim_id=dropper_claim_id,
                 address=claimant.address,
                 amount=claimant.amount,

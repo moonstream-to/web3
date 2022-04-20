@@ -8,22 +8,18 @@ from brownie import network
 from bugout.data import BugoutJournalEntry
 from bugout.exceptions import BugoutResponseException
 
-from fastapi import Body, FastAPI, Query, Request
+from fastapi import Body, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import actions
-from . import db
 from . import data
 from . import Dropper
 from . import signatures
 from .middleware import BearerTokenMiddleware, DropperHTTPException
 from .settings import (
     BROWNIE_NETWORK,
-    MOONSTREAM_ENGINE_ADMIN_ACCESS_TOKEN,
-    bugout_client as bc,
     DOCS_TARGET_PATH,
     ORIGINS,
-    DROP_JOURNAL_ID,
     DROPPER_ADDRESS,
 )
 
@@ -50,7 +46,7 @@ app = FastAPI(
     redoc_url=f"/{DOCS_TARGET_PATH}",
 )
 
-app.add_middleware(BearerTokenMiddleware)
+# app.add_middleware(BearerTokenMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
