@@ -22,6 +22,7 @@ import time
 from typing import Any, cast, Dict, Optional
 
 from brownie import accounts
+from brownie.network.account import Account
 from eip712.messages import EIP712Message
 from web3 import Web3
 
@@ -49,10 +50,7 @@ class MoonstreamAuthorization(EIP712Message):
     deadline: "uint256"
 
 
-def authorize(
-    deadline: int, account: str, password: Optional[str] = None
-) -> Dict[str, Any]:
-    signer = accounts.load(account, password)
+def authorize(deadline: int, signer: Account) -> Dict[str, Any]:
     message = MoonstreamAuthorization(
         _name_=AUTH_PAYLOAD_NAME,
         _version_=VERSION,
@@ -97,7 +95,8 @@ def verify(authorization_payload: Dict[str, Any]) -> bool:
 
 
 def handle_authorize(args: argparse.Namespace) -> None:
-    authorization = authorize(args.deadline, args.signer, args.password)
+    account = accounts.load(args.signer, args.password)
+    authorization = authorize(args.deadline, account)
     print(json.dumps(authorization))
 
 
