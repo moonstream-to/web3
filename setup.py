@@ -25,8 +25,10 @@ setup(
         "web3",
     ],
     extras_require={
-        "codegen": ["moonworm >= 0.2.0"],
-        "dev": ["black"],
+        "dev": [
+            "black",
+            "moonworm >= 0.1.14",
+        ],
         "distribute": ["setuptools", "twine", "wheel"],
     },
     description="Command line interface to the Unicorn milk bottler contract",
