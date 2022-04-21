@@ -75,15 +75,15 @@ echo
 echo
 echo -e "${PREFIX_INFO} Compile contracts"
 cd "${APP_DIR}"
-sudo -u ubuntu "${PYTHON_ENV_DIR}/bin/brownie compile"
+sudo -u ubuntu $PYTHON_ENV_DIR/bin/brownie compile
 cd "${SCRIPT_DIR}"
 
 echo
 echo
 echo -e "${PREFIX_INFO} Add brownie networks"
 set +e
-sudo -u ubuntu "${PYTHON_ENV_DIR}/bin/brownie" networks add Polygon moonstream-engine-polygon host=https://polygon-rpc.com chainid=137
-sudo -u ubuntu "${PYTHON_ENV_DIR}/bin/brownie" networks add Polygon mumbai host=https://rpc-mumbai.maticvigil.com chainid=80001
+sudo -u ubuntu $PYTHON_ENV_DIR/bin/brownie networks add Polygon moonstream-engine-polygon host=https://polygon-rpc.com chainid=137
+sudo -u ubuntu $PYTHON_ENV_DIR/bin/brownie networks add Polygon mumbai host=https://rpc-mumbai.maticvigil.com chainid=80001
 set -e
 
 echo
