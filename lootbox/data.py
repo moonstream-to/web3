@@ -26,8 +26,18 @@ class SignerWakeupResponse(BaseModel):
 
 class DropRegisterRequest(BaseModel):
 
-    dropper_contract_address: str
-    blockchain: str
+    dropper_contract_id: UUID
+    title: str
+    description: str
+    claim_block_deadline: Optional[int] = None
+    terminus_address: Optional[str] = None
+    terminus_pool_id: Optional[int] = None
+    claim_id: Optional[int] = None
+
+
+class DropCreatedResponse(BaseModel):
+    dropper_claim_id: UUID
+    dropper_contract_id: UUID
     title: str
     description: str
     claim_block_deadline: Optional[int] = None
@@ -43,12 +53,20 @@ class Claimant(BaseModel):
 
 class DropAddClaimantsRequest(BaseModel):
     dropper_claim_id: UUID
-    claimants: List[Claimant]
+    claimants: List[Claimant] = Field(default_factory=list)
+
+
+class ClaimantsResponse(BaseModel):
+    claimants: List[Claimant] = Field(default_factory=list)
 
 
 class DropRemoveClaimantsRequest(BaseModel):
     dropper_claim_id: UUID
-    addresses: List[str]
+    addresses: List[str] = Field(default_factory=list)
+
+
+class RemoveClaimantsResponse(BaseModel):
+    addresses: List[str] = Field(default_factory=list)
 
 
 class DropResponse(BaseModel):
@@ -60,3 +78,7 @@ class DropResponse(BaseModel):
 
 class DropListResponse(BaseModel):
     drops: List[Any] = Field(default_factory=list)
+
+
+class DropperContractsListResponse(BaseModel):
+    dropper_contracts: List[Any] = Field(default_factory=list)

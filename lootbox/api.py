@@ -3,16 +3,20 @@ Lootbox API.
 """
 import logging
 from typing import List
+from uuid import UUID
 
 from brownie import network, web3
 from bugout.data import BugoutJournalEntry
 from bugout.exceptions import BugoutResponseException
 
-from fastapi import Body, FastAPI, Request
+from fastapi import Body, FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from sqlalchemy.orm.exc import NoResultFound
 
 from . import actions
 from . import data
+from . import db
 from . import Dropper
 from . import signatures
 from .middleware import BearerTokenMiddleware, DropperHTTPException
@@ -66,7 +70,11 @@ async def ping_handler() -> data.PingResponse:
 
 
 @app.get("/drops", response_model=data.DropResponse)
-async def get_drop_handler(dropper_claim_id: int, address: str) -> data.DropResponse:
+async def get_drop_handler(
+    dropper_claim_id: UUID,
+    address: str,
+    db_session: Session = Depends(db.yield_db_session),
+) -> data.DropResponse:
     """
     Get signed transaction for user with the given address.
     example:
@@ -76,26 +84,15 @@ async def get_drop_handler(dropper_claim_id: int, address: str) -> data.DropResp
     address = web3.toChecksumAddress(address)
 
     try:
-        results = actions.get_claimants(dropper_claim_id, address)
+        claimant = actions.get_claimant(db_session, dropper_claim_id, address)
     except Exception as e:
-        raise DropperHTTPException(status_code=e.status_code, detail=e.detail)
-
-    if len(results) == 0:
-        raise DropperHTTPException(
-            status_code=404, detail="Whitelist or address not found"
-        )
-    elif len(results) > 1:
-        # TODO: In the future, this case should not be a failure.
-        logger.error(
-            f"Multiple whitelists found for claim_id {dropper_claim_id} and address {address}"
-        )
-        raise DropperHTTPException(status_code=409, detail="Too many whitelists found")
-
-    address, amount, claim_id = results[0]
+        raise DropperHTTPException(status_code=500, detail=f"Can't get claimant: {e}")
 
     drop_deadline = len(network.chain) + 100
 
-    message_hash = DROPPER.claim_message_hash(claim_id, address, drop_deadline, amount)
+    message_hash = DROPPER.claim_message_hash(
+        claimant.claim_id, claimant.address, drop_deadline, claimant.amount
+    )
 
     try:
         signature = signatures.DROP_SIGNER.sign_message(message_hash)
@@ -104,10 +101,11 @@ async def get_drop_handler(dropper_claim_id: int, address: str) -> data.DropResp
     except signatures.SignWithInstanceFail:
         raise DropperHTTPException(status_code=500)
     except Exception as err:
+        logger.error(f"Unexpected error in signing message process: {err}")
         raise DropperHTTPException(status_code=500)
     return data.DropResponse(
-        claimant=address,
-        claim_id=claim_id,
+        claimant=claimant.address,
+        claim_id=claimant.claim_id,
         block_deadline=drop_deadline,
         signature=signature,
     )
@@ -115,111 +113,175 @@ async def get_drop_handler(dropper_claim_id: int, address: str) -> data.DropResp
 
 @app.get("/drops/claims", response_model=data.DropListResponse)
 async def get_drop_list_handler(
-    request: Request, dropper_contract_address: str, blockchain: str, address: str
+    dropper_contract_id: str,
+    blockchain: str,
+    address: str,
+    limit: int = 10,
+    offset: int = 0,
+    db_session: Session = Depends(db.yield_db_session),
 ) -> data.DropListResponse:
     """
     Get list of drops for a given dropper contract and claimant address.
-    1 address can have multiple contracts?
     """
 
     address = web3.toChecksumAddress(address)
 
     try:
-        results = actions.get_claims(dropper_contract_address, blockchain, address)
+        results = actions.get_claims(
+            db_session=db_session,
+            dropper_contract_id=dropper_contract_id,
+            blockchain=blockchain,
+            address=address,
+            limit=limit,
+            offset=offset,
+        )
     except BugoutResponseException as e:
-        raise DropperHTTPException(status_code=e.status_code, detail=e.detail)
+        raise DropperHTTPException(status_code=500, detail=str(e))
 
     return data.DropListResponse(drops=results)
 
 
-@app.post("/drops/claims", response_model=BugoutJournalEntry)
-async def create_drop(
-    request: Request, register_request: data.DropRegisterRequest = Body(...)
-) -> List[str]:
+# todo: Enable this endpoints after we add proper authorization
 
-    """
-    Create a drop for a given dropper contract.
-    required: Web3 verification of signature (middleware probably)
-    body:
-        dropper_contract_address: address of dropper contract
-        claim_id: claim id
-        address: address of claimant
-        amount: amount of drop
+# @app.post("/drops/claims", response_model=data.DropCreatedResponse)
+# async def create_drop(
+#     register_request: data.DropRegisterRequest = Body(...),
+#     db_session: Session = Depends(db.yield_db_session),
+# ) -> data.DropCreatedResponse:
 
-    """
-    logger.info(f"Creating drop for {DROPPER_ADDRESS}")
+#     """
+#     Create a drop for a given dropper contract.
+#     required: Web3 verification of signature (middleware probably)
+#     body:
+#         dropper_contract_address: address of dropper contract
+#         claim_id: claim id
+#         address: address of claimant
+#         amount: amount of drop
 
-    try:
-        claim = actions.create_claim(
-            dropper_contract_address=register_request.dropper_contract_address,
-            blockchain=register_request.blockchain,
-            title=register_request.title,
-            description=register_request.description,
-            claim_block_deadline=register_request.claim_block_deadline,
-            terminus_address=register_request.terminus_address,
-            terminus_pool_id=register_request.terminus_pool_id,
-            claim_id=register_request.claim_id,
-        )
-    except Exception as e:
-        raise DropperHTTPException(status_code=e.status_code, detail=e.detail)
+#     """
 
-    return claim
+#     if register_request.terminus_address is None:
+#         register_request.terminus_address = web3.toChecksumAddress(
+#             "0x0000000000000000000000000000000000000000"
+#         )
+#     else:
+#         register_request.terminus_address = web3.toChecksumAddress(
+#             register_request.terminus_address
+#         )
 
+#     if register_request.terminus_pool_id is None:
+#         register_request.terminus_pool_id = 0
 
-@app.get("/drops/claimants", response_model=data.DropResponse)
-async def get_claimants(
-    dropper_claim_id: str, limit: int = 10, offset: int = 0
-) -> List[str]:
-    """
-    Get list of claimants for a given dropper contract.
-    """
-    try:
-        results = actions.get_claimants(dropper_claim_id, limit, offset)
-    except Exception as e:
-        raise DropperHTTPException(status_code=e.status_code, detail=e.detail)
+#     try:
+#         claim = actions.create_claim(
+#             db_session=db_session,
+#             dropper_contract_id=register_request.dropper_contract_id,
+#             title=register_request.title,
+#             description=register_request.description,
+#             claim_block_deadline=register_request.claim_block_deadline,
+#             terminus_address=register_request.terminus_address,
+#             terminus_pool_id=register_request.terminus_pool_id,
+#             claim_id=register_request.claim_id,
+#         )
+#     except NoResultFound:
+#         raise DropperHTTPException(status_code=404, detail="Dropper contract not found")
+#     except Exception as e:
+#         raise DropperHTTPException(status_code=500, detail=str(e))
 
-    return results
-
-
-@app.post("/drops/claimants", response_model=data.DropResponse)
-async def create_claimants(
-    request: Request, add_claimants_request: data.DropAddClaimantsRequest = Body(...)
-) -> List[str]:
-
-    """
-    Add addresses to particular claim
-    """
-
-    added_by = "me"  # request.state.user.address read from header in auth middleware
-
-    try:
-        results = actions.add_claimants(
-            dropper_claim_id=add_claimants_request.dropper_claim_id,
-            claimants=add_claimants_request.claimants,
-            added_by=added_by,
-        )
-    except Exception as e:
-        raise DropperHTTPException(status_code=500, detail=e.detail)
-
-    return results
+#     return data.DropCreatedResponse(
+#         dropper_claim_id=claim.id,
+#         dropper_contract_id=claim.dropper_contract_id,
+#         title=claim.title,
+#         description=claim.description,
+#         claim_block_deadline=claim.claim_block_deadline,
+#         terminus_address=claim.terminus_address,
+#         terminus_pool_id=claim.terminus_pool_id,
+#         claim_id=claim.claim_id,
+#     )
 
 
-@app.delete("/drops/claimants", response_model=data.DropResponse)
-async def create_claimants(
-    request: Request,
-    remove_claimants_request: data.DropRemoveClaimantsRequest = Body(...),
-) -> List[str]:
+# @app.get("/drops/claimants", response_model=data.DropListResponse)
+# async def get_claimants(
+#     dropper_claim_id: UUID,
+#     limit: int = 10,
+#     offset: int = 0,
+#     db_session: Session = Depends(db.yield_db_session),
+# ) -> List[str]:
+#     """
+#     Get list of claimants for a given dropper contract.
 
-    """
-    Remove addresses to particular claim
-    """
+#     curl -X GET "http://localhost:8000/drops/claimants?claim_id=<claim_number>"
 
-    try:
-        results = actions.delete_claimants(
-            dropper_claim_id=remove_claimants_request.dropper_claim_id,
-            addresses=remove_claimants_request.addresses,
-        )
-    except Exception as e:
-        raise DropperHTTPException(status_code=500, detail=e.detail)
+#     """
+#     try:
+#         results = actions.get_claimants(
+#             db_session=db_session,
+#             dropper_claim_id=dropper_claim_id,
+#             limit=limit,
+#             offset=offset,
+#         )
+#     except Exception as e:
+#         raise DropperHTTPException(status_code=500, detail=str(e))
 
-    return results
+#     return data.DropListResponse(drops=list(results))
+
+
+# @app.post("/drops/claimants", response_model=data.ClaimantsResponse)
+# async def create_claimants(
+#     request: Request,
+#     add_claimants_request: data.DropAddClaimantsRequest = Body(...),
+#     db_session: Session = Depends(db.yield_db_session),
+# ) -> data.ClaimantsResponse:
+
+#     """
+#     Add addresses to particular claim
+
+#     curl --location --request POST 'localhost:7191/drops/claimants' \
+#     --header 'Content-Type: application/json' \
+#     --data-raw '{"dropper_claim_id": UUID, "claimants":[{"address": address, "amount": int}]}'
+
+#     """
+
+#     added_by = "me"  # request.state.user.address read from header in auth middleware
+
+#     try:
+#         results = actions.add_claimants(
+#             db_session=db_session,
+#             dropper_claim_id=add_claimants_request.dropper_claim_id,
+#             claimants=add_claimants_request.claimants,
+#             added_by=added_by,
+#         )
+#     except Exception as e:
+#         raise DropperHTTPException(
+#             status_code=500, detail=f"Error adding claimants {e}"
+#         )
+
+#     return data.ClaimantsResponse(claimants=results)
+
+
+# @app.delete("/drops/claimants", response_model=data.RemoveClaimantsResponse)
+# async def create_claimants(
+#     request: Request,
+#     remove_claimants_request: data.DropRemoveClaimantsRequest = Body(...),
+#     db_session: Session = Depends(db.yield_db_session),
+# ) -> data.RemoveClaimantsResponse:
+
+#     """
+#     Remove addresses to particular claim
+#     curl --location --request DELETE 'localhost:7191/drops/claimants' \
+#     --header 'Content-Type: application/json' \
+#     --data-raw '{"dropper_claim_id": UUID, "claimants":[address]}'
+#     """
+
+#     try:
+#         results = actions.delete_claimants(
+#             db_session=db_session,
+#             dropper_claim_id=remove_claimants_request.dropper_claim_id,
+#             addresses=remove_claimants_request.addresses,
+#         )
+#     except Exception as e:
+#         raise DropperHTTPException(
+#             status_code=500, detail=f"Error removing claimants {e}"
+#         )
+
+#     return data.RemoveClaimantsResponse(addresses=results)
