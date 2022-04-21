@@ -86,10 +86,11 @@ async def get_drop_handler(
     except Exception as e:
         raise DropperHTTPException(status_code=500, detail=f"Can't get claimant: {e}")
 
-    drop_deadline = len(network.chain) + 100
-
     message_hash = DROPPER.claim_message_hash(
-        claimant.claim_id, claimant.address, drop_deadline, claimant.amount
+        claimant.claim_id,
+        claimant.address,
+        claimant.claim_block_deadline,
+        claimant.amount,
     )
 
     try:
@@ -105,7 +106,7 @@ async def get_drop_handler(
         claimant=claimant.address,
         amount=claimant.amount,
         claim_id=claimant.claim_id,
-        block_deadline=drop_deadline,
+        block_deadline=claimant.claim_block_deadline,
         signature=signature,
     )
 

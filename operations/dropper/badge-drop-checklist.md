@@ -16,6 +16,7 @@
 - [ ] `export CONFIRMATIONS=<m>`
 - [ ] `export MAX_UINT=$(python -c "print(2**256 - 1)")`
 - [ ] `export MAX_BADGES=<maximum number of badges that can exist>`
+- [ ] `export ENGINE_API_URL=<api url for Engine API>`
 
 # Deploy Dropper contract
 
@@ -142,75 +143,93 @@ lootbox dropper get-signer-for-claim --network $BROWNIE_NETWORK --address $DROPP
 
 ## create new contract
 
+- [ ] Create row:
 ```
 lootbox engine-db dropper create-contract -b $BROWNIE_NETWORK -a $DROPPER_ADDRESS
 
 ```
 
-## Lookup contract id
+- [ ] Verify: `lootbox engine-db dropper list-contracts -b $BROWNIE_NETWORK`
 
-```
-lootbox engine-db dropper list-contracts -b $BROWNIE_NETWORK
-```
-
-# set enviroment variable
-
-- [ ] $DROPPER_CONTRACT_ID
+- [ ] `export DROPPER_CONTRACT_ID=<primary key id for contract>`
 
 ## Create new drop
 
+- [ ] Create title for drop: `export DROP_TITLE="Any title"`
+
+- [ ] Create description for drop: `export DROP_DESCRIPTION="Any description"`
+
+- [ ] Set block deadline: `export BLOCK_DEADLINE=<whatever>`
+
 ```
 lootbox engine-db dropper create-drop --dropper-contract-id $DROPPER_CONTRACT_ID \
---title "cli-drop" \
---description "test" \
---block-deadline 29017888 \
---terminus-address $TERMINUS_ADDRESS \
---terminus-pool-id $BADGE_POOL_ID \
---claim-id $CLAIM_ID
-```
-
-## list drops
+    --title "$DROP_TITLE" \
+    --description "$DROP_DESCRIPTION" \
+    --block-deadline $BLOCK_DEADLINE \
+    --terminus-address $TERMINUS_ADDRESS \
+    --terminus-pool-id $BADGE_POOL_ID \
+    --claim-id $CLAIM_ID
 
 ```
-lootbox engine-db dropper list-drops \ --dropper-contract-id $DROPPER_CONTRACT_ID \
- -a false
-```
 
-# set enviroment variable
-
-- [ ] $DROPPER_CLAIM_ID
-
-## Add claimant to drop
+- [ ] List drops:
 
 ```
-lootbox engine-db dropper add-claimants \ --dropper-claim-id $DROPPER_CLAIM_ID \
- --claimants-file white-list.csv
+lootbox engine-db dropper list-drops \
+    --dropper-contract-id $DROPPER_CONTRACT_ID \
+    -a false
+```
+
+- [ ] `export DB_CLAIM_ID=<id of claim you just created>`
+
+
+
+## Add claimants to drop
+
+- [ ] `export CLAIM_WHITELIST=<path to CSV file containing whitelist>`
+
+```
+lootbox engine-db dropper add-claimants \
+    --dropper-claim-id $DB_CLAIM_ID \
+    --claimants-file $CLAIM_WHITELIST
+
+```
+
+## Set claim to active
+
+- [ ] Set claim as active (in `psql`):
+
+```bash
+psql $ENGINE_DB_URI -c "UPDATE dropper_claims SET active = true WHERE id = '$DB_CLAIM_ID';"
 ```
 
 # Get claim signature
 
-```
-API_CALL=$(curl -X GET "http://localhost:8000/drops?claim_id=<$CLAIM_ID>&address=<user_address>")
-```
+- [ ] Address that you would like to get claim for: `export CLAIMANT_ADDRESS=<address>`
 
 ```
-signature=$(echo $API_CALL | jq -r '.signature')
+API_CALL=$(curl -X GET "$ENGINE_API_URL/drops?dropper_claim_id=$DB_CLAIM_ID&address=$CLAIMANT_ADDRESS")
 ```
 
+- [ ] Set variables
 ```
-block_deadline=$(echo $API_CALL | jq -r '.block_deadline')
-```
-
-```
-amount=$(echo $API_CALL | jq -r '.amount')
-```
-
-```
-claim_id=$(echo $API_CALL | jq -r '.claim_id')
+signature=$(echo $API_CALL | jq -r '.signature') \
+    block_deadline=$(echo $API_CALL | jq -r '.block_deadline') \
+    amount=$(echo $API_CALL | jq -r '.amount') \
+    claim_id=$(echo $API_CALL | jq -r '.claim_id') \
+    claimant=$(echo $API_CALL | jq -r '.claimant')
 ```
 
 # claim drop
 
 ```
-lootbox dropper claim --network $BROWNIE_NETWORK --address $DROPPER_ADDRESS --sender $SENDER --claim-id $CLAIM_ID --signature $signature --block-deadline $block_deadline --amount $amount
+lootbox dropper claim \
+    --network $BROWNIE_NETWORK \
+    --address $DROPPER_ADDRESS \
+    --sender $SENDER \
+    --claim-id $CLAIM_ID \
+    --signature $signature \
+    --block-deadline $block_deadline \
+    --amount $amount
+
 ```
