@@ -1,4 +1,3 @@
-from turtle import update
 import uuid
 
 from sqlalchemy import (

@@ -1,8 +1,6 @@
 import argparse
 import logging
 
-from sqlalchemy import true
-
 from . import actions
 from . import db
 from . import signatures
