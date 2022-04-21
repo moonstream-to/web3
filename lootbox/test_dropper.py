@@ -68,7 +68,7 @@ class DropperTestCase(unittest.TestCase):
         cls.dropper = Dropper.Dropper(None)
         cls.dropper.deploy({"from": accounts[0]})
 
-        cls.TERMINUS_FACET_TYPE = int(cls.dropper.terminus_facet_type())
+        cls.TERMINUS_MINTABLE_TYPE = int(cls.dropper.terminus_mintable_type())
         cls.terminus.set_pool_controller(
             cls.mintable_terminus_pool_id, cls.dropper.address, {"from": accounts[0]}
         )
@@ -1157,7 +1157,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
     def test_claim_erc1155(self):
         reward = 3
         claim_id = self.create_claim_and_return_claim_id(
-            self.TERMINUS_FACET_TYPE,
+            self.TERMINUS_MINTABLE_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
             reward,
@@ -1200,7 +1200,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
     def test_claim_erc1155_fails_if_block_deadline_exceeded(self):
         reward = 5
         claim_id = self.create_claim_and_return_claim_id(
-            self.TERMINUS_FACET_TYPE,
+            self.TERMINUS_MINTABLE_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
             reward,
@@ -1247,7 +1247,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         reward = 6
 
         claim_id = self.create_claim_and_return_claim_id(
-            self.TERMINUS_FACET_TYPE,
+            self.TERMINUS_MINTABLE_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
             reward,
@@ -1298,7 +1298,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
     def test_claim_erc1155_fails_if_wrong_signer(self):
         reward = 7
         claim_id = self.create_claim_and_return_claim_id(
-            self.TERMINUS_FACET_TYPE,
+            self.TERMINUS_MINTABLE_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
             reward,
@@ -1342,7 +1342,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
     def test_claim_erc1155_fails_on_repeated_attempts_with_same_signed_message(self):
         reward = 9
         claim_id = self.create_claim_and_return_claim_id(
-            self.TERMINUS_FACET_TYPE,
+            self.TERMINUS_MINTABLE_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
             reward,
@@ -1403,7 +1403,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
     ):
         reward = 9
         claim_id = self.create_claim_and_return_claim_id(
-            self.TERMINUS_FACET_TYPE,
+            self.TERMINUS_MINTABLE_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
             reward,

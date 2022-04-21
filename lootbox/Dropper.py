@@ -107,9 +107,9 @@ class Dropper:
         self.assert_contract_is_instantiated()
         return self.contract.ERC721_TYPE.call()
 
-    def terminus_facet_type(self) -> Any:
+    def terminus_mintable_type(self) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.TERMINUS_FACET_TYPE.call()
+        return self.contract.TERMINUS_MINTABLE_TYPE.call()
 
     def claim(
         self,
@@ -369,10 +369,10 @@ def handle_erc721_type(args: argparse.Namespace) -> None:
     print(result)
 
 
-def handle_terminus_facet_type(args: argparse.Namespace) -> None:
+def handle_terminus_mintable_type(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
-    result = contract.terminus_facet_type()
+    result = contract.terminus_mintable_type()
     print(result)
 
 
@@ -633,9 +633,9 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(erc721_type_parser, False)
     erc721_type_parser.set_defaults(func=handle_erc721_type)
 
-    terminus_facet_type_parser = subcommands.add_parser("terminus-facet-type")
-    add_default_arguments(terminus_facet_type_parser, False)
-    terminus_facet_type_parser.set_defaults(func=handle_terminus_facet_type)
+    terminus_mintable_type_parser = subcommands.add_parser("terminus-mintable-type")
+    add_default_arguments(terminus_mintable_type_parser, False)
+    terminus_mintable_type_parser.set_defaults(func=handle_terminus_mintable_type)
 
     claim_parser = subcommands.add_parser("claim")
     add_default_arguments(claim_parser, True)

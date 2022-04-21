@@ -52,7 +52,7 @@ contract Dropper is
     uint256 public ERC20_TYPE = 20;
     uint256 public ERC721_TYPE = 721;
     uint256 public ERC1155_TYPE = 1155;
-    uint256 public TERMINUS_FACET_TYPE = 1;
+    uint256 public TERMINUS_MINTABLE_TYPE = 1;
 
     struct ClaimableToken {
         uint256 tokenType;
@@ -111,7 +111,7 @@ contract Dropper is
             tokenType == ERC20_TYPE ||
                 tokenType == ERC721_TYPE ||
                 tokenType == ERC1155_TYPE ||
-                tokenType == TERMINUS_FACET_TYPE,
+                tokenType == TERMINUS_MINTABLE_TYPE,
             "Dropper: createClaim -- Unknown token type"
         );
 
@@ -258,7 +258,7 @@ contract Dropper is
                 amount,
                 ""
             );
-        } else if (claimToken.tokenType == TERMINUS_FACET_TYPE) {
+        } else if (claimToken.tokenType == TERMINUS_MINTABLE_TYPE) {
             TerminusFacet terminusFacetContract = TerminusFacet(
                 claimToken.tokenAddress
             );
