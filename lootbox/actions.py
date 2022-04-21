@@ -170,10 +170,14 @@ def get_claimant(db_session, dropper_claim_id, address):
 
     claimant_query = (
         db_session.query(
-            DropperClaimant.address, DropperClaimant.amount, DropperClaim.claim_id
+            DropperClaimant.address,
+            DropperClaimant.amount,
+            DropperClaim.claim_id,
+            DropperClaim.claim_block_deadline,
         )
         .join(DropperClaim)
         .filter(DropperClaimant.dropper_claim_id == dropper_claim_id)
+        .filter(DropperClaimant.address == web3.toChecksumAddress(address))
         .filter(DropperClaim.claim_block_deadline > len(network.chain))
     )
 

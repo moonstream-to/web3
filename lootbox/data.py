@@ -72,6 +72,7 @@ class RemoveClaimantsResponse(BaseModel):
 class DropResponse(BaseModel):
     claimant: str
     claim_id: int
+    amount: int
     block_deadline: int
     signature: str
 

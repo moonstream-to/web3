@@ -5,7 +5,7 @@ from . import actions
 from . import db
 from . import signatures
 from . import data
-from . import Lootbox, core, drop, MockErc20, Dropper, auth
+from . import Lootbox, core, drop, MockErc20, Dropper, auth, MockTerminus
 
 
 logger = logging.getLogger(__name__)
@@ -266,6 +266,9 @@ def main() -> None:
 
     drop_parser = drop.generate_cli()
     subparsers.add_parser("drop", parents=[drop_parser], add_help=False)
+
+    terminus_parser = MockTerminus.generate_cli()
+    subparsers.add_parser("terminus", parents=[terminus_parser], add_help=False)
 
     # Signing server parser
     parser_signing_server = subparsers.add_parser(
