@@ -232,7 +232,7 @@ class Dropper:
         self.assert_contract_is_instantiated()
         return self.contract.supportsInterface.call(interface_id)
 
-    def surender_pool_control(
+    def surrender_pool_control(
         self,
         pool_id: int,
         terminus_address: ChecksumAddress,
@@ -240,7 +240,7 @@ class Dropper:
         transaction_config,
     ) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.surenderPoolControl(
+        return self.contract.surrenderPoolControl(
             pool_id, terminus_address, new_pool_controller, transaction_config
         )
 
@@ -548,11 +548,11 @@ def handle_supports_interface(args: argparse.Namespace) -> None:
     print(result)
 
 
-def handle_surender_pool_control(args: argparse.Namespace) -> None:
+def handle_surrender_pool_control(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
     transaction_config = get_transaction_config(args)
-    result = contract.surender_pool_control(
+    result = contract.surrender_pool_control(
         pool_id=args.pool_id,
         terminus_address=args.terminus_address,
         new_pool_controller=args.new_pool_controller,
@@ -813,18 +813,18 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     supports_interface_parser.set_defaults(func=handle_supports_interface)
 
-    surender_pool_control_parser = subcommands.add_parser("surender-pool-control")
-    add_default_arguments(surender_pool_control_parser, True)
-    surender_pool_control_parser.add_argument(
+    surrender_pool_control_parser = subcommands.add_parser("surrender-pool-control")
+    add_default_arguments(surrender_pool_control_parser, True)
+    surrender_pool_control_parser.add_argument(
         "--pool-id", required=True, help="Type: uint256", type=int
     )
-    surender_pool_control_parser.add_argument(
+    surrender_pool_control_parser.add_argument(
         "--terminus-address", required=True, help="Type: address"
     )
-    surender_pool_control_parser.add_argument(
+    surrender_pool_control_parser.add_argument(
         "--new-pool-controller", required=True, help="Type: address"
     )
-    surender_pool_control_parser.set_defaults(func=handle_surender_pool_control)
+    surrender_pool_control_parser.set_defaults(func=handle_surrender_pool_control)
 
     transfer_ownership_parser = subcommands.add_parser("transfer-ownership")
     add_default_arguments(transfer_ownership_parser, True)

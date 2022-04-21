@@ -319,7 +319,7 @@ contract Dropper is
         );
     }
 
-    function surenderPoolControl(
+    function surrenderPoolControl(
         uint256 poolId,
         address terminusAddress,
         address newPoolController
