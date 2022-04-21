@@ -1,13 +1,11 @@
 import argparse
 import logging
 
-from sqlalchemy import true
-
 from . import actions
 from . import db
 from . import signatures
 from . import data
-from . import Lootbox, core, drop, MockErc20, Dropper
+from . import Lootbox, core, drop, MockErc20, Dropper, auth
 
 
 logger = logging.getLogger(__name__)
@@ -331,6 +329,10 @@ def main() -> None:
         help="Dry-run flag simulate instance termination, using to check proper permissions",
     )
     parser_signing_server_sleep.set_defaults(func=signing_server_sleep_handler)
+
+    # Auth parser
+    auth_parser = auth.generate_cli()
+    subparsers.add_parser("auth", parents=[auth_parser], add_help=False)
 
     # engine-database parser
     parser_engine_database = subparsers.add_parser(
