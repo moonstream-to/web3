@@ -18,7 +18,7 @@ lootbox dropper deploy --network $BROWNIE_NETWORK --sender .secrets/<owner-key-s
 
 # set enviroment variable
 
-[ ] - DROPPER_CONTRACT
+- [ ] DROPPER_CONTRACT
 
 # Create terminus batch pool if not created yeat
 
@@ -41,7 +41,7 @@ dao terminus set-pool-controller --network $BROWNIE_NETWORK --address $TERMINUS_
 
 # set enviroment variable
 
-[ ] - $BADGE_POOL_ID
+- [ ] $BADGE_POOL_ID
 
 # Create Drop on contract
 
@@ -56,7 +56,7 @@ lootbox dropper num-claims --network $BROWNIE_NETWORK --address $DROPPER_ADDRESS
 
 # set enviroment variable
 
-[ ] - $CLAIM_ID
+- [ ] $CLAIM_ID
 
 # Engine-db cli
 
@@ -75,7 +75,7 @@ lootbox engine-db dropper list-contracts -b $BROWNIE_NETWORK
 
 # set enviroment variable
 
-[ ] - $DROPPER_CONTRACT_ID
+- [ ] $DROPPER_CONTRACT_ID
 
 ## Create new drop
 
@@ -98,7 +98,7 @@ lootbox engine-db dropper list-drops \ --dropper-contract-id $DROPPER_CONTRACT_I
 
 # set enviroment variable
 
-[ ] - $DROPPER_CLAIM_ID
+- [ ] $DROPPER_CLAIM_ID
 
 ## Add claimant to drop
 
