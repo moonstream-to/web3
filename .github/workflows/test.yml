@@ -19,6 +19,8 @@ jobs:
       - name: Install ganache
         run: npm install -g ganache-cli
       - name: Upgrade pip
+        env:
+          BROWNIE_LIB: 1
         run: pip install -U pip
       - name: Install dev dependencies
         run: pip install -e .[dev]
