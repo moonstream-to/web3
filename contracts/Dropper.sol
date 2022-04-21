@@ -49,18 +49,10 @@ contract Dropper is
     // - [x] getClaim external view
     // - [x] getClaimStatus external view
 
-    // Claim data structure:
-    // (claimId, playerAddress) -> amount
-
-    // Signer data structure
-    // token address -> signer address
-
-    uint256 public administratorPoolId;
-    address public terminusAddress;
-
     uint256 public ERC20_TYPE = 20;
     uint256 public ERC721_TYPE = 721;
     uint256 public ERC1155_TYPE = 1155;
+    uint256 public TERMINUS_MINTABLE_TYPE = 1;
 
     struct ClaimableToken {
         uint256 tokenType;
@@ -118,7 +110,8 @@ contract Dropper is
         require(
             tokenType == ERC20_TYPE ||
                 tokenType == ERC721_TYPE ||
-                tokenType == ERC1155_TYPE,
+                tokenType == ERC1155_TYPE ||
+                tokenType == TERMINUS_MINTABLE_TYPE,
             "Dropper: createClaim -- Unknown token type"
         );
 
@@ -192,17 +185,17 @@ contract Dropper is
         uint256 claimId,
         address claimant,
         uint256 blockDeadline,
-        uint256 quantity
+        uint256 amount
     ) public view returns (bytes32) {
         bytes32 structHash = keccak256(
             abi.encode(
                 keccak256(
-                    "ClaimPayload(uint256 claimId,address claimant,uint256 blockDeadline,uint256 quantity)"
+                    "ClaimPayload(uint256 claimId,address claimant,uint256 blockDeadline,uint256 amount)"
                 ),
                 claimId,
                 claimant,
                 blockDeadline,
-                quantity
+                amount
             )
         );
         bytes32 digest = _hashTypedDataV4(structHash);
@@ -212,7 +205,7 @@ contract Dropper is
     function claim(
         uint256 claimId,
         uint256 blockDeadline,
-        uint256 quantity,
+        uint256 amount,
         bytes memory signature
     ) external whenNotPaused nonReentrant {
         require(
@@ -228,7 +221,7 @@ contract Dropper is
             claimId,
             msg.sender,
             blockDeadline,
-            quantity
+            amount
         );
         require(
             SignatureChecker.isValidSignatureNow(
@@ -241,13 +234,13 @@ contract Dropper is
 
         ClaimableToken memory claimToken = ClaimToken[claimId];
 
-        if (quantity == 0) {
-            quantity = claimToken.amount;
+        if (amount == 0) {
+            amount = claimToken.amount;
         }
 
         if (claimToken.tokenType == ERC20_TYPE) {
             IERC20 erc20Contract = IERC20(claimToken.tokenAddress);
-            erc20Contract.transfer(msg.sender, quantity);
+            erc20Contract.transfer(msg.sender, amount);
         } else if (claimToken.tokenType == ERC721_TYPE) {
             IERC721 erc721Contract = IERC721(claimToken.tokenAddress);
             erc721Contract.safeTransferFrom(
@@ -262,14 +255,24 @@ contract Dropper is
                 address(this),
                 msg.sender,
                 claimToken.tokenId,
-                quantity,
+                amount,
+                ""
+            );
+        } else if (claimToken.tokenType == TERMINUS_MINTABLE_TYPE) {
+            TerminusFacet terminusFacetContract = TerminusFacet(
+                claimToken.tokenAddress
+            );
+            terminusFacetContract.mint(
+                msg.sender,
+                claimToken.tokenId,
+                amount,
                 ""
             );
         } else {
             revert("Dropper -- claim: Unknown token type in claim");
         }
 
-        ClaimCompleted[claimId][msg.sender] = quantity;
+        ClaimCompleted[claimId][msg.sender] = amount;
 
         emit Claimed(claimId, msg.sender);
     }
@@ -314,5 +317,14 @@ contract Dropper is
             tokenId,
             amount
         );
+    }
+
+    function surrenderPoolControl(
+        uint256 poolId,
+        address terminusAddress,
+        address newPoolController
+    ) public onlyOwner {
+        TerminusFacet terminusFacetContract = TerminusFacet(terminusAddress);
+        terminusFacetContract.setPoolController(poolId, newPoolController);
     }
 }

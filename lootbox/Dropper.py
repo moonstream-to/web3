@@ -107,33 +107,29 @@ class Dropper:
         self.assert_contract_is_instantiated()
         return self.contract.ERC721_TYPE.call()
 
-    def administrator_pool_id(self) -> Any:
+    def terminus_mintable_type(self) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.administratorPoolId.call()
+        return self.contract.TERMINUS_MINTABLE_TYPE.call()
 
     def claim(
         self,
         claim_id: int,
         block_deadline: int,
-        quantity: int,
+        amount: int,
         signature: bytes,
         transaction_config,
     ) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.claim(
-            claim_id, block_deadline, quantity, signature, transaction_config
+            claim_id, block_deadline, amount, signature, transaction_config
         )
 
     def claim_message_hash(
-        self,
-        claim_id: int,
-        claimant: ChecksumAddress,
-        block_deadline: int,
-        quantity: int,
+        self, claim_id: int, claimant: ChecksumAddress, block_deadline: int, amount: int
     ) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.claimMessageHash.call(
-            claim_id, claimant, block_deadline, quantity
+            claim_id, claimant, block_deadline, amount
         )
 
     def claim_status(self, claim_id: int) -> Any:
@@ -236,9 +232,17 @@ class Dropper:
         self.assert_contract_is_instantiated()
         return self.contract.supportsInterface.call(interface_id)
 
-    def terminus_address(self) -> Any:
+    def surrender_pool_control(
+        self,
+        pool_id: int,
+        terminus_address: ChecksumAddress,
+        new_pool_controller: ChecksumAddress,
+        transaction_config,
+    ) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.terminusAddress.call()
+        return self.contract.surrenderPoolControl(
+            pool_id, terminus_address, new_pool_controller, transaction_config
+        )
 
     def transfer_ownership(self, new_owner: ChecksumAddress, transaction_config) -> Any:
         self.assert_contract_is_instantiated()
@@ -365,10 +369,10 @@ def handle_erc721_type(args: argparse.Namespace) -> None:
     print(result)
 
 
-def handle_administrator_pool_id(args: argparse.Namespace) -> None:
+def handle_terminus_mintable_type(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
-    result = contract.administrator_pool_id()
+    result = contract.terminus_mintable_type()
     print(result)
 
 
@@ -379,7 +383,7 @@ def handle_claim(args: argparse.Namespace) -> None:
     result = contract.claim(
         claim_id=args.claim_id,
         block_deadline=args.block_deadline,
-        quantity=args.quantity,
+        amount=args.amount,
         signature=args.signature,
         transaction_config=transaction_config,
     )
@@ -393,7 +397,7 @@ def handle_claim_message_hash(args: argparse.Namespace) -> None:
         claim_id=args.claim_id,
         claimant=args.claimant,
         block_deadline=args.block_deadline,
-        quantity=args.quantity,
+        amount=args.amount,
     )
     print(result)
 
@@ -544,10 +548,16 @@ def handle_supports_interface(args: argparse.Namespace) -> None:
     print(result)
 
 
-def handle_terminus_address(args: argparse.Namespace) -> None:
+def handle_surrender_pool_control(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Dropper(args.address)
-    result = contract.terminus_address()
+    transaction_config = get_transaction_config(args)
+    result = contract.surrender_pool_control(
+        pool_id=args.pool_id,
+        terminus_address=args.terminus_address,
+        new_pool_controller=args.new_pool_controller,
+        transaction_config=transaction_config,
+    )
     print(result)
 
 
@@ -623,9 +633,9 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(erc721_type_parser, False)
     erc721_type_parser.set_defaults(func=handle_erc721_type)
 
-    administrator_pool_id_parser = subcommands.add_parser("administrator-pool-id")
-    add_default_arguments(administrator_pool_id_parser, False)
-    administrator_pool_id_parser.set_defaults(func=handle_administrator_pool_id)
+    terminus_mintable_type_parser = subcommands.add_parser("terminus-mintable-type")
+    add_default_arguments(terminus_mintable_type_parser, False)
+    terminus_mintable_type_parser.set_defaults(func=handle_terminus_mintable_type)
 
     claim_parser = subcommands.add_parser("claim")
     add_default_arguments(claim_parser, True)
@@ -635,9 +645,7 @@ def generate_cli() -> argparse.ArgumentParser:
     claim_parser.add_argument(
         "--block-deadline", required=True, help="Type: uint256", type=int
     )
-    claim_parser.add_argument(
-        "--quantity", required=True, help="Type: uint256", type=int
-    )
+    claim_parser.add_argument("--amount", required=True, help="Type: uint256", type=int)
     claim_parser.add_argument(
         "--signature", required=True, help="Type: bytes", type=bytes_argument_type
     )
@@ -655,7 +663,7 @@ def generate_cli() -> argparse.ArgumentParser:
         "--block-deadline", required=True, help="Type: uint256", type=int
     )
     claim_message_hash_parser.add_argument(
-        "--quantity", required=True, help="Type: uint256", type=int
+        "--amount", required=True, help="Type: uint256", type=int
     )
     claim_message_hash_parser.set_defaults(func=handle_claim_message_hash)
 
@@ -805,9 +813,18 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     supports_interface_parser.set_defaults(func=handle_supports_interface)
 
-    terminus_address_parser = subcommands.add_parser("terminus-address")
-    add_default_arguments(terminus_address_parser, False)
-    terminus_address_parser.set_defaults(func=handle_terminus_address)
+    surrender_pool_control_parser = subcommands.add_parser("surrender-pool-control")
+    add_default_arguments(surrender_pool_control_parser, True)
+    surrender_pool_control_parser.add_argument(
+        "--pool-id", required=True, help="Type: uint256", type=int
+    )
+    surrender_pool_control_parser.add_argument(
+        "--terminus-address", required=True, help="Type: address"
+    )
+    surrender_pool_control_parser.add_argument(
+        "--new-pool-controller", required=True, help="Type: address"
+    )
+    surrender_pool_control_parser.set_defaults(func=handle_surrender_pool_control)
 
     transfer_ownership_parser = subcommands.add_parser("transfer-ownership")
     add_default_arguments(transfer_ownership_parser, True)
