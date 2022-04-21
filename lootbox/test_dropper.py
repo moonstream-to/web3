@@ -834,7 +834,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
         )
         signed_message = sign_message(message_hash, self.signer_0)
         balance_claimant_0 = self.terminus.balance_of(
-            accounts[0].address, self.terminus_pool_id
+            accounts[1].address, self.terminus_pool_id
         )
         balance_dropper_0 = self.terminus.balance_of(
             self.dropper.address, self.terminus_pool_id
@@ -1176,7 +1176,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         signed_message = sign_message(message_hash, self.signer_0)
 
         balance_claimant_0 = self.terminus.balance_of(
-            accounts[0].address, self.mintable_terminus_pool_id
+            accounts[1].address, self.mintable_terminus_pool_id
         )
 
         pool_supply_0 = self.terminus.terminus_pool_supply(
@@ -1196,6 +1196,101 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         )
         self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
         self.assertEqual(pool_supply_1, pool_supply_0 + reward)
+
+    def test_claim_erc1155_fails_if_dropper_does_not_have_pool_control(self):
+        reward = 33
+
+        # create pool wich is owned by the dropper
+        self.terminus.create_pool_v1(2 ** 256 - 1, True, True, {"from": accounts[0]})
+        terminus_pool_which_is_owned_by_dropper_id = self.terminus.total_pools()
+
+        self.terminus.set_pool_controller(
+            terminus_pool_which_is_owned_by_dropper_id,
+            self.dropper.address,
+            {"from": accounts[0]},
+        )
+
+        claim_id = self.create_claim_and_return_claim_id(
+            self.TERMINUS_MINTABLE_TYPE,
+            self.terminus.address,
+            terminus_pool_which_is_owned_by_dropper_id,
+            reward,
+            {"from": accounts[0]},
+        )
+        self.dropper.set_signer_for_claim(
+            claim_id, self.signer_0.address, {"from": accounts[0]}
+        )
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, accounts[1].address, block_deadline, 0
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        balance_claimant_0 = self.terminus.balance_of(
+            accounts[1].address, terminus_pool_which_is_owned_by_dropper_id
+        )
+
+        balance_second_claimant_0 = self.terminus.balance_of(
+            accounts[2].address, terminus_pool_which_is_owned_by_dropper_id
+        )
+
+        pool_supply_0 = self.terminus.terminus_pool_supply(
+            terminus_pool_which_is_owned_by_dropper_id
+        )
+
+        self.dropper.claim(
+            claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+        )
+
+        pool_supply_1 = self.terminus.terminus_pool_supply(
+            terminus_pool_which_is_owned_by_dropper_id
+        )
+
+        balance_claimant_1 = self.terminus.balance_of(
+            accounts[1].address, terminus_pool_which_is_owned_by_dropper_id
+        )
+
+        self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
+        self.assertEqual(pool_supply_1, pool_supply_0 + reward)
+
+        self.dropper.surrender_pool_control(
+            terminus_pool_which_is_owned_by_dropper_id,
+            self.terminus.address,
+            ZERO_ADDRESS,
+            {"from": accounts[0]},
+        )
+        self.assertEqual(
+            self.terminus.terminus_pool_controller(
+                terminus_pool_which_is_owned_by_dropper_id
+            ),
+            ZERO_ADDRESS,
+        )
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, accounts[1].address, block_deadline, 0
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        with self.assertRaises(VirtualMachineError):
+            self.dropper.claim(
+                claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+            )
+
+        pool_supply_2 = self.terminus.terminus_pool_supply(
+            terminus_pool_which_is_owned_by_dropper_id
+        )
+        balance_second_claimant_2 = self.terminus.balance_of(
+            accounts[2].address, terminus_pool_which_is_owned_by_dropper_id
+        )
+
+        self.assertEqual(balance_second_claimant_2, balance_second_claimant_0)
+        self.assertEqual(pool_supply_2, pool_supply_1)
 
     def test_claim_erc1155_fails_if_block_deadline_exceeded(self):
         reward = 5
@@ -1469,27 +1564,14 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
 
 class DropperPoolControllerTest(DropperTestCase):
-    def setUp(self):
+    def test_move_pool_controller_fails_on_invalid_pool_id(self):
         # create pool wich is not owned by the dropper
         self.terminus.create_pool_v1(500000, True, True, {"from": accounts[0]})
-        self.terminus_pool_which_is_not_owned_by_dropper_id = (
-            self.terminus.total_pools()
-        )
+        terminus_pool_which_is_not_owned_by_dropper_id = self.terminus.total_pools()
 
-        # create pool wich is owned by the dropper
-        self.terminus.create_pool_v1(500000, True, True, {"from": accounts[0]})
-        self.terminus_pool_which_is_owned_by_dropper_id = self.terminus.total_pools()
-
-        self.terminus.set_pool_controller(
-            self.terminus_pool_which_is_owned_by_dropper_id,
-            self.dropper.address,
-            {"from": accounts[0]},
-        )
-
-    def test_move_pool_controller_fails_on_invalid_pool_id(self):
         with self.assertRaises(VirtualMachineError):
             self.dropper.surrender_pool_control(
-                self.terminus_pool_which_is_not_owned_by_dropper_id,
+                terminus_pool_which_is_not_owned_by_dropper_id,
                 self.terminus.address,
                 "0x0000000000000000000000000000000000000000",
                 {"from": accounts[0]},
@@ -1497,22 +1579,32 @@ class DropperPoolControllerTest(DropperTestCase):
 
         self.assertEqual(
             self.terminus.terminus_pool_controller(
-                self.terminus_pool_which_is_not_owned_by_dropper_id
+                terminus_pool_which_is_not_owned_by_dropper_id
             ),
             accounts[0].address,
         )
 
     def test_move_pool_controller_to_new_owner(self):
+        # create pool wich is owned by the dropper
+        self.terminus.create_pool_v1(500000, True, True, {"from": accounts[0]})
+        terminus_pool_which_is_owned_by_dropper_id = self.terminus.total_pools()
+
+        self.terminus.set_pool_controller(
+            terminus_pool_which_is_owned_by_dropper_id,
+            self.dropper.address,
+            {"from": accounts[0]},
+        )
+
         self.dropper.surrender_pool_control(
-            self.terminus_pool_which_is_owned_by_dropper_id,
+            terminus_pool_which_is_owned_by_dropper_id,
             self.terminus.address,
-            accounts[0].address,
+            accounts[1].address,
             {"from": accounts[0]},
         )
 
         self.assertEqual(
             self.terminus.terminus_pool_controller(
-                self.terminus_pool_which_is_not_owned_by_dropper_id
+                terminus_pool_which_is_owned_by_dropper_id
             ),
-            accounts[0].address,
+            accounts[1].address,
         )
