@@ -20,15 +20,15 @@ from . import Dropper
 from . import signatures
 from .middleware import DropperHTTPException
 from .settings import (
-    BROWNIE_NETWORK,
+    ENGINE_BROWNIE_NETWORK,
     DOCS_TARGET_PATH,
     ORIGINS,
-    DROPPER_ADDRESS,
+    ENGINE_DROPPER_ADDRESS,
 )
 
-network.connect(BROWNIE_NETWORK)
+network.connect(ENGINE_BROWNIE_NETWORK)
 
-DROPPER = Dropper.Dropper(DROPPER_ADDRESS)
+DROPPER = Dropper.Dropper(ENGINE_DROPPER_ADDRESS)
 
 RESOURCE_TYPE_DROP_WHITELIST = "drop_whitelist"
 
