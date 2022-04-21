@@ -1273,13 +1273,13 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         block_deadline = current_block  # since blocks are 0-indexed
 
         message_hash = self.dropper.claim_message_hash(
-            claim_id, accounts[1].address, block_deadline, 0
+            claim_id, accounts[2].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
-                claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+                claim_id, block_deadline, 0, signed_message, {"from": accounts[2]}
             )
 
         pool_supply_2 = self.terminus.terminus_pool_supply(
