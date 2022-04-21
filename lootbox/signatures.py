@@ -125,6 +125,7 @@ class InstanceSigner(Signer):
         self.current_signer_uri = f"http://{instances[0]['private_ip_address']}:{MOONSTREAM_AWS_SIGNER_INSTANCE_PORT}/sign"
 
     def sign_message(self, message: str):
+        # TODO(kompotkot): What to do if self.current_signer_uri is not None but the signing server went down?
         if self.current_signer_uri is None:
             self.current_signer_uri = self.refresh_signer()
 
@@ -142,7 +143,18 @@ class InstanceSigner(Signer):
             logger.error(f"Failed signing of message with instance server, {err}")
             raise SignWithInstanceFail("Failed signing of message with instance server")
 
-        return signed_message[2:-2]
+        # Hack as per: https://medium.com/@yaoshiang/ethereums-ecrecover-openzeppelin-s-ecdsa-and-web3-s-sign-8ff8d16595e1
+        signature = signed_message[2:]
+        if signature[-2:] == "00":
+            signature = f"{signature[:-2]}1b"
+        elif signature[-2:] == "01":
+            signature = f"{signature[:-2]}1c"
+        else:
+            raise SignWithInstanceFail(
+                f"Unexpected v-value on signed message: {signed_message[-2:]}"
+            )
+
+        return signature
 
 
 DROP_SIGNER: Optional[Signer] = None
