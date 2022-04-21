@@ -106,3 +106,31 @@ lootbox engine-db dropper list-drops \ --dropper-contract-id $DROPPER_CONTRACT_I
 lootbox engine-db dropper add-claimants \ --dropper-claim-id $DROPPER_CLAIM_ID \
  --claimants-file white-list.csv
 ```
+
+# Get claim signature
+
+```
+API_CALL=$(curl -X GET "http://localhost:8000/drops?claim_id=<$CLAIM_ID>&address=<user_address>")
+```
+
+```
+signature=$(echo $API_CALL | jq -r '.signature')
+```
+
+```
+block_deadline=$(echo $API_CALL | jq -r '.block_deadline')
+```
+
+```
+amount=$(echo $API_CALL | jq -r '.amount')
+```
+
+```
+claim_id=$(echo $API_CALL | jq -r '.claim_id')
+```
+
+# claim drop
+
+```
+lootbox dropper claim --network $BROWNIE_NETWORK --address $DROPPER_ADDRESS --sender .secrets/<owner-key-store> --claim-id $CLAIM_ID --signature $signature --block-deadline $block_deadline --amount $amount
+```

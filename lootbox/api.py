@@ -103,6 +103,7 @@ async def get_drop_handler(
         raise DropperHTTPException(status_code=500)
     return data.DropResponse(
         claimant=claimant.address,
+        amount=claimant.amount,
         claim_id=claimant.claim_id,
         block_deadline=drop_deadline,
         signature=signature,
