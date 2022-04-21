@@ -64,6 +64,16 @@ class DropperTestCase(unittest.TestCase):
 
         cls.mintable_terminus_pool_id = cls.terminus.total_pools()
 
+        # create pool wich is not owned by the dropper
+        cls.terminus.create_pool_v1(500000, True, True, {"from": accounts[0]})
+
+        cls.terminus_pool_which_no_owened_by_dropper_id = cls.terminus.total_pools()
+
+        # create pool wich is owned by the dropper
+        cls.terminus.create_pool_v1(500000, True, True, {"from": accounts[0]})
+
+        cls.terminus_pool_which_owened_by_dropper_id = cls.terminus.total_pools()
+
         # Dropper deployment
         cls.dropper = Dropper.Dropper(None)
         cls.dropper.deploy({"from": accounts[0]})
@@ -71,6 +81,12 @@ class DropperTestCase(unittest.TestCase):
         cls.TERMINUS_MINTABLE_TYPE = int(cls.dropper.terminus_mintable_type())
         cls.terminus.set_pool_controller(
             cls.mintable_terminus_pool_id, cls.dropper.address, {"from": accounts[0]}
+        )
+
+        cls.terminus.set_pool_controller(
+            cls.terminus_pool_which_owened_by_dropper_id,
+            cls.dropper.address,
+            {"from": accounts[0]},
         )
 
         # Create signer accounts
@@ -1466,3 +1482,38 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
         self.assertEqual(balance_claimant_2, balance_claimant_1)
         self.assertEqual(pool_supply_2, pool_supply_1)
+
+
+class DropperPoolControllerTest(DropperTestCase):
+    def test_move_pool_controller_fails_on_invalid_pool_id(self):
+
+        with self.assertRaises(VirtualMachineError):
+            self.dropper.surender_pool_control(
+                self.terminus_pool_which_no_owened_by_dropper_id,
+                self.terminus.address,
+                "0x0000000000000000000000000000000000000000",
+                {"from": accounts[0]},
+            )
+
+        self.assertEqual(
+            self.terminus.terminus_pool_controller(
+                self.terminus_pool_which_no_owened_by_dropper_id
+            ),
+            accounts[0].address,
+        )
+
+    def test_move_pool_controller_to_new_owner(self):
+
+        self.dropper.surender_pool_control(
+            self.terminus_pool_which_owened_by_dropper_id,
+            self.terminus.address,
+            accounts[0].address,
+            {"from": accounts[0]},
+        )
+
+        self.assertEqual(
+            self.terminus.terminus_pool_controller(
+                self.terminus_pool_which_no_owened_by_dropper_id
+            ),
+            accounts[0].address,
+        )
