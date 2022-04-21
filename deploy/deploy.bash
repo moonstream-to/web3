@@ -73,8 +73,25 @@ echo "AWS_LOCAL_IPV4=$(ec2metadata --local-ipv4)" >> "${PARAMETERS_ENV_PATH}"
 
 echo
 echo
+echo -e "${PREFIX_INFO} Compile contracts"
+cd "${APP_DIR}"
+sudo -u ubuntu $PYTHON_ENV_DIR/bin/brownie compile
+cd "${SCRIPT_DIR}"
+
+echo
+echo
+echo -e "${PREFIX_INFO} Add brownie networks"
+set +e
+sudo -u ubuntu $PYTHON_ENV_DIR/bin/brownie networks add Polygon moonstream-engine-polygon host=https://polygon-rpc.com chainid=137
+sudo -u ubuntu $PYTHON_ENV_DIR/bin/brownie networks add Polygon mumbai host=https://rpc-mumbai.maticvigil.com chainid=80001
+set -e
+
+echo
+echo
 echo -e "${PREFIX_INFO} Replacing existing Lootbox signing API server service definition with ${LOOTBOX_SERVICE_FILE}"
 chmod 644 "${SCRIPT_DIR}/${LOOTBOX_SERVICE_FILE}"
 cp "${SCRIPT_DIR}/${LOOTBOX_SERVICE_FILE}" "/etc/systemd/system/${LOOTBOX_SERVICE_FILE}"
 systemctl daemon-reload
 systemctl restart "${LOOTBOX_SERVICE_FILE}"
+systemctl status "${LOOTBOX_SERVICE_FILE}"
+
