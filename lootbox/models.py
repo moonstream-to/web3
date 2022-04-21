@@ -77,7 +77,6 @@ class DropperContract(Base):  # type: ignore
 
 class DropperClaim(Base):  # type: ignore
     __tablename__ = "dropper_claims"
-    __table_args__ = (UniqueConstraint("dropper_contract_id", "claim_id"),)
 
     id = Column(
         UUID(as_uuid=True),
@@ -110,8 +109,8 @@ class DropperClaim(Base):  # type: ignore
     )
 
 
-class Claimant(Base):  # type: ignore
-    __tablename__ = "claimant"
+class DropperClaimant(Base):  # type: ignore
+    __tablename__ = "dropper_claimants"
 
     id = Column(
         UUID(as_uuid=True),

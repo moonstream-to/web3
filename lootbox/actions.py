@@ -1,5 +1,5 @@
 import re
-from .models import Claimant, DropperContract, DropperClaim
+from .models import DropperClaimant, DropperContract, DropperClaim
 
 from brownie import network, web3
 
@@ -132,7 +132,7 @@ def add_claimants(db_session, dropper_claim_id, claimants, added_by):
     already_added = [address for address, _, _ in claimants_for_claim]
 
     for claimant in claimants:
-        claimant_claim = Claimant(
+        claimant_claim = DropperClaimant(
             dropper_claim_id=dropper_claim_id,
             address=web3.toChecksumAddress(claimant.address),
             amount=claimant.amount,
@@ -152,8 +152,8 @@ def get_claimants(db_session, dropper_claim_id, limit=None, offset=None):
     """
 
     claimants_query = db_session.query(
-        Claimant.address, Claimant.amount, Claimant.added_by
-    ).filter(Claimant.dropper_claim_id == dropper_claim_id)
+        DropperClaimant.address, DropperClaimant.amount, DropperClaimant.added_by
+    ).filter(DropperClaimant.dropper_claim_id == dropper_claim_id)
     if limit:
         claimants_query = claimants_query.limit(limit)
 
@@ -170,14 +170,14 @@ def get_claimant(db_session, dropper_claim_id, address):
 
     claimant_query = (
         db_session.query(
-            Claimant.address,
-            Claimant.amount,
+            DropperClaimant.address,
+            DropperClaimant.amount,
             DropperClaim.claim_id,
             DropperClaim.claim_block_deadline,
         )
         .join(DropperClaim)
-        .filter(Claimant.dropper_claim_id == dropper_claim_id)
-        .filter(Claimant.address == web3.toChecksumAddress(address))
+        .filter(DropperClaimant.dropper_claim_id == dropper_claim_id)
+        .filter(DropperClaimant.address == web3.toChecksumAddress(address))
         .filter(DropperClaim.claim_block_deadline > len(network.chain))
     )
 
@@ -201,10 +201,10 @@ def get_claims(
             DropperClaim.claim_block_deadline,
         )
         .join(DropperContract)
-        .join(Claimant)
+        .join(DropperClaimant)
         .filter(DropperClaim.dropper_contract_id == dropper_contract_id)
         .filter(DropperContract.blockchain == blockchain)
-        .filter(Claimant.address == address)
+        .filter(DropperClaimant.address == address)
         .filter(DropperClaim.claim_block_deadline > len(network.chain))
         .filter(DropperClaim.active == True)
         .limit(limit)
@@ -224,9 +224,9 @@ def delete_claimants(db_session, dropper_claim_id, addresses):
 
     was_deleted = []
     deleted_addresses = (
-        db_session.query(Claimant)
-        .filter(Claimant.dropper_claim_id == dropper_claim_id)
-        .filter(Claimant.address.in_(normalize_addresses))
+        db_session.query(DropperClaimant)
+        .filter(DropperClaimant.dropper_claim_id == dropper_claim_id)
+        .filter(DropperClaimant.address.in_(normalize_addresses))
     )
     for deleted_address in deleted_addresses:
         was_deleted.append(deleted_address.address)
