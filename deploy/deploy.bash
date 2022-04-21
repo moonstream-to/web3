@@ -83,4 +83,3 @@ chmod 644 "${SCRIPT_DIR}/${LOOTBOX_SERVICE_FILE}"
 cp "${SCRIPT_DIR}/${LOOTBOX_SERVICE_FILE}" "/etc/systemd/system/${LOOTBOX_SERVICE_FILE}"
 systemctl daemon-reload
 systemctl restart "${LOOTBOX_SERVICE_FILE}"
-systemctl status "${LOOTBOX_SERVICE_FILE}"
