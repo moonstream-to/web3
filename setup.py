@@ -14,7 +14,6 @@ setup(
     install_requires=[
         "alembic",
         "boto3",
-        "bugout",
         "eth-brownie",
         "fastapi",
         "psycopg2-binary",

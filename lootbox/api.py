@@ -6,8 +6,7 @@ from typing import List
 from uuid import UUID
 
 from brownie import network, web3
-from bugout.data import BugoutJournalEntry
-from bugout.exceptions import BugoutResponseException
+
 
 from fastapi import Body, FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,7 +18,7 @@ from . import data
 from . import db
 from . import Dropper
 from . import signatures
-from .middleware import BearerTokenMiddleware, DropperHTTPException
+from .middleware import DropperHTTPException
 from .settings import (
     BROWNIE_NETWORK,
     DOCS_TARGET_PATH,
@@ -50,7 +49,6 @@ app = FastAPI(
     redoc_url=f"/{DOCS_TARGET_PATH}",
 )
 
-# app.add_middleware(BearerTokenMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -135,7 +133,7 @@ async def get_drop_list_handler(
             limit=limit,
             offset=offset,
         )
-    except BugoutResponseException as e:
+    except Exception as e:
         raise DropperHTTPException(status_code=500, detail=str(e))
 
     return data.DropListResponse(drops=results)
