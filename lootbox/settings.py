@@ -9,13 +9,13 @@ if RAW_ORIGINS is None:
     )
 ORIGINS = RAW_ORIGINS.split(",")
 
-BROWNIE_NETWORK = os.environ.get("BROWNIE_NETWORK")
-if BROWNIE_NETWORK is None:
-    raise ValueError("BROWNIE_NETWORK environment variable must be set")
+ENGINE_BROWNIE_NETWORK = os.environ.get("ENGINE_BROWNIE_NETWORK")
+if ENGINE_BROWNIE_NETWORK is None:
+    raise ValueError("ENGINE_BROWNIE_NETWORK environment variable must be set")
 
-DROPPER_ADDRESS = os.environ.get("DROPPER_ADDRESS")
-if DROPPER_ADDRESS is None:
-    raise ValueError("DROPPER_ADDRESS environment variable must be set")
+ENGINE_DROPPER_ADDRESS = os.environ.get("ENGINE_DROPPER_ADDRESS")
+if ENGINE_DROPPER_ADDRESS is None:
+    raise ValueError("ENGINE_DROPPER_ADDRESS environment variable must be set")
 
 SIGNER_KEYSTORE = os.environ.get("SIGNER_KEYSTORE")
 SIGNER_PASSWORD = os.environ.get("SIGNER_PASSWORD")
