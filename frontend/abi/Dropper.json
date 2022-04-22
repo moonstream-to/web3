@@ -182,19 +182,6 @@
   },
   {
     "inputs": [],
-    "name": "ERC1155_TERMINUS_MINT_TYPE",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "ERC1155_TYPE",
     "outputs": [
       {

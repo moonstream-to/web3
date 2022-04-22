@@ -86,8 +86,6 @@ export interface Dropper extends BaseContract {
   ): Dropper;
   clone(): Dropper;
   methods: {
-    ERC1155_TERMINUS_MINT_TYPE(): NonPayableTransactionObject<string>;
-
     ERC1155_TYPE(): NonPayableTransactionObject<string>;
 
     ERC20_TYPE(): NonPayableTransactionObject<string>;
