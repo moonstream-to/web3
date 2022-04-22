@@ -17,6 +17,7 @@
 - [ ] `export MAX_UINT=$(python -c "print(2**256 - 1)")`
 - [ ] `export MAX_BADGES=<maximum number of badges that can exist>`
 - [ ] `export ENGINE_API_URL=<api url for Engine API>`
+- [ ] `export BLOCKCHAIN_NAME="polygon"`
 
 # Deploy Dropper contract
 
@@ -53,8 +54,8 @@ lootbox terminus create-pool-v1 \
     --address $TERMINUS_ADDRESS \
     --sender $SENDER \
     --capacity-arg $MAX_BADGES \
-    --transferable-arg False \
-    --burnable-arg False \
+    --transferable-arg false \
+    --burnable-arg true \
     --gas-price "$GAS_PRICE" \
     --confirmations $CONFIRMATIONS
 
@@ -145,11 +146,11 @@ lootbox dropper get-signer-for-claim --network $BROWNIE_NETWORK --address $DROPP
 
 - [ ] Create row:
 ```
-lootbox engine-db dropper create-contract -b $BROWNIE_NETWORK -a $DROPPER_ADDRESS
+lootbox engine-db dropper create-contract -b $BLOCKCHAIN_NAME -a $DROPPER_ADDRESS
 
 ```
 
-- [ ] Verify: `lootbox engine-db dropper list-contracts -b $BROWNIE_NETWORK`
+- [ ] Verify: `lootbox engine-db dropper list-contracts -b $BLOCKCHAIN_NAME`
 
 - [ ] `export DROPPER_CONTRACT_ID=<primary key id for contract>`
 
