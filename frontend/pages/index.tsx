@@ -14,7 +14,19 @@ import DropList from "../src/components/DropList";
 const Homepage = () => {
   const web3Provider = useContext(Web3Context);
 
-  const dropper = useDropper({dropperAddress: process.env.NEXT_PUBLIC_DROPPER_ADDRESS ?? "", targetChain: targetChain, ctx: web3Provider});
+
+
+  if(web3Provider.account == '') return <Spinner />
+
+  console.log("web3Provider.account", web3Provider.account)
+  console.log(web3Provider)
+
+  const dropper = useDropper({dropperAddress: process.env.NEXT_PUBLIC_DROPPER_ADDRESS ?? "",
+   targetChain: targetChain,
+    blockchain: process.env.NEXT_PUBLIC_BLOCKCHAIN ?? "",
+     dropperContractID: process.env.NEXT_PUBLIC_DROPPER_CONTRACT_ID ?? "",
+      dropperClaimId: process.env.NEXT_PUBLIC_DROPPER_CLAIM_ID ?? "",
+       ctx: web3Provider});
 
 
   if(dropper.dropperWeb3State.isLoading || dropper.usersDropList.isLoading) return <Spinner />

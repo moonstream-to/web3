@@ -10,11 +10,13 @@ export const claimDrop =
     blockDeadline,
     claimId,
     transactionConfig,
+    amount,
   }: {
     message: string;
     blockDeadline: string;
     claimId: string;
     transactionConfig?: any;
+    amount: string;
   }) => {
     console.log("claimDrop", message, blockDeadline, claimId, dropperAddress);
     const dropper = new ctx.web3.eth.Contract(dropperAbi) as any as Dropper;
@@ -25,8 +27,10 @@ export const claimDrop =
     // console.log("message before", message);
     // console.log("message after", ctx.web3.utils.hexToBytes(message));
 
+    console.log("ctx", ctx);
+
     const response = await dropper.methods
-      .claim(claimId, blockDeadline, "0", `0x` + message)
+      .claim(claimId, blockDeadline, amount, `0x` + message)
       // .claim("1", "123", 123)
       .send(txConfig);
     return response;

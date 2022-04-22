@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 4001",
+    "dev": "next dev -p 3000",
     "build": "yarn generate_classes && next build && next export -o build",
     "start": "next start",
     "lint": "eslint ./ --ext js,jsx,ts,tsx --fix",

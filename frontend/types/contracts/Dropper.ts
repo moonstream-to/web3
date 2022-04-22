@@ -92,12 +92,12 @@ export interface Dropper extends BaseContract {
 
     ERC721_TYPE(): NonPayableTransactionObject<string>;
 
-    administratorPoolId(): NonPayableTransactionObject<string>;
+    TERMINUS_MINTABLE_TYPE(): NonPayableTransactionObject<string>;
 
     claim(
       claimId: number | string | BN,
       blockDeadline: number | string | BN,
-      quantity: number | string | BN,
+      amount: number | string | BN,
       signature: string | number[]
     ): NonPayableTransactionObject<void>;
 
@@ -105,7 +105,7 @@ export interface Dropper extends BaseContract {
       claimId: number | string | BN,
       claimant: string,
       blockDeadline: number | string | BN,
-      quantity: number | string | BN
+      amount: number | string | BN
     ): NonPayableTransactionObject<string>;
 
     claimStatus(
@@ -177,7 +177,11 @@ export interface Dropper extends BaseContract {
       interfaceId: string | number[]
     ): NonPayableTransactionObject<boolean>;
 
-    terminusAddress(): NonPayableTransactionObject<string>;
+    surenderPoolControl(
+      poolId: number | string | BN,
+      terminusAddress: string,
+      newPoolController: string
+    ): NonPayableTransactionObject<void>;
 
     transferOwnership(newOwner: string): NonPayableTransactionObject<void>;
 

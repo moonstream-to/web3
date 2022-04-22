@@ -10,10 +10,16 @@ import { ReactWeb3ProviderInterface } from "../../../types/Moonstream";
 
 const useDropper = ({
   dropperAddress,
+  dropperContractID, 
+  dropperClaimId,
+  blockchain,
   targetChain,
   ctx,
 }: {
   dropperAddress: string;
+  dropperContractID: string;
+  dropperClaimId: string;
+  blockchain: string;
   targetChain: any;
   ctx: ReactWeb3ProviderInterface;
 }) => {
@@ -27,9 +33,11 @@ const useDropper = ({
     }
   );
 
+  
+
   const dropList = useQuery(
     ["dropList", dropperAddress, targetChain.chainId],
-    () => getDropList(dropperAddress, 1)().then((data) => data.data.drops),
+    () => getDropList(dropperContractID, blockchain, ctx.account)().then((data) => data.data.drops),
     {
       onSuccess: () => {},
     }
@@ -42,14 +50,9 @@ const useDropper = ({
     const retval: Array<any> = [];
     if (dropList?.data && ctx.account) {
       const _usersDropList: any = [];
-      dropList.data.forEach((entry: any, id: Number) => {
-        if (entry.content.includes(ctx.account)) {
-          const claimIdtag = entry.tags.find((tag: string) =>
-            tag.startsWith("claim_id:")
-          );
-          id = claimIdtag.split(":")[1];
-          retval.push({ id, entry });
-        }
+      console.log("dropList.data", dropList.data);
+      dropList.data.forEach((drop: any, id: Number) => {
+        retval.push({ id, drop });
       });
     }
     return retval;

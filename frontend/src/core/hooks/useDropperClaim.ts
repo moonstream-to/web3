@@ -19,14 +19,35 @@ const useDropperClaim = ({
   dropperAddress,
   targetChain,
   ctx,
-  claimId,
+  dropperClaimId,
+  ClaimAvailabel,
+  ClaimData,
 }: {
   dropperAddress: string;
   targetChain: any;
+  ClaimAvailabel: any;
+  ClaimData: any;
   ctx: ReactWeb3ProviderInterface;
   claimId: string;
+  dropperClaimId: string;
 }) => {
   const toast = useToast();
+
+  let claimId = "";
+
+  const claim = useMutation(() => getDropMessage(dropperClaimId)(ctx.account), {
+    onMutate: () => {},
+    onSuccess: (response) => {
+      // claimWeb3Drop.mutate({
+      //   message: response.data.signature,
+      //   blockDeadline: response.data.block_deadline,
+      //   claimId: response.data.claimId,
+      //   amount: response.data.amount,
+      // });
+    },
+    onError: (error) => {},
+    onSettled: () => {},
+  });
 
   const _getClaim = async (
     dropperAddress: string,
@@ -45,8 +66,13 @@ const useDropperClaim = ({
   };
 
   const state = useQuery(
-    ["LootboxClaimState", dropperAddress, targetChain.chainId, claimId],
-    () => _getClaim(dropperAddress, ctx, claimId),
+    [
+      "LootboxClaimState",
+      dropperAddress,
+      targetChain.chainId,
+      ClaimData?.data?.claim_id,
+    ],
+    () => _getClaim(dropperAddress, ctx, ClaimData?.data?.claim_id),
     {
       onSuccess: () => {},
       initialData: {
@@ -55,7 +81,9 @@ const useDropperClaim = ({
         status: "",
       },
       enabled:
-        ctx.web3?.utils.isAddress(ctx.account) && ctx.chainId === ctx.chainId,
+        ClaimAvailabel &&
+        ctx.web3?.utils.isAddress(ctx.account) &&
+        ctx.chainId === ctx.chainId,
     }
   );
 
@@ -66,19 +94,6 @@ const useDropperClaim = ({
     },
   });
 
-  const claim = useMutation(() => getDropMessage(claimId)(ctx.account), {
-    onMutate: () => {},
-    onSuccess: (response) => {
-      claimWeb3Drop.mutate({
-        message: response.data.signature,
-        blockDeadline: response.data.block_deadline,
-        claimId: claimId,
-      });
-    },
-    onError: (error) => {},
-    onSettled: () => {},
-  });
-
   const isLoadingClaim = React.useMemo(() => {
     if (claimWeb3Drop.isLoading || claim.isLoading) return true;
     else return false;
@@ -87,6 +102,7 @@ const useDropperClaim = ({
   return {
     state: state.data,
     claim,
+    claimWeb3Drop,
     isLoadingClaim,
     isLoadingState: state.isLoading,
   };
