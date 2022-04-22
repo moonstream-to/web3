@@ -127,7 +127,7 @@ class InstanceSigner(Signer):
     def sign_message(self, message: str):
         # TODO(kompotkot): What to do if self.current_signer_uri is not None but the signing server went down?
         if self.current_signer_uri is None:
-            self.current_signer_uri = self.refresh_signer()
+            self.refresh_signer()
 
         signed_message = ""
         try:
