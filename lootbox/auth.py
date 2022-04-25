@@ -26,9 +26,8 @@ from brownie.network.account import Account
 from eip712.messages import EIP712Message
 from web3 import Web3
 
-from .version import VERSION
-
 AUTH_PAYLOAD_NAME = "MoonstreamAuthorization"
+AUTH_VERSION = "1"
 
 # By default, authorizations will remain active for 24 hours.
 DEFAULT_INTERVAL = 60 * 60 * 24
@@ -53,7 +52,7 @@ class MoonstreamAuthorization(EIP712Message):
 def authorize(deadline: int, signer: Account) -> Dict[str, Any]:
     message = MoonstreamAuthorization(
         _name_=AUTH_PAYLOAD_NAME,
-        _version_=VERSION,
+        _version_=AUTH_VERSION,
         address=signer.address,
         deadline=deadline,
     )
@@ -77,7 +76,7 @@ def verify(authorization_payload: Dict[str, Any]) -> bool:
 
     message = MoonstreamAuthorization(
         _name_=AUTH_PAYLOAD_NAME,
-        _version_=VERSION,
+        _version_=AUTH_VERSION,
         address=address,
         deadline=deadline,
     )
