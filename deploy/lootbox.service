@@ -1,0 +1,18 @@
+[Unit]
+Description=Lootbox signing API service
+After=network.target
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/lootbox
+EnvironmentFile=/home/ubuntu/lootbox-secrets/app.env
+Restart=on-failure
+RestartSec=15s
+ExecStart=/home/ubuntu/lootbox-env/bin/uvicorn --proxy-headers --forwarded-allow-ips='127.0.0.1' --host 127.0.0.1 --port 7191 --workers 4 lootbox.api:app
+SyslogIdentifier=lootbox
+
+[Install]
+WantedBy=multi-user.target

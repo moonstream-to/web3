@@ -132,3 +132,13 @@ dmypy.json
 .lootbox/
 .secrets/
 .vscode/
+
+prod.env
+test.env
+dev.env
+prod.test.env
+dev.test.env
+
+alembic.dev.ini
+alembic.prod.ini
+alembic.test.ini
