@@ -73,7 +73,7 @@ abi = [
 
 
 def _generate_random_number():
-    return random.randint(0, 2 ** 256)
+    return random.randint(0, 2 ** 256 - 1)
 
 
 class MockVRFOracle:

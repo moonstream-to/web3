@@ -1,10 +1,18 @@
+from enum import Enum
 import unittest
-from venv import create
 
 from brownie import accounts, network
 from brownie.exceptions import VirtualMachineError
+from brownie.network import web3 as web3_client
+
+from chainlink import MockChainlinkCoordinator, MockLinkToken, mock_vrf_oracle
 from . import Lootbox, MockTerminus, MockErc20
 from .core import lootbox_item_to_tuple, gogogo
+
+
+class LootboxTypes(Enum):
+    ORDINARY = 0
+    RANDOM_TYPE_1 = 1
 
 
 class LootboxTestCase(unittest.TestCase):
@@ -15,12 +23,31 @@ class LootboxTestCase(unittest.TestCase):
         except:
             pass
 
+        cls.linkToken = MockLinkToken.MockLinkToken(None)
+        cls.linkToken.deploy({"from": accounts[0]})
+
+        cls.mock_chainlink_coordinator = (
+            MockChainlinkCoordinator.MockChainlinkCoordinator(None)
+        )
+        cls.mock_chainlink_coordinator.deploy(
+            cls.linkToken.address, {"from": accounts[0]}
+        )
+
+        cls.mock_vrf_oracle = mock_vrf_oracle.MockVRFOracle(
+            web3_client,
+            cls.mock_chainlink_coordinator.address,
+            accounts[0],
+        )
+
+        vrfFee = 0.01 * 10 ** 18
+        vrfKeyhash = b"lol"
+
         cls.terminus = MockTerminus.MockTerminus(None)
         cls.terminus.deploy({"from": accounts[0]})
 
         cls.erc20_contracts = [MockErc20.MockErc20(None) for _ in range(5)]
-        for contract in cls.erc20_contracts:
-            contract.deploy({"from": accounts[0]})
+        for i, contract in enumerate(cls.erc20_contracts):
+            contract.deploy(f"Mock Erc20-{i}", "MOCKERC20-{i}", {"from": accounts[0]})
 
         cls.erc20_contracts[0].mint(accounts[0], 100 * 10 ** 18, {"from": accounts[0]})
 
@@ -29,14 +56,25 @@ class LootboxTestCase(unittest.TestCase):
         )
         cls.terminus.set_pool_base_price(1, {"from": accounts[0]})
 
-        gogogo_result = gogogo(cls.terminus.address, {"from": accounts[0]})
+        gogogo_result = gogogo(
+            cls.terminus.address,
+            cls.mock_chainlink_coordinator.address,
+            cls.linkToken.address,
+            vrfFee,
+            vrfKeyhash,
+            {"from": accounts[0]},
+        )
 
         cls.erc20_contracts[0].approve(
             cls.terminus.address, 100 * 10 ** 18, {"from": accounts[0]}
         )
+
         cls.lootbox = Lootbox.Lootbox(gogogo_result["Lootbox"])
         cls.admin_token_pool_id = gogogo_result["adminTokenPoolId"]
 
+        cls.linkToken.mint(
+            cls.lootbox.address, (10 ** 10) * 10 ** 18, {"from": accounts[0]}
+        )
         cls.terminus.set_controller(cls.lootbox.address, {"from": accounts[0]})
 
         for i in range(5):
@@ -77,6 +115,7 @@ class LootboxTestCase(unittest.TestCase):
                 token_address,
                 token_id,
                 token_amount,
+                weight,
             ) = self.lootbox.get_lootbox_item_by_index(lootboxId, i)
 
             claimer_lootbox_balance_before = self.terminus.balance_of(
@@ -158,6 +197,7 @@ class LootboxBaseTest(LootboxTestCase):
                     token_amount=10 * 10 ** 18,
                 )
             ],
+            LootboxTypes.ORDINARY.value,
             {"from": accounts[0]},
         )
 
@@ -174,7 +214,7 @@ class LootboxBaseTest(LootboxTestCase):
 
         self.assertEqual(
             self.lootbox.get_lootbox_item_by_index(created_lootbox_id, 0),
-            (20, self.erc20_contracts[1].address, 0, 10 * 10 ** 18),
+            (20, self.erc20_contracts[1].address, 0, 10 * 10 ** 18, 0),
         )
 
         self.lootbox.set_lootbox_uri(created_lootbox_id, "lol", {"from": accounts[0]})
@@ -204,6 +244,7 @@ class LootboxBaseTest(LootboxTestCase):
                 )
             ],
             terminus_pool,
+            LootboxTypes.ORDINARY.value,
             {"from": accounts[0]},
         )
 
@@ -220,7 +261,7 @@ class LootboxBaseTest(LootboxTestCase):
 
         self.assertEqual(
             self.lootbox.get_lootbox_item_by_index(created_lootbox_id, 0),
-            (20, self.erc20_contracts[1].address, 0, 10 * 10 ** 18),
+            (20, self.erc20_contracts[1].address, 0, 10 * 10 ** 18, 0),
         )
 
         self.lootbox.set_lootbox_uri(created_lootbox_id, "lol", {"from": accounts[0]})
@@ -243,6 +284,7 @@ class LootboxBaseTest(LootboxTestCase):
                     token_amount=10 * 10 ** 18,
                 )
             ],
+            LootboxTypes.ORDINARY.value,
             {"from": accounts[0]},
         )
 
@@ -273,6 +315,7 @@ class LootboxBaseTest(LootboxTestCase):
                     token_amount=10 * 10 ** 18,
                 )
             ],
+            LootboxTypes.ORDINARY.value,
             {"from": accounts[0]},
         )
 
@@ -326,7 +369,9 @@ class LootboxBaseTest(LootboxTestCase):
 
         lootbox_items = erc20_rewards
 
-        self.lootbox.create_lootbox(lootbox_items, {"from": accounts[0]})
+        self.lootbox.create_lootbox(
+            lootbox_items, LootboxTypes.ORDINARY.value, {"from": accounts[0]}
+        )
         lootbox_id = self.lootbox.total_lootbox_count()
 
         self.lootbox.batch_mint_lootboxes(
@@ -362,6 +407,7 @@ class LootboxBaseTest(LootboxTestCase):
                     token_amount=10 * 10 ** 18,
                 )
             ],
+            LootboxTypes.ORDINARY.value,
             {"from": accounts[0]},
         )
 
@@ -460,6 +506,7 @@ class LootboxACLTests(LootboxTestCase):
                         token_amount=10 * 10 ** 18,
                     )
                 ],
+                LootboxTypes.ORDINARY.value,
                 {"from": accounts[2]},
             )
         lootboxes_count_1 = self.lootbox.total_lootbox_count()
@@ -477,6 +524,7 @@ class LootboxACLTests(LootboxTestCase):
                     token_amount=10 * 10 ** 18,
                 )
             ],
+            LootboxTypes.ORDINARY.value,
             {"from": accounts[1]},
         )
 
@@ -493,7 +541,7 @@ class LootboxACLTests(LootboxTestCase):
 
         self.assertEqual(
             self.lootbox.get_lootbox_item_by_index(created_lootbox_id, 0),
-            (20, self.erc20_contracts[1].address, 0, 10 * 10 ** 18),
+            (20, self.erc20_contracts[1].address, 0, 10 * 10 ** 18, 0),
         )
 
         self.lootbox.batch_mint_lootboxes(
@@ -523,6 +571,7 @@ class LootboxACLTests(LootboxTestCase):
                     token_amount=10 * 10 ** 18,
                 )
             ],
+            LootboxTypes.ORDINARY.value,
             {"from": accounts[1]},
         )
 
@@ -553,6 +602,7 @@ class LootboxACLTests(LootboxTestCase):
                     token_amount=10 * 10 ** 18,
                 )
             ],
+            LootboxTypes.ORDINARY.value,
             {"from": accounts[1]},
         )
 
@@ -569,7 +619,7 @@ class LootboxACLTests(LootboxTestCase):
 
         self.assertEqual(
             self.lootbox.get_lootbox_item_by_index(created_lootbox_id, 0),
-            (20, self.erc20_contracts[1].address, 0, 10 * 10 ** 18),
+            (20, self.erc20_contracts[1].address, 0, 10 * 10 ** 18, 0),
         )
 
         self.lootbox.batch_mint_lootboxes_constant(
@@ -599,6 +649,7 @@ class LootboxACLTests(LootboxTestCase):
                     token_amount=10 * 10 ** 18,
                 )
             ],
+            LootboxTypes.ORDINARY.value,
             {"from": accounts[1]},
         )
 
@@ -768,6 +819,7 @@ class LootboxACLTests(LootboxTestCase):
                     token_amount=2,
                 ),
             ],
+            LootboxTypes.ORDINARY.value,
             {"from": accounts[0]},
         )
         last_pool_id = self.terminus.total_pools()
@@ -793,6 +845,7 @@ class LootboxACLTests(LootboxTestCase):
                     token_amount=1,
                 )
             ],
+            LootboxTypes.ORDINARY.value,
             {"from": accounts[0]},
         )
         pool_id = self.terminus.total_pools()
@@ -816,6 +869,7 @@ class LootboxACLTests(LootboxTestCase):
                     token_amount=1,
                 )
             ],
+            LootboxTypes.ORDINARY.value,
             {"from": accounts[0]},
         )
         pool_id = self.terminus.total_pools()

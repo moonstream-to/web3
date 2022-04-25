@@ -1,0 +1,69 @@
+[
+    {
+        "name": "Lootbox with 1/10/20 rbw ",
+        "lootboxType": 1,
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x44b43b762E15Fb3dFC132030672Ca47caD5aa68c",
+                "tokenId": 0,
+                "tokenAmount": 1,
+                "weight": 10
+            },
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x44b43b762E15Fb3dFC132030672Ca47caD5aa68c",
+                "tokenId": 0,
+                "tokenAmount": 10,
+                "weight": 5
+            },
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x44b43b762E15Fb3dFC132030672Ca47caD5aa68c",
+                "tokenId": 0,
+                "tokenAmount": 20,
+                "weight": 1
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 1/100 rbw (5% chance for 100)",
+        "lootboxType": 1,
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x44b43b762E15Fb3dFC132030672Ca47caD5aa68c",
+                "tokenId": 0,
+                "tokenAmount": 1,
+                "weight": 19
+            },
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x44b43b762E15Fb3dFC132030672Ca47caD5aa68c",
+                "tokenId": 0,
+                "tokenAmount": 100,
+                "weight": 1
+            }
+        ]
+    },
+    {
+        "name": "Lootbox with 0/1000 rbw (1% chance for 1000)",
+        "lootboxType": 1,
+        "items": [
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x44b43b762E15Fb3dFC132030672Ca47caD5aa68c",
+                "tokenId": 0,
+                "tokenAmount": 1,
+                "weight": 99
+            },
+            {
+                "rewardType": 20,
+                "tokenAddress": "0x44b43b762E15Fb3dFC132030672Ca47caD5aa68c",
+                "tokenId": 0,
+                "tokenAmount": 100,
+                "weight": 1
+            }
+        ]
+    }
+]
