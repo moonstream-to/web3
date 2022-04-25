@@ -14,6 +14,6 @@
     "isolatedModules": true,
     "jsx": "preserve"
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.d.ts", "src/components/Web3MethodForm.tsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.d.ts", "src/components/Web3MethodForm.tsx", "src/components/FeatureCard.js"],
   "exclude": ["node_modules"]
 }

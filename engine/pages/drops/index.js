@@ -1,30 +1,42 @@
 import React, { useContext } from "react";
 import { Flex, Button, Image, Center, Spinner } from "@chakra-ui/react";
-import { DEFAULT_METATAGS } from "../src/constants";
+import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 // import { getLayout } from "../src/layouts/AppLayout";
 import useDropper from "moonstream-components//src/core/hooks/useDropper";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
-const assets: any = {
+
+import DropList from "../../../packages/moonstream-components/src/components/DropList";
+
+const assets = {
   onboarding:
     "https://s3.amazonaws.com/static.simiotics.com/unicorn_bazaar/unim-onboarding.png",
+  cryptoTraders: `${AWS_ASSETS_PATH}/crypto+traders.png`,
+  smartDevelopers: `${AWS_ASSETS_PATH}/smart+contract+developers.png`,
+  lender: `${AWS_ASSETS_PATH}/lender.png`,
+  DAO: `${AWS_ASSETS_PATH}/DAO .png`,
+  NFT: `${AWS_ASSETS_PATH}/NFT.png`,
 };
-import DropList from "../../packages/moonstream-components/src/components/DropList";
 
 const Homepage = () => {
   const web3Provider = useContext(Web3Context);
 
-  const dropper = useDropper({dropperAddress: process.env.NEXT_PUBLIC_DROPPER_ADDRESS ?? "", targetChain: targetChain, ctx: web3Provider});
+  const dropper = useDropper({
+    dropperAddress: process.env.NEXT_PUBLIC_DROPPER_ADDRESS ?? "",
+    targetChain: targetChain,
+    ctx: web3Provider,
+  });
 
-
-  if(dropper.dropperWeb3State.isLoading || dropper.usersDropList.isLoading) return <Flex minH="100vh">
-    <Spinner />
-  </Flex>
-
+  if (dropper.dropperWeb3State.isLoading || dropper.usersDropList.isLoading)
+    return (
+      <Flex minH="100vh">
+        <Spinner />
+      </Flex>
+    );
 
   return (
     <Flex w="100%" minH="100vh" bgColor={"blue.1200"} direction={"column"}>
-      {web3Provider.account && <DropList drops={dropper.usersDropList.data}  />}
+      {web3Provider.account && <DropList drops={dropper.usersDropList.data} />}
       {!web3Provider.account &&
         web3Provider.buttonText !== web3Provider.WALLET_STATES.CONNECTED && (
           <Center>
@@ -51,16 +63,10 @@ const Homepage = () => {
   );
 };
 
-interface Preconnect {
-  rel: string;
-  href: string;
-  as?: string;
-}
-
 // Homepage.getLayout = getLayout;
 
 export async function getStaticProps() {
-  const assetPreload: Array<Preconnect> = assets
+  const assetPreload = assets
     ? Object.keys(assets).map((key) => {
         return {
           rel: "preload",
@@ -69,9 +75,7 @@ export async function getStaticProps() {
         };
       })
     : [];
-  const preconnects: Array<Preconnect> = [
-    { rel: "preconnect", href: "https://s3.amazonaws.com" },
-  ];
+  const preconnects = [{ rel: "preconnect", href: "https://s3.amazonaws.com" }];
 
   const preloads = assetPreload.concat(preconnects);
 

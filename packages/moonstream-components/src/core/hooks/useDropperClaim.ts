@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import Web3Context from "../providers/Web3Provider/context";
 import BN from "bn.js";
-import { getDropList, getDropMessage } from "../services/dropper.service";
+import { getDropList, getDropMessage } from "../services/moonstream-engine.service";
 import queryCacheProps from "./hookCommon";
 import { useMutation, useQuery, UseQueryResult } from "react-query";
 import { getState, claimDrop, getClaim } from "../contracts/dropper.contract";

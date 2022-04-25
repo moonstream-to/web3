@@ -4,7 +4,6 @@
     "generate_classes": "typechain --target=web3-v1 --out-dir types/contracts 'build/contracts/*.json'"
   },
   "workspaces": [
-    "moonstream-components",
     "player",
     "engine",
     "packages/*"

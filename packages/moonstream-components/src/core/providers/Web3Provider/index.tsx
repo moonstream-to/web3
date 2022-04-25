@@ -10,7 +10,7 @@ declare global {
   }
 }
 
-export const chains: {[index: string]:any}  = {
+export const chains: { [index: string]: any } = {
   local: {
     chainId: 1337,
     name: "local",
@@ -39,8 +39,8 @@ export const chains: {[index: string]:any}  = {
   },
 };
 
-if(!process.env.NEXT_PUBLIC_TARGET_CHAIN)
-  throw("NEXT_PUBLIC_TARGET_CHAIN not defined")
+if (!process.env.NEXT_PUBLIC_TARGET_CHAIN)
+  throw "NEXT_PUBLIC_TARGET_CHAIN not defined";
 export const targetChain = chains[`${process.env.NEXT_PUBLIC_TARGET_CHAIN}`];
 
 const Web3Provider = ({ children }: { children: JSX.Element }) => {
@@ -161,7 +161,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
     }
   }, [web3.currentProvider, chainId]);
 
-  // React.useEffect(() => {
+    // React.useEffect(() => {
   //   if (
   //     !localStorage.getItem("APP_ACCESS_TOKEN") &&
   //     web3?.utils.isAddress(account)
@@ -195,7 +195,49 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
   //   }
   // }, [account, chainId, web3.utils]);
 
-  const defaultTxConfig = { from: account }
+  React.useEffect(() => {
+    const signMessage = async (message) => {
+      const signature = await window.ethereum.request({
+        method: "personal_sign",
+        params: [message, account],
+      });
+      return signature;
+    };
+    if (
+      !localStorage.getItem("APP_ACCESS_TOKEN") &&
+      web3?.utils.isAddress(account)
+    ) {
+      console.log("auth flow entring");
+
+      const message = "blablabla";
+
+      signMessage(message).then(async (signature) => {
+        // const response = await postweb3Auth(
+        //   account,
+        //   targetChain.chainId
+        // )(signature);
+        const token = signature;
+        if (token) {
+          console.log("auth flow got token");
+          localStorage.setItem("APP_ACCESS_TOKEN", token);
+        }
+      });
+
+      // getweb3Auth(account, chainId).then(async (resp: any) => {
+      //   console.log("resp", resp?.data.quest);
+
+      //   const quest = resp?.data.quest;
+      //   console.log("auth flow got quest", quest);
+
+      //   // const signature = await web3Provider.web3.eth.personal.sign(
+      //   //   data.data.quest,
+      //   //   web3Provider.account
+      //   // );
+      // });
+    }
+  }, [account, chainId, web3.utils]);
+
+  const defaultTxConfig = { from: account };
 
   return (
     <Web3Context.Provider
