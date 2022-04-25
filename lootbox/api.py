@@ -19,7 +19,7 @@ from . import data
 from . import db
 from . import Dropper
 from . import signatures
-from .middleware import DropperHTTPException
+from .middleware import DropperHTTPException, DropperAuthMiddleware
 from .settings import (
     ENGINE_BROWNIE_NETWORK,
     DOCS_TARGET_PATH,
@@ -50,7 +50,7 @@ app = FastAPI(
     redoc_url=f"/{DOCS_TARGET_PATH}",
 )
 
-app.add_middleware()
+app.add_middleware(DropperAuthMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
