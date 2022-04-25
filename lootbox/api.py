@@ -2,6 +2,7 @@
 Lootbox API.
 """
 import logging
+import time
 from typing import List
 from uuid import UUID
 
@@ -49,6 +50,7 @@ app = FastAPI(
     redoc_url=f"/{DOCS_TARGET_PATH}",
 )
 
+app.add_middleware()
 
 app.add_middleware(
     CORSMiddleware,
@@ -65,6 +67,14 @@ async def ping_handler() -> data.PingResponse:
     Check server status.
     """
     return data.PingResponse(status="ok")
+
+
+@app.get("/time", response_model=int)
+async def time_handler() -> int:
+    """
+    Get current time.
+    """
+    return int(time.time())
 
 
 @app.get("/drops", response_model=data.DropResponse)
