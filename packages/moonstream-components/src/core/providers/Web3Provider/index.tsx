@@ -2,6 +2,7 @@ import React from "react";
 import Web3Context, { WALLET_STATES } from "./context";
 import Web3 from "web3";
 import { getweb3Auth, postweb3Auth } from "../../services/terminus.service";
+import { getTime } from "../../services/moonstream-engine.service";
 
 declare global {
   interface Window {
@@ -161,7 +162,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
     }
   }, [web3.currentProvider, chainId]);
 
-    // React.useEffect(() => {
+  // React.useEffect(() => {
   //   if (
   //     !localStorage.getItem("APP_ACCESS_TOKEN") &&
   //     web3?.utils.isAddress(account)
@@ -196,46 +197,72 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
   // }, [account, chainId, web3.utils]);
 
   React.useEffect(() => {
-    const signMessage = async (message) => {
-      const signature = await window.ethereum.request({
-        method: "personal_sign",
-        params: [message, account],
-      });
-      return signature;
-    };
     if (
       !localStorage.getItem("APP_ACCESS_TOKEN") &&
       web3?.utils.isAddress(account)
     ) {
       console.log("auth flow entring");
 
-      const message = "blablabla";
+      // const message = "blablabla";
 
-      signMessage(message).then(async (signature) => {
-        // const response = await postweb3Auth(
-        //   account,
-        //   targetChain.chainId
-        // )(signature);
-        const token = signature;
-        if (token) {
-          console.log("auth flow got token");
-          localStorage.setItem("APP_ACCESS_TOKEN", token);
-        }
+      const msgParams = JSON.stringify({
+        domain: {
+          // Give a user friendly name to the specific contract you are signing for.
+          name: "MoonstreamAuthorization",
+          // Just let's you know the latest version. Definitely make sure the field name is correct.
+          version: "1",
+        },
+
+        // Defining the message signing data content.
+        message: {
+          // "_name_": "MoonstreamAuthorization", // The value to sign
+          address: account,
+          // "_version_": "1",
+          deadline: Math.floor(new Date().getTime() / 1000) + 24 * 60 * 60,
+          // deadline: "1651008410"
+        },
+        // Refers to the keys of the *types* object below.
+        primaryType: "MoonstreamAuthorization",
+        types: {
+          // TODO: Clarify if EIP712Domain refers to the domain the contract is hosted on
+          EIP712Domain: [
+            { name: "name", type: "string" },
+            { name: "version", type: "string" },
+          ],
+          // Refer to PrimaryType
+          MoonstreamAuthorization: [
+            {
+              type: "address",
+              name: "address",
+            },
+            {
+              type: "uint256",
+              name: "deadline",
+            },
+          ],
+        },
       });
 
-      // getweb3Auth(account, chainId).then(async (resp: any) => {
-      //   console.log("resp", resp?.data.quest);
-
-      //   const quest = resp?.data.quest;
-      //   console.log("auth flow got quest", quest);
-
-      //   // const signature = await web3Provider.web3.eth.personal.sign(
-      //   //   data.data.quest,
-      //   //   web3Provider.account
-      //   // );
-      // });
+      // if(!window?.ethereum?.currentProvider) throw("ERRRRROR");
+      // console.dir(window.ethereum)
+      console.log("chain id", chainId)
+      window.ethereum.sendAsync(
+        {
+          method: "eth_signTypedData_v4",
+          params: [account, msgParams],
+          from: account,
+        },
+        (err: Error, signedMessage: any) => {
+          console.log(
+            "signedMessage",
+            signedMessage,
+            account,
+            JSON.parse(msgParams).message.deadline
+          );
+        }
+      );
     }
-  }, [account, chainId, web3.utils]);
+  }, [account, chainId, web3.utils, window.ethereum.currentProvider]);
 
   const defaultTxConfig = { from: account };
 

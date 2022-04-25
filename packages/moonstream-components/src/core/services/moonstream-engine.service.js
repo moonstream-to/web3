@@ -85,3 +85,10 @@ export const authenticate =
       url: `${API}/authenticate`,
     });
   };
+
+export const getTime = () => async () => {
+  return http({
+    method: "GET",
+    url: `${API}/now`,
+  });
+};
