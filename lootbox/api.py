@@ -11,7 +11,7 @@ from brownie import network, web3
 from fastapi import Body, FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from . import actions
 from . import data
@@ -116,6 +116,7 @@ async def get_drop_list_handler(
     dropper_contract_id: str,
     blockchain: str,
     address: str,
+    active: bool = True,
     limit: int = 10,
     offset: int = 0,
     db_session: Session = Depends(db.yield_db_session),
@@ -132,11 +133,15 @@ async def get_drop_list_handler(
             dropper_contract_id=dropper_contract_id,
             blockchain=blockchain,
             address=address,
+            active=active,
             limit=limit,
             offset=offset,
         )
+    except NoResultFound:
+        raise DropperHTTPException(status_code=404, detail="No drops found.")
     except Exception as e:
-        raise DropperHTTPException(status_code=500, detail=str(e))
+        logger.error(f"Can't get claims for user {address} end with error: {e}")
+        raise DropperHTTPException(status_code=500, detail="Can't get claims")
 
     return data.DropListResponse(drops=results)
 
@@ -186,7 +191,8 @@ async def get_drop_list_handler(
 #     except NoResultFound:
 #         raise DropperHTTPException(status_code=404, detail="Dropper contract not found")
 #     except Exception as e:
-#         raise DropperHTTPException(status_code=500, detail=str(e))
+#         logger.error(f"Can't create claim: {e}")
+#         raise DropperHTTPException(status_code=500, detail="Can't create claim"))
 
 #     return data.DropCreatedResponse(
 #         dropper_claim_id=claim.id,
@@ -221,7 +227,8 @@ async def get_drop_list_handler(
 #             offset=offset,
 #         )
 #     except Exception as e:
-#         raise DropperHTTPException(status_code=500, detail=str(e))
+#         logger.error(f"Can't get claimants for claim {dropper_claim_id} with error: {e}")
+#         raise DropperHTTPException(status_code=500, detail="Can't get claimants")
 
 #     return data.DropListResponse(drops=list(results))
 
@@ -252,8 +259,9 @@ async def get_drop_list_handler(
 #             added_by=added_by,
 #         )
 #     except Exception as e:
+#         logger.info(f"Can't add claimants for claim {dropper_claim_id} with error: {e}")
 #         raise DropperHTTPException(
-#             status_code=500, detail=f"Error adding claimants {e}"
+#             status_code=500, detail=f"Error adding claimants"
 #         )
 
 #     return data.ClaimantsResponse(claimants=results)
@@ -280,8 +288,9 @@ async def get_drop_list_handler(
 #             addresses=remove_claimants_request.addresses,
 #         )
 #     except Exception as e:
+#         logger.info(f"Can't remove claimants for claim {dropper_claim_id} with error: {e}")
 #         raise DropperHTTPException(
-#             status_code=500, detail=f"Error removing claimants {e}"
+#             status_code=500, detail=f"Error removing claimants"
 #         )
 
 #     return data.RemoveClaimantsResponse(addresses=results)
