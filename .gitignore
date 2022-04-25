@@ -142,3 +142,10 @@ dev.test.env
 alembic.dev.ini
 alembic.prod.ini
 alembic.test.ini
+
+
+#Node
+node_modules/
+
+#next
+.next/

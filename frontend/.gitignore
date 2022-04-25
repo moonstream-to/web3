@@ -1,8 +1,0 @@
-.next/
-node_modules/
-templates/
-mumbai.env
-yarn-error.log
-package-lock.json
-.DS_Store
-
