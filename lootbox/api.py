@@ -3,7 +3,7 @@ Lootbox API.
 """
 import logging
 import time
-from typing import List
+from typing import List, Dict
 from uuid import UUID
 
 from brownie import network, web3
@@ -50,7 +50,19 @@ app = FastAPI(
     redoc_url=f"/{DOCS_TARGET_PATH}",
 )
 
-app.add_middleware(DropperAuthMiddleware)
+
+whitelist_paths: Dict[str, str] = {}
+whitelist_paths.update(
+    {
+        "/ping": "GET",
+        "/time": "GET",
+        "/drops": "GET",
+        "/drops/claims": "GET",
+    }
+)
+
+
+app.add_middleware(DropperAuthMiddleware, whitelist=whitelist_paths)
 
 app.add_middleware(
     CORSMiddleware,
