@@ -1,17 +1,14 @@
 from datetime import datetime
-import re
-from turtle import update
+from typing import List, Any, Optional, Dict
 
-import sqlalchemy
 
-from lootbox.drop import create_diff
-from .models import DropperClaimant, DropperContract, DropperClaim
+from brownie import network
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.sql import null as sql_null
-from uuid import uuid4, UUID
-from copy import deepcopy
+from sqlalchemy.orm import Session
+from web3 import Web3
+from web3.types import ChecksumAddress
 
-from brownie import network, web3
+from .models import DropperClaimant, DropperContract, DropperClaim
 
 
 def create_dropper_contract(db_session, blockchain, dropper_contract_address):
@@ -21,7 +18,7 @@ def create_dropper_contract(db_session, blockchain, dropper_contract_address):
 
     dropper_contract = DropperContract(
         blockchain=blockchain,
-        address=web3.toChecksumAddress(dropper_contract_address),
+        address=Web3.toChecksumAddress(dropper_contract_address),
     )
     db_session.add(dropper_contract)
     db_session.commit()
@@ -42,18 +39,30 @@ def delete_dropper_contract(db_session, blockchain, dropper_contract_address):
     return dropper_contract
 
 
-def list_dropper_contracts(db_session, blockchain):
+def list_dropper_contracts(
+    db_session, blockchain: Optional[str]
+) -> List[Dict[str, Any]]:
     """
     List all dropper contracts
     """
 
     dropper_contracts = []
 
-    dropper_contracts = db_session.query(DropperContract).filter(
-        DropperContract.blockchain == blockchain
-    )
+    dropper_contracts = db_session.query(DropperContract)
 
-    return [(contract.id, contract.address) for contract in dropper_contracts]
+    if blockchain:
+        dropper_contracts = dropper_contracts.filter(
+            DropperContract.blockchain == blockchain
+        )
+
+    return [
+        {
+            "id": dropper_contract.id,
+            "address": dropper_contract.address,
+            "blockchain": dropper_contract.blockchain,
+        }
+        for dropper_contract in dropper_contracts
+    ]
 
 
 def list_claims(db_session, dropper_contract_id, active=True):
@@ -143,11 +152,9 @@ def add_claimants(db_session, dropper_claim_id, claimants, added_by):
         claimant_objects.append(
             {
                 "dropper_claim_id": dropper_claim_id,
-                "address": web3.toChecksumAddress(claimant.address),
+                "address": Web3.toChecksumAddress(claimant.address),
                 "amount": claimant.amount,
                 "added_by": added_by,
-                "created_at": sql_null(),
-                "updated_at": sql_null(),
                 "created_at": datetime.now(),
                 "updated_at": datetime.now(),
             }
@@ -200,7 +207,7 @@ def get_claimant(db_session, dropper_claim_id, address):
         )
         .join(DropperClaim)
         .filter(DropperClaimant.dropper_claim_id == dropper_claim_id)
-        .filter(DropperClaimant.address == web3.toChecksumAddress(address))
+        .filter(DropperClaimant.address == Web3.toChecksumAddress(address))
         .filter(DropperClaim.claim_block_deadline > len(network.chain))
     )
 
@@ -208,19 +215,19 @@ def get_claimant(db_session, dropper_claim_id, address):
 
 
 def get_claims(
-    db_session,
-    dropper_contract_id,
-    blockchain,
-    address,
-    active,
-    limit=None,
-    offset=None,
+    db_session: Session,
+    dropper_contract_address: ChecksumAddress,
+    blockchain: str,
+    claimant_address: Optional[ChecksumAddress] = None,
+    active: Optional[bool] = None,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
 ):
     """
     Search for a claimant by address
     """
 
-    claims = (
+    query = (
         db_session.query(
             DropperClaim.id,
             DropperClaim.title,
@@ -228,20 +235,29 @@ def get_claims(
             DropperClaim.terminus_address,
             DropperClaim.terminus_pool_id,
             DropperClaim.claim_block_deadline,
+            DropperClaim.claim_id,
+            DropperClaim.active,
+            DropperClaimant.amount,
         )
         .join(DropperContract)
         .join(DropperClaimant)
-        .filter(DropperClaim.dropper_contract_id == dropper_contract_id)
         .filter(DropperContract.blockchain == blockchain)
-        .filter(DropperClaimant.address == address)
-        .filter(DropperClaim.claim_block_deadline > len(network.chain))
-        .filter(DropperClaim.active == active)
-        .limit(limit)
-        .offset(offset)
-        .all()
+        .filter(DropperContract.address == dropper_contract_address)
     )
 
-    return claims
+    if claimant_address:
+        query = query.filter(DropperClaimant.address == claimant_address)
+
+    if active:
+        query = query.filter(DropperClaim.active == active)
+
+    if limit:
+        query = query.limit(limit)
+
+    if offset:
+        query = query.offset(offset)
+
+    return query.all()
 
 
 def delete_claimants(db_session, dropper_claim_id, addresses):
@@ -249,7 +265,7 @@ def delete_claimants(db_session, dropper_claim_id, addresses):
     Delete all claimants for a claim
     """
 
-    normalize_addresses = [web3.toChecksumAddress(address) for address in addresses]
+    normalize_addresses = [Web3.toChecksumAddress(address) for address in addresses]
 
     was_deleted = []
     deleted_addresses = (
