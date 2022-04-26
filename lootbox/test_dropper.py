@@ -177,6 +177,27 @@ class DropperClaimTests(DropperTestCase):
             )
         self.assertEqual(self.dropper.get_signer_for_claim(claim_id), ZERO_ADDRESS)
 
+    def test_owner_can_set_claim_uri(self):
+        claim_id = self.create_claim_and_return_claim_id(
+            20, self.erc20_contract.address, 0, 1, {"from": accounts[0]}
+        )
+        self.assertEqual(self.dropper.claim_uri(claim_id), "")
+        self.dropper.set_claim_uri(
+            claim_id, "https://example.com", {"from": accounts[0]}
+        )
+        self.assertEqual(self.dropper.claim_uri(claim_id), "https://example.com")
+
+    def test_non_owner_cannot_set_claim_uri(self):
+        claim_id = self.create_claim_and_return_claim_id(
+            20, self.erc20_contract.address, 0, 1, {"from": accounts[0]}
+        )
+        self.assertEqual(self.dropper.claim_uri(claim_id), "")
+        with self.assertRaises(VirtualMachineError):
+            self.dropper.set_claim_uri(
+                claim_id, "https://example.com", {"from": accounts[1]}
+            )
+        self.assertEqual(self.dropper.claim_uri(claim_id), "")
+
 
 class DropperWithdrawalTests(DropperTestCase):
     def test_withdraw_erc20(self):

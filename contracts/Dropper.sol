@@ -48,6 +48,8 @@ contract Dropper is
     // - [x] setClaimStatus onlyOwner
     // - [x] getClaim external view
     // - [x] getClaimStatus external view
+    // - [x] claimUri external view
+    // - [x] setClaimUri external onlyOwner
 
     uint256 public ERC20_TYPE = 20;
     uint256 public ERC721_TYPE = 721;
@@ -66,6 +68,7 @@ contract Dropper is
     mapping(uint256 => address) ClaimSigner;
     mapping(uint256 => ClaimableToken) ClaimToken;
     mapping(uint256 => mapping(address => uint256)) ClaimCompleted;
+    mapping(uint256 => string) ClaimURI;
 
     event Claimed(uint256 indexed claimId, address indexed claimant);
     event ClaimCreated(
@@ -158,7 +161,7 @@ contract Dropper is
     }
 
     function setSignerForClaim(uint256 claimId, address signer)
-        external
+        public
         onlyOwner
     {
         ClaimSigner[claimId] = signer;
@@ -326,5 +329,16 @@ contract Dropper is
     ) public onlyOwner {
         TerminusFacet terminusFacetContract = TerminusFacet(terminusAddress);
         terminusFacetContract.setPoolController(poolId, newPoolController);
+    }
+
+    function claimUri(uint256 claimId) public view returns (string memory) {
+        return ClaimURI[claimId];
+    }
+
+    function setClaimUri(uint256 claimId, string memory uri)
+        external
+        onlyOwner
+    {
+        ClaimURI[claimId] = uri;
     }
 }
