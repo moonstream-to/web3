@@ -62,6 +62,7 @@ whitelist_paths.update(
         "/drops/contracts": "GET",
         "/drops/terminus": "GET",
         "/drops/blockchains": "GET",
+        "/drops/claims/all": "GET",
     }
 )
 
@@ -206,7 +207,9 @@ async def get_drops_terminus_handler(
     """
 
     try:
-        results = actions.list_drops_terminus(db_session=db_session, blockchain=blockchain)
+        results = actions.list_drops_terminus(
+            db_session=db_session, blockchain=blockchain
+        )
     except Exception as e:
         logger.error(f"Can't get list of terminus contracts end with error: {e}")
         raise DropperHTTPException(
@@ -217,7 +220,7 @@ async def get_drops_terminus_handler(
         data.DropperTerminusResponse(
             terminus_address=result.terminus_address,
             terminus_pool_id=result.terminus_pool_id,
-            blockchain=result.blockchain
+            blockchain=result.blockchain,
         )
         for result in results
     ]
@@ -255,6 +258,95 @@ async def get_drop_list_handler(
             dropper_contract_address=dropper_contract_address,
             blockchain=blockchain,
             claimant_address=claimant_address,
+            terminus_address=terminus_address,
+            terminus_pool_id=terminus_pool_id,
+            active=active,
+            limit=limit,
+            offset=offset,
+        )
+    except NoResultFound:
+        raise DropperHTTPException(status_code=404, detail="No drops found.")
+    except Exception as e:
+        logger.error(
+            f"Can't get claims for user {claimant_address} end with error: {e}"
+        )
+        raise DropperHTTPException(status_code=500, detail="Can't get claims")
+
+    return data.DropListResponse(drops=[result for result in results])
+
+
+@app.get("/drops/claims", response_model=data.DropListResponse)
+async def get_drop_list_handler(
+    dropper_contract_address: str,
+    blockchain: str,
+    claimant_address: str,
+    terminus_address: Optional[str] = Query(None),
+    terminus_pool_id: Optional[int] = Query(None),
+    active: Optional[bool] = Query(None),
+    limit: int = 10,
+    offset: int = 0,
+    db_session: Session = Depends(db.yield_db_session),
+) -> data.DropListResponse:
+    """
+    Get list of drops for a given dropper contract and claimant address.
+    """
+
+    dropper_contract_address = Web3.toChecksumAddress(dropper_contract_address)
+
+    if claimant_address:
+        claimant_address = Web3.toChecksumAddress(claimant_address)
+
+    if terminus_address:
+        terminus_address = Web3.toChecksumAddress(terminus_address)
+
+    try:
+        results = actions.get_claims(
+            db_session=db_session,
+            dropper_contract_address=dropper_contract_address,
+            blockchain=blockchain,
+            claimant_address=claimant_address,
+            terminus_address=terminus_address,
+            terminus_pool_id=terminus_pool_id,
+            active=active,
+            limit=limit,
+            offset=offset,
+        )
+    except NoResultFound:
+        raise DropperHTTPException(status_code=404, detail="No drops found.")
+    except Exception as e:
+        logger.error(
+            f"Can't get claims for user {claimant_address} end with error: {e}"
+        )
+        raise DropperHTTPException(status_code=500, detail="Can't get claims")
+
+    return data.DropListResponse(drops=[result for result in results])
+
+
+@app.get("/drops/claims/all", response_model=data.DropListResponse)
+async def get_drop_list_handler(
+    dropper_contract_address: str,
+    blockchain: str,
+    terminus_address: Optional[str] = Query(None),
+    terminus_pool_id: Optional[int] = Query(None),
+    active: Optional[bool] = Query(None),
+    limit: int = 10,
+    offset: int = 0,
+    db_session: Session = Depends(db.yield_db_session),
+) -> data.DropListResponse:
+    """
+    Get list of drops for a given dropper contract and claimant address.
+    """
+
+    dropper_contract_address = Web3.toChecksumAddress(dropper_contract_address)
+
+    if terminus_address:
+        terminus_address = Web3.toChecksumAddress(terminus_address)
+
+    try:
+        results = actions.get_claims_without_claimant(
+            db_session=db_session,
+            dropper_contract_address=dropper_contract_address,
+            blockchain=blockchain,
             terminus_address=terminus_address,
             terminus_pool_id=terminus_pool_id,
             active=active,

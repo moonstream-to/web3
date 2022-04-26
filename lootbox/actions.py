@@ -70,15 +70,21 @@ def list_drops_terminus(db_session: Session, blockchain: Optional[str] = None):
     """
 
     terminus = (
-        db_session.query(DropperClaim.terminus_address, DropperClaim.terminus_pool_id, DropperContract.blockchain)
+        db_session.query(
+            DropperClaim.terminus_address,
+            DropperClaim.terminus_pool_id,
+            DropperContract.blockchain,
+        )
         .join(DropperContract)
         .filter(DropperClaim.terminus_address.isnot(None))
         .filter(DropperClaim.terminus_pool_id.isnot(None))
     )
     if blockchain:
         terminus = terminus.filter(DropperContract.blockchain == blockchain)
-    
-    terminus = terminus.distinct(DropperClaim.terminus_address, DropperClaim.terminus_pool_id)
+
+    terminus = terminus.distinct(
+        DropperClaim.terminus_address, DropperClaim.terminus_pool_id
+    )
 
     return terminus
 
@@ -244,6 +250,54 @@ def get_claimant(db_session: Session, dropper_claim_id, address):
     )
 
     return claimant_query.one()
+
+
+def get_claims_without_claimant(
+    db_session: Session,
+    dropper_contract_address: ChecksumAddress,
+    blockchain: str,
+    terminus_address: Optional[ChecksumAddress] = None,
+    terminus_pool_id: Optional[int] = None,
+    active: Optional[bool] = None,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+):
+    """
+    Search for a claimant by address
+    """
+
+    query = (
+        db_session.query(
+            DropperClaim.id,
+            DropperClaim.title,
+            DropperClaim.description,
+            DropperClaim.terminus_address,
+            DropperClaim.terminus_pool_id,
+            DropperClaim.claim_block_deadline,
+            DropperClaim.claim_id,
+            DropperClaim.active,
+        )
+        .join(DropperContract)
+        .filter(DropperContract.blockchain == blockchain)
+        .filter(DropperContract.address == dropper_contract_address)
+    )
+
+    if terminus_address:
+        query = query.filter(DropperClaim.terminus_address == terminus_address)
+
+    if terminus_pool_id:
+        query = query.filter(DropperClaim.terminus_pool_id == terminus_pool_id)
+
+    if active:
+        query = query.filter(DropperClaim.active == active)
+
+    if limit:
+        query = query.limit(limit)
+
+    if offset:
+        query = query.offset(offset)
+
+    return query
 
 
 def get_claims(
