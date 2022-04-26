@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import List, Any, Optional, Dict, Tuple
+from unittest.mock import Mock
 import uuid
 
 from brownie import network
@@ -8,7 +9,13 @@ from sqlalchemy.orm import Session
 from web3 import Web3
 from web3.types import ChecksumAddress
 
+from . import MockTerminus
 from .models import DropperClaimant, DropperContract, DropperClaim
+from .settings import BLOCKCHAINS_TO_BROWNIE_NETWORKS
+
+
+class AuthorizationError(Exception):
+    pass
 
 
 def create_dropper_contract(
@@ -379,6 +386,26 @@ def get_claim_admin_pool(
         .filter(DropperClaim.id == dropper_claim_id)
     )
     return query.one()
+
+
+def ensure_admin_token_holder(
+    db_session: Session, dropper_claim_id: uuid.UUID, address: ChecksumAddress
+) -> bool:
+    blockchain, terminus_address, terminus_pool_id = get_claim_admin_pool(
+        db_session=db_session, dropper_claim_id=dropper_claim_id
+    )
+    brownie_network = BLOCKCHAINS_TO_BROWNIE_NETWORKS.get(blockchain)
+    if brownie_network is None:
+        raise ValueError(f"No brownie network for blockchain: {blockchain}")
+
+    network.connect(brownie_network)
+    terminus = MockTerminus.MockTerminus(terminus_address)
+    balance = terminus.balance_of(address, terminus_pool_id)
+    if balance == 0:
+        raise AuthorizationError(
+            f"Address has insufficient balance in Terminus pool: address={address}, blockchain={blockchain}, terminus_address={terminus_address}, terminus_pool_id={terminus_pool_id}"
+        )
+    return True
 
 
 def delete_claimants(db_session: Session, dropper_claim_id, addresses):

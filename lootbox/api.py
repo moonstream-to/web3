@@ -2,6 +2,7 @@
 Lootbox API.
 """
 import logging
+from multiprocessing.sharedctypes import Value
 import time
 from typing import List, Dict, Optional, Any
 from uuid import UUID
@@ -395,14 +396,23 @@ async def create_claimants(
     """
     Add addresses to particular claim
     """
-    added_by = request.state.address
+    try:
+        actions.ensure_admin_token_holder(
+            db_session, add_claimants_request.dropper_claim_id, request.state.address
+        )
+    except actions.AuthorizationError as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=403)
+    except Exception as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=500)
 
     try:
         results = actions.add_claimants(
             db_session=db_session,
             dropper_claim_id=add_claimants_request.dropper_claim_id,
             claimants=add_claimants_request.claimants,
-            added_by=added_by,
+            added_by=request.state.address,
         )
     except Exception as e:
         logger.info(
