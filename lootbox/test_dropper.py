@@ -374,6 +374,41 @@ class DropperClaimERC20Tests(DropperTestCase):
         self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
         self.assertEqual(balance_dropper_1, balance_dropper_0 - reward)
 
+    def test_claim_erc20_with_custom_amount(self):
+        default_reward = 3
+        custom_reward = 89
+        self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
+        claim_id = self.create_claim_and_return_claim_id(
+            20, self.erc20_contract.address, 0, default_reward, {"from": accounts[0]}
+        )
+        self.dropper.set_signer_for_claim(
+            claim_id, self.signer_0.address, {"from": accounts[0]}
+        )
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, accounts[1].address, block_deadline, custom_reward
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        balance_claimant_0 = self.erc20_contract.balance_of(accounts[1].address)
+        balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
+
+        self.dropper.claim(
+            claim_id,
+            block_deadline,
+            custom_reward,
+            signed_message,
+            {"from": accounts[1]},
+        )
+        balance_claimant_1 = self.erc20_contract.balance_of(accounts[1].address)
+        balance_dropper_1 = self.erc20_contract.balance_of(self.dropper.address)
+
+        self.assertEqual(balance_claimant_1, balance_claimant_0 + custom_reward)
+        self.assertEqual(balance_dropper_1, balance_dropper_0 - custom_reward)
+
     def test_claim_erc20_fails_if_block_deadline_exceeded(self):
         reward = 5
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
