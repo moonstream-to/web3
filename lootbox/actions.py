@@ -252,12 +252,12 @@ def get_claimant(db_session: Session, dropper_claim_id, address):
     return claimant_query.one()
 
 
-def get_claims_without_claimant(
+def get_terminus_claims(
     db_session: Session,
-    dropper_contract_address: ChecksumAddress,
     blockchain: str,
-    terminus_address: Optional[ChecksumAddress] = None,
-    terminus_pool_id: Optional[int] = None,
+    terminus_address: ChecksumAddress,
+    terminus_pool_id: int,
+    dropper_contract_address: Optional[ChecksumAddress] = None,
     active: Optional[bool] = None,
     limit: Optional[int] = None,
     offset: Optional[int] = None,
@@ -278,18 +278,19 @@ def get_claims_without_claimant(
             DropperClaim.active,
         )
         .join(DropperContract)
+        .filter(DropperClaim.terminus_address == terminus_address)
+        .filter(DropperClaim.terminus_pool_id == terminus_pool_id)
         .filter(DropperContract.blockchain == blockchain)
-        .filter(DropperContract.address == dropper_contract_address)
     )
 
-    if terminus_address:
-        query = query.filter(DropperClaim.terminus_address == terminus_address)
-
-    if terminus_pool_id:
-        query = query.filter(DropperClaim.terminus_pool_id == terminus_pool_id)
+    if dropper_contract_address:
+        query = query.filter(DropperContract.address == dropper_contract_address)
 
     if active:
         query = query.filter(DropperClaim.active == active)
+
+    # TODO: add ordering in all pagination queries
+    query = query.order_by(DropperClaim.created_at.asc())
 
     if limit:
         query = query.limit(limit)

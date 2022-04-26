@@ -62,7 +62,7 @@ whitelist_paths.update(
         "/drops/contracts": "GET",
         "/drops/terminus": "GET",
         "/drops/blockchains": "GET",
-        "/drops/claims/all": "GET",
+        "/drops/terminus/claims": "GET",
     }
 )
 
@@ -322,12 +322,12 @@ async def get_drop_list_handler(
     return data.DropListResponse(drops=[result for result in results])
 
 
-@app.get("/drops/claims/all", response_model=data.DropListResponse)
+@app.get("/drops/terminus/claims", response_model=data.DropListResponse)
 async def get_drop_list_handler(
-    dropper_contract_address: str,
     blockchain: str,
-    terminus_address: Optional[str] = Query(None),
-    terminus_pool_id: Optional[int] = Query(None),
+    terminus_address: str,
+    terminus_pool_id: int,
+    dropper_contract_address: Optional[str] = Query(None),
     active: Optional[bool] = Query(None),
     limit: int = 10,
     offset: int = 0,
@@ -337,13 +337,13 @@ async def get_drop_list_handler(
     Get list of drops for a given dropper contract and claimant address.
     """
 
-    dropper_contract_address = Web3.toChecksumAddress(dropper_contract_address)
+    if dropper_contract_address:
+        dropper_contract_address = Web3.toChecksumAddress(dropper_contract_address)
 
-    if terminus_address:
-        terminus_address = Web3.toChecksumAddress(terminus_address)
+    terminus_address = Web3.toChecksumAddress(terminus_address)
 
     try:
-        results = actions.get_claims_without_claimant(
+        results = actions.get_terminus_claims(
             db_session=db_session,
             dropper_contract_address=dropper_contract_address,
             blockchain=blockchain,
