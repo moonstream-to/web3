@@ -6,7 +6,8 @@ import time
 from typing import List, Dict, Optional, Any
 from uuid import UUID
 
-from brownie import network, web3
+from web3 import Web3
+from brownie import network
 
 
 from fastapi import Body, FastAPI, Request, Depends, Query
@@ -104,7 +105,7 @@ async def get_drop_handler(
     curl -X GET "http://localhost:8000/drops?claim_id=<claim_number>&address=<user_address>"
     """
 
-    address = web3.toChecksumAddress(address)
+    address = Web3.toChecksumAddress(address)
 
     try:
         claimant = actions.get_claimant(db_session, dropper_claim_id, address)
@@ -214,7 +215,10 @@ async def get_drops_terminus_handler(
         )
 
     response = [
-        data.DropperTerminusResponse(address=result.terminus_address)
+        data.DropperTerminusResponse(
+            terminus_address=result.terminus_address,
+            terminus_pool_id=result.terminus_pool_id,
+        )
         for result in results
     ]
 
@@ -226,6 +230,8 @@ async def get_drop_list_handler(
     dropper_contract_address: str,
     blockchain: str,
     claimant_address: Optional[str] = Query(None),
+    terminus_address: Optional[str] = Query(None),
+    terminus_pool_id: Optional[int] = Query(None),
     active: Optional[bool] = Query(None),
     limit: int = 10,
     offset: int = 0,
@@ -235,9 +241,13 @@ async def get_drop_list_handler(
     Get list of drops for a given dropper contract and claimant address.
     """
 
-    claimant_address = web3.toChecksumAddress(claimant_address)
+    dropper_contract_address = Web3.toChecksumAddress(dropper_contract_address)
 
-    dropper_contract_address = web3.toChecksumAddress(dropper_contract_address)
+    if claimant_address:
+        claimant_address = Web3.toChecksumAddress(claimant_address)
+
+    if terminus_address:
+        terminus_address = Web3.toChecksumAddress(terminus_address)
 
     try:
         results = actions.get_claims(
@@ -245,6 +255,8 @@ async def get_drop_list_handler(
             dropper_contract_address=dropper_contract_address,
             blockchain=blockchain,
             claimant_address=claimant_address,
+            terminus_address=terminus_address,
+            terminus_pool_id=terminus_pool_id,
             active=active,
             limit=limit,
             offset=offset,
@@ -277,17 +289,10 @@ async def create_drop(
 
     """
 
-    if register_request.terminus_address is None:
-        register_request.terminus_address = web3.toChecksumAddress(
-            "0x0000000000000000000000000000000000000000"
-        )
-    else:
-        register_request.terminus_address = web3.toChecksumAddress(
+    if register_request.terminus_address:
+        register_request.terminus_address = Web3.toChecksumAddress(
             register_request.terminus_address
         )
-
-    if register_request.terminus_pool_id is None:
-        register_request.terminus_pool_id = 0
 
     try:
         claim = actions.create_claim(

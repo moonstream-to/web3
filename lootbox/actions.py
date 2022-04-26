@@ -70,9 +70,10 @@ def list_drops_terminus(db_session: Session):
     """
 
     drops = (
-        db_session.query(DropperClaim.terminus_address)
+        db_session.query(DropperClaim.terminus_address, DropperClaim.terminus_pool_id)
         .filter(DropperClaim.terminus_address.isnot(None))
-        .distinct(DropperClaim.terminus_address)
+        .distinct(DropperClaim.terminus_pool_id.isnot(None))
+        .distinct(DropperClaim.terminus_address, DropperClaim.terminus_pool_id)
     )
 
     return drops
@@ -246,6 +247,8 @@ def get_claims(
     dropper_contract_address: ChecksumAddress,
     blockchain: str,
     claimant_address: Optional[ChecksumAddress] = None,
+    terminus_address: Optional[ChecksumAddress] = None,
+    terminus_pool_id: Optional[int] = None,
     active: Optional[bool] = None,
     limit: Optional[int] = None,
     offset: Optional[int] = None,
@@ -274,6 +277,12 @@ def get_claims(
 
     if claimant_address:
         query = query.filter(DropperClaimant.address == claimant_address)
+
+    if terminus_address:
+        query = query.filter(DropperClaim.terminus_address == terminus_address)
+
+    if terminus_pool_id:
+        query = query.filter(DropperClaim.terminus_pool_id == terminus_pool_id)
 
     if active:
         query = query.filter(DropperClaim.active == active)
