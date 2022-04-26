@@ -64,6 +64,7 @@ class DropperAuthMiddleware(BaseHTTPMiddleware):
             address = json_payload.get("address")
             if address is not None:
                 address = Web3.toChecksumAddress(address)
+            request.state.address = address
             request.state.verified = verified
         except MoonstreamAuthorizationVerificationError as e:
             logger.info("Moonstream authorization verification error: %s", e)
