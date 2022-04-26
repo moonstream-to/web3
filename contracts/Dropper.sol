@@ -90,7 +90,7 @@ contract Dropper is
     /**
      * @dev Initializes the Dropper contract
      */
-    constructor() EIP712("Moonstream Dropper", "0.0.1") {}
+    constructor() EIP712("Moonstream Dropper", "0.1.0") {}
 
     function onERC721Received(
         address operator,
