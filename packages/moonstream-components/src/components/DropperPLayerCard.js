@@ -13,6 +13,7 @@ import Web3Context from "../core/providers/Web3Provider/context";
 import { targetChain } from "../core/providers/Web3Provider";
 import Erc20Card from "./Erc20Card";
 
+
 const DropCard = ({ drop }) => {
   const web3Provider = useContext(Web3Context);
 

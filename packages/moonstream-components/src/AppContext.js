@@ -24,20 +24,18 @@ const AppContext = (props) => {
 
   return (
     <UserProvider>
-      <StripeProvider>
-        <ChakraProvider theme={theme}>
-          <Fonts />
-          <Web3Provider>
-            <DataProvider>
-              <UIProvider>
-                <OverlayProvider>
-                  <AnalyticsProvider>{props.children}</AnalyticsProvider>
-                </OverlayProvider>
-              </UIProvider>
-            </DataProvider>
-          </Web3Provider>
-        </ChakraProvider>
-      </StripeProvider>
+      <ChakraProvider theme={theme}>
+        <Fonts />
+        <Web3Provider>
+          <DataProvider>
+            <UIProvider>
+              <OverlayProvider>
+                <AnalyticsProvider>{props.children}</AnalyticsProvider>
+              </OverlayProvider>
+            </UIProvider>
+          </DataProvider>
+        </Web3Provider>
+      </ChakraProvider>
     </UserProvider>
   );
 };

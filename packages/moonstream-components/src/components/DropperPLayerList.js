@@ -1,6 +1,6 @@
 import React from "react";
 import { chakra, Flex, Text, Stack, Heading } from "@chakra-ui/react";
-import DropCard from "./DropCard";
+import DropCard from "./DropperPLayerCard";
 
 const DropList = ({ drops }) => {
   return (
@@ -15,7 +15,7 @@ const DropList = ({ drops }) => {
       py={"10px"}
       direction="column"
     >
-      <Heading py={2}> Your drops list</Heading>
+      <Heading py={2}>Drops management panel</Heading>
       <Stack direction={"column"} spacing={2} flexGrow={1}>
         {drops?.map((drop) => (
           <DropCard key={drop.id} drop={drop} />

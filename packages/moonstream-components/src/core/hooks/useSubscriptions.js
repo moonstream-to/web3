@@ -68,6 +68,7 @@ const useSubscriptions = () => {
     }
   );
 
+
   const updateSubscription = useMutation(
     SubscriptionsService.modifySubscription(),
     {

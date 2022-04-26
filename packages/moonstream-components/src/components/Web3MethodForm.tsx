@@ -93,7 +93,6 @@ const Web3MethodForm = ({
     }
   };
 
-  // console.log("args", state.inputs[1]);
   if (!rendered) return <></>;
   return (
     <Fade in={rendered} style={{ width: "100%" }}>
@@ -103,7 +102,6 @@ const Web3MethodForm = ({
             Object.keys(argumentFields).includes(inputItem.name) &&
             inputItem.name
           ) {
-            console.log("inputItem", inputItem.name);
             return (
               <>
                 {inputItem.type === "string" && (

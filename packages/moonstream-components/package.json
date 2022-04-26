@@ -11,6 +11,8 @@
     "generate_classes": "typechain --target=web3-v1 --out-dir ../types/contracts '../build/contracts/*.json'"
   },
   "dependencies": {
+    "papaparse": "^5.3.2",
+    "react-dropzone": "^12.1.0",
     "@chakra-ui/icons": "^1.0.14",
     "@chakra-ui/react": "^1.6.4",
     "@emotion/react": "^11.4.0",

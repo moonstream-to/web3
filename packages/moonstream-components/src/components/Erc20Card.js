@@ -23,7 +23,6 @@ const ERC20Card = ({ address, amount, isLoading }) => {
   });
   if (erc20.ERC20State.isLoading || isLoading) return <Spinner size="sm" />;
   if (!erc20.ERC20State.data) return "whops";
-  console.log("erc20", erc20.ERC20State.data);
   return (
     <Badge size="md" colorScheme={"blue"}>
       {erc20.ERC20State.data.symbol} : {amount}

@@ -1,12 +1,12 @@
 import React, { useContext } from "react";
 import Web3Context from "../providers/Web3Provider/context";
 import BN from "bn.js";
-import { getDropList, getDropMessage } from "../services/moonstream-engine.service";
+import {  getDropList, getDropMessage } from "../services/moonstream-engine.service";
 import queryCacheProps from "./hookCommon";
 import { useMutation, useQuery, UseQueryResult } from "react-query";
 import { getState } from "../contracts/dropper.contract";
 import DataContext from "../providers/DataProvider/context";
-import { ReactWeb3ProviderInterface } from "../../../types/Moonstream";
+import { ChainInterface, MoonstreamWeb3ProviderInterface } from "../../../../../types/Moonstream";
 
 const useDropper = ({
   dropperAddress,
@@ -14,9 +14,11 @@ const useDropper = ({
   ctx,
 }: {
   dropperAddress: string;
-  targetChain: any;
-  ctx: ReactWeb3ProviderInterface;
+  targetChain: ChainInterface;
+  ctx: MoonstreamWeb3ProviderInterface;
 }) => {
+
+
   const dropperWeb3State = useQuery(
     ["dropperContractState", dropperAddress, targetChain.chainId],
     () => getState(dropperAddress, ctx)(),
@@ -27,9 +29,10 @@ const useDropper = ({
     }
   );
 
+
   const dropList = useQuery(
     ["dropList", dropperAddress, targetChain.chainId],
-    () => getDropList(dropperAddress, 1)().then((data) => data.data.drops),
+    () => getDropList(dropperAddress, ctx)().then((data) => data.data.drops),
     {
       onSuccess: () => {},
     }
@@ -41,9 +44,8 @@ const useDropper = ({
   usersDropList['data'] = React.useMemo((): any => {
     const retval: Array<any> = [];
     if (dropList?.data && ctx.account) {
-      const _usersDropList: any = [];
       dropList.data.forEach((entry: any, id: Number) => {
-        if (entry.content.includes(ctx.account)) {
+        if (entry?.content?.includes(ctx.account)) {
           const claimIdtag = entry.tags.find((tag: string) =>
             tag.startsWith("claim_id:")
           );
@@ -60,7 +62,7 @@ const useDropper = ({
   usersDropList.status = dropList.status;
 
 
-  return { dropperWeb3State, usersDropList };
+  return { dropperWeb3State, usersDropList, dropList };
 };
 
 export default useDropper;

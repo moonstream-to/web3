@@ -10,6 +10,7 @@ export const MODAL_TYPES = {
   UPLOAD_ABI: 8,
   FILL_BOTTLE: 9,
   POUR_BOTTLE: 10,
+  FILE_UPLOAD: 11,
 };
 
 export const DRAWER_TYPES = {

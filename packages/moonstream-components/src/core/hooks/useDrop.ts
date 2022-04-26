@@ -1,7 +1,10 @@
 import React, { useContext } from "react";
 import Web3Context from "../providers/Web3Provider/context";
 import BN from "bn.js";
-import { getDropList, getDropMessage } from "../services/moonstream-engine.service";
+import {
+  getDropList,
+  getDropMessage,
+} from "../services/moonstream-engine.service";
 import queryCacheProps from "./hookCommon";
 import { useMutation, useQuery, UseQueryResult } from "react-query";
 import { getState, claimDrop, getClaim } from "../contracts/dropper.contract";
@@ -15,7 +18,7 @@ interface ClaimerState {
   status: string;
 }
 
-const useDropperClaim = ({
+const useDrop = ({
   dropperAddress,
   targetChain,
   ctx,
@@ -45,7 +48,7 @@ const useDropperClaim = ({
   };
 
   const state = useQuery(
-    ["LootboxClaimState", dropperAddress, targetChain.chainId, claimId],
+    ["useDrop", dropperAddress, targetChain.chainId, claimId],
     () => _getClaim(dropperAddress, ctx, claimId),
     {
       onSuccess: () => {},
@@ -55,41 +58,13 @@ const useDropperClaim = ({
         status: "",
       },
       enabled:
-        ctx.web3?.utils.isAddress(ctx.account) && ctx.chainId === ctx.chainId,
+        ctx.web3?.utils.isAddress(ctx.account) &&
+        ctx.chainId === ctx.chainId &&
+        claimId !== "0",
     }
   );
 
-  const claimWeb3Drop = useMutation(claimDrop(dropperAddress, ctx), {
-    onSuccess: (resonse) => {
-      toast("Claim successful", "success");
-      state.refetch();
-    },
-  });
-
-  const claim = useMutation(() => getDropMessage(claimId)(ctx.account), {
-    onMutate: () => {},
-    onSuccess: (response) => {
-      claimWeb3Drop.mutate({
-        message: response.data.signature,
-        blockDeadline: response.data.block_deadline,
-        claimId: claimId,
-      });
-    },
-    onError: (error) => {},
-    onSettled: () => {},
-  });
-
-  const isLoadingClaim = React.useMemo(() => {
-    if (claimWeb3Drop.isLoading || claim.isLoading) return true;
-    else return false;
-  }, [claimWeb3Drop.isLoading, claim.isLoading]);
-
-  return {
-    state: state.data,
-    claim,
-    isLoadingClaim,
-    isLoadingState: state.isLoading,
-  };
+  return state;
 };
 
-export default useDropperClaim;
+export default useDrop;

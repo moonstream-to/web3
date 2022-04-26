@@ -1,12 +1,39 @@
 import { http } from "../utils";
 const API = process.env.NEXT_PUBLIC_APP_API_URL;
 
-export const getDropList = (dropper) => async (address) =>
-  http({
+export const getContracts = () => async () => {
+  return http({
     method: "GET",
-    url: `${API}/drops/claims`,
-    params: { dropper_contract_address: dropper, address: claimId },
+    url: `${API}/drops/contracts`,
   });
+};
+
+export const getDropList =
+  (dropperAddress, chainName, ctx) => async (address) => {
+    console.log("getDropList");
+    return http({
+      method: "GET",
+      url: `${API}/drops/claims`,
+      params: {
+        dropper_contract_address: encodeURIComponent(dropperAddress),
+        blockchain: chainName,
+        claimant_address: address,
+      },
+    });
+  };
+
+export const getAdminList =
+  (terminusAddress, chainName, poolId) => async () => {
+    return http({
+      method: "GET",
+      url: `${API}/drops/terminus/claims`,
+      params: {
+        terminus_address: encodeURIComponent(terminusAddress),
+        blockchain: chainName,
+        terminus_pool_id: poolId,
+      },
+    });
+  };
 
 export const getDropMessage = (claimId) => async (address) =>
   http({
@@ -49,19 +76,19 @@ export const getClaimants =
     });
   };
 
-export const setClaimants =
-  ({ dropperClaimId }) =>
-  async (claimants) => {
-    const data = new FormData();
-    data.append("dropper_claim_id", dropperClaimId);
-    data.append("claimants", claimants);
+export const setClaimants = ({ dropperClaimId, claimants }) => {
+  console.log("setClaimants", dropperClaimId, claimants);
+  // const data = new FormData();
+  // data.append("dropper_claim_id", dropperClaimId);
+  // data.append("claimants", claimants);
+  const data = { dropper_claim_id: dropperClaimId, claimants: claimants };
 
-    return http({
-      method: "POST",
-      url: `${API}/drops/claimants`,
-      data: data,
-    });
-  };
+  return http({
+    method: "POST",
+    url: `${API}/drops/claimants`,
+    data: data,
+  });
+};
 
 export const deleteClaimants =
   ({ dropperClaimId }) =>
@@ -77,18 +104,17 @@ export const deleteClaimants =
     });
   };
 
-export const authenticate =
-  ({ signedMessage }) =>
-  async () => {
-    return http({
-      method: "POST",
-      url: `${API}/authenticate`,
-    });
-  };
-
 export const getTime = () => async () => {
   return http({
     method: "GET",
     url: `${API}/now`,
+  });
+};
+
+export const getTerminus = (chainName) => async () => {
+  return http({
+    method: "GET",
+    url: `${API}/drops/terminus`,
+    params: { blockchain: chainName },
   });
 };

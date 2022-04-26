@@ -30,6 +30,7 @@ const HubspotForm = React.lazy(() => import("../../../components/HubspotForm"));
 const NewSubscription = React.lazy(() =>
   import("../../../components/NewSubscription")
 );
+const FileUpload = React.lazy(() => import("../../../components/FileUpload"));
 
 const OverlayProvider = ({ children }) => {
   const ui = useContext(UIContext);
@@ -136,12 +137,13 @@ const OverlayProvider = ({ children }) => {
         size="2xl"
         scrollBehavior="outside"
         trapFocus={false}
+        bgColor="white.100"
       >
         <ModalOverlay />
 
-        <ModalContent borderRadius="48px" bgColor="purple.900">
+        <ModalContent borderRadius="48px" bgColor="red.100">
           <ModalHeader
-            bgColor="pink.900"
+            bgColor="orange.900"
             textColor="white.300"
             py={2}
             fontSize="lg"
@@ -161,17 +163,12 @@ const OverlayProvider = ({ children }) => {
               `Fill ${modal.props.bottle.name} bottles with UNIM`}
             {modal.type === MODAL_TYPES.POUR_BOTTLE &&
               `Open ${modal.props.bottle.name} bottles to extract UNIM`}
+            {modal.type === MODAL_TYPES.FILE_UPLOAD && `Upload new csv file`}
           </ModalHeader>
           {modal.type !== MODAL_TYPES.FILL_BOTTLE &&
             modal.type !== MODAL_TYPES.POUR_BOTTLE && <Divider />}
           <ModalCloseButton mr={2} />
-          <ModalBody
-            zIndex={100002}
-            bgColor={
-              modal.type === MODAL_TYPES.UPLOAD_ABI ? "white.200" : undefined
-            }
-            borderRadius="148px"
-          >
+          <ModalBody zIndex={100002} bgColor={"white.300"} borderRadius="148px">
             <Suspense fallback={<Spinner />}>
               {modal.type === MODAL_TYPES.NEW_SUBSCRIPTON && (
                 <NewSubscription
@@ -193,6 +190,9 @@ const OverlayProvider = ({ children }) => {
               )}
               {modal.type === MODAL_TYPES.SIGNUP && (
                 <SignUp toggleModal={toggleModal} />
+              )}
+              {modal.type === MODAL_TYPES.FILE_UPLOAD && (
+                <FileUpload toggleModal={toggleModal} />
               )}
             </Suspense>
           </ModalBody>

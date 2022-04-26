@@ -3,6 +3,7 @@ import Web3Context, { WALLET_STATES } from "./context";
 import Web3 from "web3";
 import { getweb3Auth, postweb3Auth } from "../../services/terminus.service";
 import { getTime } from "../../services/moonstream-engine.service";
+import { ChainInterface } from "../../../../../../types/Moonstream";
 
 declare global {
   interface Window {
@@ -11,15 +12,15 @@ declare global {
   }
 }
 
-export const chains: { [index: string]: any } = {
+export const chains: { [index: string]: ChainInterface } = {
   local: {
     chainId: 1337,
     name: "local",
     rpcs: ["http://127.0.0.1:8545"],
   },
-  matic_mumbai: {
+  mumbai: {
     chainId: 80001,
-    name: "Matic mumbai",
+    name: "mumbai",
     rpcs: [
       "https://rpc-mumbai.matic.today",
       "https://matic-mumbai.chainstacklabs.com",
@@ -29,7 +30,7 @@ export const chains: { [index: string]: any } = {
   },
   matic: {
     chainId: 137,
-    name: "Matic mainnet",
+    name: "matic",
     rpcs: [
       "https://rpc-mainnet.matic.network",
       "https://matic-mainnet.chainstacklabs.com",
@@ -48,7 +49,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
   const [web3] = React.useState<Web3>(new Web3(null));
   const [buttonText, setButtonText] = React.useState(WALLET_STATES.ONBOARD);
   const [account, setAccount] = React.useState<string>("");
-  const [chainId, setChainId] = React.useState<number | void>();
+  const [chainId, setChainId] = React.useState<number>(0);
 
   const setWeb3ProviderAsWindowEthereum = async () => {
     let wasSetupSuccess = false;
@@ -162,6 +163,20 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
     }
   }, [web3.currentProvider, chainId]);
 
+  React.useEffect(() => {
+    if (window?.ethereum?.selectedAddress) {
+      setWeb3ProviderAsWindowEthereum().then((result) => {
+        if (result) console.log("wallet setup was successfull");
+        else
+          console.warn(
+            "wallet setup failed, should go in fallback mode immediately"
+          );
+        setButtonText(result ? WALLET_STATES.CONNECTED : WALLET_STATES.CONNECT);
+      });
+      //  ÷
+    }
+  }, [window?.ethereum?.selectedAddress]);
+
   // React.useEffect(() => {
   //   if (
   //     !localStorage.getItem("APP_ACCESS_TOKEN") &&
@@ -197,8 +212,17 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
   // }, [account, chainId, web3.utils]);
 
   React.useEffect(() => {
+    const outDated = () => {
+      console.log("OutDated:");
+      const deadline = localStorage.getItem("APP_ACCESS_TOKEN_DEADLINE");
+      if (!deadline) return true;
+      if (Number(deadline) <= Math.floor(new Date().getTime() / 1000))
+        return true;
+      console.log("OutDated: false");
+      return false;
+    };
     if (
-      !localStorage.getItem("APP_ACCESS_TOKEN") &&
+      (!localStorage.getItem("APP_ACCESS_TOKEN") || outDated()) &&
       web3?.utils.isAddress(account)
     ) {
       console.log("auth flow entring");
@@ -245,7 +269,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
 
       // if(!window?.ethereum?.currentProvider) throw("ERRRRROR");
       // console.dir(window.ethereum)
-      console.log("chain id", chainId)
+      console.log("chain id", chainId);
       window.ethereum.sendAsync(
         {
           method: "eth_signTypedData_v4",
@@ -259,10 +283,26 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
             account,
             JSON.parse(msgParams).message.deadline
           );
+
+          localStorage.setItem(
+            "APP_ACCESS_TOKEN",
+            Buffer.from(
+              JSON.stringify({
+                address: account,
+                deadline: JSON.parse(msgParams).message.deadline,
+                signed_message: signedMessage.result,
+              }),
+              "utf-8"
+            ).toString("base64")
+          );
+          localStorage.setItem(
+            "APP_ACCESS_TOKEN_DEADLINE",
+            JSON.parse(msgParams).message.deadline
+          );
         }
       );
     }
-  }, [account, chainId, web3.utils, window.ethereum.currentProvider]);
+  }, [account, chainId, web3.utils, window?.ethereum?.currentProvider]);
 
   const defaultTxConfig = { from: account };
 

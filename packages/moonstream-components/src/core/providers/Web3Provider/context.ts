@@ -3,7 +3,7 @@ import Web3 from "web3";
 import {
   WalletStatesInterface,
   MoonstreamWeb3ProviderInterface,
-} from "../../../../../types/Moonstream";
+} from "../../../../../../types/Moonstream";
 
 export enum txStatus {
   READY = 0,
@@ -31,7 +31,7 @@ const Web3Context = createContext<MoonstreamWeb3ProviderInterface>({
   buttonText: "",
   WALLET_STATES: WALLET_STATES,
   account: "",
-  chainId: "0",
+  chainId: 0,
   defaultTxConfig: {},
 });
 

@@ -2,11 +2,9 @@ import React, { useContext } from "react";
 import { Flex, Button, Image, Center, Spinner } from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
-// import { getLayout } from "../src/layouts/AppLayout";
-import useDropper from "moonstream-components//src/core/hooks/useDropper";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
-
-import DropList from "../../../packages/moonstream-components/src/components/DropList";
+import ContractCard from "moonstream-components/src/components/Dropper/ContractCard";
+import useClaimAdmin from "moonstream-components/src/core/hooks/useClaimAdmin";
 
 const assets = {
   onboarding:
@@ -18,16 +16,15 @@ const assets = {
   NFT: `${AWS_ASSETS_PATH}/NFT.png`,
 };
 
-const Homepage = () => {
+const Drops = () => {
   const web3Provider = useContext(Web3Context);
 
-  const dropper = useDropper({
-    dropperAddress: process.env.NEXT_PUBLIC_DROPPER_ADDRESS ?? "",
+  const { adminClaims } = useClaimAdmin({
     targetChain: targetChain,
     ctx: web3Provider,
   });
 
-  if (dropper.dropperWeb3State.isLoading || dropper.usersDropList.isLoading)
+  if (adminClaims.isLoading)
     return (
       <Flex minH="100vh">
         <Spinner />
@@ -35,8 +32,25 @@ const Homepage = () => {
     );
 
   return (
-    <Flex w="100%" minH="100vh" bgColor={"blue.1200"} direction={"column"}>
-      {web3Provider.account && <DropList drops={dropper.usersDropList.data} />}
+    <Flex
+      w="100%"
+      minH="100vh"
+      bgColor={"blue.1200"}
+      direction={"column"}
+      px="7%"
+    >
+      {web3Provider.account &&
+        adminClaims?.data?.map((claim, idx) => {
+          return (
+            <ContractCard
+              key={`contract-card-${idx}}`}
+              address={claim.address}
+              claimId={claim.id}
+              deadline={claim.deadline}
+              title={claim.title}
+            />
+          );
+        })}
       {!web3Provider.account &&
         web3Provider.buttonText !== web3Provider.WALLET_STATES.CONNECTED && (
           <Center>
@@ -63,8 +77,6 @@ const Homepage = () => {
   );
 };
 
-// Homepage.getLayout = getLayout;
-
 export async function getStaticProps() {
   const assetPreload = assets
     ? Object.keys(assets).map((key) => {
@@ -84,4 +96,4 @@ export async function getStaticProps() {
   };
 }
 
-export default Homepage;
+export default Drops;

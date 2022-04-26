@@ -1,11 +1,9 @@
 import React, { useContext } from "react";
-import { Flex, Button, Image, Center, Spinner } from "@chakra-ui/react";
+import { Flex, Center } from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 // import { getLayout } from "../src/layouts/AppLayout";
-import useDropper from "moonstream-components/src/core/hooks/useDropper";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
-import DropList from "../../packages/moonstream-components/src/components/DropList";
 import FeatureCard from "../../packages/moonstream-components/src/components/FeatureCard";
 
 const assets: any = {
@@ -19,19 +17,6 @@ const assets: any = {
 };
 const Homepage = () => {
   const web3Provider = useContext(Web3Context);
-
-  const dropper = useDropper({
-    dropperAddress: process.env.NEXT_PUBLIC_DROPPER_ADDRESS ?? "",
-    targetChain: targetChain,
-    ctx: web3Provider,
-  });
-
-  // if (dropper.dropperWeb3State.isLoading || dropper.usersDropList.isLoading)
-  //   return (
-  //     <Flex minH="100vh">
-  //       <Spinner />
-  //     </Flex>
-  //   );
 
   return (
     <Flex
@@ -54,19 +39,7 @@ const Homepage = () => {
               alt="Drops"
               textColor={"white.100"}
               level="h2"
-
             />
-            {/* <FeatureCard
-              w="300px"
-              link="/drops"
-              text="Create new whitelist with loaylty rewards"
-              heading="Drops"
-              imageUrl={assets["lender"]}
-              alt="Drops"
-              textColor={"white.100"}
-              level="h2"
-              disabled={true}
-            /> */}
             <FeatureCard
               w="300px"
               link="/drops"

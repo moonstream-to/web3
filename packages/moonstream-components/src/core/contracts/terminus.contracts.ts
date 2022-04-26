@@ -1,91 +1,118 @@
-// import { TerminusFacet } from "../../../types/contracts/TerminusFacet";
-// import { BaseContract } from "../../../types/contracts/types";
-// import { OwnershipFacet } from "../../../types/contracts/OwnershipFacet";
+import { MockTerminus as TerminusFacet } from "../../../../../types/contracts/MockTerminus";
+import { BaseContract } from "../../../../../types/contracts/types";
 
-// import Web3 from "web3";
+import Web3 from "web3";
+import { MoonstreamWeb3ProviderInterface } from "../../../../../types/Moonstream";
 
-// export const getTerminusFacetState =
-//   (contracts: { ownershipFacet: BaseContract; terminusFacet: BaseContract }) =>
-//   async () => {
-//     console.log("gert terminusFacetState");
-//     const terminusFacet = contracts.terminusFacet as TerminusFacet;
-//     const ownershipFacet = contracts.ownershipFacet as OwnershipFacet;
-//     console.dir(contracts.terminusFacet);
-//     const poolBasePrice = await terminusFacet.methods.poolBasePrice().call();
-//     const paymentToken = await terminusFacet.methods.paymentToken().call();
-//     const contractURI = await terminusFacet.methods.contractURI().call();
-//     const totalPools = await terminusFacet.methods.totalPools().call();
-//     const owner = await ownershipFacet.methods.owner().call();
-//     // const controller = await terminusFacet.methods.terminusController().call();
-//     // let numberOfOwnedPools = "0";
-//     // let ownedPoolIds = [];
-//     // if (account) {
-//     //   numberOfOwnedPools = await terminusFacet.methods
-//     //     .totalPoolsByOwner(account)
-//     //     .call();
+const terminusAbi = require("../../../../../abi/MockTerminus.json");
+export const getTerminusFacetState =
+  (ctx: MoonstreamWeb3ProviderInterface, terminusAddress: string) =>
+  async () => {
+    const terminusFacet = new ctx.web3.eth.Contract(
+      terminusAbi
+    ) as any as TerminusFacet;
+    terminusFacet.options.address = terminusAddress;
 
-//     //   if (numberOfOwnedPools !== "0") {
-//     //     const n = new Number(numberOfOwnedPools);
-//     //     for (let i = 0; i < n; i++) {
-//     //       const poolId = await terminusFacet.methods
-//     //         .poolOfOwnerByIndex(account, i)
-//     //         .call();
-//     //       const poolOwner: any = await terminusFacet.methods
-//     //         .terminusPoolController(poolId)
-//     //         .call();
+    const poolBasePrice = await terminusFacet.methods.poolBasePrice().call();
+    const paymentToken = await terminusFacet.methods.paymentToken().call();
+    const contractURI = await terminusFacet.methods.contractURI().call();
+    const totalPools = await terminusFacet.methods.totalPools().call();
+    // const controller = await terminusFacet.methods.terminusController().call();
+    // let numberOfOwnedPools = "0";
+    // let ownedPoolIds = [];
+    // if (account) {
+    //   numberOfOwnedPools = await terminusFacet.methods
+    //     .totalPoolsByOwner(account)
+    //     .call();
 
-//     //       if (poolOwner === account) {
-//     //         ownedPoolIds.push(poolId);
-//     //       }
-//     //     }
-//     //   }
+    //   if (numberOfOwnedPools !== "0") {
+    //     const n = new Number(numberOfOwnedPools);
+    //     for (let i = 0; i < n; i++) {
+    //       const poolId = await terminusFacet.methods
+    //         .poolOfOwnerByIndex(account, i)
+    //         .call();
+    //       const poolOwner: any = await terminusFacet.methods
+    //         .terminusPoolController(poolId)
+    //         .call();
 
-//     // }
-//     // const web3 = new Web3(
-//     //   `https://mainnet.infura.io/v3/6e9a55a6a5664c4a84335d68d9f5a727`
-//     // );
-//     // const allEvents = await terminusFacet.getPastEvents("allEvents");
+    //       if (poolOwner === account) {
+    //         ownedPoolIds.push(poolId);
+    //       }
+    //     }
+    //   }
 
-//     // const blockNumber = await web3.eth.getBlockNumber();
-//     // console.log("block number: ", blockNumber);
-//     // const pastPoolControlTransferred = await terminusFacet.getPastEvents(
-//     //   "allEvents",
-//     //   { fromBlock: 26051378 - 175, toBlock: 26051378 + 175 }
-//     // );
-//     // console.dir(pastPoolControlTransferred);
-//     // console.log("poolBasePrice:", poolBasePrice);
-//     // console.log("totalPools", totalPools);
+    //     // }
+    //     // const web3 = new Web3(
+    //     //   `https://mainnet.infura.io/v3/6e9a55a6a5664c4a84335d68d9f5a727`
+    //     // );
+    //     // const allEvents = await terminusFacet.getPastEvents("allEvents");
 
-//     // while (0) {}
+    //     // const blockNumber = await web3.eth.getBlockNumber();
+    //     // console.log("block number: ", blockNumber);
+    //     // const pastPoolControlTransferred = await terminusFacet.getPastEvents(
+    //     //   "allEvents",
+    //     //   { fromBlock: 26051378 - 175, toBlock: 26051378 + 175 }
+    //     // );
+    //     // console.dir(pastPoolControlTransferred);
+    //     // console.log("poolBasePrice:", poolBasePrice);
+    //     // console.log("totalPools", totalPools);
 
-//     return {
-//       poolBasePrice,
-//       paymentToken,
-//       contractURI,
-//       totalPools,
-//       // numberOfOwnedPools,
-//       // ownedPoolIds,
-//       owner,
-//       // controller,
-//     };
-//   };
+    //     // while (0) {}
 
-// export const getTerminusFacetPoolState =
-//   (contract: BaseContract, poolId: string) => async () => {
-//     const terminusFacet = contract as TerminusFacet;
-//     const controller = await terminusFacet.methods
-//       .terminusPoolController(poolId)
-//       .call();
-//     const supply = await terminusFacet.methods
-//       .terminusPoolSupply(poolId)
-//       .call();
-//     const uri = await terminusFacet.methods.uri(poolId).call();
-//     const capacity = await terminusFacet.methods
-//       .terminusPoolCapacity(poolId)
-//       .call();
+    return {
+      poolBasePrice,
+      paymentToken,
+      contractURI,
+      totalPools,
+    };
+  };
 
-//     return { controller, supply, uri, capacity };
-//   };
+export const getTerminusFacetPoolState =
+  (ctx: MoonstreamWeb3ProviderInterface, address: string, poolId: string) =>
+  async () => {
+    const terminusFacet = new ctx.web3.eth.Contract(
+      terminusAbi
+    ) as any as TerminusFacet;
+    terminusFacet.options.address = address;
+
+    const controller = await terminusFacet.methods
+      .terminusPoolController(poolId)
+      .call();
+    const supply = await terminusFacet.methods
+      .terminusPoolSupply(poolId)
+      .call();
+    const uri = await terminusFacet.methods.uri(poolId).call();
+    const capacity = await terminusFacet.methods
+      .terminusPoolCapacity(poolId)
+      .call();
+
+    let accountBalance: any = "0";
+
+    if (ctx.account) {
+      accountBalance = await terminusFacet.methods
+        .balanceOf(ctx.account, poolId)
+        .call();
+    }
+    console.log("getTerminusFacetPoolState:", ctx.account, accountBalance);
+
+    return { controller, supply, uri, capacity, accountBalance };
+  };
+
+export const balanceOfAddress =
+  (
+    userAddress: string,
+    terminusAddress: string,
+    terminusPoolId: number,
+    ctx: MoonstreamWeb3ProviderInterface
+  ) =>
+  async () => {
+    const terminusFacet = new ctx.web3.eth.Contract(
+      terminusAbi
+    ) as any as TerminusFacet;
+    terminusFacet.options.address = terminusAddress;
+
+    return terminusFacet.methods.balanceOf(userAddress, terminusPoolId).call();
+  };
 
 // export const createSimplePool =
 //   (contract: BaseContract, defaultTxConfig: any) =>

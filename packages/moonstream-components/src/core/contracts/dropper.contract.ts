@@ -16,14 +16,10 @@ export const claimDrop =
     claimId: string;
     transactionConfig?: any;
   }) => {
-    console.log("claimDrop", message, blockDeadline, claimId, dropperAddress);
     const dropper = new ctx.web3.eth.Contract(dropperAbi) as any as Dropper;
     dropper.options.address = dropperAddress;
     const txConfig = { ...ctx.defaultTxConfig, ...transactionConfig };
 
-    console.log("txConfig", txConfig);
-    // console.log("message before", message);
-    // console.log("message after", ctx.web3.utils.hexToBytes(message));
 
     const response = await dropper.methods
       .claim(claimId, blockDeadline, "0", `0x` + message)
