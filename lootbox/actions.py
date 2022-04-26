@@ -276,6 +276,7 @@ def get_terminus_claims(
             DropperClaim.claim_block_deadline,
             DropperClaim.claim_id,
             DropperClaim.active,
+            DropperContract.address.label("dropper_contract_address"),
         )
         .join(DropperContract)
         .filter(DropperClaim.terminus_address == terminus_address)
@@ -303,8 +304,8 @@ def get_terminus_claims(
 
 def get_claims(
     db_session: Session,
-    dropper_contract_address: ChecksumAddress,
     blockchain: str,
+    dropper_contract_address: Optional[ChecksumAddress] = None,
     claimant_address: Optional[ChecksumAddress] = None,
     terminus_address: Optional[ChecksumAddress] = None,
     terminus_pool_id: Optional[int] = None,
@@ -327,12 +328,15 @@ def get_claims(
             DropperClaim.claim_id,
             DropperClaim.active,
             DropperClaimant.amount,
+            DropperContract.address.label("dropper_contract_address"),
         )
         .join(DropperContract)
         .join(DropperClaimant)
         .filter(DropperContract.blockchain == blockchain)
-        .filter(DropperContract.address == dropper_contract_address)
     )
+
+    if dropper_contract_address:
+        query = query.filter(DropperContract.address == dropper_contract_address)
 
     if claimant_address:
         query = query.filter(DropperClaimant.address == claimant_address)
@@ -345,6 +349,8 @@ def get_claims(
 
     if active:
         query = query.filter(DropperClaim.active == active)
+
+    query = query.order_by(DropperClaim.created_at.asc())
 
     if limit:
         query = query.limit(limit)

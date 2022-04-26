@@ -230,56 +230,9 @@ async def get_drops_terminus_handler(
 
 @app.get("/drops/claims", response_model=data.DropListResponse)
 async def get_drop_list_handler(
-    dropper_contract_address: str,
-    blockchain: str,
-    claimant_address: Optional[str] = Query(None),
-    terminus_address: Optional[str] = Query(None),
-    terminus_pool_id: Optional[int] = Query(None),
-    active: Optional[bool] = Query(None),
-    limit: int = 10,
-    offset: int = 0,
-    db_session: Session = Depends(db.yield_db_session),
-) -> data.DropListResponse:
-    """
-    Get list of drops for a given dropper contract and claimant address.
-    """
-
-    dropper_contract_address = Web3.toChecksumAddress(dropper_contract_address)
-
-    if claimant_address:
-        claimant_address = Web3.toChecksumAddress(claimant_address)
-
-    if terminus_address:
-        terminus_address = Web3.toChecksumAddress(terminus_address)
-
-    try:
-        results = actions.get_claims(
-            db_session=db_session,
-            dropper_contract_address=dropper_contract_address,
-            blockchain=blockchain,
-            claimant_address=claimant_address,
-            terminus_address=terminus_address,
-            terminus_pool_id=terminus_pool_id,
-            active=active,
-            limit=limit,
-            offset=offset,
-        )
-    except NoResultFound:
-        raise DropperHTTPException(status_code=404, detail="No drops found.")
-    except Exception as e:
-        logger.error(
-            f"Can't get claims for user {claimant_address} end with error: {e}"
-        )
-        raise DropperHTTPException(status_code=500, detail="Can't get claims")
-
-    return data.DropListResponse(drops=[result for result in results])
-
-
-@app.get("/drops/claims", response_model=data.DropListResponse)
-async def get_drop_list_handler(
-    dropper_contract_address: str,
     blockchain: str,
     claimant_address: str,
+    dropper_contract_address: Optional[str] = Query(None),
     terminus_address: Optional[str] = Query(None),
     terminus_pool_id: Optional[int] = Query(None),
     active: Optional[bool] = Query(None),
@@ -289,9 +242,11 @@ async def get_drop_list_handler(
 ) -> data.DropListResponse:
     """
     Get list of drops for a given dropper contract and claimant address.
+    dasdasd
     """
 
-    dropper_contract_address = Web3.toChecksumAddress(dropper_contract_address)
+    if dropper_contract_address:
+        dropper_contract_address = Web3.toChecksumAddress(dropper_contract_address)
 
     if claimant_address:
         claimant_address = Web3.toChecksumAddress(claimant_address)
