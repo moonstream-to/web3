@@ -101,8 +101,6 @@ async def get_drop_handler(
 ) -> data.DropResponse:
     """
     Get signed transaction for user with the given address.
-    example:
-    curl -X GET "http://localhost:8000/drops?claim_id=<claim_number>&address=<user_address>"
     """
 
     address = Web3.toChecksumAddress(address)
@@ -199,6 +197,7 @@ async def get_drops_blockchains_handler(
 
 @app.get("/drops/terminus")
 async def get_drops_terminus_handler(
+    blockchain: str = Query(None),
     db_session: Session = Depends(db.yield_db_session),
 ) -> List[data.DropperTerminusResponse]:
 
@@ -207,7 +206,7 @@ async def get_drops_terminus_handler(
     """
 
     try:
-        results = actions.list_drops_terminus(db_session=db_session)
+        results = actions.list_drops_terminus(db_session=db_session, blockchain=blockchain)
     except Exception as e:
         logger.error(f"Can't get list of terminus contracts end with error: {e}")
         raise DropperHTTPException(
@@ -218,6 +217,7 @@ async def get_drops_terminus_handler(
         data.DropperTerminusResponse(
             terminus_address=result.terminus_address,
             terminus_pool_id=result.terminus_pool_id,
+            blockchain=result.blockchain
         )
         for result in results
     ]
@@ -280,13 +280,6 @@ async def create_drop(
 
     """
     Create a drop for a given dropper contract.
-    required: Web3 verification of signature (middleware probably)
-    body:
-        dropper_contract_address: address of dropper contract
-        claim_id: claim id
-        address: address of claimant
-        amount: amount of drop
-
     """
 
     if register_request.terminus_address:
@@ -332,9 +325,6 @@ async def get_claimants(
 ) -> List[str]:
     """
     Get list of claimants for a given dropper contract.
-
-    curl -X GET "http://localhost:8000/drops/claimants?claim_id=<claim_number>"
-
     """
     try:
         results = actions.get_claimants(
@@ -359,11 +349,6 @@ async def create_claimants(
 
     """
     Add addresses to particular claim
-
-    curl --location --request POST 'localhost:7191/drops/claimants' \
-    --header 'Content-Type: application/json' \
-    --data-raw '{"dropper_claim_id": UUID, "claimants":[{"address": address, "amount": int}]}'
-
     """
 
     added_by = "me"  # request.state.user.address read from header in auth middleware
@@ -393,9 +378,6 @@ async def create_claimants(
 
     """
     Remove addresses to particular claim
-    curl --location --request DELETE 'localhost:7191/drops/claimants' \
-    --header 'Content-Type: application/json' \
-    --data-raw '{"dropper_claim_id": UUID, "claimants":[address]}'
     """
 
     try:

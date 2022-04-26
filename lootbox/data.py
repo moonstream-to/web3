@@ -36,6 +36,7 @@ class DropperContractResponse(BaseModel):
 class DropperTerminusResponse(BaseModel):
     terminus_address: str
     terminus_pool_id: int
+    blockchain: str
 
 class DropperBlockchainResponse(BaseModel):
     blockchain: str

@@ -64,19 +64,23 @@ def list_dropper_contracts(
     return dropper_contracts
 
 
-def list_drops_terminus(db_session: Session):
+def list_drops_terminus(db_session: Session, blockchain: Optional[str] = None):
     """
     List distinct of terminus addressess
     """
 
-    drops = (
-        db_session.query(DropperClaim.terminus_address, DropperClaim.terminus_pool_id)
+    terminus = (
+        db_session.query(DropperClaim.terminus_address, DropperClaim.terminus_pool_id, DropperContract.blockchain)
+        .join(DropperContract)
         .filter(DropperClaim.terminus_address.isnot(None))
-        .distinct(DropperClaim.terminus_pool_id.isnot(None))
-        .distinct(DropperClaim.terminus_address, DropperClaim.terminus_pool_id)
+        .filter(DropperClaim.terminus_pool_id.isnot(None))
     )
+    if blockchain:
+        terminus = terminus.filter(DropperContract.blockchain == blockchain)
+    
+    terminus = terminus.distinct(DropperClaim.terminus_address, DropperClaim.terminus_pool_id)
 
-    return drops
+    return terminus
 
 
 def list_drops_blockchains(db_session: Session):
