@@ -398,7 +398,10 @@ def ensure_admin_token_holder(
     if brownie_network is None:
         raise ValueError(f"No brownie network for blockchain: {blockchain}")
 
-    network.connect(brownie_network)
+    try:
+        network.connect(brownie_network)
+    except Exception:
+        pass
     terminus = MockTerminus.MockTerminus(terminus_address)
     balance = terminus.balance_of(address, terminus_pool_id)
     if balance == 0:
