@@ -7,15 +7,15 @@ from sqlalchemy import (
     Column,
     DateTime,
     ForeignKey,
+    Index,
     MetaData,
-    Text,
     String,
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import expression
+from sqlalchemy.sql import expression, and_
 
 """
 Naming conventions doc
@@ -63,6 +63,9 @@ class DropperContract(Base):  # type: ignore
     )
     blockchain = Column(VARCHAR(128), nullable=False)
     address = Column(VARCHAR(256), index=True)
+    title = Column(VARCHAR(128), nullable=True)
+    description = Column(String, nullable=True)
+    image_uri = Column(String, nullable=True)
 
     created_at = Column(
         DateTime(timezone=True), server_default=utcnow(), nullable=False
@@ -93,8 +96,8 @@ class DropperClaim(Base):  # type: ignore
     claim_id = Column(BigInteger, nullable=True)
     title = Column(VARCHAR(128), nullable=True)
     description = Column(String, nullable=True)
-    terminus_address = Column(VARCHAR(256), nullable=False, index=True)
-    terminus_pool_id = Column(BigInteger, nullable=False, index=True)
+    terminus_address = Column(VARCHAR(256), nullable=True, index=True)
+    terminus_pool_id = Column(BigInteger, nullable=True, index=True)
     claim_block_deadline = Column(BigInteger, nullable=True)
     active = Column(Boolean, default=False, nullable=False)
 
@@ -108,9 +111,20 @@ class DropperClaim(Base):  # type: ignore
         nullable=False,
     )
 
+    __table_args__ = (
+        Index(
+            "uq_dropper_claims_dropper_contract_id_claim_id",
+            "dropper_contract_id",
+            "claim_id",
+            unique=True,
+            postgresql_where=and_(claim_id.isnot(None), active.is_(True)),
+        ),
+    )
+
 
 class DropperClaimant(Base):  # type: ignore
     __tablename__ = "dropper_claimants"
+    __table_args__ = (UniqueConstraint("dropper_claim_id", "address"),)
 
     id = Column(
         UUID(as_uuid=True),
