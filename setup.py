@@ -30,7 +30,7 @@ setup(
         ],
         "distribute": ["setuptools", "twine", "wheel"],
     },
-    description="Command line interface to the Unicorn milk bottler contract",
+    description="Command line interface for moonstream-engine.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Moonstream",

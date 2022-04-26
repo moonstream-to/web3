@@ -8,6 +8,7 @@ from . import data
 from . import Lootbox, core, drop, MockErc20, Dropper, auth, MockTerminus
 
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -70,7 +71,7 @@ def create_dropper_contract_handler(args: argparse.Namespace) -> None:
     except Exception as err:
         logger.error(f"Unhandled /create_dropper_contract exception: {err}")
         return
-    print(created_contract)
+    logger.info(created_contract)
 
 
 def delete_dropper_contract_handler(args: argparse.Namespace) -> None:
@@ -84,7 +85,7 @@ def delete_dropper_contract_handler(args: argparse.Namespace) -> None:
     except Exception as err:
         logger.error(f"Unhandled /delete_dropper_contract exception: {err}")
         return
-    print(removed_contract)
+    logger.info(removed_contract)
 
 
 def list_dropper_contracts_handler(args: argparse.Namespace) -> None:
@@ -96,7 +97,9 @@ def list_dropper_contracts_handler(args: argparse.Namespace) -> None:
     except Exception as err:
         logger.error(f"Unhandled /list_dropper_contracts exception: {err}")
         return
-    print(data.DropperContractsListResponse(dropper_contracts=dropper_contracts).json())
+    logger.info(
+        data.DropperContractsListResponse(dropper_contracts=dropper_contracts).json()
+    )
 
 
 def dropper_create_drop_handler(args: argparse.Namespace) -> None:
@@ -115,7 +118,7 @@ def dropper_create_drop_handler(args: argparse.Namespace) -> None:
     except Exception as err:
         logger.error(f"Unhandled /create_dropper_claim exception: {err}")
         return
-    print(created_claim)
+    logger.info(created_claim)
 
 
 def dropper_list_drops_handler(args: argparse.Namespace) -> None:
@@ -124,12 +127,12 @@ def dropper_list_drops_handler(args: argparse.Namespace) -> None:
             dropper_claims = actions.list_claims(
                 db_session=db_session,
                 dropper_contract_id=args.dropper_contract_id,
-                active=False,
+                active=args.active,
             )
     except Exception as err:
         logger.error(f"Unhandled /list_dropper_claims exception: {err}")
         return
-    print(dropper_claims)
+    logger.info(dropper_claims)
 
 
 def dropper_delete_drop_handler(args: argparse.Namespace) -> None:
@@ -142,7 +145,7 @@ def dropper_delete_drop_handler(args: argparse.Namespace) -> None:
     except Exception as err:
         logger.error(f"Unhandled /delete_dropper_claim exception: {err}")
         return
-    print(removed_claim)
+    logger.info(removed_claim)
 
 
 def add_claimants_handler(args: argparse.Namespace) -> None:
@@ -184,7 +187,7 @@ def add_claimants_handler(args: argparse.Namespace) -> None:
         except Exception as err:
             logger.error(f"Unhandled /add_claimants exception: {err}")
             return
-    print(data.ClaimantsResponse(claimants=claimants).json())
+    logger.info(data.ClaimantsResponse(claimants=claimants).json())
 
 
 def delete_claimants_handler(args: argparse.Namespace) -> None:
@@ -224,7 +227,7 @@ def delete_claimants_handler(args: argparse.Namespace) -> None:
         except Exception as err:
             logger.error(f"Unhandled /delete_claimants exception: {err}")
             return
-    print(data.RemoveClaimantsResponse(addresses=addresses).json())
+    logger.info(data.RemoveClaimantsResponse(addresses=addresses).json())
 
 
 def list_claimants_handler(args: argparse.Namespace) -> None:
@@ -241,7 +244,7 @@ def list_claimants_handler(args: argparse.Namespace) -> None:
         except Exception as err:
             logger.error(f"Unhandled /list_claimants exception: {err}")
             return
-    print(claimants)
+    logger.info(claimants)
 
 
 def main() -> None:

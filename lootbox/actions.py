@@ -1,5 +1,15 @@
+from datetime import datetime
 import re
+from turtle import update
+
+import sqlalchemy
+
+from lootbox.drop import create_diff
 from .models import DropperClaimant, DropperContract, DropperClaim
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.sql import null as sql_null
+from uuid import uuid4, UUID
+from copy import deepcopy
 
 from brownie import network, web3
 
@@ -125,25 +135,38 @@ def add_claimants(db_session, dropper_claim_id, claimants, added_by):
     Add a claimants to a claim
     """
 
-    # get the claimamants for this dropper claim
+    # On conflict requirements https://stackoverflow.com/questions/42022362/no-unique-or-exclusion-constraint-matching-the-on-conflict
 
-    claimants_for_claim = get_claimants(db_session, dropper_claim_id)
-
-    already_added = [address for address, _, _ in claimants_for_claim]
+    claimant_objects = []
 
     for claimant in claimants:
-        claimant_claim = DropperClaimant(
-            dropper_claim_id=dropper_claim_id,
-            address=web3.toChecksumAddress(claimant.address),
-            amount=claimant.amount,
-            added_by=added_by,
+        claimant_objects.append(
+            {
+                "dropper_claim_id": dropper_claim_id,
+                "address": web3.toChecksumAddress(claimant.address),
+                "amount": claimant.amount,
+                "added_by": added_by,
+                "created_at": sql_null(),
+                "updated_at": sql_null(),
+                "created_at": datetime.now(),
+                "updated_at": datetime.now(),
+            }
         )
-        if claimant.address not in already_added:
-            db_session.add(claimant_claim)
-            db_session.commit()
-            db_session.refresh(claimant_claim)  # refresh the object to get the id
-            already_added.append(claimant.address)
-    return claimants
+
+    insert_statement = insert(DropperClaimant).values(claimant_objects)
+
+    result_stmt = insert_statement.on_conflict_do_update(
+        index_elements=[DropperClaimant.address, DropperClaimant.dropper_claim_id],
+        set_=dict(
+            amount=insert_statement.excluded.amount,
+            added_by=insert_statement.excluded.added_by,
+            updated_at=datetime.now(),
+        ),
+    )
+    db_session.execute(result_stmt)
+    db_session.commit()
+
+    return claimant_objects
 
 
 def get_claimants(db_session, dropper_claim_id, limit=None, offset=None):
@@ -185,7 +208,13 @@ def get_claimant(db_session, dropper_claim_id, address):
 
 
 def get_claims(
-    db_session, dropper_contract_id, blockchain, address, limit=None, offset=None
+    db_session,
+    dropper_contract_id,
+    blockchain,
+    address,
+    active,
+    limit=None,
+    offset=None,
 ):
     """
     Search for a claimant by address
@@ -206,7 +235,7 @@ def get_claims(
         .filter(DropperContract.blockchain == blockchain)
         .filter(DropperClaimant.address == address)
         .filter(DropperClaim.claim_block_deadline > len(network.chain))
-        .filter(DropperClaim.active == True)
+        .filter(DropperClaim.active == active)
         .limit(limit)
         .offset(offset)
         .all()
