@@ -24,6 +24,21 @@ class SignerWakeupResponse(BaseModel):
     instances: List[str] = Field(default_factory=list)
 
 
+class DropperContractResponse(BaseModel):
+    id: UUID
+    address: str
+    blockchain: str
+    title: Optional[str]
+    description: Optional[str]
+    image_uri: Optional[str]
+
+
+class DropperTerminusResponse(BaseModel):
+    terminus_address: Optional[str]
+
+class DropperBlockchainResponse(BaseModel):
+    blockchain: str
+
 class DropRegisterRequest(BaseModel):
 
     dropper_contract_id: UUID
@@ -79,7 +94,3 @@ class DropResponse(BaseModel):
 
 class DropListResponse(BaseModel):
     drops: List[Any] = Field(default_factory=list)
-
-
-class DropperContractsListResponse(BaseModel):
-    dropper_contracts: List[Any] = Field(default_factory=list)

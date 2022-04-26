@@ -11,7 +11,9 @@ from web3.types import ChecksumAddress
 from .models import DropperClaimant, DropperContract, DropperClaim
 
 
-def create_dropper_contract(db_session, blockchain, dropper_contract_address):
+def create_dropper_contract(
+    db_session: Session, blockchain: Optional[str], dropper_contract_address
+):
     """
     Create a new dropper contract.
     """
@@ -25,11 +27,15 @@ def create_dropper_contract(db_session, blockchain, dropper_contract_address):
     return dropper_contract
 
 
-def delete_dropper_contract(db_session, blockchain, dropper_contract_address):
+def delete_dropper_contract(
+    db_session: Session, blockchain: Optional[str], dropper_contract_address
+):
 
     dropper_contract = (
         db_session.query(DropperContract)
-        .filter(DropperContract.address == dropper_contract_address)
+        .filter(
+            DropperContract.address == Web3.toChecksumAddress(dropper_contract_address)
+        )
         .filter(DropperContract.blockchain == blockchain)
         .one()
     )
@@ -40,7 +46,7 @@ def delete_dropper_contract(db_session, blockchain, dropper_contract_address):
 
 
 def list_dropper_contracts(
-    db_session, blockchain: Optional[str]
+    db_session: Session, blockchain: Optional[str]
 ) -> List[Dict[str, Any]]:
     """
     List all dropper contracts
@@ -55,17 +61,38 @@ def list_dropper_contracts(
             DropperContract.blockchain == blockchain
         )
 
-    return [
-        {
-            "id": dropper_contract.id,
-            "address": dropper_contract.address,
-            "blockchain": dropper_contract.blockchain,
-        }
-        for dropper_contract in dropper_contracts
-    ]
+    return dropper_contracts
 
 
-def list_claims(db_session, dropper_contract_id, active=True):
+def list_drops_terminus(db_session: Session):
+    """
+    List distinct of terminus addressess
+    """
+
+    drops = (
+        db_session.query(DropperClaim.terminus_address)
+        .filter(DropperClaim.terminus_address.isnot(None))
+        .distinct(DropperClaim.terminus_address)
+    )
+
+    return drops
+
+
+def list_drops_blockchains(db_session: Session):
+    """
+    List distinct of blockchains
+    """
+
+    blockchains = (
+        db_session.query(DropperContract.blockchain)
+        .filter(DropperContract.blockchain.isnot(None))
+        .distinct(DropperContract.blockchain)
+    )
+
+    return blockchains
+
+
+def list_claims(db_session: Session, dropper_contract_id, active=True):
     """
     List all claims
     """
@@ -87,7 +114,7 @@ def list_claims(db_session, dropper_contract_id, active=True):
     return claims
 
 
-def delete_claim(db_session, dropper_claim_id):
+def delete_claim(db_session: Session, dropper_claim_id):
     """
     Delete a claim
     """
@@ -103,7 +130,7 @@ def delete_claim(db_session, dropper_claim_id):
 
 
 def create_claim(
-    db_session,
+    db_session: Session,
     dropper_contract_id,
     claim_id,
     title,
@@ -139,7 +166,7 @@ def create_claim(
     return dropper_claim
 
 
-def add_claimants(db_session, dropper_claim_id, claimants, added_by):
+def add_claimants(db_session: Session, dropper_claim_id, claimants, added_by):
     """
     Add a claimants to a claim
     """
@@ -176,7 +203,7 @@ def add_claimants(db_session, dropper_claim_id, claimants, added_by):
     return claimant_objects
 
 
-def get_claimants(db_session, dropper_claim_id, limit=None, offset=None):
+def get_claimants(db_session: Session, dropper_claim_id, limit=None, offset=None):
     """
     Search for a claimant by address
     """
@@ -193,7 +220,7 @@ def get_claimants(db_session, dropper_claim_id, limit=None, offset=None):
     return claimants_query.all()
 
 
-def get_claimant(db_session, dropper_claim_id, address):
+def get_claimant(db_session: Session, dropper_claim_id, address):
     """
     Search for a claimant by address
     """
@@ -257,10 +284,10 @@ def get_claims(
     if offset:
         query = query.offset(offset)
 
-    return query.all()
+    return query
 
 
-def delete_claimants(db_session, dropper_claim_id, addresses):
+def delete_claimants(db_session: Session, dropper_claim_id, addresses):
     """
     Delete all claimants for a claim
     """

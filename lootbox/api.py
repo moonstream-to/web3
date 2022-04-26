@@ -59,6 +59,8 @@ whitelist_paths.update(
         "/drops": "GET",
         "/drops/claims": "GET",
         "/drops/contracts": "GET",
+        "/drops/terminus": "GET",
+        "/drops/blockchains": "GET",
     }
 )
 
@@ -134,11 +136,11 @@ async def get_drop_handler(
     )
 
 
-@app.get("/drops/contracts")
+@app.get("/drops/contracts", response_model=List[data.DropperContractResponse])
 async def get_dropper_contracts_handler(
     blockchain: Optional[str] = Query(None),
     db_session: Session = Depends(db.yield_db_session),
-) -> Any:
+) -> List[data.DropperContractResponse]:
     """
     Get list of drops for a given dropper contract.
     """
@@ -153,7 +155,70 @@ async def get_dropper_contracts_handler(
         logger.error(f"Can't get list of dropper contracts end with error: {e}")
         raise DropperHTTPException(status_code=500, detail="Can't get contracts")
 
-    return results
+    response = [
+        data.DropperContractResponse(
+            id=result.id,
+            blockchain=result.blockchain,
+            address=result.address,
+            title=result.title,
+            description=result.description,
+            image_uri=result.image_uri,
+        )
+        for result in results
+    ]
+
+    return response
+
+
+@app.get("/drops/blockchains")
+async def get_drops_blockchains_handler(
+    db_session: Session = Depends(db.yield_db_session),
+) -> List[data.DropperBlockchainResponse]:
+    """
+    Get list of blockchains.
+    """
+
+    try:
+        results = actions.list_drops_blockchains(db_session=db_session)
+    except NoResultFound:
+        raise DropperHTTPException(status_code=404, detail="No drops found.")
+    except Exception as e:
+        logger.error(f"Can't get list of drops end with error: {e}")
+        raise DropperHTTPException(status_code=500, detail="Can't get drops")
+
+    response = [
+        data.DropperBlockchainResponse(
+            blockchain=result.blockchain,
+        )
+        for result in results
+    ]
+
+    return response
+
+
+@app.get("/drops/terminus")
+async def get_drops_terminus_handler(
+    db_session: Session = Depends(db.yield_db_session),
+) -> List[data.DropperTerminusResponse]:
+
+    """
+    Return ditinct of terminus contracts
+    """
+
+    try:
+        results = actions.list_drops_terminus(db_session=db_session)
+    except Exception as e:
+        logger.error(f"Can't get list of terminus contracts end with error: {e}")
+        raise DropperHTTPException(
+            status_code=500, detail="Can't get terminus contracts"
+        )
+
+    response = [
+        data.DropperTerminusResponse(address=result.terminus_address)
+        for result in results
+    ]
+
+    return response
 
 
 @app.get("/drops/claims", response_model=data.DropListResponse)
@@ -192,7 +257,7 @@ async def get_drop_list_handler(
         )
         raise DropperHTTPException(status_code=500, detail="Can't get claims")
 
-    return data.DropListResponse(drops=results)
+    return data.DropListResponse(drops=[result for result in results])
 
 
 @app.post("/drops/claims", response_model=data.DropCreatedResponse)

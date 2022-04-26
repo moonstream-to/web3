@@ -91,14 +91,24 @@ def delete_dropper_contract_handler(args: argparse.Namespace) -> None:
 def list_dropper_contracts_handler(args: argparse.Namespace) -> None:
     try:
         with db.yield_db_session_ctx() as db_session:
-            dropper_contracts = actions.list_dropper_contracts(
+            results = actions.list_dropper_contracts(
                 db_session=db_session, blockchain=args.blockchain
             )
     except Exception as err:
         logger.error(f"Unhandled /list_dropper_contracts exception: {err}")
         return
     logger.info(
-        data.DropperContractsListResponse(dropper_contracts=dropper_contracts).json()
+        [
+            data.DropperContractResponse(
+                id=result.id,
+                blockchain=result.blockchain,
+                address=result.address,
+                title=result.title,
+                description=result.description,
+                image_uri=result.image_uri,
+            )
+            for result in results
+        ]
     )
 
 
