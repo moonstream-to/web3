@@ -5,6 +5,8 @@ from typing import Any, Awaitable, Callable, Dict, Optional
 
 from fastapi import HTTPException, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
+from web3 import Web3
+
 from .auth import (
     AUTH_PAYLOAD_NAME,
     DEFAULT_INTERVAL,
@@ -58,10 +60,19 @@ class DropperAuthMiddleware(BaseHTTPMiddleware):
             ).decode("utf-8")
 
             json_payload = json.loads(json_payload_str)
-            verify(json_payload)
+            verified = verify(json_payload)
+            address = json_payload.get("address")
+            if address is not None:
+                address = Web3.toChecksumAddress(address)
+            request.state.verified = verified
         except MoonstreamAuthorizationVerificationError as e:
             logger.info("Moonstream authorization verification error: %s", e)
             return Response(status_code=403, content="Invalid authorization header")
+        except Exception as e:
+            logger.info("Unexpected exception: %s", e)
+            raise
+
+        return await call_next(request)
 
 
 class DropperHTTPException(HTTPException):

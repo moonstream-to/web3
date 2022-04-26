@@ -1,6 +1,6 @@
 from datetime import datetime
-from typing import List, Any, Optional, Dict
-
+from typing import List, Any, Optional, Dict, Tuple
+import uuid
 
 from brownie import network
 from sqlalchemy.dialects.postgresql import insert
@@ -359,6 +359,26 @@ def get_claims(
         query = query.offset(offset)
 
     return query
+
+
+def get_claim_admin_pool(
+    db_session: Session,
+    dropper_claim_id: uuid.UUID,
+) -> Any:
+    """
+    Search for a claimant by address
+    """
+
+    query = (
+        db_session.query(
+            DropperContract.blockchain,
+            DropperClaim.terminus_address,
+            DropperClaim.terminus_pool_id,
+        )
+        .join(DropperContract)
+        .filter(DropperClaim.id == dropper_claim_id)
+    )
+    return query.one()
 
 
 def delete_claimants(db_session: Session, dropper_claim_id, addresses):

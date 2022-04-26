@@ -66,9 +66,6 @@ whitelist_paths.update(
     }
 )
 
-
-app.add_middleware(DropperAuthMiddleware, whitelist=whitelist_paths)
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ORIGINS,
@@ -76,6 +73,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(DropperAuthMiddleware, whitelist=whitelist_paths)
 
 
 @app.get("/ping", response_model=data.PingResponse)
@@ -203,7 +202,7 @@ async def get_drops_terminus_handler(
 ) -> List[data.DropperTerminusResponse]:
 
     """
-    Return ditinct of terminus contracts
+    Return distinct terminus pools
     """
 
     try:
@@ -393,12 +392,10 @@ async def create_claimants(
     add_claimants_request: data.DropAddClaimantsRequest = Body(...),
     db_session: Session = Depends(db.yield_db_session),
 ) -> data.ClaimantsResponse:
-
     """
     Add addresses to particular claim
     """
-
-    added_by = "me"  # request.state.user.address read from header in auth middleware
+    added_by = request.state.address
 
     try:
         results = actions.add_claimants(
