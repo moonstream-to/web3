@@ -67,6 +67,8 @@ whitelist_paths.update(
     }
 )
 
+app.add_middleware(DropperAuthMiddleware, whitelist=whitelist_paths)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ORIGINS,
@@ -74,8 +76,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.add_middleware(DropperAuthMiddleware, whitelist=whitelist_paths)
 
 
 @app.get("/ping", response_model=data.PingResponse)
