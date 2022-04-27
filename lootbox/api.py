@@ -26,12 +26,9 @@ from .settings import (
     ENGINE_BROWNIE_NETWORK,
     DOCS_TARGET_PATH,
     ORIGINS,
-    ENGINE_DROPPER_ADDRESS,
 )
 
 network.connect(ENGINE_BROWNIE_NETWORK)
-
-DROPPER = Dropper.Dropper(ENGINE_DROPPER_ADDRESS)
 
 RESOURCE_TYPE_DROP_WHITELIST = "drop_whitelist"
 
@@ -127,7 +124,8 @@ async def get_drop_handler(
             detail="Cannot claim rewards for a claim with no block deadline",
         )
 
-    message_hash = DROPPER.claim_message_hash(
+    dropper_contract = Dropper.Dropper(claimant.dropper_contract_address)
+    message_hash = dropper_contract.claim_message_hash(
         claimant.claim_id,
         claimant.address,
         claimant.claim_block_deadline,
