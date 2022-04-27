@@ -109,8 +109,24 @@ async def get_drop_handler(
 
     try:
         claimant = actions.get_claimant(db_session, dropper_claim_id, address)
+    except NoResultFound:
+        raise DropperHTTPException(
+            status_code=403, detail="You are not authorized to claim that reward"
+        )
     except Exception as e:
-        raise DropperHTTPException(status_code=500, detail=f"Can't get claimant: {e}")
+        raise DropperHTTPException(status_code=500, detail="Can't get claimant")
+
+    if not claimant.active:
+        raise DropperHTTPException(
+            status_code=403, detail="Cannot claim rewards for an inactive claim"
+        )
+
+    # If block deadline has already been exceeded - the contract (or frontend) will handle it.
+    if claimant.claim_block_deadline is None:
+        raise DropperHTTPException(
+            status_code=403,
+            detail="Cannot claim rewards for a claim with no block deadline",
+        )
 
     message_hash = DROPPER.claim_message_hash(
         claimant.claim_id,
@@ -128,6 +144,7 @@ async def get_drop_handler(
     except Exception as err:
         logger.error(f"Unexpected error in signing message process: {err}")
         raise DropperHTTPException(status_code=500)
+
     return data.DropResponse(
         claimant=claimant.address,
         amount=claimant.amount,

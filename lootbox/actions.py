@@ -262,12 +262,12 @@ def get_claimant(db_session: Session, dropper_claim_id, address):
             DropperClaimant.address,
             DropperClaimant.amount,
             DropperClaim.claim_id,
+            DropperClaim.active,
             DropperClaim.claim_block_deadline,
         )
         .join(DropperClaim)
         .filter(DropperClaimant.dropper_claim_id == dropper_claim_id)
         .filter(DropperClaimant.address == Web3.toChecksumAddress(address))
-        .filter(DropperClaim.claim_block_deadline > len(network.chain))
     )
 
     return claimant_query.one()
