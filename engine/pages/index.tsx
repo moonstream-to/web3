@@ -32,31 +32,31 @@ const Homepage = () => {
             <FeatureCard
               w="300px"
               link="/drops"
-              text="Create new whitelist with loaylty rewards"
-              heading="Drops"
-              imageUrl={assets["cryptoTraders"]}
-              alt="Drops"
+              text=" Set up a loyalty program and reward your players with tokens, items, badges, and achievements"
+              heading="Loyalty and Drops"
+              imageUrl={assets["lender"]}
+              alt="Loyalty-Drops"
               textColor={"white.100"}
               level="h2"
             />
             <FeatureCard
               w="300px"
-              link="/drops"
-              text="Create new whitelist with loaylty rewards"
-              heading="Guards"
+              link="/loot"
+              text="Create lootboxes as rewards for encounters, challenges, and boss fights"
+              heading="Lootboxes"
               imageUrl={assets["DAO"]}
-              alt="Drops"
+              alt="Lootboxes"
               textColor={"white.100"}
               level="h2"
               disabled={true}
             />
             <FeatureCard
               w="300px"
-              link="/drops"
-              text="Create new whitelist with loaylty rewards"
-              heading="Treasury"
+              link="/crafting"
+              text="Create on-chain crafting recipes for your blockchain game"
+              heading="Crafting"
               imageUrl={assets["NFT"]}
-              alt="Drops"
+              alt="Crafting"
               textColor={"white.100"}
               level="h2"
               disabled={true}
