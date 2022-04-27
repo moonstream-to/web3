@@ -10,8 +10,8 @@ export const APP_API_URL = process.env.NEXT_PUBLIC_APP_API_URL;
   image: URL of image to display on page preview in search engines and link shares
 */
 export const DEFAULT_METATAGS = {
-  title: "Moonstream lootbox",
-  description: "Moonstream engine",
+  title: "Moonstream engine",
+  description: "Engine to build on-chain game experience",
   keywords: "web3, smart contracts, terminus, nfts",
   url: "https://engine.moonstream.io",
   image: `https://s3.amazonaws.com/static.simiotics.com/moonstream/assets/lender.png`,
@@ -119,4 +119,4 @@ export const SUPPORT_EMAIL = "support@moonstream.to";
 /*
 App name that will show in titles, modals etc
 */
-export const APP_NAME = "Lootbox";
+export const APP_NAME = "Engine";
