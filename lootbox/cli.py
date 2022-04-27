@@ -8,6 +8,7 @@ from . import data
 from . import Lootbox, core, drop, MockErc20, Dropper, auth, MockTerminus
 
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -66,6 +67,9 @@ def create_dropper_contract_handler(args: argparse.Namespace) -> None:
                 db_session=db_session,
                 blockchain=args.blockchain,
                 dropper_contract_address=args.address,
+                title=args.title,
+                description=args.description,
+                image_uri=args.image_uri,
             )
     except Exception as err:
         logger.error(f"Unhandled /create_dropper_contract exception: {err}")
@@ -90,13 +94,27 @@ def delete_dropper_contract_handler(args: argparse.Namespace) -> None:
 def list_dropper_contracts_handler(args: argparse.Namespace) -> None:
     try:
         with db.yield_db_session_ctx() as db_session:
-            dropper_contracts = actions.list_dropper_contracts(
+            results = actions.list_dropper_contracts(
                 db_session=db_session, blockchain=args.blockchain
             )
     except Exception as err:
         logger.error(f"Unhandled /list_dropper_contracts exception: {err}")
         return
-    print(data.DropperContractsListResponse(dropper_contracts=dropper_contracts).json())
+    print(
+        "\n".join(
+            [
+                data.DropperContractResponse(
+                    id=result.id,
+                    blockchain=result.blockchain,
+                    address=result.address,
+                    title=result.title,
+                    description=result.description,
+                    image_uri=result.image_uri,
+                ).json()
+                for result in results
+            ]
+        )
+    )
 
 
 def dropper_create_drop_handler(args: argparse.Namespace) -> None:
@@ -118,13 +136,32 @@ def dropper_create_drop_handler(args: argparse.Namespace) -> None:
     print(created_claim)
 
 
+def dropper_admin_pool_handler(args: argparse.Namespace) -> None:
+    try:
+        with db.yield_db_session_ctx() as db_session:
+            (
+                blockchain,
+                terminus_address,
+                terminus_pool_id,
+            ) = actions.get_claim_admin_pool(
+                db_session=db_session, dropper_claim_id=args.id
+            )
+    except Exception as err:
+        logger.error(f"Unhandled exception: {err}")
+        return
+
+    print(
+        f"Blockchain: {blockchain}, Terminus address: {terminus_address}, Pool ID: {terminus_pool_id}"
+    )
+
+
 def dropper_list_drops_handler(args: argparse.Namespace) -> None:
     try:
         with db.yield_db_session_ctx() as db_session:
             dropper_claims = actions.list_claims(
                 db_session=db_session,
                 dropper_contract_id=args.dropper_contract_id,
-                active=False,
+                active=args.active,
             )
     except Exception as err:
         logger.error(f"Unhandled /list_dropper_claims exception: {err}")
@@ -374,6 +411,28 @@ def main() -> None:
         required=True,
         help="Contract address",
     )
+    parser_dropper_contract_create.add_argument(
+        "-t",
+        "--title",
+        type=str,
+        required=False,
+        help="Contract title",
+    )
+    parser_dropper_contract_create.add_argument(
+        "-d",
+        "--description",
+        type=str,
+        required=False,
+        help="Contract description",
+    )
+    parser_dropper_contract_create.add_argument(
+        "-i",
+        "--image-uri",
+        type=str,
+        required=False,
+        help="Contract image uri",
+    )
+
     parser_dropper_contract_create.set_defaults(func=create_dropper_contract_handler)
 
     parser_dropper_contract_list = subparsers_dropper.add_parser(
@@ -460,6 +519,14 @@ def main() -> None:
     )
 
     parser_dropper_create_drop.set_defaults(func=dropper_create_drop_handler)
+
+    parser_dropper_get_claim_admin_pool = subparsers_dropper.add_parser(
+        "admin-pool", description="Get admin pool for drop"
+    )
+    parser_dropper_get_claim_admin_pool.add_argument(
+        "-i", "--id", required=True, help="Dropper Claim ID (Database ID)"
+    )
+    parser_dropper_get_claim_admin_pool.set_defaults(func=dropper_admin_pool_handler)
 
     parser_dropper_list_drops = subparsers_dropper.add_parser(
         "list-drops", description="List dropper drops"

@@ -12,6 +12,14 @@ class PingResponse(BaseModel):
     status: str
 
 
+class NowResponse(BaseModel):
+    """
+    Schema for responses on /now endpoint
+    """
+
+    epoch_time: float
+
+
 class SignerListResponse(BaseModel):
     instances: List[Any] = Field(default_factory=list)
 
@@ -22,6 +30,25 @@ class SignerSleepResponse(BaseModel):
 
 class SignerWakeupResponse(BaseModel):
     instances: List[str] = Field(default_factory=list)
+
+
+class DropperContractResponse(BaseModel):
+    id: UUID
+    address: str
+    blockchain: str
+    title: Optional[str]
+    description: Optional[str]
+    image_uri: Optional[str]
+
+
+class DropperTerminusResponse(BaseModel):
+    terminus_address: str
+    terminus_pool_id: int
+    blockchain: str
+
+
+class DropperBlockchainResponse(BaseModel):
+    blockchain: str
 
 
 class DropRegisterRequest(BaseModel):
@@ -79,7 +106,3 @@ class DropResponse(BaseModel):
 
 class DropListResponse(BaseModel):
     drops: List[Any] = Field(default_factory=list)
-
-
-class DropperContractsListResponse(BaseModel):
-    dropper_contracts: List[Any] = Field(default_factory=list)

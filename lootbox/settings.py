@@ -1,4 +1,5 @@
 import os
+from typing import Dict
 
 
 # Origin
@@ -44,3 +45,8 @@ if MOONSTREAM_AWS_SIGNER_IMAGE_ID is None:
     raise ValueError("MOONSTREAM_AWS_SIGNER_IMAGE_ID environment variable must be set")
 
 MOONSTREAM_AWS_SIGNER_INSTANCE_PORT = 17181
+
+BLOCKCHAINS_TO_BROWNIE_NETWORKS: Dict[str, str] = {
+    "polygon": "moonstream-engine-polygon",
+    "mumbai": "mumbai",
+}
