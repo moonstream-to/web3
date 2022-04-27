@@ -57,7 +57,6 @@ whitelist_paths: Dict[str, str] = {}
 whitelist_paths.update(
     {
         "/ping": "GET",
-        "/time": "GET",
         "/drops": "GET",
         "/drops/claims": "GET",
         "/drops/contracts": "GET",
@@ -396,6 +395,7 @@ async def create_drop(
 
 @app.get("/drops/claimants", response_model=data.DropListResponse)
 async def get_claimants(
+    request: Request,
     dropper_claim_id: UUID,
     limit: int = 10,
     offset: int = 0,
@@ -404,6 +404,17 @@ async def get_claimants(
     """
     Get list of claimants for a given dropper contract.
     """
+
+    try:
+        actions.ensure_admin_token_holder(
+            db_session, dropper_claim_id, request.state.address
+        )
+    except actions.AuthorizationError as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=403)
+    except Exception as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=500)
 
     try:
         results = actions.get_claimants(
