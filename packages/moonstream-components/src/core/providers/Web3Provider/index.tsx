@@ -279,7 +279,8 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
         signAccessToken(account);
       }
     }
-  }, [account, web3.utils]);
+    //eslint-disable-next-line
+  }, [account]);
 
   const defaultTxConfig = { from: account };
 
