@@ -10,8 +10,8 @@ export const APP_API_URL = process.env.NEXT_PUBLIC_ENGINE_API_URL;
   image: URL of image to display on page preview in search engines and link shares
 */
 export const DEFAULT_METATAGS = {
-  title: "Moonstream engine",
-  description: "Engine to build on-chain game experience",
+  title: "Moonstream Engine",
+  description: "Building blocks for your blockchain game",
   keywords: "web3, smart contracts, terminus, nfts",
   url: "https://engine.moonstream.io",
   image: `https://s3.amazonaws.com/static.simiotics.com/moonstream/assets/lender.png`,
