@@ -86,12 +86,12 @@ async def ping_handler() -> data.PingResponse:
     return data.PingResponse(status="ok")
 
 
-@app.get("/time", response_model=int)
-async def time_handler() -> int:
+@app.get("/now", tags=["time"])
+async def now_handler() -> data.NowResponse:
     """
-    Get current time.
+    Get server current time.
     """
-    return int(time.time())
+    return data.NowResponse(epoch_time=time.time())
 
 
 @app.get("/drops", response_model=data.DropResponse)

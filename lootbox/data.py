@@ -12,6 +12,14 @@ class PingResponse(BaseModel):
     status: str
 
 
+class NowResponse(BaseModel):
+    """
+    Schema for responses on /now endpoint
+    """
+
+    epoch_time: float
+
+
 class SignerListResponse(BaseModel):
     instances: List[Any] = Field(default_factory=list)
 
