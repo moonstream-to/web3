@@ -272,8 +272,10 @@ def get_claimant(db_session: Session, dropper_claim_id, address):
             DropperClaim.claim_id,
             DropperClaim.active,
             DropperClaim.claim_block_deadline,
+            DropperContract.address.label("dropper_contract_address"),
         )
         .join(DropperClaim)
+        .join(DropperContract)
         .filter(DropperClaimant.dropper_claim_id == dropper_claim_id)
         .filter(DropperClaimant.address == Web3.toChecksumAddress(address))
     )
