@@ -1,6 +1,6 @@
 import { http } from "../utils";
 
-const API_URL = process.env.NEXT_PUBLIC_APP_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_ENGINE_API_URL;
 const DB_URL = process.env.NEXT_PUBLIC_MOONSTREAM_DB_URL;
 const ETHEREUM_CLUSTER_URL =
   process.env.NEXT_PUBLIC_MOONSTREAM_ETHEREUM_CLUSTER_URL;

@@ -1,6 +1,6 @@
 import { http } from "../utils";
 
-const API_URL = process.env.NEXT_PUBLIC_APP_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_ENGINE_API_URL;
 export const AUTH_URL = `${API_URL}/users`;
 
 export const login = ({ username, password, token_note }) => {
