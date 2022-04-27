@@ -420,7 +420,7 @@ async def get_claimants(
 
 
 @app.post("/drops/claimants", response_model=data.ClaimantsResponse)
-async def create_claimants(
+async def add_claimants(
     request: Request,
     add_claimants_request: data.DropAddClaimantsRequest = Body(...),
     db_session: Session = Depends(db.yield_db_session),

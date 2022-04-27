@@ -21,7 +21,12 @@ class AuthorizationError(Exception):
 
 
 def create_dropper_contract(
-    db_session: Session, blockchain: Optional[str], dropper_contract_address
+    db_session: Session,
+    blockchain: Optional[str],
+    dropper_contract_address,
+    title,
+    description,
+    image_uri,
 ):
     """
     Create a new dropper contract.
@@ -30,6 +35,9 @@ def create_dropper_contract(
     dropper_contract = DropperContract(
         blockchain=blockchain,
         address=Web3.toChecksumAddress(dropper_contract_address),
+        title=title,
+        description=description,
+        image_uri=image_uri,
     )
     db_session.add(dropper_contract)
     db_session.commit()

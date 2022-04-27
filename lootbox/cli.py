@@ -67,11 +67,14 @@ def create_dropper_contract_handler(args: argparse.Namespace) -> None:
                 db_session=db_session,
                 blockchain=args.blockchain,
                 dropper_contract_address=args.address,
+                title=args.title,
+                description=args.description,
+                image_uri=args.image_uri,
             )
     except Exception as err:
         logger.error(f"Unhandled /create_dropper_contract exception: {err}")
         return
-    logger.info(created_contract)
+    print(created_contract)
 
 
 def delete_dropper_contract_handler(args: argparse.Namespace) -> None:
@@ -85,7 +88,7 @@ def delete_dropper_contract_handler(args: argparse.Namespace) -> None:
     except Exception as err:
         logger.error(f"Unhandled /delete_dropper_contract exception: {err}")
         return
-    logger.info(removed_contract)
+    print(removed_contract)
 
 
 def list_dropper_contracts_handler(args: argparse.Namespace) -> None:
@@ -97,18 +100,20 @@ def list_dropper_contracts_handler(args: argparse.Namespace) -> None:
     except Exception as err:
         logger.error(f"Unhandled /list_dropper_contracts exception: {err}")
         return
-    logger.info(
-        [
-            data.DropperContractResponse(
-                id=result.id,
-                blockchain=result.blockchain,
-                address=result.address,
-                title=result.title,
-                description=result.description,
-                image_uri=result.image_uri,
-            )
-            for result in results
-        ]
+    print(
+        "\n".join(
+            [
+                data.DropperContractResponse(
+                    id=result.id,
+                    blockchain=result.blockchain,
+                    address=result.address,
+                    title=result.title,
+                    description=result.description,
+                    image_uri=result.image_uri,
+                ).json()
+                for result in results
+            ]
+        )
     )
 
 
@@ -128,7 +133,7 @@ def dropper_create_drop_handler(args: argparse.Namespace) -> None:
     except Exception as err:
         logger.error(f"Unhandled /create_dropper_claim exception: {err}")
         return
-    logger.info(created_claim)
+    print(created_claim)
 
 
 def dropper_admin_pool_handler(args: argparse.Namespace) -> None:
@@ -161,7 +166,7 @@ def dropper_list_drops_handler(args: argparse.Namespace) -> None:
     except Exception as err:
         logger.error(f"Unhandled /list_dropper_claims exception: {err}")
         return
-    logger.info(dropper_claims)
+    print(dropper_claims)
 
 
 def dropper_delete_drop_handler(args: argparse.Namespace) -> None:
@@ -174,7 +179,7 @@ def dropper_delete_drop_handler(args: argparse.Namespace) -> None:
     except Exception as err:
         logger.error(f"Unhandled /delete_dropper_claim exception: {err}")
         return
-    logger.info(removed_claim)
+    print(removed_claim)
 
 
 def add_claimants_handler(args: argparse.Namespace) -> None:
@@ -216,7 +221,7 @@ def add_claimants_handler(args: argparse.Namespace) -> None:
         except Exception as err:
             logger.error(f"Unhandled /add_claimants exception: {err}")
             return
-    logger.info(data.ClaimantsResponse(claimants=claimants).json())
+    print(data.ClaimantsResponse(claimants=claimants).json())
 
 
 def delete_claimants_handler(args: argparse.Namespace) -> None:
@@ -256,7 +261,7 @@ def delete_claimants_handler(args: argparse.Namespace) -> None:
         except Exception as err:
             logger.error(f"Unhandled /delete_claimants exception: {err}")
             return
-    logger.info(data.RemoveClaimantsResponse(addresses=addresses).json())
+    print(data.RemoveClaimantsResponse(addresses=addresses).json())
 
 
 def list_claimants_handler(args: argparse.Namespace) -> None:
@@ -273,7 +278,7 @@ def list_claimants_handler(args: argparse.Namespace) -> None:
         except Exception as err:
             logger.error(f"Unhandled /list_claimants exception: {err}")
             return
-    logger.info(claimants)
+    print(claimants)
 
 
 def main() -> None:
@@ -406,6 +411,28 @@ def main() -> None:
         required=True,
         help="Contract address",
     )
+    parser_dropper_contract_create.add_argument(
+        "-t",
+        "--title",
+        type=str,
+        required=False,
+        help="Contract title",
+    )
+    parser_dropper_contract_create.add_argument(
+        "-d",
+        "--description",
+        type=str,
+        required=False,
+        help="Contract description",
+    )
+    parser_dropper_contract_create.add_argument(
+        "-i",
+        "--image-uri",
+        type=str,
+        required=False,
+        help="Contract image uri",
+    )
+
     parser_dropper_contract_create.set_defaults(func=create_dropper_contract_handler)
 
     parser_dropper_contract_list = subparsers_dropper.add_parser(
