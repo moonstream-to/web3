@@ -9,7 +9,9 @@ from sqlalchemy.orm import Session
 from web3 import Web3
 from web3.types import ChecksumAddress
 
-from . import MockTerminus
+from lootbox.Dropper import Dropper
+
+from . import Dropper, MockTerminus
 from .models import DropperClaimant, DropperContract, DropperClaim
 from .settings import BLOCKCHAINS_TO_BROWNIE_NETWORKS
 
@@ -69,6 +71,18 @@ def list_dropper_contracts(
         )
 
     return dropper_contracts
+
+
+def get_dropper_contract_by_id(
+    db_session: Session, dropper_contract_id: uuid.UUID
+) -> DropperContract:
+    """
+    Get a dropper contract by its ID
+    """
+    query = db_session.query(DropperContract).filter(
+        DropperContract.id == dropper_contract_id
+    )
+    return query.one()
 
 
 def list_drops_terminus(db_session: Session, blockchain: Optional[str] = None):
@@ -407,6 +421,34 @@ def ensure_admin_token_holder(
     if balance == 0:
         raise AuthorizationError(
             f"Address has insufficient balance in Terminus pool: address={address}, blockchain={blockchain}, terminus_address={terminus_address}, terminus_pool_id={terminus_pool_id}"
+        )
+    return True
+
+
+def ensure_dropper_contract_owner(
+    db_session: Session, dropper_contract_id: uuid.UUID, address: ChecksumAddress
+) -> bool:
+    dropper_contract_info = get_dropper_contract_by_id(
+        db_session=db_session, dropper_contract_id=dropper_contract_id
+    )
+    brownie_network = BLOCKCHAINS_TO_BROWNIE_NETWORKS.get(
+        dropper_contract_info.blockchain
+    )
+    if brownie_network is None:
+        raise ValueError(
+            f"No brownie network for blockchain: {dropper_contract_info.blockchain}"
+        )
+
+    try:
+        network.connect(brownie_network)
+    except Exception:
+        pass
+
+    dropper = Dropper.Dropper(dropper_contract_info.address)
+    dropper_owner_address = dropper.owner()
+    if address != Web3.toChecksumAddress(dropper_owner_address):
+        raise AuthorizationError(
+            f"Given address is not the owner of the given dropper contract: address={address}, blockchain={dropper_contract_info.blockchain}, dropper_address={dropper_contract_info.address}"
         )
     return True
 

@@ -1,6 +1,7 @@
 """
 Lootbox API.
 """
+from atexit import register
 import logging
 import time
 from typing import List, Dict, Optional
@@ -320,6 +321,7 @@ async def get_drop_list_handler(
 
 @app.post("/drops/claims", response_model=data.DropCreatedResponse)
 async def create_drop(
+    request: Request,
     register_request: data.DropRegisterRequest = Body(...),
     db_session: Session = Depends(db.yield_db_session),
 ) -> data.DropCreatedResponse:
@@ -327,8 +329,9 @@ async def create_drop(
     """
     Create a drop for a given dropper contract.
     """
-
-    ## auth required
+    actions.ensure_dropper_contract_owner(
+        db_session, register_request.dropper_contract_id, request.state.address
+    )
 
     if register_request.terminus_address:
         register_request.terminus_address = Web3.toChecksumAddress(
