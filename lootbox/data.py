@@ -38,8 +38,10 @@ class DropperTerminusResponse(BaseModel):
     terminus_pool_id: int
     blockchain: str
 
+
 class DropperBlockchainResponse(BaseModel):
     blockchain: str
+
 
 class DropRegisterRequest(BaseModel):
 

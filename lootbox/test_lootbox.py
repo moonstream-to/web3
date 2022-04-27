@@ -22,7 +22,7 @@ class LootboxTestCase(unittest.TestCase):
         for contract in cls.erc20_contracts:
             contract.deploy({"from": accounts[0]})
 
-        cls.erc20_contracts[0].mint(accounts[0], 100 * 10 ** 18, {"from": accounts[0]})
+        cls.erc20_contracts[0].mint(accounts[0], 100 * 10**18, {"from": accounts[0]})
 
         cls.terminus.set_payment_token(
             cls.erc20_contracts[0].address, {"from": accounts[0]}
@@ -32,7 +32,7 @@ class LootboxTestCase(unittest.TestCase):
         gogogo_result = gogogo(cls.terminus.address, {"from": accounts[0]})
 
         cls.erc20_contracts[0].approve(
-            cls.terminus.address, 100 * 10 ** 18, {"from": accounts[0]}
+            cls.terminus.address, 100 * 10**18, {"from": accounts[0]}
         )
         cls.lootbox = Lootbox.Lootbox(gogogo_result["Lootbox"])
         cls.admin_token_pool_id = gogogo_result["adminTokenPoolId"]
@@ -42,12 +42,12 @@ class LootboxTestCase(unittest.TestCase):
         for i in range(5):
             cls.erc20_contracts[i].mint(
                 cls.lootbox.address,
-                (100 ** 18) * (10 ** 18),
+                (100**18) * (10**18),
                 {"from": accounts[0]},
             )
 
     def _create_terminus_pool(
-        self, capacity=10 ** 18, transferable=True, burnable=True
+        self, capacity=10**18, transferable=True, burnable=True
     ) -> int:
         self.lootbox.surrender_terminus_control({"from": accounts[0]})
         self.terminus.create_pool_v1(
@@ -155,14 +155,14 @@ class LootboxBaseTest(LootboxTestCase):
                     reward_type=20,
                     token_address=self.erc20_contracts[1].address,
                     token_id=0,
-                    token_amount=10 * 10 ** 18,
+                    token_amount=10 * 10**18,
                 )
             ],
             {"from": accounts[0]},
         )
 
         self.erc20_contracts[1].mint(
-            self.lootbox.address, 100 * 10 ** 18, {"from": accounts[0]}
+            self.lootbox.address, 100 * 10**18, {"from": accounts[0]}
         )
 
         lootboxes_count_1 = self.lootbox.total_lootbox_count()
@@ -174,7 +174,7 @@ class LootboxBaseTest(LootboxTestCase):
 
         self.assertEqual(
             self.lootbox.get_lootbox_item_by_index(created_lootbox_id, 0),
-            (20, self.erc20_contracts[1].address, 0, 10 * 10 ** 18),
+            (20, self.erc20_contracts[1].address, 0, 10 * 10**18),
         )
 
         self.lootbox.set_lootbox_uri(created_lootbox_id, "lol", {"from": accounts[0]})
@@ -200,7 +200,7 @@ class LootboxBaseTest(LootboxTestCase):
                     reward_type=20,
                     token_address=self.erc20_contracts[1].address,
                     token_id=0,
-                    token_amount=10 * 10 ** 18,
+                    token_amount=10 * 10**18,
                 )
             ],
             terminus_pool,
@@ -208,7 +208,7 @@ class LootboxBaseTest(LootboxTestCase):
         )
 
         self.erc20_contracts[1].mint(
-            self.lootbox.address, 100 * 10 ** 18, {"from": accounts[0]}
+            self.lootbox.address, 100 * 10**18, {"from": accounts[0]}
         )
 
         lootboxes_count_1 = self.lootbox.total_lootbox_count()
@@ -220,7 +220,7 @@ class LootboxBaseTest(LootboxTestCase):
 
         self.assertEqual(
             self.lootbox.get_lootbox_item_by_index(created_lootbox_id, 0),
-            (20, self.erc20_contracts[1].address, 0, 10 * 10 ** 18),
+            (20, self.erc20_contracts[1].address, 0, 10 * 10**18),
         )
 
         self.lootbox.set_lootbox_uri(created_lootbox_id, "lol", {"from": accounts[0]})
@@ -239,7 +239,7 @@ class LootboxBaseTest(LootboxTestCase):
                     reward_type=20,
                     token_address=self.erc20_contracts[1].address,
                     token_id=0,
-                    token_amount=10 * 10 ** 18,
+                    token_amount=10 * 10**18,
                 )
             ],
             {"from": accounts[0]},
@@ -267,7 +267,7 @@ class LootboxBaseTest(LootboxTestCase):
                     reward_type=20,
                     token_address=self.erc20_contracts[1].address,
                     token_id=0,
-                    token_amount=10 * 10 ** 18,
+                    token_amount=10 * 10**18,
                 )
             ],
             {"from": accounts[0]},
@@ -297,7 +297,7 @@ class LootboxBaseTest(LootboxTestCase):
                     reward_type=20,
                     token_address=self.erc20_contracts[1].address,
                     token_id=0,
-                    token_amount=10 * 10 ** 18,
+                    token_amount=10 * 10**18,
                 )
             ],
             {"from": accounts[0]},
@@ -327,7 +327,7 @@ class LootboxBaseTest(LootboxTestCase):
                 reward_type=20,
                 token_address=self.erc20_contracts[i].address,
                 token_id=0,
-                token_amount=i * 15 * 10 ** 18,
+                token_amount=i * 15 * 10**18,
             )
             for i in range(3)
         ]
@@ -386,7 +386,7 @@ class LootboxBaseTest(LootboxTestCase):
                     reward_type=20,
                     token_address=self.erc20_contracts[1].address,
                     token_id=0,
-                    token_amount=10 * 10 ** 18,
+                    token_amount=10 * 10**18,
                 )
             ],
             {"from": accounts[0]},
@@ -398,7 +398,7 @@ class LootboxBaseTest(LootboxTestCase):
             reward_type=20,
             token_address=self.erc20_contracts[2].address,
             token_id=0,
-            token_amount=10 * 10 ** 18,
+            token_amount=10 * 10**18,
         )
 
         self.lootbox.add_lootbox_item(lootbox_id, newLootboxItem, {"from": accounts[0]})
@@ -484,7 +484,7 @@ class LootboxACLTests(LootboxTestCase):
                         reward_type=20,
                         token_address=self.erc20_contracts[1].address,
                         token_id=0,
-                        token_amount=10 * 10 ** 18,
+                        token_amount=10 * 10**18,
                     )
                 ],
                 {"from": accounts[2]},
@@ -501,14 +501,14 @@ class LootboxACLTests(LootboxTestCase):
                     reward_type=20,
                     token_address=self.erc20_contracts[1].address,
                     token_id=0,
-                    token_amount=10 * 10 ** 18,
+                    token_amount=10 * 10**18,
                 )
             ],
             {"from": accounts[1]},
         )
 
         self.erc20_contracts[1].mint(
-            self.lootbox.address, 100 * 10 ** 18, {"from": accounts[0]}
+            self.lootbox.address, 100 * 10**18, {"from": accounts[0]}
         )
 
         lootboxes_count_1 = self.lootbox.total_lootbox_count()
@@ -520,7 +520,7 @@ class LootboxACLTests(LootboxTestCase):
 
         self.assertEqual(
             self.lootbox.get_lootbox_item_by_index(created_lootbox_id, 0),
-            (20, self.erc20_contracts[1].address, 0, 10 * 10 ** 18),
+            (20, self.erc20_contracts[1].address, 0, 10 * 10**18),
         )
 
         self.lootbox.batch_mint_lootboxes(
@@ -535,7 +535,7 @@ class LootboxACLTests(LootboxTestCase):
             accounts[3].address
         )
         self.assertEqual(
-            recipient_erc20_balance_1, recipient_erc20_balance_0 + (10 * (10 ** 18))
+            recipient_erc20_balance_1, recipient_erc20_balance_0 + (10 * (10**18))
         )
 
     def test_nonadmin_cannot_mint_lootbox_created_by_admin(self):
@@ -547,14 +547,14 @@ class LootboxACLTests(LootboxTestCase):
                     reward_type=20,
                     token_address=self.erc20_contracts[1].address,
                     token_id=0,
-                    token_amount=10 * 10 ** 18,
+                    token_amount=10 * 10**18,
                 )
             ],
             {"from": accounts[1]},
         )
 
         self.erc20_contracts[1].mint(
-            self.lootbox.address, 100 * 10 ** 18, {"from": accounts[0]}
+            self.lootbox.address, 100 * 10**18, {"from": accounts[0]}
         )
 
         lootboxes_count_1 = self.lootbox.total_lootbox_count()
@@ -577,14 +577,14 @@ class LootboxACLTests(LootboxTestCase):
                     reward_type=20,
                     token_address=self.erc20_contracts[1].address,
                     token_id=0,
-                    token_amount=10 * 10 ** 18,
+                    token_amount=10 * 10**18,
                 )
             ],
             {"from": accounts[1]},
         )
 
         self.erc20_contracts[1].mint(
-            self.lootbox.address, 100 * 10 ** 18, {"from": accounts[0]}
+            self.lootbox.address, 100 * 10**18, {"from": accounts[0]}
         )
 
         lootboxes_count_1 = self.lootbox.total_lootbox_count()
@@ -596,7 +596,7 @@ class LootboxACLTests(LootboxTestCase):
 
         self.assertEqual(
             self.lootbox.get_lootbox_item_by_index(created_lootbox_id, 0),
-            (20, self.erc20_contracts[1].address, 0, 10 * 10 ** 18),
+            (20, self.erc20_contracts[1].address, 0, 10 * 10**18),
         )
 
         self.lootbox.batch_mint_lootboxes_constant(
@@ -611,7 +611,7 @@ class LootboxACLTests(LootboxTestCase):
             accounts[3].address
         )
         self.assertEqual(
-            recipient_erc20_balance_1, recipient_erc20_balance_0 + (10 * (10 ** 18))
+            recipient_erc20_balance_1, recipient_erc20_balance_0 + (10 * (10**18))
         )
 
     def test_nonadmin_cannot_batch_mint_constant_lootbox_created_by_admin(self):
@@ -623,14 +623,14 @@ class LootboxACLTests(LootboxTestCase):
                     reward_type=20,
                     token_address=self.erc20_contracts[1].address,
                     token_id=0,
-                    token_amount=10 * 10 ** 18,
+                    token_amount=10 * 10**18,
                 )
             ],
             {"from": accounts[1]},
         )
 
         self.erc20_contracts[1].mint(
-            self.lootbox.address, 100 * 10 ** 18, {"from": accounts[0]}
+            self.lootbox.address, 100 * 10**18, {"from": accounts[0]}
         )
 
         lootboxes_count_1 = self.lootbox.total_lootbox_count()
