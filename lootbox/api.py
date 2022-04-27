@@ -328,6 +328,8 @@ async def create_drop(
     Create a drop for a given dropper contract.
     """
 
+    ## auth required
+
     if register_request.terminus_address:
         register_request.terminus_address = Web3.toChecksumAddress(
             register_request.terminus_address
@@ -372,6 +374,7 @@ async def get_claimants(
     """
     Get list of claimants for a given dropper contract.
     """
+
     try:
         results = actions.get_claimants(
             db_session=db_session,
@@ -395,6 +398,7 @@ async def create_claimants(
     """
     Add addresses to particular claim
     """
+
     try:
         actions.ensure_admin_token_holder(
             db_session, add_claimants_request.dropper_claim_id, request.state.address
@@ -423,7 +427,7 @@ async def create_claimants(
 
 
 @app.delete("/drops/claimants", response_model=data.RemoveClaimantsResponse)
-async def create_claimants(
+async def delete_claimants(
     request: Request,
     remove_claimants_request: data.DropRemoveClaimantsRequest = Body(...),
     db_session: Session = Depends(db.yield_db_session),
@@ -432,6 +436,19 @@ async def create_claimants(
     """
     Remove addresses to particular claim
     """
+
+    try:
+        actions.ensure_admin_token_holder(
+            db_session,
+            data.DropRemoveClaimantsRequest.dropper_claim_id,
+            request.state.address,
+        )
+    except actions.AuthorizationError as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=403)
+    except Exception as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=500)
 
     try:
         results = actions.delete_claimants(
