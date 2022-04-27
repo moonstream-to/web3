@@ -2,9 +2,8 @@
 Lootbox API.
 """
 import logging
-from multiprocessing.sharedctypes import Value
 import time
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional
 from uuid import UUID
 
 from web3 import Web3
@@ -14,7 +13,7 @@ from brownie import network
 from fastapi import Body, FastAPI, Request, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from sqlalchemy.orm.exc import NoResultFound
 
 from . import actions
 from . import data
@@ -312,7 +311,7 @@ async def get_drop_list_handler(
         raise DropperHTTPException(status_code=404, detail="No drops found.")
     except Exception as e:
         logger.error(
-            f"Can't get claims for user {claimant_address} end with error: {e}"
+            f"Can't get Terminus claims (blockchain={blockchain}, address={terminus_address}, pool_id={terminus_pool_id}): {e}"
         )
         raise DropperHTTPException(status_code=500, detail="Can't get claims")
 
