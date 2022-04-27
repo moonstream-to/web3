@@ -9,7 +9,6 @@ const assets: any = {
   onboarding:
     "https://s3.amazonaws.com/static.simiotics.com/unicorn_bazaar/unim-onboarding.png",
 };
-import DropList from "../../packages/moonstream-components/src/components/DropList";
 
 const Homepage = () => {
   const web3Provider = useContext(Web3Context);
@@ -29,7 +28,6 @@ const Homepage = () => {
 
   return (
     <Flex w="100%" minH="100vh" bgColor={"blue.1200"} direction={"column"}>
-      {web3Provider.account && <DropList drops={dropper.usersDropList.data} />}
       {!web3Provider.account &&
         web3Provider.buttonText !== web3Provider.WALLET_STATES.CONNECTED && (
           <Center>
@@ -40,7 +38,7 @@ const Homepage = () => {
                   ? "orange"
                   : "orange"
               }
-              onClick={web3Provider.onConnectWalletClick}
+              onClick={() => web3Provider.onConnectWalletClick()}
             >
               {web3Provider.buttonText}
               {"  "}
