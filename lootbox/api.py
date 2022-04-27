@@ -64,6 +64,7 @@ whitelist_paths.update(
         "/drops/terminus": "GET",
         "/drops/blockchains": "GET",
         "/drops/terminus/claims": "GET",
+        "/now": "GET",
     }
 )
 
