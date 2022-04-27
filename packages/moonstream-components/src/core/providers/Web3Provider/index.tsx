@@ -1,8 +1,6 @@
 import React from "react";
 import Web3Context, { WALLET_STATES } from "./context";
 import Web3 from "web3";
-import { getweb3Auth, postweb3Auth } from "../../services/terminus.service";
-import { getTime } from "../../services/moonstream-engine.service";
 import { ChainInterface } from "../../../../../../types/Moonstream";
 
 declare global {
@@ -175,41 +173,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
       });
       //  ÷
     }
-  }, [window?.ethereum?.selectedAddress]);
-
-  // React.useEffect(() => {
-  //   if (
-  //     !localStorage.getItem("APP_ACCESS_TOKEN") &&
-  //     web3?.utils.isAddress(account)
-  //   ) {
-  //     console.log("x0x entring");
-  //     getweb3Auth(account, chainId).then(async (resp: any) => {
-  //       // console.log("resp", resp?.data.quest);
-
-  //       const quest = resp?.data.quest;
-  //       console.log("x0x got quest", quest);
-
-  //       const signature = await window.ethereum.request({
-  //         method: "personal_sign",
-  //         params: [quest, account],
-  //       });
-  //       // const signature = await web3Provider.web3.eth.personal.sign(
-  //       //   data.data.quest,
-  //       //   web3Provider.account
-  //       // );
-  //       const response = await postweb3Auth(
-  //         account,
-  //         targetChain.chainId
-  //       )(signature);
-  //       console.log("token:", response.data);
-  //       const token = response.data;
-  //       if (token) {
-  //         console.log("x0x got token");
-  //         localStorage.setItem("APP_ACCESS_TOKEN", token);
-  //       }
-  //     });
-  //   }
-  // }, [account, chainId, web3.utils]);
+  });
 
   React.useEffect(() => {
     const outDated = () => {
@@ -302,7 +266,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
         }
       );
     }
-  }, [account, chainId, web3.utils, window?.ethereum?.currentProvider]);
+  }, [account, chainId, web3.utils]);
 
   const defaultTxConfig = { from: account };
 

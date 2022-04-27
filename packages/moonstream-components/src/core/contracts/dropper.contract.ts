@@ -1,6 +1,5 @@
 import { Dropper } from "../../../../../types/contracts/Dropper";
 const dropperAbi = require("../../../../../abi/Dropper.json");
-import Web3 from "web3";
 import { MoonstreamWeb3ProviderInterface } from "../../../../../types/Moonstream";
 
 export const claimDrop =
@@ -20,7 +19,6 @@ export const claimDrop =
     dropper.options.address = dropperAddress;
     const txConfig = { ...ctx.defaultTxConfig, ...transactionConfig };
 
-
     const response = await dropper.methods
       .claim(claimId, blockDeadline, "0", `0x` + message)
       // .claim("1", "123", 123)
@@ -33,8 +31,11 @@ export const getState = (address: any, ctx: any) => async () => {
   const dropper = new web3.eth.Contract(dropperAbi) as any as Dropper;
   dropper.options.address = address;
 
+  //eslint-disable-next-line
   const ERC20_TYPE = await dropper.methods.ERC20_TYPE().call();
+  //eslint-disable-next-line
   const ERC721_TYPE = await dropper.methods.ERC721_TYPE().call();
+  //eslint-disable-next-line
   const ERC1155_TYPE = await dropper.methods.ERC1155_TYPE().call();
   const numClaims = await dropper.methods.numClaims().call();
   const owner = await dropper.methods.owner().call();

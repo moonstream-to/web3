@@ -8,19 +8,18 @@ export const getContracts = () => async () => {
   });
 };
 
-export const getDropList =
-  (dropperAddress, chainName, ctx) => async (address) => {
-    console.log("getDropList");
-    return http({
-      method: "GET",
-      url: `${API}/drops/claims`,
-      params: {
-        dropper_contract_address: encodeURIComponent(dropperAddress),
-        blockchain: chainName,
-        claimant_address: address,
-      },
-    });
-  };
+export const getDropList = (dropperAddress, chainName) => async (address) => {
+  console.log("getDropList");
+  return http({
+    method: "GET",
+    url: `${API}/drops/claims`,
+    params: {
+      dropper_contract_address: encodeURIComponent(dropperAddress),
+      blockchain: chainName,
+      claimant_address: address,
+    },
+  });
+};
 
 export const getAdminList =
   (terminusAddress, chainName, poolId) => async () => {
@@ -43,15 +42,13 @@ export const getDropMessage = (claimId) => async (address) =>
   });
 
 export const createDropperClaim =
-  ({ dropperContractAddress }, ctx) =>
+  ({ dropperContractAddress }) =>
   async ({ title, description, deadline, terminusAddress, terminusPoolId }) => {
     const data = new FormData();
     data.append("dropper_contract_address", dropperContractAddress);
-    data.append("chain_id", chain_id);
     data.append("title", title);
     data.append("description", description);
     data.append("claim_block_deadline", deadline);
-    data.append("claim_id", claim_id);
     terminusAddress && data.append("terminus_address", terminusAddress);
     terminusPoolId && data.append("terminus_pool_id", terminusPoolId);
 

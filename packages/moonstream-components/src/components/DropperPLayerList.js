@@ -1,5 +1,5 @@
 import React from "react";
-import { chakra, Flex, Text, Stack, Heading } from "@chakra-ui/react";
+import { Flex, Stack, Heading } from "@chakra-ui/react";
 import DropCard from "./DropperPLayerCard";
 
 const DropList = ({ drops }) => {

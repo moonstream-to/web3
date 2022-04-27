@@ -1,7 +1,5 @@
 import { MockTerminus as TerminusFacet } from "../../../../../types/contracts/MockTerminus";
-import { BaseContract } from "../../../../../types/contracts/types";
 
-import Web3 from "web3";
 import { MoonstreamWeb3ProviderInterface } from "../../../../../types/Moonstream";
 
 const terminusAbi = require("../../../../../abi/MockTerminus.json");

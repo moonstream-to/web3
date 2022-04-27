@@ -18,10 +18,6 @@
 // }) => {
 //   console.log("useDropper", ctx)
 
-
-
-
-
 //   const dropperWeb3State = useQuery(
 //     ["dropperContractState", dropperAddress, targetChain.chainId],
 //     () => getState(dropperAddress, ctx)(),
@@ -31,7 +27,6 @@
 //         ctx.web3?.utils.isAddress(ctx.account) && ctx.chainId === ctx.chainId,
 //     }
 //   );
-
 
 //   const dropList = useQuery(
 //     ["dropList", dropperAddress, targetChain.chainId],
@@ -64,7 +59,6 @@
 //   usersDropList.isLoading = dropList.isLoading;
 //   usersDropList.error = dropList.error;
 //   usersDropList.status = dropList.status;
-
 
 //   return { dropperWeb3State, usersDropList };
 // };

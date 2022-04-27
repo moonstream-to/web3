@@ -14,17 +14,22 @@ import DropList from "../../packages/moonstream-components/src/components/DropLi
 const Homepage = () => {
   const web3Provider = useContext(Web3Context);
 
-  const dropper = useDropper({dropperAddress: process.env.NEXT_PUBLIC_DROPPER_ADDRESS ?? "", targetChain: targetChain, ctx: web3Provider});
+  const dropper = useDropper({
+    dropperAddress: process.env.NEXT_PUBLIC_DROPPER_ADDRESS ?? "",
+    targetChain: targetChain,
+    ctx: web3Provider,
+  });
 
-
-  if(dropper.dropperWeb3State.isLoading || dropper.usersDropList.isLoading) return <Flex minH="100vh">
-    <Spinner />
-  </Flex>
-
+  if (dropper.dropperWeb3State.isLoading || dropper.usersDropList.isLoading)
+    return (
+      <Flex minH="100vh">
+        <Spinner />
+      </Flex>
+    );
 
   return (
     <Flex w="100%" minH="100vh" bgColor={"blue.1200"} direction={"column"}>
-      {web3Provider.account && <DropList drops={dropper.usersDropList.data}  />}
+      {web3Provider.account && <DropList drops={dropper.usersDropList.data} />}
       {!web3Provider.account &&
         web3Provider.buttonText !== web3Provider.WALLET_STATES.CONNECTED && (
           <Center>

@@ -39,7 +39,6 @@ import { MODAL_TYPES } from "../core/providers/OverlayProvider/constants";
 import OverlayContext from "../core/providers/OverlayProvider/context";
 import moment from "moment";
 import Web3Context from "../core/providers/Web3Provider/context";
-import { targetChain } from "../core/providers/Web3Provider";
 
 const Sidebar = () => {
   const ui = useContext(UIContext);
@@ -159,8 +158,7 @@ const Sidebar = () => {
                         m={2}
                         p={0}
                         whiteSpace="break-spaces"
-                      >
-                      </Badge>
+                      ></Badge>
                       <Badge
                         colorScheme={"blue"}
                         variant={"subtle"}

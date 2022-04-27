@@ -1,30 +1,17 @@
-import React, { useContext, useEffect } from "react";
-import Web3Context from "../providers/Web3Provider/context";
-import BN from "bn.js";
+import React from "react";
 import {
   getAdminList,
   getContracts,
-  getDropList,
-  getDropMessage,
   getTerminus,
   setClaimants,
 } from "../services/moonstream-engine.service";
-import queryCacheProps from "./hookCommon";
-import { useMutation, useQuery, UseQueryResult } from "react-query";
-import { getState, claimDrop, getClaim } from "../contracts/dropper.contract";
-import DataContext from "../providers/DataProvider/context";
+import { useMutation, useQuery } from "react-query";
 import {
   ChainInterface,
   MoonstreamWeb3ProviderInterface,
 } from "../../../../../types/Moonstream";
 import { useToast } from ".";
 import { balanceOfAddress } from "../contracts/terminus.contracts";
-
-interface ClaimerState {
-  canClaim: boolean;
-  claim: Array<String>;
-  status: string;
-}
 
 const useClaimAdmin = ({
   targetChain,
@@ -43,36 +30,6 @@ const useClaimAdmin = ({
     }
   );
 
-  const _getDropList = async () => {
-    const claimsByPermission = adminPermissions.data
-      ? await Promise.all(
-          contractsList.data.map(async (contractInList: any) => {
-            const response = await getDropList(
-              contractInList.address,
-              contractInList.blockchain,
-              ctx
-            )();
-            return {
-              address: contractInList.address,
-              blockchain: contractInList.blockchain,
-              claims: response.data.drops,
-            };
-          })
-        )
-      : [];
-    const claims: any = [];
-    claimsByPermission.forEach((_item) => claims.push(..._item));
-    console.log("claimsByPermission", claimsByPermission, claims);
-    return claims;
-  };
-
-  // const allDrops = useQuery(["allDrops"], _getDropList, {
-  //   enabled: !!contractsList.data,
-  //   onSuccess: () => {},
-  // });
-
-  // console.log("allDrops", allDrops.data);
-
   const terminusList = useQuery(["terminusAddresses"], () =>
     getTerminus(targetChain.name)().then((response) => response.data)
   );
@@ -80,7 +37,6 @@ const useClaimAdmin = ({
   const _hasAdminPermissions = React.useCallback(async () => {
     if (terminusList.data) {
       console.log("adminContracts terminusList.data", terminusList.data);
-      console.log("adminContracts contractsList.data", contractsList.data);
       const terminusAuthorizations = await Promise.all(
         terminusList.data.map(async (terminus: any) => {
           return [
@@ -100,7 +56,7 @@ const useClaimAdmin = ({
       );
       return terminusAdmin;
     }
-  }, [terminusList.data]);
+  }, [terminusList.data, ctx]);
 
   const adminPermissions = useQuery(
     ["claimAdmin", "adminPermissions"],
@@ -110,7 +66,6 @@ const useClaimAdmin = ({
       onSuccess: () => {},
     }
   );
-
 
   const _getAdminClaimsList = async () => {
     const claimsByPermission = adminPermissions.data

@@ -11,15 +11,7 @@ import Web3Context from "../../core/providers/Web3Provider/context";
 import useClaimAdmin from "../../core/hooks/useClaimAdmin";
 import Papa from "papaparse";
 import FileUpload from "../FileUpload";
-const ContractCard = ({
-  claims,
-  address,
-  title,
-  description,
-  claimId,
-  imageURL,
-  ...props
-}) => {
+const ContractCard = ({ title, description, claimId, ...props }) => {
   const web3ctx = useContext(Web3Context);
 
   const { uploadFile } = useClaimAdmin({
@@ -40,7 +32,7 @@ const ContractCard = ({
           claimants: result.data,
         });
       },
-      error: (err, file) => console.log("acceptedFiles csv:", err.message),
+      error: (err) => console.log("acceptedFiles csv:", err.message),
     });
   };
 

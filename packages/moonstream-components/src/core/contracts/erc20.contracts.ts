@@ -1,8 +1,6 @@
 import { MockErc20 } from "../../../../../types/contracts/MockErc20";
 const erc20abi: AbiItem = require("../../../../../abi/MockERC20.json");
-import Web3 from "web3";
 import { MoonstreamWeb3ProviderInterface } from "../../../../../types/Moonstream";
-import BN from "bn.js";
 import { AbiItem } from "web3-utils";
 
 export const getTokenState =

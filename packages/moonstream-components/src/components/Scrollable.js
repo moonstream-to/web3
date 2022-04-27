@@ -23,7 +23,7 @@ const Scrollable = (props) => {
     const currentScroll = Math.ceil(getScrollPrecent(e) / 10);
     if (currentScroll > scrollDepth) {
       setScrollDepth(currentScroll);
-      mixpanel.hasOwnProperty("get_distinct_id") &&
+      Object.prototype.hasOwnProperty.call(mixpanel, "get_distinct_id") &&
         mixpanel.people.increment({
           [`Scroll depth at: ${router.nextRouter.pathname}`]: currentScroll,
         });

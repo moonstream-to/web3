@@ -25,7 +25,6 @@ import {
 import router from "next/router";
 import { MODAL_TYPES } from "../core/providers/OverlayProvider/constants";
 import Web3Context from "../core/providers/Web3Provider/context";
-import { targetChain } from "../core/providers/Web3Provider";
 
 const LandingNavbar = () => {
   const ui = useContext(UIContext);

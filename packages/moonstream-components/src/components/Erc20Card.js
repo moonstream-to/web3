@@ -1,15 +1,5 @@
 import React, { useContext } from "react";
-import {
-  chakra,
-  Flex,
-  Text,
-  Stack,
-  Heading,
-  Spinner,
-  Button,
-  Badge,
-} from "@chakra-ui/react";
-import useDropperClaim from "../core/hooks/useDropperClaim";
+import { Spinner, Badge } from "@chakra-ui/react";
 import Web3Context from "../core/providers/Web3Provider/context";
 import { targetChain } from "../core/providers/Web3Provider";
 import useErc20 from "../core/hooks/useERC20";

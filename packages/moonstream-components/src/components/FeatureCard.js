@@ -7,7 +7,6 @@ import {
   chakra,
   Link as ChakraLink,
 } from "@chakra-ui/react";
-import { ChakraProps } from "@chakra-ui/react";
 // export interface FeatureCardArgs extends ChakraProps {
 //   text: string;
 //   heading: string;

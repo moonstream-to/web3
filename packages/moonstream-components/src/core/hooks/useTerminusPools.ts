@@ -1,10 +1,6 @@
 import React from "react";
-import DataContext from "../providers/DataProvider/context";
-import { useMutation, useQuery } from "react-query";
-import {
-  getTerminusFacetPoolState,
-  getTerminusFacetState,
-} from "../contracts/terminus.contracts";
+import { useQuery } from "react-query";
+import { getTerminusFacetPoolState } from "../contracts/terminus.contracts";
 import useTerminus from "./useTerminus";
 import * as abi from "../../../../../abi/MockTerminus.json";
 import { MockTerminus as TerminusFacet } from "../../../../../types/contracts/MockTerminus";

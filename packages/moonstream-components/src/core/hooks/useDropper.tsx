@@ -1,12 +1,11 @@
-import React, { useContext } from "react";
-import Web3Context from "../providers/Web3Provider/context";
-import BN from "bn.js";
-import {  getDropList, getDropMessage } from "../services/moonstream-engine.service";
-import queryCacheProps from "./hookCommon";
-import { useMutation, useQuery, UseQueryResult } from "react-query";
+import React from "react";
+import { getDropList } from "../services/moonstream-engine.service";
+import { useQuery } from "react-query";
 import { getState } from "../contracts/dropper.contract";
-import DataContext from "../providers/DataProvider/context";
-import { ChainInterface, MoonstreamWeb3ProviderInterface } from "../../../../../types/Moonstream";
+import {
+  ChainInterface,
+  MoonstreamWeb3ProviderInterface,
+} from "../../../../../types/Moonstream";
 
 const useDropper = ({
   dropperAddress,
@@ -17,8 +16,6 @@ const useDropper = ({
   targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
 }) => {
-
-
   const dropperWeb3State = useQuery(
     ["dropperContractState", dropperAddress, targetChain.chainId],
     () => getState(dropperAddress, ctx)(),
@@ -28,7 +25,6 @@ const useDropper = ({
         ctx.web3?.utils.isAddress(ctx.account) && ctx.chainId === ctx.chainId,
     }
   );
-
 
   const dropList = useQuery(
     ["dropList", dropperAddress, targetChain.chainId],
@@ -41,7 +37,7 @@ const useDropper = ({
   // const [usersDropList, setUsersDropList] = React.useState<Array<any>>([]);
 
   let usersDropList: any = {};
-  usersDropList['data'] = React.useMemo((): any => {
+  usersDropList["data"] = React.useMemo((): any => {
     const retval: Array<any> = [];
     if (dropList?.data && ctx.account) {
       dropList.data.forEach((entry: any, id: Number) => {
@@ -60,7 +56,6 @@ const useDropper = ({
   usersDropList.isLoading = dropList.isLoading;
   usersDropList.error = dropList.error;
   usersDropList.status = dropList.status;
-
 
   return { dropperWeb3State, usersDropList, dropList };
 };

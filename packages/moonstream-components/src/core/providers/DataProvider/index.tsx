@@ -2,8 +2,6 @@ import React, { useContext } from "react";
 import DataContext, { ContractsHolder } from "./context";
 import Web3Context from "../Web3Provider/context";
 
-
-
 const DataProvider = ({ children }: { children: JSX.Element }) => {
   const { web3 } = useContext(Web3Context);
 

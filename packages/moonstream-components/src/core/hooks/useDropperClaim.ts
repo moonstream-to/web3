@@ -1,19 +1,9 @@
-import React, { useContext } from "react";
-import Web3Context from "../providers/Web3Provider/context";
-import BN from "bn.js";
-import { getDropList, getDropMessage } from "../services/moonstream-engine.service";
-import queryCacheProps from "./hookCommon";
-import { useMutation, useQuery, UseQueryResult } from "react-query";
-import { getState, claimDrop, getClaim } from "../contracts/dropper.contract";
-import DataContext from "../providers/DataProvider/context";
+import React from "react";
+import { getDropMessage } from "../services/moonstream-engine.service";
+import { useMutation, useQuery } from "react-query";
+import { claimDrop, getClaim } from "../contracts/dropper.contract";
 import { MoonstreamWeb3ProviderInterface } from "../../../../../types/Moonstream";
 import { useToast } from "../../core/hooks";
-
-interface ClaimerState {
-  canClaim: boolean;
-  claim: Array<String>;
-  status: string;
-}
 
 const useDropperClaim = ({
   dropperAddress,
@@ -60,7 +50,7 @@ const useDropperClaim = ({
   );
 
   const claimWeb3Drop = useMutation(claimDrop(dropperAddress, ctx), {
-    onSuccess: (resonse) => {
+    onSuccess: () => {
       toast("Claim successful", "success");
       state.refetch();
     },
@@ -75,7 +65,7 @@ const useDropperClaim = ({
         claimId: claimId,
       });
     },
-    onError: (error) => {},
+    onError: () => {},
     onSettled: () => {},
   });
 

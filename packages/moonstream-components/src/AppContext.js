@@ -9,7 +9,6 @@ import {
   OverlayProvider,
   Web3Provider,
 } from "./core/providers";
-import { StripeProvider } from "./core/providers/StripeProvider";
 import Fonts from "./Theme/Fonts";
 
 const AppContext = (props) => {

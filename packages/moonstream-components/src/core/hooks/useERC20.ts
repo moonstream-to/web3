@@ -1,11 +1,4 @@
-import React, { useContext } from "react";
-import Web3Context from "../providers/Web3Provider/context";
-import BN from "bn.js";
-import { getDropList, getDropMessage } from "../services/moonstream-engine.service";
-import queryCacheProps from "./hookCommon";
-import { useMutation, useQuery, UseQueryResult } from "react-query";
-import { getState, claimDrop, getClaim } from "../contracts/dropper.contract";
-import DataContext from "../providers/DataProvider/context";
+import { useQuery } from "react-query";
 import { ReactWeb3ProviderInterface } from "../../../types/Moonstream";
 import { getTokenState } from "../contracts/erc20.contracts";
 

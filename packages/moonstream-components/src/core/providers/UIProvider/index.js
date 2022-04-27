@@ -1,31 +1,9 @@
-import React, {
-  useState,
-  useContext,
-  useEffect,
-  useCallback,
-  useLayoutEffect,
-} from "react";
+import React, { useState, useContext, useEffect, useLayoutEffect } from "react";
 import { useBreakpointValue } from "@chakra-ui/react";
 import { useStorage, useQuery, useRouter } from "../../hooks";
 import UIContext from "./context";
 import UserContext from "../UserProvider/context";
 import { v4 as uuid4 } from "uuid";
-
-//TODO: onboardingSteps must be made either generic for any APP, or removed at all for now
-const onboardingSteps = [
-  {
-    step: "welcome",
-    description: "Basics of how Moonstream works",
-  },
-  {
-    step: "subscriptions",
-    description: "Learn how to subscribe to blockchain events",
-  },
-  {
-    step: "stream",
-    description: "Learn how to use your Moonstream to analyze blah blah blah",
-  },
-];
 
 const UIProvider = ({ children }) => {
   const router = useRouter();
