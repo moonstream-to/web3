@@ -7,7 +7,7 @@ import UIContext from "../UIProvider/context";
 
 const AnalyticsProvider = ({ children }) => {
   const clientID = useClientID();
-  const analytics = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN_BOTTLER;
+  const analytics = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN;
   const { user, isInit } = useUser();
   const [isMixpanelReady, setIsLoaded] = useState(false);
   const router = useRouter();
