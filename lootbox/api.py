@@ -330,9 +330,18 @@ async def create_drop(
     """
     Create a drop for a given dropper contract.
     """
-    actions.ensure_dropper_contract_owner(
-        db_session, register_request.dropper_contract_id, request.state.address
-    )
+    try:
+        actions.ensure_dropper_contract_owner(
+            db_session, register_request.dropper_contract_id, request.state.address
+        )
+    except actions.AuthorizationError as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=403)
+    except NoResultFound:
+        raise DropperHTTPException(status_code=404, detail="Dropper contract not found")
+    except Exception as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=500)
 
     if register_request.terminus_address:
         register_request.terminus_address = Web3.toChecksumAddress(
