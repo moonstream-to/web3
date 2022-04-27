@@ -26,10 +26,11 @@ export const chains: { [index: string]: ChainInterface } = {
       "https://matic-testnet-archive-rpc.bwarelabs.com",
     ],
   },
-  matic: {
+  polygon: {
     chainId: 137,
-    name: "matic",
+    name: "polygon",
     rpcs: [
+      "https://polygon-rpc.com",
       "https://rpc-mainnet.matic.network",
       "https://matic-mainnet.chainstacklabs.com",
       "https://rpc-mainnet.maticvigil.com",
