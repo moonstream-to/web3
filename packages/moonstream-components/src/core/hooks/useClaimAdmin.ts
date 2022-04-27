@@ -101,10 +101,10 @@ const useClaimAdmin = ({
 
   const uploadFile = useMutation(setClaimants, {
     onSuccess: () => {
-      toast("Created new dashboard", "success");
+      toast("File uploaded successfully", "success");
     },
     onError: (error: any) => {
-      toast(error.error, "error", "Fail");
+      toast("Uploading file failed", "error", "Error! >.<");
     },
     onSettled: () => {},
   });
@@ -113,8 +113,6 @@ const useClaimAdmin = ({
     adminClaims,
     isLoading,
     uploadFile,
-    // contractsList,
-    // terminusList,
   };
 };
 
