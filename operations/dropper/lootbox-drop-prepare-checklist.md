@@ -321,7 +321,7 @@ lootbox dropper set-signer-for-claim \
     --network $BROWNIE_NETWORK \
     --address $DROPPER_ADDRESS \
     --sender $SENDER \
-    --claim-id $TERMINUS_MYTH_LOOTBOX_POOL_ID \
+    --claim-id $MYTH_LOOTBOX_CLAIM_ID \
     --signer-arg $SIGNER_ADDRESS \
     --gas-price "$GAS_PRICE" \
     --confirmations $CONFIRMATIONS
@@ -337,3 +337,86 @@ lootbox dropper get-signer-for-claim --network $BROWNIE_NETWORK --address $DROPP
 # Engine-db cli
 
 ## create new contract
+
+- [ ] Create row:
+
+```
+lootbox engine-db dropper create-contract -b polygon \
+                                          -a $DROPPER_ADDRESS \
+                                          -t "Our NEW Dropper contract" \
+                                          -d "This is a dropper contract(capitan)" \
+                                          -i "image-uri"
+```
+
+- [ ] Verify: `lootbox engine-db dropper list-contracts -b $BLOCKCHAIN_NAME`
+
+- [ ] `export DROPPER_CONTRACT_ID=<primary key id for contract>`
+
+## Create new drops
+
+- [ ] Create title COMMON_LOOTBOX for drop: `export DROP_COMMON_LOOTBOX_TITLE="Any title"`
+
+- [ ] Create description COMMON_LOOTBOX for drop: `export DROP_COMMON_LOOTBOX_DESCRIPTION="Any description"`
+
+- [ ] Create title RARE_LOOTBOX for drop: `export DROP_RARE_LOOTBOX_TITLE="Any title"`
+
+- [ ] Create description RARE_LOOTBOX for drop: `export DROP_RARE_LOOTBOX_DESCRIPTION="Any description"`
+
+- [ ] Create title MYTH_LOOTBOX for drop: `export DROP_MYTH_LOOTBOX_TITLE="Any title"`
+
+- [ ] Create description MYTH_LOOTBOX for drop: `export DROP_MYTH_LOOTBOX_DESCRIPTION="Any description"`
+
+- [ ] Set block deadline: `export BLOCK_DEADLINE=<whatever>`
+
+```
+lootbox engine-db dropper create-drop --dropper-contract-id $DROPPER_CONTRACT_ID \
+    --title "$DROP_COMMON_LOOTBOX_TITLE" \
+    --description "$DROP_COMMON_LOOTBOX_DESCRIPTION" \
+    --block-deadline $BLOCK_DEADLINE \
+    --terminus-address $TERMINUS_ADDRESS \
+    --terminus-pool-id $TERMINUS_COMMON_LOOTBOX_POOL_ID \
+    --claim-id $COMMON_LOOTBOX_CLAIM_ID
+
+```
+
+```
+lootbox engine-db dropper create-drop --dropper-contract-id $DROPPER_CONTRACT_ID \
+    --title "$DROP_TITLE" \
+    --description "$DROP_DESCRIPTION" \
+    --block-deadline $BLOCK_DEADLINE \
+    --terminus-address $TERMINUS_ADDRESS \
+    --terminus-pool-id $TERMINUS_RARE_LOOTBOX_POOL_ID \
+    --claim-id $RARE_LOOTBOX_CLAIM_ID
+
+```
+
+```
+lootbox engine-db dropper create-drop --dropper-contract-id $DROPPER_CONTRACT_ID \
+    --title "$DROP_TITLE" \
+    --description "$DROP_DESCRIPTION" \
+    --block-deadline $BLOCK_DEADLINE \
+    --terminus-address $TERMINUS_ADDRESS \
+    --terminus-pool-id $TERMINUS_MYTH_LOOTBOX_POOL_ID \
+    --claim-id $MYTH_LOOTBOX_CLAIM_ID
+
+```
+
+- [ ] List drops:
+
+```
+lootbox engine-db dropper list-drops \
+    --dropper-contract-id $DROPPER_CONTRACT_ID \
+    -a false
+```
+
+- [ ] `export DB_COMMON_LOOTBOX_CLAIM_ID=<id of claim you just created>`
+- [ ] `export DB_RARE_LOOTBOX_CLAIM_ID=<id of claim you just created>`
+- [ ] `export DB_MYTH_LOOTBOX_CLAIM_ID=<id of claim you just created>`
+
+## Set claims to active
+
+- [x] Set claim as active (in `psql`):
+
+```bash
+psql $ENGINE_DB_URI -c "UPDATE dropper_claims SET active = true WHERE id in ('$DB_COMMON_LOOTBOX_CLAIM_ID','$DB_RARE_LOOTBOX_CLAIM_ID','$DB_MYTH_LOOTBOX_CLAIM_ID');"
+```
