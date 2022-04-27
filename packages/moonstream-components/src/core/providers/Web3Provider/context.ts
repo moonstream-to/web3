@@ -33,6 +33,7 @@ const Web3Context = createContext<MoonstreamWeb3ProviderInterface>({
   account: "",
   chainId: 0,
   defaultTxConfig: {},
+  signAccessToken: () => console.error("not intied"),
 });
 
 export default Web3Context;

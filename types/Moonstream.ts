@@ -6,8 +6,6 @@ export interface WalletStatesInterface {
   CONNECTED: String;
   WRONG_CHAIN: String;
 }
-
-
 export interface ChainInterface {
   chainId: number;
   name: string;
@@ -22,4 +20,5 @@ export interface MoonstreamWeb3ProviderInterface {
   account: string;
   chainId: number;
   defaultTxConfig: Object;
+  signAccessToken: Function;
 }
