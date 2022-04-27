@@ -46,8 +46,6 @@ curl -L --max-redirs 4 -X GET $(terminus uri --network $BROWNIE_NETWORK --addres
 
 ```
 
-```
-
 curl -L --max-redirs 4 -X GET $(terminus uri --network $BROWNIE_NETWORK --address $TERMINUS_ADDRESS --pool-id 6)
 
 ```
@@ -55,7 +53,6 @@ curl -L --max-redirs 4 -X GET $(terminus uri --network $BROWNIE_NETWORK --addres
 - [ ] `export TERMINUS_COMMON_LOOTBOX_POOL_ID=""`
 - [ ] `export TERMINUS_RARE_LOOTBOX_POOL_ID=""`
 - [ ] `export TERMINUS_MYTH_LOOTBOX_POOL_ID=""`
-
 
 Return pool control to owner of DarkForest contract lootboxes and eggs in one moment
 
@@ -66,6 +63,7 @@ dark-forest surrender-terminus-pools --network $BROWNIE_NETWORK --address $TERMI
 ```
 
 ## Check pool controller
+
 ```
 
 [$(terminus terminus-pool-controller --network $BROWNIE_NETWORK --address $TERMINUS_ADDRESS --pool-id 1) == $SENDER_ADDRESS] && echo "OK"
@@ -103,8 +101,6 @@ terminus-pool-controller --network $BROWNIE_NETWORK --address $TERMINUS_ADDRESS 
 ```
 
 ### Transfer pool control to dropper contract
-
-
 
 ## move control of pool to dropper contract
 
@@ -153,8 +149,7 @@ lootbox terminus set-pool-controller \
 
 ```
 
-
-- [x] Verify
+- [ ] Verify
 
 ```
 
@@ -162,7 +157,7 @@ lootbox terminus terminus-pool-controller --network $BROWNIE_NETWORK --address $
 
 ```
 
-- [x] Verify
+- [ ] Verify
 
 ```
 
@@ -170,7 +165,7 @@ lootbox terminus terminus-pool-controller --network $BROWNIE_NETWORK --address $
 
 ```
 
-- [x] Verify
+- [ ] Verify
 
 ```
 
@@ -178,10 +173,7 @@ lootbox terminus terminus-pool-controller --network $BROWNIE_NETWORK --address $
 
 ```
 
-
-
-
-# Create Drop on contract
+## Create Drop on contract common lootbox
 
 - [ ] Create claim common lootbox
 
@@ -210,8 +202,7 @@ lootbox dropper get-claim --network $BROWNIE_NETWORK --address $DROPPER_ADDRESS 
 
 ```
 
-
-# Create Drop on contract
+# Create Drop on contract rare lootbox
 
 - [ ] Create claim rare lootbox
 
@@ -234,15 +225,13 @@ lootbox dropper create-claim \
 
 - [ ] Verify
 
-
 ```
 
 lootbox dropper get-claim --network $BROWNIE_NETWORK --address $DROPPER_ADDRESS --claim-id $RARE_LOOTBOX_CLAIM_ID
 
 ```
 
-
-# Create Drop on contract
+# Create Drop on contract myth lootbox
 
 - [ ] Create claim myth lootbox
 
@@ -261,11 +250,9 @@ lootbox dropper create-claim \
 
 ```
 
-
 - [ ] `export MYTH_LOOTBOX_CLAIM_ID=$(lootbox dropper num-claims --network $BROWNIE_NETWORK --address $DROPPER_ADDRESS)`
 
 - [ ] Verify
-
 
 ```
 
@@ -273,5 +260,80 @@ lootbox dropper get-claim --network $BROWNIE_NETWORK --address $DROPPER_ADDRESS 
 
 ```
 
+## Set signer
+
+- [ ] Get signer public key:
 
 ```
+export SIGNER_ADDRESS=<redacted>
+```
+
+### Set signer on pool common lootbox
+
+- [ ] Set signer for claim:
+
+```
+lootbox dropper set-signer-for-claim \
+    --network $BROWNIE_NETWORK \
+    --address $DROPPER_ADDRESS \
+    --sender $SENDER \
+    --claim-id $COMMON_LOOTBOX_CLAIM_ID \
+    --signer-arg $SIGNER_ADDRESS \
+    --gas-price "$GAS_PRICE" \
+    --confirmations $CONFIRMATIONS
+
+```
+
+- [ ] Verify:
+
+```
+lootbox dropper get-signer-for-claim --network $BROWNIE_NETWORK --address $DROPPER_ADDRESS --claim-id $COMMON_LOOTBOX_CLAIM_ID
+```
+
+### Set signer on pool common lootbox
+
+- [ ] Set signer for claim:
+
+```
+lootbox dropper set-signer-for-claim \
+    --network $BROWNIE_NETWORK \
+    --address $DROPPER_ADDRESS \
+    --sender $SENDER \
+    --claim-id $RARE_LOOTBOX_CLAIM_ID \
+    --signer-arg $SIGNER_ADDRESS \
+    --gas-price "$GAS_PRICE" \
+    --confirmations $CONFIRMATIONS
+
+```
+
+- [ ] Verify:
+
+```
+lootbox dropper get-signer-for-claim --network $BROWNIE_NETWORK --address $DROPPER_ADDRESS --claim-id $RARE_LOOTBOX_CLAIM_ID
+```
+
+### Set signer on pool common lootbox
+
+- [ ] Set signer for claim:
+
+```
+lootbox dropper set-signer-for-claim \
+    --network $BROWNIE_NETWORK \
+    --address $DROPPER_ADDRESS \
+    --sender $SENDER \
+    --claim-id $TERMINUS_MYTH_LOOTBOX_POOL_ID \
+    --signer-arg $SIGNER_ADDRESS \
+    --gas-price "$GAS_PRICE" \
+    --confirmations $CONFIRMATIONS
+
+```
+
+- [ ] Verify:
+
+```
+lootbox dropper get-signer-for-claim --network $BROWNIE_NETWORK --address $DROPPER_ADDRESS --claim-id $TERMINUS_MYTH_LOOTBOX_POOL_ID
+```
+
+# Engine-db cli
+
+## create new contract
