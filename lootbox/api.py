@@ -470,7 +470,7 @@ async def delete_claimants(
     try:
         actions.ensure_admin_token_holder(
             db_session,
-            data.DropRemoveClaimantsRequest.dropper_claim_id,
+            remove_claimants_request.dropper_claim_id,
             request.state.address,
         )
     except actions.AuthorizationError as e:
