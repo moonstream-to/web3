@@ -45,7 +45,7 @@ lootbox dropper get-claim --network $BROWNIE_NETWORK --address $DROPPER_ADDRESS 
 
 ## Set signer
 
-- [x] Get signer public key:
+- [ ] Get signer public key:
 
 ```
 export SIGNER_ADDRESS=<redacted>
@@ -53,7 +53,7 @@ export SIGNER_ADDRESS=<redacted>
 
 ### Set signer on pool common lootbox
 
-- [x] Set signer for claim:
+- [ ] Set signer for claim:
 
 ```
 lootbox dropper set-signer-for-claim \
@@ -66,7 +66,7 @@ lootbox dropper set-signer-for-claim \
     --confirmations $CONFIRMATIONS
 ```
 
-- [x] Verify:
+- [ ] Verify:
 
 ```
 lootbox dropper get-signer-for-claim --network $BROWNIE_NETWORK --address $DROPPER_ADDRESS --claim-id $RBW_CLAIM_ID
@@ -91,7 +91,7 @@ lootbox dropper set-claim-uri \
     --uri $RBW_CLAIM_ID_URI
 ```
 
-- [x] Verify
+- [ ] Verify
 
 ```
 lootbox dropper claim-uri --network $BROWNIE_NETWORK --address $DROPPER_ADDRESS --claim-id $RBW_CLAIM_ID
@@ -101,14 +101,14 @@ lootbox dropper claim-uri --network $BROWNIE_NETWORK --address $DROPPER_ADDRESS 
 
 ### create new contract
 
-- [x] Verify: `lootbox engine-db dropper list-contracts -b $BLOCKCHAIN_NAME`
+- [ ] Verify: `lootbox engine-db dropper list-contracts -b $BLOCKCHAIN_NAME`
 
-- [x] `export DROPPER_CONTRACT_ID=<redacted>`
+- [ ] `export DROPPER_CONTRACT_ID=<redacted>`
 
 ```
 lootbox engine-db dropper create-drop --dropper-contract-id $DROPPER_CONTRACT_ID \
-    --title "Crypto Unicorns: UNIM" \
-    --description "Some amount of pretty rare unicorn milk." \
+    --title "Crypto Unicorns: Rainbow tokens." \
+    --description "Some amount of pretty rare Rainbow tokens." \
     --block-deadline $BLOCK_DEADLINE \
     --terminus-address $TERMINUS_ADDRESS \
     --terminus-pool-id $ADMIN_POOL_ID \
@@ -117,11 +117,11 @@ lootbox engine-db dropper create-drop --dropper-contract-id $DROPPER_CONTRACT_ID
 
 lootbox engine-db dropper list-drops --dropper-contract-id $DROPPER_CONTRACT_ID
 
-- [x] `export DB_RBW_CLAIM_ID=<id of claim you just created>`
+- [ ] `export DB_RBW_CLAIM_ID=<id of claim you just created>`
 
 ## Set claims to active
 
-- [x] Set claim as active (in `psql`):
+- [ ] Set claim as active (in `psql`):
 
 ```bash
 psql $ENGINE_DB_URI -c "UPDATE dropper_claims SET active = true WHERE id = '$DB_RBW_CLAIM_ID';"
