@@ -1,6 +1,5 @@
 from datetime import datetime
-from typing import List, Any, Optional, Dict, Tuple
-from unittest.mock import Mock
+from typing import List, Any, Optional, Dict, cast
 import uuid
 
 from brownie import network
@@ -11,7 +10,7 @@ from web3.types import ChecksumAddress
 
 from lootbox.Dropper import Dropper
 
-from . import Dropper, MockTerminus
+from . import Dropper, MockErc20, MockTerminus
 from .models import DropperClaimant, DropperContract, DropperClaim
 from .settings import BLOCKCHAINS_TO_BROWNIE_NETWORKS
 
@@ -243,11 +242,30 @@ def add_claimants(db_session: Session, dropper_claim_id, claimants, added_by):
     return claimant_objects
 
 
+def transform_claim_amount(
+    db_session: Session, dropper_claim_id: uuid.UUID, db_amount: int
+) -> int:
+    claim = (
+        db_session.query(DropperClaim.claim_id, DropperContract.address)
+        .join(DropperContract, DropperContract.id == DropperClaim.dropper_contract_id)
+        .filter(DropperClaim.id == dropper_claim_id)
+        .one()
+    )
+    dropper_contract = Dropper.Dropper(claim.address)
+    claim_info = dropper_contract.get_claim(claim.claim_id)
+    if claim_info[0] != 20:
+        return db_amount
+
+    erc20_contract = MockErc20.MockErc20(claim_info[1])
+    decimals = cast(int, erc20_contract.decimals())
+
+    return db_amount * decimals
+
+
 def get_claimants(db_session: Session, dropper_claim_id, limit=None, offset=None):
     """
     Search for a claimant by address
     """
-
     claimants_query = db_session.query(
         DropperClaimant.address, DropperClaimant.amount, DropperClaimant.added_by
     ).filter(DropperClaimant.dropper_claim_id == dropper_claim_id)
@@ -269,6 +287,7 @@ def get_claimant(db_session: Session, dropper_claim_id, address):
         db_session.query(
             DropperClaimant.address,
             DropperClaimant.amount,
+            DropperClaim.id.label("dropper_claim_id"),
             DropperClaim.claim_id,
             DropperClaim.active,
             DropperClaim.claim_block_deadline,
