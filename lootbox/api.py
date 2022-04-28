@@ -112,6 +112,10 @@ async def get_drop_handler(
     except Exception as e:
         raise DropperHTTPException(status_code=500, detail="Can't get claimant")
 
+    transformed_amount = actions.transform_claim_amount(
+        db_session, dropper_claim_id, claimant.amount
+    )
+
     if not claimant.active:
         raise DropperHTTPException(
             status_code=403, detail="Cannot claim rewards for an inactive claim"
@@ -129,7 +133,7 @@ async def get_drop_handler(
         claimant.claim_id,
         claimant.address,
         claimant.claim_block_deadline,
-        claimant.amount,
+        transformed_amount,
     )
 
     try:
@@ -144,7 +148,7 @@ async def get_drop_handler(
 
     return data.DropResponse(
         claimant=claimant.address,
-        amount=claimant.amount,
+        amount=transformed_amount,
         claim_id=claimant.claim_id,
         block_deadline=claimant.claim_block_deadline,
         signature=signature,
