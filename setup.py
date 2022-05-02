@@ -45,6 +45,7 @@ setup(
     entry_points={
         "console_scripts": [
             "lootbox=lootbox.cli:main",
+            "workers=workers.fetcher-worker:main",
         ]
     },
     include_package_data=True,
