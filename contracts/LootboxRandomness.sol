@@ -70,7 +70,7 @@ abstract contract LootboxRandomness is VRFConsumerBase {
     function _startRandomLootboxOpening(uint256 lootboxId) internal {
         require(
             CurrentOpeningforUser[msg.sender] == 0,
-            "DarkForest: offerSacrifice -- Sender already has a sacrifice in progress"
+            "LootboxRandomness: _startRandomLootboxOpening -- Sender already has an incompleted opening"
         );
 
         emit LootboxOpeningBegan(msg.sender, lootboxId);
