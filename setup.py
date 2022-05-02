@@ -1,14 +1,28 @@
 from setuptools import find_packages, setup
 
+with open("lootbox/version.txt") as ifp:
+    VERSION = ifp.read().strip()
+
 long_description = ""
 with open("README.md") as ifp:
     long_description = ifp.read()
 
 setup(
     name="lootbox",
-    version="0.0.1",
+    version=VERSION,
     packages=find_packages(),
-    install_requires=["eth-brownie", "tqdm", "web3"],
+    install_requires=[
+        "alembic",
+        "boto3",
+        "eth-brownie",
+        "fastapi",
+        "psycopg2-binary",
+        "pydantic",
+        "sqlalchemy",
+        "tqdm",
+        "uvicorn",
+        "web3",
+    ],
     extras_require={
         "dev": [
             "black",
@@ -16,7 +30,7 @@ setup(
         ],
         "distribute": ["setuptools", "twine", "wheel"],
     },
-    description="Command line interface to the Unicorn milk bottler contract",
+    description="Command line interface for moonstream-engine.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Moonstream",
