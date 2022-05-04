@@ -4,7 +4,7 @@
     "generate_classes": "typechain --target=web3-v1 --out-dir types/contracts 'build/contracts/*.json'"
   },
   "workspaces": [
-    "player",
+    "play",
     "engine",
     "packages/*"
   ]
