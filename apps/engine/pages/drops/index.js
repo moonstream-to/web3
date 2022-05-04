@@ -3,7 +3,7 @@ import { Flex, Button, Image, Center, Spinner } from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
-import ContractCard from "moonstream-components/src/components/Dropper/ContractCard";
+import DropCard from "moonstream-components/src/components/Dropper/DropCard";
 import useClaimAdmin from "moonstream-components/src/core/hooks/useClaimAdmin";
 
 const assets = {
@@ -42,7 +42,7 @@ const Drops = () => {
       {web3Provider.account &&
         adminClaims?.data?.map((claim, idx) => {
           return (
-            <ContractCard
+            <DropCard
               key={`contract-card-${idx}}`}
               address={claim.address}
               claimId={claim.id}

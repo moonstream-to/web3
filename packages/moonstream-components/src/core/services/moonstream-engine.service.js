@@ -64,7 +64,7 @@ export const getClaimants =
   ({ limit, offset }) => {
     return http({
       method: "GET",
-      url: `${API}/claimants`,
+      url: `${API}/drops/claimants`,
       params: {
         dropper_claim_id: encodeURIComponent(dropperClaimId),
         offset: encodeURIComponent(offset),
