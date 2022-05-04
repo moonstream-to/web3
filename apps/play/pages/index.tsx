@@ -3,7 +3,7 @@ import { Flex, Center } from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 // import { getLayout } from "../src/layouts/AppLayout";
-import FeatureCard from "../../packages/moonstream-components/src/components/FeatureCard";
+import FeatureCard from "../../../packages/moonstream-components/src/components/FeatureCard";
 
 const assets: any = {
   onboarding:
@@ -79,12 +79,12 @@ interface Preconnect {
 export async function getStaticProps() {
   const assetPreload: Array<Preconnect> = assets
     ? Object.keys(assets).map((key) => {
-      return {
-        rel: "preload",
-        href: assets[key],
-        as: "image",
-      };
-    })
+        return {
+          rel: "preload",
+          href: assets[key],
+          as: "image",
+        };
+      })
     : [];
   const preconnects: Array<Preconnect> = [
     { rel: "preconnect", href: "https://s3.amazonaws.com" },

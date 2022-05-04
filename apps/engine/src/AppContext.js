@@ -3,14 +3,21 @@ import { ChakraProvider } from "@chakra-ui/react";
 import theme from "./Theme/theme";
 import {
   AnalyticsProvider,
-  UserProvider,
   UIProvider,
-  DataProvider,
+  MoonstreamProvider,
   OverlayProvider,
   Web3Provider,
 } from "moonstream-components/src/core/providers";
-import { StripeProvider } from "moonstream-components/src/core/providers/StripeProvider";
 import Fonts from "./Theme/Fonts";
+import {
+  APP_NAME,
+  AWS_ASSETS_PATH,
+  COPYRIGHT_NAME,
+  DEFAULT_METATAGS,
+  SUPPORT_EMAIL,
+  TIME_RANGE_SECONDS,
+  WHITE_LOGO_W_TEXT_URL,
+} from "./constants";
 
 const AppContext = (props) => {
   useEffect(() => {
@@ -23,22 +30,29 @@ const AppContext = (props) => {
   }, []);
 
   return (
-    <UserProvider>
-      <StripeProvider>
-        <ChakraProvider theme={theme}>
-          <Fonts />
-          <Web3Provider>
-            <DataProvider>
-              <UIProvider>
-                <OverlayProvider>
-                  <AnalyticsProvider>{props.children}</AnalyticsProvider>
-                </OverlayProvider>
-              </UIProvider>
-            </DataProvider>
-          </Web3Provider>
-        </ChakraProvider>
-      </StripeProvider>
-    </UserProvider>
+    <ChakraProvider theme={theme}>
+      <Fonts />
+      <Web3Provider>
+        <MoonstreamProvider
+          constants={{
+            SITEMAP: [],
+            DEFAULT_METATAGS: DEFAULT_METATAGS,
+            TIME_RANGE_SECONDS: TIME_RANGE_SECONDS,
+            COPYRIGHT_NAME: COPYRIGHT_NAME,
+            SUPPORT_EMAIL: SUPPORT_EMAIL,
+            APP_NAME: APP_NAME,
+            WHITE_LOGO_W_TEXT_URL: WHITE_LOGO_W_TEXT_URL,
+            AWS_ASSETS_PATH: AWS_ASSETS_PATH,
+          }}
+        >
+          <UIProvider>
+            <OverlayProvider>
+              <AnalyticsProvider>{props.children}</AnalyticsProvider>
+            </OverlayProvider>
+          </UIProvider>
+        </MoonstreamProvider>
+      </Web3Provider>
+    </ChakraProvider>
   );
 };
 

@@ -127,7 +127,6 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
   const [buttonText, setButtonText] = React.useState(WALLET_STATES.ONBOARD);
   const [account, setAccount] = React.useState<string>("");
   const [chainId, setChainId] = React.useState<number>(0);
-  const [hasSignedToken, setHasSignedToken] = React.useState<boolean>(false)
 
   const setWeb3ProviderAsWindowEthereum = async () => {
     let wasSetupSuccess = false;

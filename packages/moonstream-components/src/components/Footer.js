@@ -12,16 +12,9 @@ import {
   chakra,
 } from "@chakra-ui/react";
 import RouterLink from "next/link";
-import {
-  WHITE_LOGO_SVG,
-  ALL_NAV_PATHES,
-  FOOTER_COLUMNS,
-  SOCIAL_LINKS,
-  COPYRIGHT_NAME,
-} from "../core/constants";
 import { FaGithub, FaTwitter, FaDiscord } from "react-icons/fa";
-import { v4 } from "uuid";
 import moment from "moment";
+import MoonstreamContext from "../core/providers/MoonstreamProvider/context";
 
 const LINKS_SIZES = {
   fontWeight: "300",
@@ -67,76 +60,82 @@ const SocialButton = ({ children, label, href }) => {
   );
 };
 
-const Footer = () => (
-  <Box
-    bg={useColorModeValue("blue.1200", "gray.900")}
-    color={useColorModeValue("gray.700", "gray.200")}
-  >
-    <Container as={Stack} maxW={"6xl"} py={10}>
-      <SimpleGrid
-        templateColumns={{ sm: "1fr 1fr", md: "2fr 1fr 1fr 2fr" }}
-        spacing={8}
-      >
-        <Stack spacing={6}>
-          <Stack direction={"row"}>
+const Footer = () => {
+  const { WHITE_LOGO_W_TEXT_URL, SITEMAP } =
+    React.useContext(MoonstreamContext);
+  return (
+    <Box
+      bg={useColorModeValue("blue.900", "gray.900")}
+      color={useColorModeValue("gray.700", "gray.200")}
+    >
+      <Container as={Stack} maxW={"8xl"} py={10}>
+        <SimpleGrid
+          templateColumns={{ sm: "1fr 1fr", md: "2fr 1fr 1fr 1fr 1fr" }}
+          spacing={8}
+        >
+          <Stack spacing={6}>
             <Box>
-              <Link href="https://discord.gg/K56VNUQGvA" alignSelf="center">
+              <Link href="/" alignSelf="center">
                 <ChakraImage
                   alignSelf="center"
                   // as={Link}
                   // to="/"
                   h="2.5rem"
                   minW="2.5rem"
-                  src={WHITE_LOGO_SVG}
-                  alt="Logo"
+                  src={WHITE_LOGO_W_TEXT_URL}
+                  alt="Go to app root"
                 />
               </Link>
             </Box>
+            <Text fontSize={"sm"}>
+              © {moment().year()} Moonstream.to All rights reserved
+            </Text>
+            <Stack direction={"row"} spacing={6}>
+              <SocialButton
+                label={"Twitter"}
+                href={"https://twitter.com/moonstreamto"}
+              >
+                <FaTwitter />
+              </SocialButton>
+              <SocialButton
+                label={"Github"}
+                href={"https://github.com/bugout-dev/moonstream"}
+              >
+                <FaGithub />
+              </SocialButton>
+              <SocialButton label={"Discord"} href={"/discordleed"}>
+                <FaDiscord />
+              </SocialButton>
+            </Stack>
           </Stack>
-          <Stack direction={"row"} spacing={6}>
-            {SOCIAL_LINKS.map((social_link, idx) => {
+          {SITEMAP.length > 0 &&
+            Object.values(SITEMAP).map((category, colIndex) => {
               return (
-                <SocialButton
-                  key={`social-links-${idx}`}
-                  label={social_link.label}
-                  href={social_link.url}
+                <Stack
+                  align={"flex-start"}
+                  key={`footer-list-column-${colIndex}`}
                 >
-                  {social_link.label === "Twitter" && <FaTwitter />}
-                  {social_link.label === "Github" && <FaGithub />}
-                  {social_link.label === "Discord" && <FaDiscord />}
-                </SocialButton>
+                  <>
+                    <ListHeader>{category.title}</ListHeader>
+                    {category.children.map((linkItem, linkItemIndex) => {
+                      return (
+                        <RouterLink
+                          passHref
+                          href={linkItem.path}
+                          key={`footer-list-link-item-${linkItemIndex}-col-${colIndex}`}
+                        >
+                          <Link {...LINKS_SIZES}>{linkItem.title}</Link>
+                        </RouterLink>
+                      );
+                    })}
+                  </>
+                </Stack>
               );
             })}
-          </Stack>
-        </Stack>
-        {Object.values(FOOTER_COLUMNS).map((columnEnum) => {
-          return (
-            <Stack align={"flex-start"} key={v4()}>
-              {ALL_NAV_PATHES.filter(
-                (navPath) => navPath.footerCategory === columnEnum
-              ).length > 0 && (
-                <>
-                  <ListHeader>{columnEnum}</ListHeader>
-                  {ALL_NAV_PATHES.filter(
-                    (navPath) => navPath.footerCategory === columnEnum
-                  ).map((linkItem) => {
-                    return (
-                      <RouterLink passHref href={linkItem.path} key={v4()}>
-                        <Link {...LINKS_SIZES}>{linkItem.title}</Link>
-                      </RouterLink>
-                    );
-                  })}
-                </>
-              )}
-            </Stack>
-          );
-        })}
-      </SimpleGrid>
-      <Text fontSize={"sm"} textColor={"gray.300"} w="100%" textAlign={"end"}>
-        © {moment().year()} {COPYRIGHT_NAME} All rights reserved
-      </Text>
-    </Container>
-  </Box>
-);
+        </SimpleGrid>
+      </Container>
+    </Box>
+  );
+};
 
 export default Footer;

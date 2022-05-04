@@ -12,6 +12,7 @@ import {
 } from "../../../../../types/Moonstream";
 import { useToast } from ".";
 import { balanceOfAddress } from "../contracts/terminus.contracts";
+import queryCacheProps from "./hookCommon";
 
 const useClaimAdmin = ({
   targetChain,
@@ -22,16 +23,12 @@ const useClaimAdmin = ({
 }) => {
   const toast = useToast();
 
-  const contractsList = useQuery(
-    ["contractsList"],
-    () => getContracts()().then((data) => data.data),
+  const terminusList = useQuery(
+    ["terminusAddresses"],
+    () => getTerminus(targetChain.name)().then((response) => response.data),
     {
-      onSuccess: () => {},
+      ...queryCacheProps,
     }
-  );
-
-  const terminusList = useQuery(["terminusAddresses"], () =>
-    getTerminus(targetChain.name)().then((response) => response.data)
   );
 
   const _hasAdminPermissions = React.useCallback(async () => {
@@ -95,15 +92,15 @@ const useClaimAdmin = ({
   );
 
   const isLoading = React.useMemo(() => {
-    if (terminusList.isLoading || contractsList.isLoading) return true;
+    if (terminusList.isLoading) return true;
     return false;
-  }, [terminusList.isLoading, contractsList.isLoading]);
+  }, [terminusList.isLoading]);
 
   const uploadFile = useMutation(setClaimants, {
     onSuccess: () => {
       toast("File uploaded successfully", "success");
     },
-    onError: (error: any) => {
+    onError: () => {
       toast("Uploading file failed", "error", "Error! >.<");
     },
     onSettled: () => {},

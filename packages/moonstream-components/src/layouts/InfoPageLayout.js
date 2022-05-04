@@ -1,8 +1,11 @@
 import React, { useContext, useState, useEffect, useLayoutEffect } from "react";
 import { Flex, useMediaQuery, Stack } from "@chakra-ui/react";
 import UIContext from "../core/providers/UIProvider/context";
-import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../core/constants";
 import { getLayout as getSiteLayout } from "./index";
+import {
+  DEFAULT_METATAGS,
+  AWS_ASSETS_PATH,
+} from "../core/providers/MoonstreamProvider/context";
 
 const assets = {
   background720: `${AWS_ASSETS_PATH}/blog-background-720x405.png`,
@@ -13,6 +16,7 @@ const assets = {
 
 const InfoPageLayout = ({ children }) => {
   const ui = useContext(UIContext);
+
   const [background, setBackground] = useState("background720");
   const [backgroundLoaded720, setBackgroundLoaded720] = useState(false);
   const [backgroundLoaded1920, setBackgroundLoaded1920] = useState(false);
@@ -118,7 +122,7 @@ const InfoPageLayout = ({ children }) => {
 export const getLayout = (page) =>
   getSiteLayout(<InfoPageLayout>{page}</InfoPageLayout>);
 
-export const getLayoutProps = () => {
+export const getStaticProps = () => {
   const assetPreload = Object.keys(assets).map((key) => {
     return {
       rel: "preload",

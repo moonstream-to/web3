@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useContext, Suspense } from "react";
+import React, { useState, useLayoutEffect, Suspense } from "react";
 import OverlayContext from "./context";
 import { MODAL_TYPES, DRAWER_TYPES } from "./constants";
 import {
@@ -19,22 +19,10 @@ import {
   Spinner,
   Divider,
 } from "@chakra-ui/react";
-import UserContext from "../UserProvider/context";
-import UIContext from "../UIProvider/context";
-import SignUp from "../../../components/SignUp";
-const ForgotPassword = React.lazy(() =>
-  import("../../../components/ForgotPassword")
-);
-const SignIn = React.lazy(() => import("../../../components/SignIn"));
 const HubspotForm = React.lazy(() => import("../../../components/HubspotForm"));
-const NewSubscription = React.lazy(() =>
-  import("../../../components/NewSubscription")
-);
 const FileUpload = React.lazy(() => import("../../../components/FileUpload"));
 
 const OverlayProvider = ({ children }) => {
-  const ui = useContext(UIContext);
-  const { user } = useContext(UserContext);
   const [modal, toggleModal] = useState({
     type: MODAL_TYPES.OFF,
     props: undefined,
@@ -79,22 +67,6 @@ const OverlayProvider = ({ children }) => {
   );
 
   const cancelRef = React.useRef();
-
-  useLayoutEffect(() => {
-    if (
-      ui.isAppView &&
-      ui.isInit &&
-      !user?.username &&
-      !ui.isLoggingOut &&
-      !ui.isLoggingIn &&
-      !modal.type
-    ) {
-      toggleModal({ type: MODAL_TYPES.LOGIN });
-    } else if (user && ui.isLoggingOut) {
-      toggleModal({ type: MODAL_TYPES.OFF });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ui.isAppView, ui.isAppReady, user, ui.isLoggingOut, modal.type]);
 
   return (
     <OverlayContext.Provider
@@ -156,8 +128,6 @@ const OverlayProvider = ({ children }) => {
               "Subscribe to a new address"}
             {modal.type === MODAL_TYPES.FORGOT && "Forgot Password"}
             {modal.type === MODAL_TYPES.HUBSPOT && "Join the waitlist"}
-            {modal.type === MODAL_TYPES.LOGIN && "Login now"}
-            {modal.type === MODAL_TYPES.SIGNUP && "Create an account"}
             {modal.type === MODAL_TYPES.UPLOAD_ABI && "Assign ABI"}
             {modal.type === MODAL_TYPES.FILL_BOTTLE &&
               `Fill ${modal.props.bottle.name} bottles with UNIM`}
@@ -170,26 +140,12 @@ const OverlayProvider = ({ children }) => {
           <ModalCloseButton mr={2} />
           <ModalBody zIndex={100002} bgColor={"white.300"} borderRadius="148px">
             <Suspense fallback={<Spinner />}>
-              {modal.type === MODAL_TYPES.NEW_SUBSCRIPTON && (
-                <NewSubscription
-                  onClose={() => toggleModal({ type: MODAL_TYPES.OFF })}
-                  isModal={true}
-                  {...modal.props}
-                />
-              )}
-              {modal.type === MODAL_TYPES.FORGOT && <ForgotPassword />}
               {modal.type === MODAL_TYPES.HUBSPOT && (
                 <HubspotForm
                   toggleModal={toggleModal}
                   title={"Join the waitlist"}
                   formId={"1897f4a1-3a00-475b-9bd5-5ca2725bd720"}
                 />
-              )}
-              {modal.type === MODAL_TYPES.LOGIN && (
-                <SignIn toggleModal={toggleModal} />
-              )}
-              {modal.type === MODAL_TYPES.SIGNUP && (
-                <SignUp toggleModal={toggleModal} />
               )}
               {modal.type === MODAL_TYPES.FILE_UPLOAD && (
                 <FileUpload toggleModal={toggleModal} />
