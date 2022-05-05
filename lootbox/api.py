@@ -54,6 +54,7 @@ whitelist_paths: Dict[str, str] = {}
 whitelist_paths.update(
     {
         "/ping": "GET",
+        "/docs": "GET",
         "/drops": "GET",
         "/drops/claims": "GET",
         "/drops/contracts": "GET",
@@ -61,6 +62,7 @@ whitelist_paths.update(
         "/drops/blockchains": "GET",
         "/drops/terminus/claims": "GET",
         "/now": "GET",
+        "/openapi.json": "GET",
     }
 )
 
