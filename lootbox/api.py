@@ -208,9 +208,7 @@ async def get_drops_blockchains_handler(
         raise DropperHTTPException(status_code=500, detail="Can't get drops")
 
     response = [
-        data.DropperBlockchainResponse(
-            blockchain=result.blockchain,
-        )
+        data.DropperBlockchainResponse(blockchain=result.blockchain,)
         for result in results
     ]
 
@@ -219,8 +217,7 @@ async def get_drops_blockchains_handler(
 
 @app.get("/drops/terminus")
 async def get_drops_terminus_handler(
-    blockchain: str = Query(None),
-    db_session: Session = Depends(db.yield_db_session),
+    blockchain: str = Query(None), db_session: Session = Depends(db.yield_db_session),
 ) -> List[data.DropperTerminusResponse]:
 
     """
@@ -257,7 +254,7 @@ async def get_drop_list_handler(
     terminus_address: Optional[str] = Query(None),
     terminus_pool_id: Optional[int] = Query(None),
     active: Optional[bool] = Query(None),
-    limit: int = 10,
+    limit: int = 20,
     offset: int = 0,
     db_session: Session = Depends(db.yield_db_session),
 ) -> data.DropListResponse:
@@ -305,7 +302,7 @@ async def get_drop_list_handler(
     terminus_pool_id: int,
     dropper_contract_address: Optional[str] = Query(None),
     active: Optional[bool] = Query(None),
-    limit: int = 10,
+    limit: int = 20,
     offset: int = 0,
     db_session: Session = Depends(db.yield_db_session),
 ) -> data.DropListResponse:
