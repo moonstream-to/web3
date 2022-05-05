@@ -47,7 +47,11 @@ const AppContext = (props) => {
         >
           <UIProvider>
             <OverlayProvider>
-              <AnalyticsProvider>{props.children}</AnalyticsProvider>
+              <AnalyticsProvider
+                mixpanelToken={process.env.NEXT_PUBLIC_ENGINE_MIXPANEL_TOKEN}
+              >
+                {props.children}
+              </AnalyticsProvider>
             </OverlayProvider>
           </UIProvider>
         </MoonstreamProvider>

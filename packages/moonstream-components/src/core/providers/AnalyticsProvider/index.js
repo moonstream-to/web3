@@ -5,9 +5,8 @@ import { useClientID, useRouter } from "../../hooks";
 import { MIXPANEL_EVENTS, MIXPANEL_PROPS } from "./constants";
 import UIContext from "../UIProvider/context";
 
-const AnalyticsProvider = ({ children }) => {
+const AnalyticsProvider = ({ children, mixpanelToken }) => {
   const clientID = useClientID();
-  const analytics = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN_ENGINE;
   const [isMixpanelReady, setIsLoaded] = useState(false);
   const router = useRouter();
   const ui = useContext(UIContext);
@@ -126,7 +125,7 @@ const AnalyticsProvider = ({ children }) => {
   useEffect(() => {
     if (clientID) {
       try {
-        mixpanel.init(analytics, {
+        mixpanel.init(mixpanelToken, {
           api_host: "https://api.mixpanel.com",
           loaded: () => {
             setIsLoaded(true);
@@ -137,7 +136,7 @@ const AnalyticsProvider = ({ children }) => {
         console.warn("loading mixpanel failed:", error);
       }
     }
-  }, [analytics, clientID]);
+  }, [mixpanelToken, clientID]);
 
   useEffect(() => {
     isMixpanelReady && mixpanel.register("sessionId", ui.sessionId);
