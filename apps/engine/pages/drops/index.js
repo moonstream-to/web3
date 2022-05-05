@@ -41,12 +41,11 @@ const Drops = () => {
     >
       {web3Provider.account &&
         adminClaims?.data?.map((claim, idx) => {
+          console.log("claim", claim);
           return (
             <DropCard
               key={`contract-card-${idx}}`}
-              address={claim.address}
-              claimId={claim.id}
-              deadline={claim.deadline}
+              claim={claim}
               title={claim.title}
             />
           );
