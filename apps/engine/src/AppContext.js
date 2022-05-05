@@ -23,10 +23,7 @@ const AppContext = (props) => {
   useEffect(() => {
     const version = "0.2";
     if (version) console.log(`Frontend version: ${version}`);
-    else
-      console.error(
-        "NEXT_PUBLIC_FRONTEND_VERSION version variable is not exported"
-      );
+    else console.error("version variable is not set");
   }, []);
 
   return (
