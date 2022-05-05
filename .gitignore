@@ -132,6 +132,7 @@ dmypy.json
 .lootbox/
 .secrets/
 .vscode/
+.engine/
 
 prod.env
 test.env
