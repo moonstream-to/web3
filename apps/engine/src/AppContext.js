@@ -18,6 +18,7 @@ import {
   TIME_RANGE_SECONDS,
   WHITE_LOGO_W_TEXT_URL,
 } from "./constants";
+import { PAGETYPE } from "../../../types/Site";
 
 const AppContext = (props) => {
   useEffect(() => {
@@ -32,7 +33,14 @@ const AppContext = (props) => {
       <Web3Provider>
         <MoonstreamProvider
           constants={{
-            SITEMAP: [],
+            SITEMAP: [
+              {
+                title: "Resources",
+                children: [
+                  { title: "Api Docs", path: "/docs", type: PAGETYPE.CONTENT },
+                ],
+              },
+            ],
             DEFAULT_METATAGS: DEFAULT_METATAGS,
             TIME_RANGE_SECONDS: TIME_RANGE_SECONDS,
             COPYRIGHT_NAME: COPYRIGHT_NAME,
