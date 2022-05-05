@@ -205,6 +205,36 @@ def create_claim(
     return dropper_claim
 
 
+def activate_claim(db_session: Session, dropper_claim_id):
+    """
+    Activate a claim
+    """
+
+    claim = (
+        db_session.query(DropperClaim).filter(DropperClaim.id == dropper_claim_id).one()
+    )
+
+    claim.active = True
+    db_session.commit()
+
+    return claim
+
+
+def activate_claim(db_session: Session, dropper_claim_id):
+    """
+    Activate a claim
+    """
+
+    claim = (
+        db_session.query(DropperClaim).filter(DropperClaim.id == dropper_claim_id).one()
+    )
+
+    claim.active = False
+    db_session.commit()
+
+    return claim
+
+
 def add_claimants(db_session: Session, dropper_claim_id, claimants, added_by):
     """
     Add a claimants to a claim
@@ -259,7 +289,7 @@ def transform_claim_amount(
     erc20_contract = MockErc20.MockErc20(claim_info[1])
     decimals = cast(int, erc20_contract.decimals())
 
-    return db_amount * (10**decimals)
+    return db_amount * (10 ** decimals)
 
 
 def get_claimants(db_session: Session, dropper_claim_id, limit=None, offset=None):
@@ -411,10 +441,7 @@ def get_claims(
     return query
 
 
-def get_claim_admin_pool(
-    db_session: Session,
-    dropper_claim_id: uuid.UUID,
-) -> Any:
+def get_claim_admin_pool(db_session: Session, dropper_claim_id: uuid.UUID,) -> Any:
     """
     Search for a claimant by address
     """

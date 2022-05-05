@@ -208,9 +208,7 @@ async def get_drops_blockchains_handler(
         raise DropperHTTPException(status_code=500, detail="Can't get drops")
 
     response = [
-        data.DropperBlockchainResponse(
-            blockchain=result.blockchain,
-        )
+        data.DropperBlockchainResponse(blockchain=result.blockchain,)
         for result in results
     ]
 
@@ -219,8 +217,7 @@ async def get_drops_blockchains_handler(
 
 @app.get("/drops/terminus")
 async def get_drops_terminus_handler(
-    blockchain: str = Query(None),
-    db_session: Session = Depends(db.yield_db_session),
+    blockchain: str = Query(None), db_session: Session = Depends(db.yield_db_session),
 ) -> List[data.DropperTerminusResponse]:
 
     """
@@ -394,6 +391,92 @@ async def create_drop(
         terminus_address=claim.terminus_address,
         terminus_pool_id=claim.terminus_pool_id,
         claim_id=claim.claim_id,
+    )
+
+
+@app.put("/drops/claims/activate", response_model=data.DropUpdatedResponse)
+async def activate_drop(
+    request: Request,
+    activate_request: data.DropActivateRequest = Body(...),
+    db_session: Session = Depends(db.yield_db_session),
+) -> data.DropUpdatedResponse:
+
+    """
+    Activate a given drop by drop id.
+    """
+    try:
+        actions.ensure_dropper_contract_owner(
+            db_session, activate_request.dropper_claim_id, request.state.address
+        )
+    except actions.AuthorizationError as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=403)
+    except NoResultFound:
+        raise DropperHTTPException(status_code=404, detail="Drop not found")
+
+    try:
+        drop = actions.activate_drop(
+            db_session=db_session, dropper_claim_id=activate_request.dropper_claim_id,
+        )
+    except NoResultFound:
+        raise DropperHTTPException(status_code=404, detail="Drop not found")
+    except Exception as e:
+        logger.error(f"Can't activate drop: {e}")
+        raise DropperHTTPException(status_code=500, detail="Can't activate drop")
+
+    return data.DropUpdatedResponse(
+        dropper_claim_id=drop.id,
+        dropper_contract_id=drop.dropper_contract_id,
+        title=drop.title,
+        description=drop.description,
+        claim_block_deadline=drop.claim_block_deadline,
+        terminus_address=drop.terminus_address,
+        terminus_pool_id=drop.terminus_pool_id,
+        claim_id=drop.claim_id,
+        active=drop.active,
+    )
+
+
+@app.put("/drops/claims/deactivate", response_model=data.DropUpdatedResponse)
+async def activate_drop(
+    request: Request,
+    activate_request: data.DropActivateRequest = Body(...),
+    db_session: Session = Depends(db.yield_db_session),
+) -> data.DropUpdatedResponse:
+
+    """
+    Activate a given drop by drop id.
+    """
+    try:
+        actions.ensure_dropper_contract_owner(
+            db_session, activate_request.dropper_claim_id, request.state.address
+        )
+    except actions.AuthorizationError as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=403)
+    except NoResultFound:
+        raise DropperHTTPException(status_code=404, detail="Drop not found")
+
+    try:
+        drop = actions.deactivate_drop(
+            db_session=db_session, dropper_claim_id=activate_request.dropper_claim_id,
+        )
+    except NoResultFound:
+        raise DropperHTTPException(status_code=404, detail="Drop not found")
+    except Exception as e:
+        logger.error(f"Can't activate drop: {e}")
+        raise DropperHTTPException(status_code=500, detail="Can't activate drop")
+
+    return data.DropUpdatedResponse(
+        dropper_claim_id=drop.id,
+        dropper_contract_id=drop.dropper_contract_id,
+        title=drop.title,
+        description=drop.description,
+        claim_block_deadline=drop.claim_block_deadline,
+        terminus_address=drop.terminus_address,
+        terminus_pool_id=drop.terminus_pool_id,
+        claim_id=drop.claim_id,
+        active=drop.active,
     )
 
 
