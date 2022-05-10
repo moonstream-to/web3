@@ -254,7 +254,7 @@ async def get_drop_list_handler(
     terminus_address: Optional[str] = Query(None),
     terminus_pool_id: Optional[int] = Query(None),
     active: Optional[bool] = Query(None),
-    limit: int = 10,
+    limit: int = 20,
     offset: int = 0,
     db_session: Session = Depends(db.yield_db_session),
 ) -> data.DropListResponse:
@@ -302,7 +302,7 @@ async def get_drop_list_handler(
     terminus_pool_id: int,
     dropper_contract_address: Optional[str] = Query(None),
     active: Optional[bool] = Query(None),
-    limit: int = 10,
+    limit: int = 20,
     offset: int = 0,
     db_session: Session = Depends(db.yield_db_session),
 ) -> data.DropListResponse:
