@@ -106,3 +106,28 @@ class DropResponse(BaseModel):
 
 class DropListResponse(BaseModel):
     drops: List[Any] = Field(default_factory=list)
+
+
+class DropActivateRequest(BaseModel):
+    dropper_claim_id: UUID
+
+
+class DropUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    claim_block_deadline: Optional[int] = None
+    terminus_address: Optional[str] = None
+    terminus_pool_id: Optional[int] = None
+    claim_id: Optional[int] = None
+
+
+class DropUpdatedResponse(BaseModel):
+    dropper_claim_id: UUID
+    dropper_contract_id: UUID
+    title: str
+    description: str
+    claim_block_deadline: Optional[int] = None
+    terminus_address: Optional[str] = None
+    terminus_pool_id: Optional[int] = None
+    claim_id: Optional[int] = None
+    active: bool = True

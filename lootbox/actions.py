@@ -205,11 +205,12 @@ def create_claim(
     return dropper_claim
 
 
-def activate_claim(db_session: Session, dropper_claim_id):
+def activate_drop(db_session: Session, dropper_claim_id):
     """
     Activate a claim
     """
-
+    print("activating claim")
+    print(dropper_claim_id)
     claim = (
         db_session.query(DropperClaim).filter(DropperClaim.id == dropper_claim_id).one()
     )
@@ -220,7 +221,7 @@ def activate_claim(db_session: Session, dropper_claim_id):
     return claim
 
 
-def activate_claim(db_session: Session, dropper_claim_id):
+def deactivate_drop(db_session: Session, dropper_claim_id):
     """
     Activate a claim
     """
@@ -230,6 +231,42 @@ def activate_claim(db_session: Session, dropper_claim_id):
     )
 
     claim.active = False
+    db_session.commit()
+
+    return claim
+
+
+def update_drop(
+    db_session: Session,
+    dropper_claim_id,
+    title,
+    description,
+    terminus_address,
+    terminus_pool_id,
+    claim_block_deadline,
+    claim_id,
+):
+    """
+    Update a claim
+    """
+
+    claim = (
+        db_session.query(DropperClaim).filter(DropperClaim.id == dropper_claim_id).one()
+    )
+
+    if title:
+        claim.title = title
+    if description:
+        claim.description = description
+    if terminus_address:
+        claim.terminus_address = terminus_address
+    if terminus_pool_id:
+        claim.terminus_pool_id = terminus_pool_id
+    if claim_block_deadline:
+        claim.claim_block_deadline = claim_block_deadline
+    if claim_id:
+        claim.claim_id = claim_id
+
     db_session.commit()
 
     return claim
