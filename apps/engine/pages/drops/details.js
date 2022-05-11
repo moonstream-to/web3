@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { Flex, ScaleFade, Collapse } from "@chakra-ui/react";
+import { Flex, ScaleFade } from "@chakra-ui/react";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import Details from "moonstream-components/src/components/Dropper/Details";
 

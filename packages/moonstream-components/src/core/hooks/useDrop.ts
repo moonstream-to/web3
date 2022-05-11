@@ -37,7 +37,7 @@ const useClaim = ({
   targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
   claimId: string;
-  initialPageSize?: string;
+  initialPageSize?: number;
   getAll?: boolean;
 }) => {
   console.log("useClaim");
@@ -65,7 +65,7 @@ const useClaim = ({
   const _getClaimants = async (page: number) => {
     const response = await getClaimants({ dropperClaimId: claimId })({
       limit: claimantsPageSize,
-      offset: page,
+      offset: page * claimantsPageSize,
     });
     console.log("_getClaimants", response);
     return response.data.drops;
