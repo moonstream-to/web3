@@ -6,14 +6,13 @@ import {
   ListItem,
   UnorderedList,
   Button,
+  Link,
 } from "@chakra-ui/react";
-import { targetChain } from "../../core/providers/Web3Provider";
-import Web3Context from "../../core/providers/Web3Provider/context";
-import useClaimAdmin from "../../core/hooks/useClaimAdmin";
-import useClaimCard from "../../core/hooks/useClaimCard";
 import Papa from "papaparse";
 import FileUpload from "../FileUpload";
-import ReactDiffViewer from "react-diff-viewer";
+import OverlayContext from "../../core/providers/OverlayProvider/context";
+import { MODAL_TYPES } from "../../core/providers/OverlayProvider/constants";
+import { useRouter } from "../../core/hooks";
 
 interface ClaimInterface {
   active: boolean;
@@ -27,21 +26,18 @@ interface ClaimInterface {
   title: string;
 }
 
-const ContractCard = ({ claim, ...props }: { claim: ClaimInterface }) => {
-  const web3ctx = useContext(Web3Context);
+const DropCard = ({
+  claim,
+  children,
+  ...props
+}: {
+  claim: ClaimInterface;
+  children: React.ReactNode;
+}) => {
+  const router = useRouter();
+  const overlay = useContext(OverlayContext);
 
-  const { uploadFile } = useClaimAdmin({
-    targetChain: targetChain,
-    ctx: web3ctx,
-  });
-
-  const claimants = useClaimCard({
-    targetChain,
-    ctx: web3ctx,
-    claimId: claim.id,
-  });
-
-  console.log(claimants?.data);
+  const query = router.query;
 
   const onDrop = (file: any) => {
     console.log("onDrop!,", file);
@@ -51,22 +47,19 @@ const ContractCard = ({ claim, ...props }: { claim: ClaimInterface }) => {
       skipEmptyLines: true,
       complete: (result: any) => {
         console.log("Complete: uploading file", claim.id, result.data);
-        uploadFile.mutate({
-          dropperClaimId: claim.id,
-          claimants: result.data,
+        overlay.toggleModal({
+          type: MODAL_TYPES.CSV_DIFF,
+          props: { newValue: result.data, dropId: claim.id },
         });
+        // uploadFile.mutate({
+        //   dropperClaimId: claim.id,
+        //   claimants: result.data,
+        // });
       },
       error: (err: Error) => console.log("acceptedFiles csv:", err.message),
     });
   };
 
-  // console.log("claimants", claimants.data.data.);
-  let comparison = "";
-  claimants.data?.data?.drops?.forEach(
-    (dropItem: any) =>
-      (comparison += dropItem.address + "," + dropItem.amount) + `\n`
-  );
-  console.log("claimants", comparison);
   return (
     <Flex
       borderRadius={"md"}
@@ -76,7 +69,7 @@ const ContractCard = ({ claim, ...props }: { claim: ClaimInterface }) => {
       p={4}
       mt={2}
       textColor={"gray.300"}
-      // {...props}
+      {...props}
     >
       <Heading as={"h2"} fontSize="lg" borderBottomWidth={1}>
         {"Claim: "}
@@ -139,13 +132,31 @@ const ContractCard = ({ claim, ...props }: { claim: ClaimInterface }) => {
         >
           Deactivate
         </Button>
-        <Button colorScheme={"orange"} variant="outline">
-          See whitelist
+        <Button
+          as={Link}
+          colorScheme={"orange"}
+          variant="outline"
+          // href={`/drops/details/`}
+          onClick={() => {
+            // router.appendQuery("dropId", claim.id);
+            if (query?.dropId) {
+              router.push({
+                pathname: "/drops",
+              });
+            } else {
+              router.push({
+                pathname: "drops/details",
+                query: { dropId: claim.id },
+              });
+            }
+          }}
+        >
+          {query?.dropId ? `Back to list` : `See whitelist`}
         </Button>
       </Flex>
-      <ReactDiffViewer oldValue={comparison} newValue={""} splitView={true} />
+      {children && children}
     </Flex>
   );
 };
 
-export default chakra(ContractCard);
+export default chakra(DropCard);

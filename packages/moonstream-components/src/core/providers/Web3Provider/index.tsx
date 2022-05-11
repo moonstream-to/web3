@@ -283,6 +283,8 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
 
   const defaultTxConfig = { from: account };
 
+  console.log('meta test',window?.ethereum)
+
   return (
     <Web3Context.Provider
       value={{

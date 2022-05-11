@@ -55,7 +55,7 @@ function FileUpload(props) {
       <Box {...getRootProps({ style })}>
         <input {...getInputProps()} />
         <p>{`Drag 'n' drop some files here, or click to select files`}</p>
-        <p>{`We expect csv file in format: "address, amount" `}</p>
+        <p>{`We expect csv file in format: "address,amount" `}</p>
       </Box>
     </Container>
   );
