@@ -22,7 +22,7 @@ export const getDropList = (dropperAddress, chainName) => async (address) => {
 };
 
 export const getAdminList =
-  (terminusAddress, chainName, poolId) => async () => {
+  (terminusAddress, chainName, poolId, offset, limit) => async () => {
     return http({
       method: "GET",
       url: `${API}/drops/terminus/claims`,
@@ -30,6 +30,8 @@ export const getAdminList =
         terminus_address: encodeURIComponent(terminusAddress),
         blockchain: chainName,
         terminus_pool_id: poolId,
+        offset: offset,
+        limit: limit,
       },
     });
   };

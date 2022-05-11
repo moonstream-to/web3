@@ -11,8 +11,7 @@
     "generate_classes": "typechain --target=web3-v1 --out-dir ../types/contracts '../build/contracts/*.json'"
   },
   "dependencies": {
-    "moonstream-components": "1.0.0",
-    "react-diff-viewer": "^3.1.1"
+    "moonstream-components": "1.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.14.3",

@@ -10,9 +10,11 @@ import {
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
-import Drop from "moonstream-components/src/components/Dropper/Drop";
 import useDrops from "moonstream-components/src/core/hooks/useDrops";
+import Drop from "moonstream-components/src/components/Dropper/Drop";
 import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
+import Paginator from "moonstream-components/src/components/Paginator";
+import { useRouter } from "moonstream-components/src/core/hooks";
 
 const assets = {
   onboarding:
@@ -27,10 +29,19 @@ const assets = {
 const Drops = () => {
   const web3Provider = useContext(Web3Context);
 
-  const { adminClaims } = useDrops({
+  const { adminClaims, pageOptions } = useDrops({
     targetChain: targetChain,
     ctx: web3Provider,
   });
+
+  const router = useRouter();
+  React.useEffect(() => {
+    router.appendQueries({
+      claimsLimit: pageOptions.pageSize,
+      claimsPage: pageOptions.page,
+    });
+    // eslint-disable-next-line
+  }, [pageOptions.page, pageOptions.pageSize]);
 
   if (!adminClaims.data)
     return (
@@ -48,17 +59,26 @@ const Drops = () => {
         direction={"column"}
         px="7%"
       >
-        {web3Provider.account &&
-          adminClaims?.data?.map((claim, idx) => {
-            console.log("claim", claim);
-            return (
-              <Drop
-                key={`contract-card-${idx}}`}
-                claim={claim}
-                title={claim.title}
-              />
-            );
-          })}
+        <Paginator
+          onBack={() => pageOptions.setPage((_currentPage) => _currentPage - 1)}
+          onForward={() =>
+            pageOptions.setPage((_currentPage) => _currentPage + 1)
+          }
+          paginatorKey={"claims"}
+          setLimit={pageOptions.setPageSize}
+          hasMore={adminClaims.length == pageOptions.pageSize}
+        >
+          {web3Provider.account &&
+            adminClaims?.data?.map((claim, idx) => {
+              return (
+                <Drop
+                  key={`contract-card-${idx}}`}
+                  claim={claim}
+                  title={claim.title}
+                />
+              );
+            })}
+        </Paginator>
         {!web3Provider.account &&
           web3Provider.buttonText !== web3Provider.WALLET_STATES.CONNECTED && (
             <Center>
