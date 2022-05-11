@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import { chakra, Flex, Spinner } from "@chakra-ui/react";
 import { targetChain } from "../../core/providers/Web3Provider";
 import Web3Context from "../../core/providers/Web3Provider/context";
-import useClaimAdmin from "../../core/hooks/useDrops";
+import useDrops from "../../core/hooks/useDrops";
 import useClaim from "../../core/hooks/useDrop";
 import Claimers from "../Claimers";
 import { useRouter } from "../../core/hooks";
@@ -16,7 +16,7 @@ const _Drop = ({
 }) => {
   const web3ctx = useContext(Web3Context);
 
-  const { adminClaims } = useClaimAdmin({
+  const { adminClaims } = useDrops({
     targetChain: targetChain,
     ctx: web3ctx,
   });

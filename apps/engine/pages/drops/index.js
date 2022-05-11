@@ -11,9 +11,8 @@ import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
 import Drop from "moonstream-components/src/components/Dropper/Drop";
-import useClaimAdmin from "moonstream-components/src/core/hooks/useDrops";
+import useDrops from "moonstream-components/src/core/hooks/useDrops";
 import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
-import { useRouter } from "moonstream-components/src/core/hooks";
 
 const assets = {
   onboarding:
@@ -28,12 +27,12 @@ const assets = {
 const Drops = () => {
   const web3Provider = useContext(Web3Context);
 
-  const { adminClaims } = useClaimAdmin({
+  const { adminClaims } = useDrops({
     targetChain: targetChain,
     ctx: web3Provider,
   });
 
-  if (adminClaims.isLoading)
+  if (!adminClaims.data)
     return (
       <Flex minH="100vh">
         <Spinner />
