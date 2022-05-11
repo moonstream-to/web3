@@ -29,8 +29,7 @@ import {
 import Papa from "papaparse";
 import FileUpload from "../FileUpload";
 import OverlayContext from "../../core/providers/OverlayProvider/context";
-import { MODAL_TYPES } from "../../core/providers/OverlayProvider/constants";
-import { useDrop, useRouter } from "../../core/hooks";
+import { useDrop, useDrops, useRouter } from "../../core/hooks";
 import { EditIcon } from "@chakra-ui/icons";
 import FocusLock from "react-focus-lock";
 import { useForm } from "react-hook-form";
@@ -58,7 +57,6 @@ const DropCard = ({
   children: React.ReactNode;
 }) => {
   const router = useRouter();
-  const overlay = useContext(OverlayContext);
   const web3ctx = useContext(Web3Context);
 
   const { register, handleSubmit } = useForm();
@@ -69,6 +67,7 @@ const DropCard = ({
     claimId: claim.id,
   });
 
+  const { uploadFile } = useDrops({ targetChain, ctx: web3ctx });
   const query = router.query;
 
   const onDrop = (file: any) => {
@@ -76,9 +75,9 @@ const DropCard = ({
       header: true,
       skipEmptyLines: true,
       complete: (result: any) => {
-        overlay.toggleModal({
-          type: MODAL_TYPES.CSV_DIFF,
-          props: { newValue: result.data, dropId: claim.id },
+        uploadFile.mutate({
+          dropperClaimId: claim.id,
+          claimants: result.data,
         });
       },
       error: (err: Error) => console.log("acceptedFiles csv:", err.message),

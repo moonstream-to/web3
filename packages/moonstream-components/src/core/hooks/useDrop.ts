@@ -2,7 +2,6 @@ import React from "react";
 import {
   deleteClaimants as _deleteClaimants,
   getClaimants,
-  // getClaim as _getClaim,
   activate,
   deactivate,
   updateDrop,
@@ -80,10 +79,6 @@ const useClaim = ({
     }
   );
 
-  // const getClaim = useQuery(
-  //   ["getClaim", claimId, targetChain.chainId],
-  //   _getClaim(targetChain.name)
-  // );
 
   const deleteClaimants = useMutation(
     _deleteClaimants({ dropperClaimId: claimId }),
@@ -158,7 +153,7 @@ const useClaim = ({
       ...queryCacheProps,
       keepPreviousData: true,
       onSuccess: () => {},
-      enabled: getAll,
+      enabled: !!getAll,
     }
   );
 
