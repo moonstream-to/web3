@@ -1,5 +1,4 @@
 import React from "react";
-import { useState } from "react";
 import {
   getAdminList,
   getTerminus,
@@ -21,11 +20,10 @@ const useClaimAdmin = ({
   targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
 }) => {
-  console.log("useClaimAdmin");
   const toast = useToast();
 
-  const [offset, setOffset] = useState(0);
-  const [limit, setLimit] = useState(5);
+  const [claimsPage, setClaimsPage] = React.useState(0);
+  const [claimsPageSize, setClaimsPageSize] = React.useState(10);
 
   const terminusList = useQuery(
     ["terminusAddresses"],
@@ -85,8 +83,8 @@ const useClaimAdmin = ({
               permission[0],
               targetChain.name,
               permission[1],
-              offset,
-              limit
+              claimsPage * claimsPageSize,
+              claimsPageSize
             )();
             return response.data.drops;
           })
@@ -98,7 +96,13 @@ const useClaimAdmin = ({
   };
 
   const adminClaims = useQuery(
-    ["claimAdmin", "adminClaims", targetChain.chainId, limit, offset],
+    [
+      "claimAdmin",
+      "adminClaims",
+      targetChain.chainId,
+      claimsPage,
+      claimsPageSize,
+    ],
     _getAdminClaimsList,
     {
       enabled: !!adminPermissions.data,
@@ -122,10 +126,10 @@ const useClaimAdmin = ({
   });
 
   const pageOptions = {
-    limit: limit,
-    setLimit: setLimit,
-    offset: offset,
-    setOffset: setOffset,
+    page: claimsPage,
+    setPage: setClaimsPage,
+    pageSize: claimsPageSize,
+    setPageSize: setClaimsPageSize,
   };
 
   return {
