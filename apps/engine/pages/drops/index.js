@@ -5,7 +5,7 @@ import Web3Context from "moonstream-components/src/core/providers/Web3Provider/c
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
 import ContractCard from "moonstream-components/src/components/Dropper/ContractCard";
 import ClaimPageControls from "moonstream-components/src/components/ClaimPageControls";
-import useClaimAdmin from "moonstream-components/src/core/hooks/useClaimAdmin";
+import useDrops from "moonstream-components/src/core/hooks/useDrops";
 
 const assets = {
   onboarding:
@@ -20,7 +20,7 @@ const assets = {
 const Drops = () => {
   const web3Provider = useContext(Web3Context);
 
-  const { adminClaims, isLoading, uploadFile, pageOptions } = useClaimAdmin({
+  const { adminClaims, isLoading, uploadFile, pageOptions } = useDrops({
     targetChain: targetChain,
     ctx: web3Provider,
   });

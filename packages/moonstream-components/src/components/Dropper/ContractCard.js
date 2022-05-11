@@ -8,13 +8,13 @@ import {
 } from "@chakra-ui/react";
 import { targetChain } from "../../core/providers/Web3Provider";
 import Web3Context from "../../core/providers/Web3Provider/context";
-import useClaimAdmin from "../../core/hooks/useClaimAdmin";
+import useDrops from "../../core/hooks/useDrops";
 import Papa from "papaparse";
 import FileUpload from "../FileUpload";
 const ContractCard = ({ title, description, claimId, ...props }) => {
   const web3ctx = useContext(Web3Context);
 
-  const { uploadFile } = useClaimAdmin({
+  const { uploadFile } = useDrops({
     targetChain: targetChain,
     ctx: web3ctx,
   });

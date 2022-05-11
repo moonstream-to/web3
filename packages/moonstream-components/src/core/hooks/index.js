@@ -1,6 +1,6 @@
 export { default as hookCommon } from "./hookCommon";
 export { default as useAuthResultHandler } from "./useAuthResultHandler";
-export { default as useClaimAdmin } from "./useClaimAdmin";
+export { default as useDrops } from "./useDrops";
 export { default as useClientID } from "./useClientID";
 export { default as useDropper } from "./useDropper";
 export { default as useDropperClaim } from "./useDropperClaim";
