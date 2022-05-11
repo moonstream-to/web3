@@ -12,10 +12,10 @@ import { useRouter as useNextRouter } from "next/router";
  *   name: 'Sam',
  * }
  */
-const queryFromUrl = (url) => {
+const queryFromUrl = (url: string) => {
   const [, ...queryStrings] = url.split("?");
   const queryString = queryStrings.join("?");
-  const query = {};
+  let query: { [key: string]: string } = {};
 
   for (let [key, value] of new URLSearchParams(queryString).entries()) {
     query[key] = value;
@@ -42,11 +42,11 @@ const queryFromUrl = (url) => {
  * }
  */
 
-const extractPathParams = (router, query) => {
-  const queryKeys = Object.keys(query);
+const extractPathParams = (router: any, query: any) => {
+  const queryKeys = Object.keys(query ?? {});
   const params = Object.keys(router.query)
     .filter((key) => !queryKeys.includes(key))
-    .reduce((obj, key) => {
+    .reduce((obj: any, key) => {
       obj[key] = router.query[key];
       return obj;
     }, {});
@@ -92,12 +92,12 @@ const extractPathParams = (router, query) => {
 
 const useRouter = () => {
   const router = useNextRouter();
-  const query = queryFromUrl(router.asPath);
+  const query = queryFromUrl(router.asPath) as any;
 
   const params = extractPathParams(router, query);
 
-  const appendQueries = (items, push, shallow) => {
-    const newQuery = { ...router.query }; //
+  const appendQueries = (items: any, push?: any, shallow?: boolean) => {
+    const newQuery: any = { ...router.query }; //
     for (const [key, value] of Object.entries(items)) {
       newQuery[key] = value;
     }
@@ -114,7 +114,7 @@ const useRouter = () => {
     }
   };
 
-  const appendQuery = (key, value, push, shallow) => {
+  const appendQuery = (key: string, value: string, push: any, shallow: any) => {
     const newQuery = { ...router.query };
     newQuery[key] = value;
     if (push) {
@@ -130,7 +130,7 @@ const useRouter = () => {
     }
   };
 
-  const drop = (item) => {
+  const drop = (item: string) => {
     const newQuery = { ...router.query };
     delete newQuery[`${item}`];
 

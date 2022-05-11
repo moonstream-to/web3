@@ -10,35 +10,39 @@ import {
   Button,
 } from "@chakra-ui/react";
 
+// title="Please confirm"
+//                   confirmLabel="confirm"
+//                   cancelLabel="cancel"
+//                   description="This will delete claimant form the list"
 const ConfirmationRequest = (props) => {
   return (
     <Popover>
       {({ onClose }) => (
         <Fragment>
           <PopoverTrigger>{props.children}</PopoverTrigger>
-          <PopoverContent zIndex={100} bg="White">
+          <PopoverContent zIndex={100} bg="blue.900">
             <PopoverCloseButton />
             <PopoverHeader fontWeight="bold">{props.header}</PopoverHeader>
             <PopoverBody fontSize="md">{props.bodyMessage}</PopoverBody>
             <PopoverFooter>
-              <Button
-                onClick={onClose}
-                colorScheme="blue"
-                variant="outline"
-                size="sm"
-              >
-                No
-              </Button>
               <Button
                 onClick={() => {
                   props.onConfirm();
                   onClose();
                 }}
                 colorScheme="red"
+                variant="outline"
+                size="sm"
+              >
+                {props.confirmLabel ?? "Confirm"}
+              </Button>
+              <Button
+                onClick={onClose}
+                colorScheme="green"
                 variant="solid"
                 size="sm"
               >
-                Yes
+                {props.cancelLabel ?? "Cancel"}
               </Button>
             </PopoverFooter>
           </PopoverContent>

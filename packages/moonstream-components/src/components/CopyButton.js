@@ -12,7 +12,9 @@ import { BiCopy } from "react-icons/bi";
 
 const CopyButton = (props) => {
   const children = props.children ? props.children : "";
-  const copyString = props.prefix ? props.prefix + children : children;
+  const copyString = props.prefix
+    ? props.prefix + props.text ?? children
+    : props.text ?? children;
 
   const { onCopy } = useClipboard(copyString);
 

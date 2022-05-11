@@ -1,10 +1,12 @@
 export { default as hookCommon } from "./hookCommon";
 export { default as useAuthResultHandler } from "./useAuthResultHandler";
-export { default as useClaimAdmin } from "./useClaimAdmin";
 export { default as useClientID } from "./useClientID";
+export { default as useDrop } from "./useDrop";
 export { default as useDropper } from "./useDropper";
 export { default as useDropperClaim } from "./useDropperClaim";
+export { default as useDrops } from "./useDrops";
 export { default as useERC20 } from "./useERC20";
+export { default as useLootbox } from "./useLootbox";
 export { default as usePresignedURL } from "./usePresignedURL";
 export { default as useQuery } from "./useQuery";
 export { default as useRouter } from "./useRouter";

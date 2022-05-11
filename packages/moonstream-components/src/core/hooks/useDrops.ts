@@ -1,9 +1,9 @@
 import React from "react";
 import {
   getAdminList,
-  getContracts,
   getTerminus,
   setClaimants,
+  deleteClaimants
 } from "../services/moonstream-engine.service";
 import { useMutation, useQuery } from "react-query";
 import {
@@ -21,6 +21,7 @@ const useClaimAdmin = ({
   targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
 }) => {
+  console.log('useClaimAdmin')
   const toast = useToast();
 
   const terminusList = useQuery(
@@ -35,19 +36,25 @@ const useClaimAdmin = ({
     if (terminusList.data) {
       console.log("adminContracts terminusList.data", terminusList.data);
       const terminusAuthorizations = await Promise.all(
-        terminusList.data.map(async (terminus: any) => {
-          return [
-            terminus.terminus_address,
-            terminus.terminus_pool_id,
-            await balanceOfAddress(
-              ctx.account,
+        terminusList.data.map(
+          async (terminus: {
+            terminus_address: string;
+            terminus_pool_id: number;
+          }) => {
+            return [
               terminus.terminus_address,
               terminus.terminus_pool_id,
-              ctx
-            )(),
-          ];
-        })
+              await balanceOfAddress(
+                ctx.account,
+                terminus.terminus_address,
+                terminus.terminus_pool_id,
+                ctx
+              )(),
+            ];
+          }
+        )
       );
+      //terminusAuthorizations = [[terminus_addess, poolId, balance]]
       const terminusAdmin = terminusAuthorizations.filter(
         (item) => item[2] > 0
       );
@@ -110,6 +117,7 @@ const useClaimAdmin = ({
     adminClaims,
     isLoading,
     uploadFile,
+    deleteClaimants,
   };
 };
 
