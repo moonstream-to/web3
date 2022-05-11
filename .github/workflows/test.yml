@@ -24,6 +24,8 @@ jobs:
         run: pip install -U pip
       - name: Install dev dependencies
         run: pip install -e .[dev]
+      - name: Black version check
+        run: black --version
       - name: Black syntax check
         run: black --check lootbox/
       - name: Run tests
