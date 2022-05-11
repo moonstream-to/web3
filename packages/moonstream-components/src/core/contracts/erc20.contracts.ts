@@ -1,5 +1,5 @@
 import { MockErc20 } from "../../../../../types/contracts/MockErc20";
-const erc20abi: AbiItem = require("../../../../../abi/MockERC20.json");
+const erc20abi: AbiItem = require("../../../../../abi/MockErc20.json");
 import { MoonstreamWeb3ProviderInterface } from "../../../../../types/Moonstream";
 import { AbiItem } from "web3-utils";
 
