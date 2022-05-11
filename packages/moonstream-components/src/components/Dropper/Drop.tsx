@@ -153,8 +153,7 @@ const DropCard = ({
                       variant={"flushed"}
                       colorScheme="orange"
                       defaultValue={claim.title}
-                      name="title"
-                      ref={register({ required: "title is required!" })}
+                      {...register("title")}
                     />
                   </FormControl>
                   <FormControl>
@@ -166,8 +165,7 @@ const DropCard = ({
                       variant={"flushed"}
                       colorScheme="orange"
                       defaultValue={claim.description}
-                      name="description"
-                      ref={register({ required: "description is required!" })}
+                      {...register("description")}
                     />
                   </FormControl>
 
@@ -181,11 +179,7 @@ const DropCard = ({
                       colorScheme="orange"
                       defaultValue={claim.claim_block_deadline}
                     >
-                      <NumberInputField
-                        px={2}
-                        name="deadline"
-                        ref={register({ required: "deadline is required!" })}
-                      />
+                      <NumberInputField px={2} {...register("deadline")} />
                       <NumberInputStepper>
                         <NumberIncrementStepper />
                         <NumberDecrementStepper />
