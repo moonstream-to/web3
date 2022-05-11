@@ -2,9 +2,10 @@ import React from "react";
 import {
   deleteClaimants as _deleteClaimants,
   getClaimants,
-  getClaim as _getClaim,
+  // getClaim as _getClaim,
   activate,
   deactivate,
+  updateDrop,
 } from "../services/moonstream-engine.service";
 import { useMutation, useQuery } from "react-query";
 import {
@@ -76,6 +77,7 @@ const useClaim = ({
 
     {
       ...queryCacheProps,
+      enabled: !!ctx.account,
       keepPreviousData: true,
       onSuccess: () => {},
     }
@@ -124,7 +126,9 @@ const useClaim = ({
       onError: () => {
         toast("Deactivating drop failed", "error", "Error! >.<");
       },
-      onSettled: () => {},
+      onSettled: () => {
+        deactivateDrop.reset();
+      },
     }
   );
 
@@ -162,6 +166,16 @@ const useClaim = ({
     }
   );
 
+  const update = useMutation(updateDrop({ dropperClaimId: claimId }), {
+    onSuccess: () => {
+      admin.adminClaims.refetch();
+      toast("Updated drop info", "success");
+    },
+    onError: () => {
+      toast("Updating drop failed >.<", "error");
+    },
+  });
+
   return {
     claim,
     claimants,
@@ -173,6 +187,7 @@ const useClaim = ({
     deactivateDrop,
     activateDrop,
     AllClaimants,
+    update,
   };
 };
 

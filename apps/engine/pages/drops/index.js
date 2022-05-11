@@ -29,7 +29,7 @@ const assets = {
 const Drops = () => {
   const web3Provider = useContext(Web3Context);
 
-  const { adminClaims, isLoading, uploadFile, pageOptions } = useDrops({
+  const { adminClaims, pageOptions } = useDrops({
     targetChain: targetChain,
     ctx: web3Provider,
   });
@@ -43,8 +43,7 @@ const Drops = () => {
     // eslint-disable-next-line
   }, [pageOptions.page, pageOptions.pageSize]);
 
-
-  if (adminClaims.isLoading)
+  if (!adminClaims.data)
     return (
       <Flex minH="100vh">
         <Spinner />

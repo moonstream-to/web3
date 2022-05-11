@@ -30,6 +30,7 @@ const useClaimAdmin = ({
     () => getTerminus(targetChain.name)().then((response) => response.data),
     {
       ...queryCacheProps,
+      enabled: !!ctx.account,
     }
   );
 
@@ -67,6 +68,7 @@ const useClaimAdmin = ({
     ["claimAdmin", "adminPermissions", ctx.account],
     _hasAdminPermissions,
     {
+      ...queryCacheProps,
       enabled: !!terminusList.data && !!ctx.account,
       onSuccess: () => {},
       onError: (err) => {
@@ -105,8 +107,9 @@ const useClaimAdmin = ({
     ],
     _getAdminClaimsList,
     {
-      enabled: !!adminPermissions.data,
+      ...queryCacheProps,
       keepPreviousData: true,
+      enabled: !!adminPermissions.data && !!ctx.account,
     }
   );
 
