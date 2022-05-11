@@ -26,7 +26,7 @@ setup(
     extras_require={
         "dev": [
             "black",
-            "moonworm >= 0.1.14",
+            "moonworm >= 0.2.2",
         ],
         "distribute": ["setuptools", "twine", "wheel"],
     },
