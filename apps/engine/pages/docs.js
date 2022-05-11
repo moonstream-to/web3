@@ -6,11 +6,13 @@ import { DEFAULT_METATAGS } from "../src/constants";
 
 const API = process.env.NEXT_PUBLIC_ENGINE_API_URL;
 
+console.log("API", API);
+
 const Docs = () => {
   return (
     // <Box overflowY="hidden" w="100%" maxH="100%" minH="100vh">
     <>
-      <Box w="100%" maxH="100vh" overflowY="scroll" zIndex={0}>
+      <Box w="100%" maxH="100vh" overflowY="scroll" zIndex={0} bgColor="white">
         <RedocStandalone
           specUrl={`${API}/openapi.json`}
           options={{

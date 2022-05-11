@@ -117,7 +117,7 @@ const Footer = () => {
                 >
                   <>
                     <ListHeader>{category.title}</ListHeader>
-                    {category.children.map((linkItem, linkItemIndex) => {
+                    {category.children?.map((linkItem, linkItemIndex) => {
                       return (
                         <RouterLink
                           passHref
