@@ -15,7 +15,6 @@ const EngineLayout = (props) => {
   React.useEffect(() => {
     setPath(router.nextRouter.asPath.split("/").slice(1, -1));
   }, [router.nextRouter.asPath]);
-  console.log("router.params", path);
 
   return (
     <Flex
@@ -41,7 +40,6 @@ const EngineLayout = (props) => {
           path.forEach((value, index) => {
             if (index <= idx) linkPath += value + "/";
           });
-          console.log("linkPath", linkPath);
           return (
             <BreadcrumbItem key={`bcl-${element}-${idx}`}>
               <NextLink passHref href={`${linkPath}`}>
