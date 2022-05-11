@@ -8,9 +8,24 @@ const Paginator = ({
   onForward,
   onBack,
   setLimit,
+  paginatorKey,
+  hasMore,
+  pageOptions,
+  ...props
 }) => {
   const router = useRouter();
-  const { page, limit } = router.query;
+  /**
+   *  @dev set page and limit by appending query to url path:
+   * @example
+   * router.appendQueries({
+      claimantsLimit: claimantsPageSize,
+      claimantsPage: claimantsPage,
+    });
+   */
+  const page = router.query[`${paginatorKey}Page`];
+  const limit = router.query[`${paginatorKey}Limit`];
+  const _pageOptions = pageOptions ?? ["25", "50", "100", "300", "500"];
+
   const PageBar = () => (
     <Flex justifyContent={"space-between"} pt={2}>
       <ButtonGroup
@@ -32,18 +47,23 @@ const Paginator = ({
           onChange={(e) => setLimit(e.target.value)}
           value={limit}
         >
-          <option value="25">25</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
-          <option value="300">300</option>
-          <option value="500">500</option>
+          {_pageOptions.map((pageSize) => {
+            return (
+              <option
+                key={`paginator-options-pagesize-${pageSize}`}
+                value={pageSize}
+              >
+                {pageSize}
+              </option>
+            );
+          })}
         </Select>
-        <Button onClick={onForward}>{`>>>`}</Button>
+        <Button isDisabled={!hasMore} onClick={onForward}>{`>>>`}</Button>
       </ButtonGroup>
     </Flex>
   );
   return (
-    <Flex className="Paginator" direction={"column"} w="100%">
+    <Flex className="Paginator" direction={"column"} w="100%" {...props}>
       <PageBar />
       {children}
       <PageBar />
