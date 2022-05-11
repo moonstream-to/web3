@@ -23,8 +23,8 @@ jobs:
           BROWNIE_LIB: 1
         run: pip install -U pip
       - name: Install dev dependencies
-        run: pip install -e .[dev]
-      - name: Black syntax check
-        run: black --check lootbox/
+        run: |
+          pip install -e .
+          pip install -U black moonworm
       - name: Run tests
         run: bash test.sh
