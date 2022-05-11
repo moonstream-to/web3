@@ -66,9 +66,7 @@ const Drops = () => {
           }
           paginatorKey={"claims"}
           setLimit={pageOptions.setLimit}
-          hasMore={() => {
-            return true;
-          }}
+          hasMore={(adminClaims.length == pageOptions.pageSize)}
         >
           {web3Provider.account &&
             adminClaims?.data?.map((claim, idx) => {
