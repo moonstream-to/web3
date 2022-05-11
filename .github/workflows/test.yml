@@ -26,9 +26,5 @@ jobs:
         run: |
           pip install -e .
           pip install -U black moonworm
-      - name: Black version check
-        run: black --version
-      - name: Black syntax check
-        run: black --check lootbox/
       - name: Run tests
         run: bash test.sh
