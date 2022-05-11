@@ -54,8 +54,8 @@ class DropperBlockchainResponse(BaseModel):
 class DropRegisterRequest(BaseModel):
 
     dropper_contract_id: UUID
-    title: str
-    description: str
+    title: Optional[str] = None
+    description: Optional[str] = None
     claim_block_deadline: Optional[int] = None
     terminus_address: Optional[str] = None
     terminus_pool_id: Optional[int] = None

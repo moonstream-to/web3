@@ -517,6 +517,7 @@ async def update_drop(
             terminus_address=update_request.terminus_address,
             terminus_pool_id=update_request.terminus_pool_id,
             claim_id=update_request.claim_id,
+            address=request.state.address,
         )
     except NoResultFound:
         raise DropperHTTPException(status_code=404, detail="Drop not found")
