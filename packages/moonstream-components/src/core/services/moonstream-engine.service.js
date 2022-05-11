@@ -34,12 +34,13 @@ export const getAdminList =
     });
   };
 
-export const getDropMessage = (claimId) => async (address) =>
-  http({
+export const getClaim = (claimId, address) => {
+  return http({
     method: "GET",
     url: `${API}/drops/`,
     params: { address: address, dropper_claim_id: claimId },
   });
+};
 
 export const createDropperClaim =
   ({ dropperContractAddress }) =>
@@ -113,14 +114,6 @@ export const getTerminus = (chainName) => async () => {
     method: "GET",
     url: `${API}/drops/terminus`,
     params: { blockchain: chainName },
-  });
-};
-
-export const getClaim = (chainName) => (address) => {
-  return http({
-    method: "GET",
-    url: `${API}/drops`,
-    params: { blockchain: chainName, address: address },
   });
 };
 
