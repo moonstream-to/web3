@@ -63,7 +63,11 @@ const DropCard = ({
 
   const { register, handleSubmit } = useForm();
 
-  const { update } = useDrop({ targetChain, ctx: web3ctx, claimId: claim.id });
+  const { update, activateDrop, deactivateDrop } = useDrop({
+    targetChain,
+    ctx: web3ctx,
+    claimId: claim.id,
+  });
 
   const query = router.query;
 
@@ -175,7 +179,6 @@ const DropCard = ({
                     <NumberInput
                       variant={"flushed"}
                       name="deadline"
-
                       colorScheme="orange"
                       defaultValue={claim.claim_block_deadline}
                     >
@@ -264,6 +267,7 @@ const DropCard = ({
           variant={"outline"}
           colorScheme="green"
           isDisabled={!!claim.active}
+          onClick={() => activateDrop.mutate()}
         >
           Activate
         </Button>
@@ -271,6 +275,7 @@ const DropCard = ({
           variant={"outline"}
           colorScheme="red"
           isDisabled={!claim.active}
+          onClick={() => deactivateDrop.mutate()}
         >
           Deactivate
         </Button>

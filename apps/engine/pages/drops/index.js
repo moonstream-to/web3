@@ -5,6 +5,7 @@ import {
   Image,
   Center,
   Spinner,
+  Heading,
   ScaleFade,
 } from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
@@ -59,26 +60,49 @@ const Drops = () => {
         direction={"column"}
         px="7%"
       >
-        <Paginator
-          onBack={() => pageOptions.setPage((_currentPage) => _currentPage - 1)}
-          onForward={() =>
-            pageOptions.setPage((_currentPage) => _currentPage + 1)
-          }
-          paginatorKey={"claims"}
-          setLimit={pageOptions.setPageSize}
-          hasMore={adminClaims.length == pageOptions.pageSize}
-        >
-          {web3Provider.account &&
-            adminClaims?.data?.map((claim, idx) => {
-              return (
-                <Drop
-                  key={`contract-card-${idx}}`}
-                  claim={claim}
-                  title={claim.title}
-                />
-              );
-            })}
-        </Paginator>
+        {adminClaims.data?.length == 0 && (
+          <Flex
+            w="100%"
+            minH="50vh"
+            bgColor={"blue.700"}
+            borderRadius="md"
+            placeContent={"center"}
+          >
+            <Center>
+              <Flex direction={"column"}>
+                <Heading>Your drops list is empty</Heading>
+                <Heading>
+                  <br />
+                  Please contact us on discord to create one
+                </Heading>
+              </Flex>
+            </Center>
+          </Flex>
+        )}
+        {adminClaims.data?.length != 0 && (
+          <Paginator
+            onBack={() =>
+              pageOptions.setPage((_currentPage) => _currentPage - 1)
+            }
+            onForward={() =>
+              pageOptions.setPage((_currentPage) => _currentPage + 1)
+            }
+            paginatorKey={"claims"}
+            setLimit={pageOptions.setPageSize}
+            hasMore={adminClaims.data.length == pageOptions.pageSize}
+          >
+            {web3Provider.account &&
+              adminClaims?.data?.map((claim, idx) => {
+                return (
+                  <Drop
+                    key={`contract-card-${idx}}`}
+                    claim={claim}
+                    title={claim.title}
+                  />
+                );
+              })}
+          </Paginator>
+        )}
         {!web3Provider.account &&
           web3Provider.buttonText !== web3Provider.WALLET_STATES.CONNECTED && (
             <Center>
