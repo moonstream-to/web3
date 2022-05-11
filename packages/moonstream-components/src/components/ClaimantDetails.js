@@ -17,7 +17,6 @@ import { BiTrash } from "react-icons/bi";
 const ClaimantDetails = ({ dropId, address, onClose, onDeleteClaimant }) => {
   const web3ctx = useContext(Web3Context);
 
-  console.log("dropId", dropId);
   const { claim } = useClaimant({
     targetChain,
     ctx: web3ctx,
@@ -25,7 +24,6 @@ const ClaimantDetails = ({ dropId, address, onClose, onDeleteClaimant }) => {
     claimantAddress: address,
   });
   if (claim.isLoading) return <Spinner />;
-  console.log("ClaimantDetails claim", claim.data);
   return (
     <Flex className="ClaimantDetails" direction={"row"}>
       {claim.data?.signature && (

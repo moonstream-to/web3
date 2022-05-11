@@ -46,10 +46,6 @@ export const chains: { [index: string]: ChainInterface } = {
 };
 
 const signAccessToken = async (account: string) => {
-  console.log("auth flow entring");
-
-  // const message = "blablabla";
-
   const msgParams = JSON.stringify({
     domain: {
       // Give a user friendly name to the specific contract you are signing for.
@@ -94,13 +90,6 @@ const signAccessToken = async (account: string) => {
     from: account,
   });
 
-  console.log(
-    "signedMessage",
-    result,
-    account,
-    JSON.parse(msgParams).message.deadline
-  );
-
   localStorage.setItem(
     "APP_ACCESS_TOKEN",
     Buffer.from(
@@ -120,7 +109,8 @@ const signAccessToken = async (account: string) => {
 
 if (!process.env.NEXT_PUBLIC_ENGINE_TARGET_CHAIN)
   throw "NEXT_PUBLIC_ENGINE_API_URL not defined";
-export const targetChain = chains[`${process.env.NEXT_PUBLIC_ENGINE_TARGET_CHAIN}`];
+export const targetChain =
+  chains[`${process.env.NEXT_PUBLIC_ENGINE_TARGET_CHAIN}`];
 
 const Web3Provider = ({ children }: { children: JSX.Element }) => {
   const [web3] = React.useState<Web3>(new Web3(null));
@@ -155,7 +145,6 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
 
   React.useLayoutEffect(() => {
     if (web3.currentProvider) {
-      console.log("web3 is getting chain id");
       web3?.eth.getChainId().then((id) => setChainId(id));
     }
   }, [web3.currentProvider, web3?.eth]);
@@ -192,19 +181,11 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
     };
 
     if (web3.currentProvider && chainId) {
-      console.log(
-        "Checking that",
-        chainId,
-        "corresponds to selected target chain id:",
-        targetChain.chainId
-      );
       if (chainId) {
         if (chainId === targetChain.chainId) {
           //we are on matic
-          console.log("chain id is correct");
         } else {
           //we are not on matic
-          console.log("requesting to change chain Id", chainId);
           changeChain();
         }
       }
@@ -283,7 +264,6 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
 
   const defaultTxConfig = { from: account };
 
-  console.log('meta test',window?.ethereum)
 
   return (
     <Web3Context.Provider

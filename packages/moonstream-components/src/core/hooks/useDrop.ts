@@ -41,7 +41,6 @@ const useClaim = ({
   initialPageSize?: number;
   getAll?: boolean;
 }) => {
-  console.log("useClaim");
   const admin = useClaimAdmin({ targetChain, ctx });
   const toast = useToast();
 
@@ -50,7 +49,6 @@ const useClaim = ({
   );
   React.useEffect(() => {
     if (admin.adminClaims.data || !admin.adminClaims.isLoading) {
-      console.log("eff", admin.adminClaims.data);
       setClaim(
         admin.adminClaims.data?.find(
           (element: ClaimInterface) => element.id === claimId
@@ -68,7 +66,6 @@ const useClaim = ({
       limit: claimantsPageSize,
       offset: page * claimantsPageSize,
     });
-    console.log("_getClaimants", response);
     return response.data.drops;
   };
   const claimants = useQuery(
@@ -150,7 +147,6 @@ const useClaim = ({
       _claimants.push(...response.data.drops);
     }
 
-    console.log("_getClaimants", _claimants);
     return _claimants;
   };
 

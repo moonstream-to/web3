@@ -51,7 +51,6 @@ const CSVDiff = ({ toggleModal, dropId, newValue }) => {
     }
   }, [newValue]);
 
-  console.log("CSVDIFF");
   if (AllClaimants.isLoading) return <Spinner />;
 
   return (

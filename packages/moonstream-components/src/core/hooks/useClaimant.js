@@ -3,7 +3,6 @@ import { getClaim } from "../services/moonstream-engine.service";
 import { queryCacheProps } from "./hookCommon";
 
 const useClaimant = ({ dropId, claimantAddress }) => {
-  console.log("useClaimant dropId", dropId);
   const claim = useQuery(
     ["claim", dropId, claimantAddress],
     async () => {

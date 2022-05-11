@@ -68,21 +68,14 @@ const DropCard = ({
   const query = router.query;
 
   const onDrop = (file: any) => {
-    console.log("onDrop!,", file);
-    console.log("Who is papa", Papa);
     Papa.parse(file[0], {
       header: true,
       skipEmptyLines: true,
       complete: (result: any) => {
-        console.log("Complete: uploading file", claim.id, result.data);
         overlay.toggleModal({
           type: MODAL_TYPES.CSV_DIFF,
           props: { newValue: result.data, dropId: claim.id },
         });
-        // uploadFile.mutate({
-        //   dropperClaimId: claim.id,
-        //   claimants: result.data,
-        // });
       },
       error: (err: Error) => console.log("acceptedFiles csv:", err.message),
     });
@@ -97,17 +90,6 @@ const DropCard = ({
     }
   }, [isOpen, update, onClose]);
   const firstFieldRef = React.useRef(null);
-
-  // const handleFormSubmit = (e: any) => {
-  //   e.preventDefault();
-  //   console.log("form data", e.target[0].value);
-  //   console.log("form data", e.target[1].value);
-  //   console.log("form data", e.target[3].value);
-  //   console.log("form data", e.target[4].value);
-
-  //   // console.dir(props);
-  //   // console.log("handleSubmit", props);
-  // };
 
   const onSubmit = (data: any) => update.mutate({ ...data });
 
@@ -170,7 +152,6 @@ const DropCard = ({
                       defaultValue={claim.title}
                       name="title"
                       ref={register({ required: "title is required!" })}
-                      // {...register("title")}
                     />
                   </FormControl>
                   <FormControl>
@@ -184,7 +165,6 @@ const DropCard = ({
                       defaultValue={claim.description}
                       name="description"
                       ref={register({ required: "description is required!" })}
-                      // {...register("description")}
                     />
                   </FormControl>
 
@@ -195,7 +175,6 @@ const DropCard = ({
                     <NumberInput
                       variant={"flushed"}
                       name="deadline"
-                      // {...register("deadline")}
 
                       colorScheme="orange"
                       defaultValue={claim.claim_block_deadline}

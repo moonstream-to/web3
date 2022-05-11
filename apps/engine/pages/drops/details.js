@@ -22,7 +22,6 @@ const Drops = () => {
 
   if (!dropId) return "drop Id must be specifed";
   if (!claim) return "";
-  console.log("dropId,", dropId);
   return (
     <ScaleFade in transition={"2s"}>
       <Flex>

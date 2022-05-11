@@ -35,7 +35,6 @@ const useClaimAdmin = ({
   );
 
   const _hasAdminPermissions = React.useCallback(async () => {
-    // console.log("_hasAdminPermissions");
     if (terminusList.data) {
       const terminusAuthorizations = await Promise.all(
         terminusList.data.map(

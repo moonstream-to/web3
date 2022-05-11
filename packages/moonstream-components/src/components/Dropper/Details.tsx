@@ -48,7 +48,6 @@ const _Drop = ({
   if (!claim || !claimants.data || !adminClaims.data || adminClaims.isLoading)
     return <Spinner />;
 
-  console.log("claimants", claimants.data);
   return (
     <Flex
       borderRadius={"md"}

@@ -9,7 +9,6 @@ export const getContracts = () => async () => {
 };
 
 export const getDropList = (dropperAddress, chainName) => async (address) => {
-  console.log("getDropList");
   return http({
     method: "GET",
     url: `${API}/drops/claims`,
@@ -77,10 +76,6 @@ export const getClaimants =
   };
 
 export const setClaimants = ({ dropperClaimId, claimants }) => {
-  console.log("setClaimants", dropperClaimId, claimants);
-  // const data = new FormData();
-  // data.append("dropper_claim_id", dropperClaimId);
-  // data.append("claimants", claimants);
   const data = { dropper_claim_id: dropperClaimId, claimants: claimants };
 
   return http({

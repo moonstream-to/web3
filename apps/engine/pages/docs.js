@@ -6,7 +6,6 @@ import { DEFAULT_METATAGS } from "../src/constants";
 
 const API = process.env.NEXT_PUBLIC_ENGINE_API_URL;
 
-console.log("API", API);
 
 const Docs = () => {
   return (
