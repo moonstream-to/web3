@@ -23,7 +23,9 @@ jobs:
           BROWNIE_LIB: 1
         run: pip install -U pip
       - name: Install dev dependencies
-        run: pip install -e .[dev]
+        run: |
+          pip install -e .
+          pip install -U black moonworm
       - name: Black version check
         run: black --version
       - name: Black syntax check

@@ -259,7 +259,7 @@ def transform_claim_amount(
     erc20_contract = MockErc20.MockErc20(claim_info[1])
     decimals = cast(int, erc20_contract.decimals())
 
-    return db_amount * (10 ** decimals)
+    return db_amount * (10**decimals)
 
 
 def get_claimants(db_session: Session, dropper_claim_id, limit=None, offset=None):
