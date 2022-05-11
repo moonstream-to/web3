@@ -4,7 +4,6 @@ const GTAG = process.env.NEXT_PUBLIC_ENGINE_GTAG;
 
 export default class MyDocument extends Document {
   render() {
-    const GTAG = process.env.NEXT_PUBLIC_ENGINE_GTAG;
     return (
       <Html
         lang="en"

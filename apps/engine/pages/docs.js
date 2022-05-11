@@ -6,7 +6,6 @@ import { DEFAULT_METATAGS } from "../src/constants";
 
 const API = process.env.NEXT_PUBLIC_ENGINE_API_URL;
 
-
 const Docs = () => {
   return (
     // <Box overflowY="hidden" w="100%" maxH="100%" minH="100vh">
