@@ -7,12 +7,35 @@ import {
   UnorderedList,
   Button,
   Link,
+  IconButton,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverArrow,
+  PopoverCloseButton,
+  useDisclosure,
+  Stack,
+  FormControl,
+  FormLabel,
+  Input,
+  ButtonGroup,
+  PopoverAnchor,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  NumberIncrementStepper,
+  NumberDecrementStepper,
 } from "@chakra-ui/react";
 import Papa from "papaparse";
 import FileUpload from "../FileUpload";
 import OverlayContext from "../../core/providers/OverlayProvider/context";
 import { MODAL_TYPES } from "../../core/providers/OverlayProvider/constants";
-import { useRouter } from "../../core/hooks";
+import { useDrop, useRouter } from "../../core/hooks";
+import { EditIcon } from "@chakra-ui/icons";
+import FocusLock from "react-focus-lock";
+import { useForm } from "react-hook-form";
+import { targetChain } from "../../core/providers/Web3Provider";
+import Web3Context from "../../core/providers/Web3Provider/context";
 
 interface ClaimInterface {
   active: boolean;
@@ -36,6 +59,11 @@ const DropCard = ({
 }) => {
   const router = useRouter();
   const overlay = useContext(OverlayContext);
+  const web3ctx = useContext(Web3Context);
+
+  const { register, handleSubmit } = useForm();
+
+  const { update } = useDrop({ targetChain, ctx: web3ctx, claimId: claim.id });
 
   const query = router.query;
 
@@ -60,6 +88,29 @@ const DropCard = ({
     });
   };
 
+  const { onOpen, onClose, isOpen } = useDisclosure();
+
+  React.useEffect(() => {
+    if (isOpen && update.isSuccess) {
+      onClose();
+      update.reset();
+    }
+  }, [isOpen, update, onClose]);
+  const firstFieldRef = React.useRef(null);
+
+  // const handleFormSubmit = (e: any) => {
+  //   e.preventDefault();
+  //   console.log("form data", e.target[0].value);
+  //   console.log("form data", e.target[1].value);
+  //   console.log("form data", e.target[3].value);
+  //   console.log("form data", e.target[4].value);
+
+  //   // console.dir(props);
+  //   // console.log("handleSubmit", props);
+  // };
+
+  const onSubmit = (data: any) => update.mutate({ ...data });
+
   return (
     <Flex
       borderRadius={"md"}
@@ -71,9 +122,120 @@ const DropCard = ({
       textColor={"gray.300"}
       {...props}
     >
-      <Heading as={"h2"} fontSize="lg" borderBottomWidth={1}>
-        {"Claim: "}
-        {claim.title}
+      <Popover
+        isOpen={isOpen}
+        initialFocusRef={firstFieldRef}
+        onOpen={onOpen}
+        onClose={onClose}
+        placement="bottom"
+        closeOnBlur={false}
+      >
+        <Flex dir="row" borderBottomWidth={1} p={0}>
+          <PopoverAnchor>
+            <Heading as={"h2"} fontSize="lg" w="90%" mt={2}>
+              {"Drop: "}
+              {claim.title}
+            </Heading>
+          </PopoverAnchor>
+
+          <PopoverTrigger>
+            <IconButton
+              mt={2}
+              aria-label="edit"
+              colorScheme="orange"
+              variant={"ghost"}
+              size="sm"
+              icon={<EditIcon />}
+              display="inline"
+              float="right"
+            />
+          </PopoverTrigger>
+          <PopoverContent
+            p={5}
+            bgColor="blue.1000"
+            boxShadow={"lg"}
+            minW="300px"
+          >
+            <FocusLock returnFocus persistentFocus={false}>
+              <PopoverArrow />
+              <PopoverCloseButton />
+              <form onSubmit={handleSubmit(onSubmit)}>
+                <Stack spacing={4}>
+                  <FormControl>
+                    <FormLabel htmlFor={"title"}>{"Title"}</FormLabel>
+                    <Input
+                      px={2}
+                      variant={"flushed"}
+                      colorScheme="orange"
+                      defaultValue={claim.title}
+                      name="title"
+                      ref={register({ required: "title is required!" })}
+                      // {...register("title")}
+                    />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel htmlFor={"description"}>
+                      {"Description"}
+                    </FormLabel>
+                    <Input
+                      px={2}
+                      variant={"flushed"}
+                      colorScheme="orange"
+                      defaultValue={claim.description}
+                      name="description"
+                      ref={register({ required: "description is required!" })}
+                      // {...register("description")}
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel htmlFor={"deadline"}>
+                      {"Block deadline"}
+                    </FormLabel>
+                    <NumberInput
+                      variant={"flushed"}
+                      name="deadline"
+                      // {...register("deadline")}
+
+                      colorScheme="orange"
+                      defaultValue={claim.claim_block_deadline}
+                    >
+                      <NumberInputField
+                        px={2}
+                        name="deadline"
+                        ref={register({ required: "deadline is required!" })}
+                      />
+                      <NumberInputStepper>
+                        <NumberIncrementStepper />
+                        <NumberDecrementStepper />
+                      </NumberInputStepper>
+                    </NumberInput>
+                  </FormControl>
+
+                  <ButtonGroup d="flex" justifyContent="flex-end">
+                    <Button
+                      variant="outline"
+                      onClick={onClose}
+                      isLoading={update.isLoading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      colorScheme="orange"
+                      type="submit"
+                      isLoading={update.isLoading}
+                    >
+                      Save
+                    </Button>
+                  </ButtonGroup>
+                </Stack>
+              </form>
+            </FocusLock>
+          </PopoverContent>
+        </Flex>
+      </Popover>
+      <Heading as={"h3"} fontSize="md">
+        {claim.description}
       </Heading>
       <Flex w="100%" direction={["row", null]} flexWrap="wrap">
         <Flex
@@ -93,18 +255,19 @@ const DropCard = ({
             px={2}
             // pt={4}
           >
-            <UnorderedList>
+            <UnorderedList fontSize={"sm"}>
               <ListItem>
                 Deadline: &#9;&#9;&#9;&#9;&#9;&#9;&#9;
                 {claim.claim_block_deadline}
               </ListItem>
-              <ListItem>Description: {claim.description}</ListItem>
               <ListItem>Enabled: {claim.active ? "True" : "False"}</ListItem>
               <ListItem>
-                Dropper address: {claim.dropper_contract_address}
+                Dropper: <code>{claim.dropper_contract_address}</code>
               </ListItem>
-              <ListItem>Terminus address: {claim.terminus_address}</ListItem>
-              <ListItem>Terminus address: {claim.terminus_pool_id}</ListItem>
+              <ListItem>
+                Terminus: <code>{claim.terminus_address}</code>
+              </ListItem>
+              <ListItem>Pool id: {claim.terminus_pool_id}</ListItem>
             </UnorderedList>
           </Flex>
         </Flex>

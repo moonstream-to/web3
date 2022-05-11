@@ -21,7 +21,6 @@ const useClaimAdmin = ({
   targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
 }) => {
-  console.log('useClaimAdmin')
   const toast = useToast();
 
   const terminusList = useQuery(
@@ -29,6 +28,7 @@ const useClaimAdmin = ({
     () => getTerminus(targetChain.name)().then((response) => response.data),
     {
       ...queryCacheProps,
+      enabled: !!ctx.account,
     }
   );
 
@@ -66,7 +66,8 @@ const useClaimAdmin = ({
     ["claimAdmin", "adminPermissions"],
     _hasAdminPermissions,
     {
-      enabled: !!terminusList.data,
+      ...queryCacheProps,
+      enabled: !!terminusList.data && !!ctx.account,
       onSuccess: () => {},
     }
   );
@@ -94,7 +95,8 @@ const useClaimAdmin = ({
     ["claimAdmin", "adminClaims", targetChain.chainId],
     _getAdminClaimsList,
     {
-      enabled: !!adminPermissions.data,
+      ...queryCacheProps,
+      enabled: !!adminPermissions.data && !!ctx.account,
     }
   );
 
