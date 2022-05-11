@@ -18,7 +18,7 @@ import {
 } from "@chakra-ui/react";
 import Paginator from "./Paginator";
 
-const Claimers = ({ list, onDeleteClaimant, setPage, setLimit }) => {
+const Claimers = ({ list, onDeleteClaimant, setPage, setLimit, hasMore }) => {
   const { onOpen, onClose, isOpen } = useDisclosure();
   const [filter, setFilter] = useState("");
 
@@ -72,9 +72,9 @@ const Claimers = ({ list, onDeleteClaimant, setPage, setLimit }) => {
         <Paginator
           onBack={() => setPage((_currentPage) => _currentPage - 1)}
           onForward={() => setPage((_currentPage) => _currentPage + 1)}
-          // currentPage={currentPage}
-          // limit={limit}
+          paginatorKey={"claimants"}
           setLimit={setLimit}
+          hasMore={hasMore}
         >
           <ClaimersList data={list} onDeleteClaimant={onDeleteClaimant} />
         </Paginator>

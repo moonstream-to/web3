@@ -38,7 +38,10 @@ const _Drop = ({
   const router = useRouter();
 
   React.useEffect(() => {
-    router.appendQueries({ limit: claimantsPageSize, page: claimantsPage });
+    router.appendQueries({
+      claimantsLimit: claimantsPageSize,
+      claimantsPage: claimantsPage,
+    });
     //eslint-disable-next-line
   }, [claimantsPageSize, claimantsPage]);
 
@@ -65,6 +68,7 @@ const _Drop = ({
           }}
           setPage={setClaimantsPage}
           setLimit={setClaimantsPageSize}
+          hasMore={claimants.data.length == claimantsPageSize ? true : false}
         />
       </Flex>
     </Flex>
