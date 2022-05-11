@@ -2,7 +2,7 @@ import React from "react";
 import { Flex, IconButton } from "@chakra-ui/react";
 import { ArrowLeftIcon, ArrowRightIcon } from "@chakra-ui/icons";
 
-const ClaimPageControls = ({ pageOptions, refetch }) => {
+const ClaimPageControls = ({ pageOptions }) => {
   return (
     <Flex justifyContent="center">
       <IconButton
@@ -11,7 +11,6 @@ const ClaimPageControls = ({ pageOptions, refetch }) => {
           pageOptions.setOffset(
             Math.max(pageOptions.offset - pageOptions.limit, 0)
           );
-          refetch();
         }}
         alignSelf="center"
       ></IconButton>

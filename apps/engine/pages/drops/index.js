@@ -47,7 +47,6 @@ const Drops = () => {
       {includePageControls && (
         <ClaimPageControls
           pageOptions={pageOptions}
-          refetch={adminClaims.refetch}
         ></ClaimPageControls>
       )}
       {web3Provider.account &&
@@ -65,7 +64,6 @@ const Drops = () => {
       {includePageControls && (
         <ClaimPageControls
           pageOptions={pageOptions}
-          refetch={adminClaims.refetch}
         ></ClaimPageControls>
       )}
       {!web3Provider.account &&

@@ -1,8 +1,7 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useState } from "react";
 import {
   getAdminList,
-  getContracts,
   getTerminus,
   setClaimants,
 } from "../services/moonstream-engine.service";
