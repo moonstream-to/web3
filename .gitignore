@@ -146,6 +146,7 @@ alembic.test.ini
 
 #Node
 node_modules/
+yarn.lock
 
 #next
 .next/

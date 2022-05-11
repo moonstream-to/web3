@@ -1,11 +1,21 @@
 import React, { useContext } from "react";
-import { Flex, Button, Image, Center, Spinner } from "@chakra-ui/react";
+import {
+  Flex,
+  Button,
+  Image,
+  Center,
+  Spinner,
+  ScaleFade,
+} from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
-import ContractCard from "moonstream-components/src/components/Dropper/ContractCard";
 import ClaimPageControls from "moonstream-components/src/components/ClaimPageControls";
 import useDrops from "moonstream-components/src/core/hooks/useDrops";
+import Drop from "moonstream-components/src/components/Dropper/Drop";
+import useClaimAdmin from "moonstream-components/src/core/hooks/useDrops";
+import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
+import { useRouter } from "moonstream-components/src/core/hooks";
 
 const assets = {
   onboarding:
@@ -37,58 +47,55 @@ const Drops = () => {
     );
 
   return (
-    <Flex
-      w="100%"
-      minH="100vh"
-      bgColor={"blue.1200"}
-      direction={"column"}
-      px="7%"
-    >
-      {includePageControls && (
-        <ClaimPageControls
-          pageOptions={pageOptions}
-        ></ClaimPageControls>
-      )}
-      {web3Provider.account &&
-        adminClaims?.data?.map((claim, idx) => {
-          return (
-            <ContractCard
-              key={`contract-card-${idx}}`}
-              address={claim.address}
-              claimId={claim.id}
-              deadline={claim.deadline}
-              title={claim.title}
-            />
-          );
-        })}
-      {includePageControls && (
-        <ClaimPageControls
-          pageOptions={pageOptions}
-        ></ClaimPageControls>
-      )}
-      {!web3Provider.account &&
-        web3Provider.buttonText !== web3Provider.WALLET_STATES.CONNECTED && (
-          <Center>
-            <Button
-              mt={20}
-              colorScheme={
-                web3Provider.buttonText === web3Provider.WALLET_STATES.CONNECTED
-                  ? "orange"
-                  : "orange"
-              }
-              onClick={web3Provider.onConnectWalletClick}
-            >
-              {web3Provider.buttonText}
-              {"  "}
-              <Image
-                pl={2}
-                h="24px"
-                src="https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg"
-              />
-            </Button>
-          </Center>
+    <ScaleFade in>
+      <Flex
+        w="100%"
+        minH="100vh"
+        bgColor={"blue.1200"}
+        direction={"column"}
+        px="7%"
+      >
+        {includePageControls && (
+          <ClaimPageControls pageOptions={pageOptions}></ClaimPageControls>
         )}
-    </Flex>
+        {web3Provider.account &&
+          adminClaims?.data?.map((claim, idx) => {
+            return (
+              <Drop
+                key={`contract-card-${idx}}`}
+                claim={claim}
+                title={claim.title}
+              />
+            );
+          })}
+        {includePageControls && (
+          <ClaimPageControls pageOptions={pageOptions}></ClaimPageControls>
+        )}
+        {!web3Provider.account &&
+          web3Provider.buttonText !== web3Provider.WALLET_STATES.CONNECTED && (
+            <Center>
+              <Button
+                mt={20}
+                colorScheme={
+                  web3Provider.buttonText ===
+                  web3Provider.WALLET_STATES.CONNECTED
+                    ? "orange"
+                    : "orange"
+                }
+                onClick={web3Provider.onConnectWalletClick}
+              >
+                {web3Provider.buttonText}
+                {"  "}
+                <Image
+                  pl={2}
+                  h="24px"
+                  src="https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg"
+                />
+              </Button>
+            </Center>
+          )}
+      </Flex>
+    </ScaleFade>
   );
 };
 
@@ -111,4 +118,5 @@ export async function getStaticProps() {
   };
 }
 
+Drops.getLayout = getLayout;
 export default Drops;

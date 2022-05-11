@@ -103,12 +103,12 @@ export const balanceOfAddress =
     terminusPoolId: number,
     ctx: MoonstreamWeb3ProviderInterface
   ) =>
-  async () => {
+  () => {
     const terminusFacet = new ctx.web3.eth.Contract(
       terminusAbi
     ) as any as TerminusFacet;
+    // console.log("balanceOf", userAddress, terminusPoolId, terminusAddress);
     terminusFacet.options.address = terminusAddress;
-
     return terminusFacet.methods.balanceOf(userAddress, terminusPoolId).call();
   };
 

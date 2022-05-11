@@ -55,7 +55,8 @@
     "styled-components": "^5.3.3",
     "uuid": "^8.3.2",
     "web3": "^1.7.0",
-    "web3-utils": "^1.6.0"
+    "web3-utils": "^1.6.0",
+    "react-diff-viewer": "^3.1.1"
   },
   "devDependencies": {
     "@babel/core": "^7.14.3",

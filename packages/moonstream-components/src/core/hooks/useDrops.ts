@@ -21,6 +21,7 @@ const useClaimAdmin = ({
   targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
 }) => {
+  console.log("useClaimAdmin");
   const toast = useToast();
 
   const [offset, setOffset] = useState(0);
@@ -35,21 +36,28 @@ const useClaimAdmin = ({
   );
 
   const _hasAdminPermissions = React.useCallback(async () => {
+    // console.log("_hasAdminPermissions");
     if (terminusList.data) {
       const terminusAuthorizations = await Promise.all(
-        terminusList.data.map(async (terminus: any) => {
-          return [
-            terminus.terminus_address,
-            terminus.terminus_pool_id,
-            await balanceOfAddress(
-              ctx.account,
+        terminusList.data.map(
+          async (terminus: {
+            terminus_address: string;
+            terminus_pool_id: number;
+          }) => {
+            return [
               terminus.terminus_address,
               terminus.terminus_pool_id,
-              ctx
-            )(),
-          ];
-        })
+              await balanceOfAddress(
+                ctx.account,
+                terminus.terminus_address,
+                terminus.terminus_pool_id,
+                ctx
+              )(),
+            ];
+          }
+        )
       );
+      //terminusAuthorizations = [[terminus_addess, poolId, balance]]
       const terminusAdmin = terminusAuthorizations.filter(
         (item) => item[2] > 0
       );
@@ -58,11 +66,14 @@ const useClaimAdmin = ({
   }, [terminusList.data, ctx]);
 
   const adminPermissions = useQuery(
-    ["claimAdmin", "adminPermissions"],
+    ["claimAdmin", "adminPermissions", ctx.account],
     _hasAdminPermissions,
     {
-      enabled: !!terminusList.data,
+      enabled: !!terminusList.data && !!ctx.account,
       onSuccess: () => {},
+      onError: (err) => {
+        console.error("adminPermissions err", err);
+      },
     }
   );
 
