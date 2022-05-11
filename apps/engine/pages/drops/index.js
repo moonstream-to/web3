@@ -4,6 +4,7 @@ import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
 import ContractCard from "moonstream-components/src/components/Dropper/ContractCard";
+import ClaimPageControls from "moonstream-components/src/components/ClaimPageControls";
 import useClaimAdmin from "moonstream-components/src/core/hooks/useClaimAdmin";
 
 const assets = {
@@ -19,10 +20,14 @@ const assets = {
 const Drops = () => {
   const web3Provider = useContext(Web3Context);
 
-  const { adminClaims } = useClaimAdmin({
+  const { adminClaims, isLoading, uploadFile, pageOptions } = useClaimAdmin({
     targetChain: targetChain,
     ctx: web3Provider,
   });
+
+  const includePageControls = function () {
+    return web3Provider.account && adminClaims && adminClaims.data;
+  };
 
   if (adminClaims.isLoading)
     return (
@@ -39,6 +44,12 @@ const Drops = () => {
       direction={"column"}
       px="7%"
     >
+      {includePageControls && (
+        <ClaimPageControls
+          pageOptions={pageOptions}
+          refetch={adminClaims.refetch}
+        ></ClaimPageControls>
+      )}
       {web3Provider.account &&
         adminClaims?.data?.map((claim, idx) => {
           return (
@@ -51,6 +62,12 @@ const Drops = () => {
             />
           );
         })}
+      {includePageControls && (
+        <ClaimPageControls
+          pageOptions={pageOptions}
+          refetch={adminClaims.refetch}
+        ></ClaimPageControls>
+      )}
       {!web3Provider.account &&
         web3Provider.buttonText !== web3Provider.WALLET_STATES.CONNECTED && (
           <Center>

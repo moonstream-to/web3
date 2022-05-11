@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useState } from "react";
 import {
   getAdminList,
   getContracts,
@@ -23,6 +24,9 @@ const useClaimAdmin = ({
 }) => {
   const toast = useToast();
 
+  const [offset, setOffset] = useState(0);
+  const [limit, setLimit] = useState(5);
+
   const terminusList = useQuery(
     ["terminusAddresses"],
     () => getTerminus(targetChain.name)().then((response) => response.data),
@@ -33,7 +37,6 @@ const useClaimAdmin = ({
 
   const _hasAdminPermissions = React.useCallback(async () => {
     if (terminusList.data) {
-      console.log("adminContracts terminusList.data", terminusList.data);
       const terminusAuthorizations = await Promise.all(
         terminusList.data.map(async (terminus: any) => {
           return [
@@ -68,11 +71,12 @@ const useClaimAdmin = ({
     const claimsByPermission = adminPermissions.data
       ? await Promise.all(
           adminPermissions.data.map(async (permission) => {
-            console.log("permission map", permission);
             const response = await getAdminList(
               permission[0],
               targetChain.name,
-              permission[1]
+              permission[1],
+              offset,
+              limit
             )();
             return response.data.drops;
           })
@@ -84,10 +88,11 @@ const useClaimAdmin = ({
   };
 
   const adminClaims = useQuery(
-    ["claimAdmin", "adminClaims", targetChain.chainId],
+    ["claimAdmin", "adminClaims", targetChain.chainId, limit, offset],
     _getAdminClaimsList,
     {
       enabled: !!adminPermissions.data,
+      keepPreviousData: true,
     }
   );
 
@@ -106,10 +111,18 @@ const useClaimAdmin = ({
     onSettled: () => {},
   });
 
+  const pageOptions = {
+    limit: limit,
+    setLimit: setLimit,
+    offset: offset,
+    setOffset: setOffset,
+  };
+
   return {
     adminClaims,
     isLoading,
     uploadFile,
+    pageOptions,
   };
 };
 
