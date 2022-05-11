@@ -1,14 +1,12 @@
 import React, { useContext, useEffect, useState } from "react";
 import mixpanel from "mixpanel-browser";
 import AnalyticsContext from "./context";
-import { useClientID, useUser, useRouter } from "../../hooks";
+import { useClientID, useRouter } from "../../hooks";
 import { MIXPANEL_EVENTS, MIXPANEL_PROPS } from "./constants";
 import UIContext from "../UIProvider/context";
 
-const AnalyticsProvider = ({ children }) => {
+const AnalyticsProvider = ({ children, mixpanelToken }) => {
   const clientID = useClientID();
-  const analytics = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN_ENGINE;
-  const { user, isInit } = useUser();
   const [isMixpanelReady, setIsLoaded] = useState(false);
   const router = useRouter();
   const ui = useContext(UIContext);
@@ -21,12 +19,6 @@ const AnalyticsProvider = ({ children }) => {
       });
     }
   }, [ui.onboardingState, isMixpanelReady]);
-
-  useEffect(() => {
-    if (ui.isOnboardingComplete && isMixpanelReady && user) {
-      mixpanel.people.set(MIXPANEL_EVENTS.ONBOARDING_COMPLETED, true);
-    }
-  }, [ui.isOnboardingComplete, isMixpanelReady, user]);
 
   // ********** ONBOARDING STEP and TIMING **************
   const [previousOnboardingStep, setPreviousOnboardingStep] = useState(false);
@@ -116,7 +108,7 @@ const AnalyticsProvider = ({ children }) => {
     }
     const urlForUnmount = router.nextRouter.pathname;
     const closeListener = () => {
-      mixpanel.track(MIXPANEL_EVENTS.PAGEVIEW_DURATION, {
+      mixpanel?.track(MIXPANEL_EVENTS.PAGEVIEW_DURATION, {
         url: urlForUnmount,
         isBeforeUnload: true,
       });
@@ -133,7 +125,7 @@ const AnalyticsProvider = ({ children }) => {
   useEffect(() => {
     if (clientID) {
       try {
-        mixpanel.init(analytics, {
+        mixpanel.init(mixpanelToken, {
           api_host: "https://api.mixpanel.com",
           loaded: () => {
             setIsLoaded(true);
@@ -144,57 +136,17 @@ const AnalyticsProvider = ({ children }) => {
         console.warn("loading mixpanel failed:", error);
       }
     }
-  }, [analytics, clientID]);
+  }, [mixpanelToken, clientID]);
 
   useEffect(() => {
     isMixpanelReady && mixpanel.register("sessionId", ui.sessionId);
   }, [ui.sessionId, isMixpanelReady]);
-
-  // ********** USER STATE **************
-
-  useEffect(() => {
-    if (user) {
-      try {
-        if (isMixpanelReady) {
-          mixpanel.people.set({
-            [`${MIXPANEL_EVENTS.LAST_VISITED}`]: new Date().toISOString(),
-          });
-          mixpanel.people.set({
-            USER_ID: user.user_id,
-            $name: user.username,
-            $email: user.email,
-          });
-        }
-      } catch (err) {
-        console.error("could not set up people in mixpanel:", err);
-      }
-    }
-  }, [user, isMixpanelReady, clientID]);
-
-  useEffect(() => {
-    if (isMixpanelReady && user) {
-      mixpanel.people.set_once({
-        [`${MIXPANEL_EVENTS.FIRST_LOGIN_DATE}`]: new Date().toISOString(),
-      });
-      mixpanel.people.set({
-        [`${MIXPANEL_EVENTS.LAST_LOGIN_DATE}`]: new Date().toISOString(),
-      });
-      mixpanel.track(`${MIXPANEL_EVENTS.USER_LOGS_IN}`, {});
-    }
-  }, [user, isMixpanelReady]);
 
   useEffect(() => {
     if (isMixpanelReady && ui.isLoggingOut) {
       mixpanel.track(`${MIXPANEL_EVENTS.USER_LOGS_OUT}`, {});
     }
   }, [ui.isLoggingOut, isMixpanelReady]);
-
-  // ********** USER BOUNCE TIME **************
-  useEffect(() => {
-    if (!user && isInit && isMixpanelReady) {
-      mixpanel.time_event(MIXPANEL_EVENTS.CONVERT_TO_USER);
-    }
-  }, [user, isInit, isMixpanelReady]);
 
   return (
     <AnalyticsContext.Provider

@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useContext, Suspense } from "react";
+import React, { useState, useLayoutEffect, Suspense } from "react";
 import OverlayContext from "./context";
 import { MODAL_TYPES, DRAWER_TYPES } from "./constants";
 import {
@@ -19,22 +19,11 @@ import {
   Spinner,
   Divider,
 } from "@chakra-ui/react";
-import UserContext from "../UserProvider/context";
-import UIContext from "../UIProvider/context";
-import SignUp from "../../../components/SignUp";
-const ForgotPassword = React.lazy(() =>
-  import("../../../components/ForgotPassword")
-);
-const SignIn = React.lazy(() => import("../../../components/SignIn"));
 const HubspotForm = React.lazy(() => import("../../../components/HubspotForm"));
-const NewSubscription = React.lazy(() =>
-  import("../../../components/NewSubscription")
-);
 const FileUpload = React.lazy(() => import("../../../components/FileUpload"));
+const CSVDiff = React.lazy(() => import("../../../components/CSVDiff"));
 
 const OverlayProvider = ({ children }) => {
-  const ui = useContext(UIContext);
-  const { user } = useContext(UserContext);
   const [modal, toggleModal] = useState({
     type: MODAL_TYPES.OFF,
     props: undefined,
@@ -79,22 +68,6 @@ const OverlayProvider = ({ children }) => {
   );
 
   const cancelRef = React.useRef();
-
-  useLayoutEffect(() => {
-    if (
-      ui.isAppView &&
-      ui.isInit &&
-      !user?.username &&
-      !ui.isLoggingOut &&
-      !ui.isLoggingIn &&
-      !modal.type
-    ) {
-      toggleModal({ type: MODAL_TYPES.LOGIN });
-    } else if (user && ui.isLoggingOut) {
-      toggleModal({ type: MODAL_TYPES.OFF });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ui.isAppView, ui.isAppReady, user, ui.isLoggingOut, modal.type]);
 
   return (
     <OverlayContext.Provider
@@ -141,7 +114,15 @@ const OverlayProvider = ({ children }) => {
       >
         <ModalOverlay />
 
-        <ModalContent borderRadius="48px" bgColor="red.100">
+        <ModalContent
+          borderRadius={modal.type === MODAL_TYPES.CSV_DIFF ? "148px" : "148px"}
+          bgColor={
+            modal.type === MODAL_TYPES.CSV_DIFF ? "transparent" : "red.100"
+          }
+          w="full"
+          maxW={modal.type === MODAL_TYPES.CSV_DIFF ? "100%" : undefined}
+          mx={modal.type === MODAL_TYPES.CSV_DIFF ? "20px" : undefined}
+        >
           <ModalHeader
             bgColor="orange.900"
             textColor="white.300"
@@ -152,32 +133,23 @@ const OverlayProvider = ({ children }) => {
             boxShadow={"lg"}
             textAlign={"center"}
           >
-            {modal.type === MODAL_TYPES.NEW_SUBSCRIPTON &&
-              "Subscribe to a new address"}
-            {modal.type === MODAL_TYPES.FORGOT && "Forgot Password"}
-            {modal.type === MODAL_TYPES.HUBSPOT && "Join the waitlist"}
-            {modal.type === MODAL_TYPES.LOGIN && "Login now"}
-            {modal.type === MODAL_TYPES.SIGNUP && "Create an account"}
-            {modal.type === MODAL_TYPES.UPLOAD_ABI && "Assign ABI"}
-            {modal.type === MODAL_TYPES.FILL_BOTTLE &&
-              `Fill ${modal.props.bottle.name} bottles with UNIM`}
-            {modal.type === MODAL_TYPES.POUR_BOTTLE &&
-              `Open ${modal.props.bottle.name} bottles to extract UNIM`}
+            {modal.type === MODAL_TYPES.CSV_DIFF && "Review diff"}
             {modal.type === MODAL_TYPES.FILE_UPLOAD && `Upload new csv file`}
           </ModalHeader>
           {modal.type !== MODAL_TYPES.FILL_BOTTLE &&
             modal.type !== MODAL_TYPES.POUR_BOTTLE && <Divider />}
           <ModalCloseButton mr={2} />
-          <ModalBody zIndex={100002} bgColor={"white.300"} borderRadius="148px">
+          <ModalBody
+            zIndex={100002}
+            bgColor={"white.300"}
+            borderBottomRadius={"48px"}
+            maxW={modal.type === MODAL_TYPES.CSV_DIFF ? "100%" : undefined}
+            // w="100vw"
+            maxH={modal.type === MODAL_TYPES.CSV_DIFF ? "70vh" : "0px"}
+            overflowY={"hidden"}
+            px={"48px"}
+          >
             <Suspense fallback={<Spinner />}>
-              {modal.type === MODAL_TYPES.NEW_SUBSCRIPTON && (
-                <NewSubscription
-                  onClose={() => toggleModal({ type: MODAL_TYPES.OFF })}
-                  isModal={true}
-                  {...modal.props}
-                />
-              )}
-              {modal.type === MODAL_TYPES.FORGOT && <ForgotPassword />}
               {modal.type === MODAL_TYPES.HUBSPOT && (
                 <HubspotForm
                   toggleModal={toggleModal}
@@ -185,14 +157,11 @@ const OverlayProvider = ({ children }) => {
                   formId={"1897f4a1-3a00-475b-9bd5-5ca2725bd720"}
                 />
               )}
-              {modal.type === MODAL_TYPES.LOGIN && (
-                <SignIn toggleModal={toggleModal} />
-              )}
-              {modal.type === MODAL_TYPES.SIGNUP && (
-                <SignUp toggleModal={toggleModal} />
-              )}
               {modal.type === MODAL_TYPES.FILE_UPLOAD && (
                 <FileUpload toggleModal={toggleModal} />
+              )}
+              {modal.type === MODAL_TYPES.CSV_DIFF && (
+                <CSVDiff toggleModal={toggleModal} {...modal.props} />
               )}
             </Suspense>
           </ModalBody>

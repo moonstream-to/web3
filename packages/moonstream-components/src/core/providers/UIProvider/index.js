@@ -1,13 +1,10 @@
-import React, { useState, useContext, useEffect, useLayoutEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useBreakpointValue } from "@chakra-ui/react";
-import { useStorage, useQuery, useRouter } from "../../hooks";
+import { useStorage, useQuery } from "../../hooks";
 import UIContext from "./context";
-import UserContext from "../UserProvider/context";
 import { v4 as uuid4 } from "uuid";
 
 const UIProvider = ({ children }) => {
-  const router = useRouter();
-  const { user, isInit } = useContext(UserContext);
   const isMobileView = useBreakpointValue({
     base: true,
     sm: true,
@@ -25,38 +22,6 @@ const UIProvider = ({ children }) => {
   // ****** Session state *****
   // Whether sidebar should be toggled in mobile view
   const [sessionId] = useStorage(window.sessionStorage, "sessionID", uuid4());
-
-  // ******* APP state ********
-  const [isLoggedIn, setLoggedIn] = useState(user && user.username);
-  const [isLoggingOut, setLoggingOut] = useState(false);
-  const [isLoggingIn, setLoggingIn] = useState(false);
-  const [isAppReady, setAppReady] = useState(false);
-  const [isAppView, setAppView] = useState(false);
-
-  useEffect(() => {
-    if (isLoggingOut && !isAppView && user) {
-      setLoggingOut(false);
-    }
-  }, [isAppView, user, isLoggingOut]);
-
-  useEffect(() => {
-    if (user && user.username) {
-      setLoggedIn(true);
-    } else {
-      setLoggedIn(false);
-    }
-  }, [user]);
-
-  useLayoutEffect(() => {
-    if (
-      isLoggingOut &&
-      router.nextRouter.pathname === "/" &&
-      !user &&
-      !localStorage.getItem("APP_ACCESS_TOKEN")
-    ) {
-      setLoggingOut(false);
-    }
-  }, [isLoggingOut, router.nextRouter.pathname, user]);
 
   // *********** Sidebar states **********************
 
@@ -96,14 +61,10 @@ const UIProvider = ({ children }) => {
       setSidebarVisible(true);
       setSidebarCollapsed(false);
     } else {
-      if (!isAppView) {
-        setSidebarVisible(false);
-      } else {
-        setSidebarVisible(true);
-      }
+      setSidebarVisible(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMobileView, isAppView]);
+  }, [isMobileView]);
 
   // *********** Entries layout states **********************
 
@@ -132,14 +93,6 @@ const UIProvider = ({ children }) => {
     );
   }, [isEntryDetailView, isMobileView]);
 
-  useEffect(() => {
-    if (isInit && router.nextRouter.isReady && !isLoggingOut && !isLoggingIn) {
-      setAppReady(true);
-    } else {
-      setAppReady(false);
-    }
-  }, [isInit, router, isLoggingOut, isLoggingIn]);
-
   //***************Overlay's states  ************************/
   // const [newDashboardForm, setNewDashboardForm] = useStorage(
   //   window.sessionStorage,
@@ -162,20 +115,12 @@ const UIProvider = ({ children }) => {
         setSidebarToggled,
         searchTerm,
         setSearchTerm,
-        isAppView,
-        setAppView,
-        setLoggingOut,
-        isLoggedIn,
-        isAppReady,
         entriesViewMode,
         setEntryDetailView,
         sessionId,
         currentTransaction,
         setCurrentTransaction,
         isEntryDetailView,
-        isLoggingOut,
-        isLoggingIn,
-        setLoggingIn,
         newDashboardForm,
         setNewDashboardForm,
       }}

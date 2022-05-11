@@ -5,6 +5,7 @@ import useTerminus from "./useTerminus";
 import * as abi from "../../../../../abi/MockTerminus.json";
 import { MockTerminus as TerminusFacet } from "../../../../../types/contracts/MockTerminus";
 import { MoonstreamWeb3ProviderInterface } from "../../../../../types/Moonstream";
+import { AbiItem } from "web3-utils";
 
 export interface useTerminusPoolArgumentsType {
   terminusAddress: string;
@@ -45,7 +46,9 @@ const useTerminusPool = ({
 
   const getMethodsABI = React.useCallback(
     <T extends keyof TerminusFacet["methods"]>(name: T): typeof abi[number] => {
-      const index = abi.findIndex(
+      const _abi = abi as any as Array<AbiItem>;
+
+      const index = _abi.findIndex(
         (item) => item.name === name && item.type == "function"
       );
       if (index !== -1) {

@@ -14,9 +14,6 @@ import {
 } from "@chakra-ui/react";
 import React, { useContext } from "react";
 import UIContext from "../core/providers/UIProvider/context";
-import { FaGithubSquare } from "react-icons/fa";
-import RouteButton from "../components/RouteButton";
-import { APP_NAME } from "../core/constants";
 
 const Feature = ({ text, icon, iconBg, bullets }) => {
   return (
@@ -187,22 +184,6 @@ const SplitWithImage = ({
                 >
                   {cta.label}
                 </Button>
-              )}
-              {/* TODO(Peersky): Button text should be an argument*/}
-              {socialButton && (
-                <RouteButton
-                  isExternal
-                  w={["100%", "100%", "fit-content", null]}
-                  maxW={["250px", null, "fit-content"]}
-                  href={socialButton.url}
-                  mt={[0, 0, null, 16]}
-                  size={socialButton ? buttonSize.double : buttonSize.single}
-                  variant="outline"
-                  colorScheme={colorScheme}
-                  leftIcon={<FaGithubSquare />}
-                >
-                  git clone {APP_NAME}
-                </RouteButton>
               )}
             </Flex>
           </Stack>

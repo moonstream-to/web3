@@ -22,3 +22,7 @@ export interface MoonstreamWeb3ProviderInterface {
   defaultTxConfig: Object;
   signAccessToken: Function;
 }
+
+
+
+
