@@ -18,15 +18,13 @@ import {
   TIME_RANGE_SECONDS,
   WHITE_LOGO_W_TEXT_URL,
 } from "./constants";
+import { PAGETYPE } from "../../../types/Site";
 
 const AppContext = (props) => {
   useEffect(() => {
     const version = "0.2";
     if (version) console.log(`Frontend version: ${version}`);
-    else
-      console.error(
-        "NEXT_PUBLIC_FRONTEND_VERSION version variable is not exported"
-      );
+    else console.error("version variable is not set");
   }, []);
 
   return (
@@ -35,7 +33,14 @@ const AppContext = (props) => {
       <Web3Provider>
         <MoonstreamProvider
           constants={{
-            SITEMAP: [],
+            SITEMAP: [
+              {
+                title: "Resources",
+                children: [
+                  { title: "Api Docs", path: "/docs", type: PAGETYPE.CONTENT },
+                ],
+              },
+            ],
             DEFAULT_METATAGS: DEFAULT_METATAGS,
             TIME_RANGE_SECONDS: TIME_RANGE_SECONDS,
             COPYRIGHT_NAME: COPYRIGHT_NAME,
@@ -47,7 +52,11 @@ const AppContext = (props) => {
         >
           <UIProvider>
             <OverlayProvider>
-              <AnalyticsProvider>{props.children}</AnalyticsProvider>
+              <AnalyticsProvider
+                mixpanelToken={process.env.NEXT_PUBLIC_ENGINE_MIXPANEL_TOKEN}
+              >
+                {props.children}
+              </AnalyticsProvider>
             </OverlayProvider>
           </UIProvider>
         </MoonstreamProvider>

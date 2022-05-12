@@ -12,8 +12,16 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "downlevelIteration": true
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.d.ts", "src/components/Web3MethodForm.tsx", "src/components/FeatureCard.js"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.d.ts",
+    "src/components/Web3MethodForm.tsx",
+    "src/components/FeatureCard.js"
+  ],
   "exclude": ["node_modules"]
 }

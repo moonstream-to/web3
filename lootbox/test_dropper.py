@@ -53,10 +53,10 @@ class DropperTestCase(unittest.TestCase):
         )
         cls.terminus.set_pool_base_price(1, {"from": accounts[0]})
         cls.erc20_contract.approve(
-            cls.terminus.address, 100 * 10 ** 18, {"from": accounts[0]}
+            cls.terminus.address, 100 * 10**18, {"from": accounts[0]}
         )
 
-        cls.terminus.create_pool_v1(2 ** 256 - 1, True, True, {"from": accounts[0]})
+        cls.terminus.create_pool_v1(2**256 - 1, True, True, {"from": accounts[0]})
         cls.terminus_pool_id = cls.terminus.total_pools()
 
         # create dropper own pool
@@ -1490,7 +1490,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         reward = 33
 
         # create pool wich is owned by the dropper
-        self.terminus.create_pool_v1(2 ** 256 - 1, True, True, {"from": accounts[0]})
+        self.terminus.create_pool_v1(2**256 - 1, True, True, {"from": accounts[0]})
         terminus_pool_which_is_owned_by_dropper_id = self.terminus.total_pools()
 
         self.terminus.set_pool_controller(

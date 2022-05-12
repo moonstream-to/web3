@@ -30,8 +30,8 @@ def boolean_argument_type(raw_value: str) -> bool:
     )
 
 
-def bytes_argument_type(raw_value: str) -> str:
-    return raw_value
+def bytes_argument_type(raw_value: str) -> bytes:
+    return raw_value.encode()
 
 
 def get_abi_json(abi_name: str) -> List[Dict[str, Any]]:
@@ -80,9 +80,9 @@ class MockErc20:
                 self.contract_name, self.address, self.abi
             )
 
-    def deploy(self, name: str, symbol: str, transaction_config):
+    def deploy(self, transaction_config):
         contract_class = contract_from_build(self.contract_name)
-        deployed_contract = contract_class.deploy(name, symbol, transaction_config)
+        deployed_contract = contract_class.deploy(transaction_config)
         self.address = deployed_contract.address
         self.contract = deployed_contract
         return deployed_contract.tx
@@ -241,9 +241,7 @@ def handle_deploy(args: argparse.Namespace) -> None:
     network.connect(args.network)
     transaction_config = get_transaction_config(args)
     contract = MockErc20(None)
-    result = contract.deploy(
-        name=args.name, symbol=args.symbol, transaction_config=transaction_config
-    )
+    result = contract.deploy(transaction_config=transaction_config)
     print(result)
     print(result.info())
 
@@ -387,8 +385,6 @@ def generate_cli() -> argparse.ArgumentParser:
 
     deploy_parser = subcommands.add_parser("deploy")
     add_default_arguments(deploy_parser, True)
-    deploy_parser.add_argument("--name", required=True, help="Type: string", type=str)
-    deploy_parser.add_argument("--symbol", required=True, help="Type: string", type=str)
     deploy_parser.set_defaults(func=handle_deploy)
 
     verify_contract_parser = subcommands.add_parser("verify-contract")
