@@ -9,28 +9,21 @@ import {
 import { useToast } from ".";
 import { getLootboxState } from "../contracts/lootbox.contract";
 
-const useLootbox = ({
+const useLootboxToken = ({
     contractAddress,
-    lootboxId,
     targetChain,
     ctx,
 }: {
     contractAddress: string;
-    lootboxId: number;
     targetChain: ChainInterface;
     ctx: MoonstreamWeb3ProviderInterface;
 }) => {
-    const toast = useToast();
 
     const state = useQuery(
-        ["LootboxState", contractAddress, targetChain.chainId, lootboxId],
-        () => getLootboxState(contractAddress, ctx, lootboxId)(),
+        ["LootboxState", contractAddress, targetChain.chainId,],
+        () => getLootboxState(contractAddress, ctx,)(),
         {
             onSuccess: () => { },
-            initialData: {
-                lootboxUri: "",
-                lootboxBalance: "",
-            },
             enabled:
                 ctx.web3?.utils.isAddress(ctx.account) &&
                 ctx.chainId === targetChain.chainId,
@@ -43,4 +36,5 @@ const useLootbox = ({
     };
 };
 
-export default useLootbox;
+export default useLootboxToken;
+

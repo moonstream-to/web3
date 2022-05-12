@@ -4,6 +4,8 @@ import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
 import ContractCard from "moonstream-components/src/components/Dropper/ContractCard";
+
+import LootboxCard from "moonstream-components/src/components/lootbox/LootboxCard";
 import useLootbox from "moonstream-components/src/core/hooks/useLootbox";
 
 const assets = {
@@ -16,17 +18,18 @@ const assets = {
   NFT: `${AWS_ASSETS_PATH}/NFT.png`,
 };
 
-const Drops = () => {
+const Lootboxes = () => {
   const web3Provider = useContext(Web3Context);
-
-
-
-  const { adminClaims } = useClaimAdmin({
+  const contractAddress = "0x8B013c13538D37C73C7A32278D4Dba4910c85977"
+  const { state } = useLootbox({
+    contractAddress: contractAddress,
     targetChain: targetChain,
     ctx: web3Provider,
   });
 
-  if (adminClaims.isLoading)
+  console.log("state", state.activeOpening);
+
+  if (state.isLoading)
     return (
       <Flex minH="100vh">
         <Spinner />
@@ -42,14 +45,14 @@ const Drops = () => {
       px="7%"
     >
       {web3Provider.account &&
-        adminClaims?.data?.map((claim, idx) => {
+        state?.data?.lootboxIds?.map((lootboxId) => {
           return (
-            <ContractCard
-              key={`contract-card-${idx}}`}
-              address={claim.address}
-              claimId={claim.id}
-              deadline={claim.deadline}
-              title={claim.title}
+            <LootboxCard
+              key={`contract-card-${lootboxId}}`}
+              contractAddress={contractAddress}
+              hasActiveOpening={parseInt(state.data.activeOpening?.lootboxId) === lootboxId}
+              activeOpening={state.data.activeOpening}
+              lootboxId={lootboxId}
             />
           );
         })}
@@ -98,4 +101,4 @@ export async function getStaticProps() {
   };
 }
 
-export default Drops;
+export default Lootboxes;

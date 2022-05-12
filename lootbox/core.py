@@ -152,6 +152,7 @@ def create_lootboxes_from_config(
                     "name": lootbox["name"],
                     "tokenUri": lootbox["tokenUri"],
                     "lootboxId": lootbox_id,
+                    "lootboxType": lootbox["lootboxType"],
                     "items": lootbox["items"],
                     "terminusPoolId": terminus_pool_id,
                 }
