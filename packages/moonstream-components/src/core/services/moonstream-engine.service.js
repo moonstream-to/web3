@@ -9,6 +9,7 @@ export const getContracts = () => async () => {
 };
 
 export const getDropList = (dropperAddress, chainName) => async (address) => {
+  console.log("getDropList");
   return http({
     method: "GET",
     url: `${API}/drops/claims`,
@@ -21,7 +22,7 @@ export const getDropList = (dropperAddress, chainName) => async (address) => {
 };
 
 export const getAdminList =
-  (terminusAddress, chainName, poolId, offset, limit) => async () => {
+  (terminusAddress, chainName, poolId) => async () => {
     return http({
       method: "GET",
       url: `${API}/drops/terminus/claims`,
@@ -29,19 +30,16 @@ export const getAdminList =
         terminus_address: encodeURIComponent(terminusAddress),
         blockchain: chainName,
         terminus_pool_id: poolId,
-        offset: offset,
-        limit: limit,
       },
     });
   };
 
-export const getClaim = (claimId, address) => {
-  return http({
+export const getDropMessage = (claimId) => async (address) =>
+  http({
     method: "GET",
     url: `${API}/drops/`,
     params: { address: address, dropper_claim_id: claimId },
   });
-};
 
 export const createDropperClaim =
   ({ dropperContractAddress }) =>
@@ -66,7 +64,7 @@ export const getClaimants =
   ({ limit, offset }) => {
     return http({
       method: "GET",
-      url: `${API}/drops/claimants`,
+      url: `${API}/claimants`,
       params: {
         dropper_claim_id: encodeURIComponent(dropperClaimId),
         offset: encodeURIComponent(offset),
@@ -76,6 +74,10 @@ export const getClaimants =
   };
 
 export const setClaimants = ({ dropperClaimId, claimants }) => {
+  console.log("setClaimants", dropperClaimId, claimants);
+  // const data = new FormData();
+  // data.append("dropper_claim_id", dropperClaimId);
+  // data.append("claimants", claimants);
   const data = { dropper_claim_id: dropperClaimId, claimants: claimants };
 
   return http({
@@ -87,15 +89,15 @@ export const setClaimants = ({ dropperClaimId, claimants }) => {
 
 export const deleteClaimants =
   ({ dropperClaimId }) =>
-  ({ list }) => {
+  async (addresses) => {
     const data = new FormData();
     data.append("dropper_claim_id", dropperClaimId);
-    data.append("addresses", list);
+    data.append("addresses", addresses);
 
     return http({
       method: "DELETE",
       url: `${API}/drops/claimants`,
-      data: { dropper_claim_id: dropperClaimId, addresses: list },
+      data: data,
     });
   };
 
@@ -113,31 +115,3 @@ export const getTerminus = (chainName) => async () => {
     params: { blockchain: chainName },
   });
 };
-
-export const deactivate = ({ dropperClaimId }) => {
-  return http({
-    method: "PUT",
-    url: `${API}/drops/claims/${dropperClaimId}/deactivate`,
-  });
-};
-
-export const activate = ({ dropperClaimId }) => {
-  return http({
-    method: "PUT",
-    url: `${API}/drops/claims/${dropperClaimId}/activate`,
-  });
-};
-
-export const updateDrop =
-  ({ dropperClaimId }) =>
-  ({ title, description, deadline }) => {
-    return http({
-      method: "PUT",
-      url: `${API}/drops/claims/${dropperClaimId}`,
-      data: {
-        title: title,
-        description: description,
-        claim_block_deadline: deadline,
-      },
-    });
-  };

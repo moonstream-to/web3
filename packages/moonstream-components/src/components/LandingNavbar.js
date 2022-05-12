@@ -63,7 +63,7 @@ const LandingNavbar = () => {
       </Flex>
 
       {!ui.isMobileView && (
-        <Flex pr={14} justifyItems="flex-end" flexGrow={1} alignItems="center">
+        <>
           <Spacer />
           <ButtonGroup variant="solid" spacing={4} pr={16}>
             {SITEMAP.map((item, idx) => {
@@ -82,12 +82,7 @@ const LandingNavbar = () => {
                   )}
                   {item.children && (
                     <Menu>
-                      <MenuButton
-                        as={Button}
-                        rightIcon={<ChevronDownIcon />}
-                        color="white"
-                        variant="link"
-                      >
+                      <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
                         {item.title}
                       </MenuButton>
                       <Portal>
@@ -111,51 +106,54 @@ const LandingNavbar = () => {
                 </React.Fragment>
               );
             })}
-          </ButtonGroup>
-          {web3Provider.buttonText !== web3Provider.WALLET_STATES.CONNECTED && (
-            <Button
-              colorScheme={
-                web3Provider.buttonText === web3Provider.WALLET_STATES.CONNECTED
-                  ? "green"
-                  : "green"
-              }
-              onClick={web3Provider.onConnectWalletClick}
-            >
-              {web3Provider.buttonText}
-              {"  "}
-              <Image
-                pl={2}
-                h="24px"
-                src="https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg"
-              />
-            </Button>
-          )}
-          {web3Provider.buttonText === web3Provider.WALLET_STATES.CONNECTED && (
-            <Flex>
-              <Badge
-                colorScheme={"blue"}
-                variant={"subtle"}
-                size="sm"
-                borderRadius={"md"}
-                mr={2}
-                p={0}
+            {web3Provider.buttonText !==
+              web3Provider.WALLET_STATES.CONNECTED && (
+              <Button
+                colorScheme={
+                  web3Provider.buttonText ===
+                  web3Provider.WALLET_STATES.CONNECTED
+                    ? "green"
+                    : "green"
+                }
+                onClick={web3Provider.onConnectWalletClick}
               >
-                <Skeleton
-                  isLoaded={web3Provider.account}
-                  h="100%"
-                  colorScheme={"red"}
-                  w="100%"
-                  borderRadius={"inherit"}
-                  startColor="red.500"
-                  endColor="blue.500"
-                  p={1}
+                {web3Provider.buttonText}
+                {"  "}
+                <Image
+                  pl={2}
+                  h="24px"
+                  src="https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg"
+                />
+              </Button>
+            )}
+            {web3Provider.buttonText ===
+              web3Provider.WALLET_STATES.CONNECTED && (
+              <Flex>
+                <Badge
+                  colorScheme={"blue"}
+                  variant={"subtle"}
+                  size="sm"
+                  borderRadius={"md"}
+                  mr={2}
+                  p={0}
                 >
-                  {web3Provider.account}
-                </Skeleton>
-              </Badge>
-            </Flex>
-          )}
-        </Flex>
+                  <Skeleton
+                    isLoaded={web3Provider.account}
+                    h="100%"
+                    colorScheme={"red"}
+                    w="100%"
+                    borderRadius={"inherit"}
+                    startColor="red.500"
+                    endColor="blue.500"
+                    p={1}
+                  >
+                    {web3Provider.account}
+                  </Skeleton>
+                </Badge>
+              </Flex>
+            )}
+          </ButtonGroup>
+        </>
       )}
     </>
   );

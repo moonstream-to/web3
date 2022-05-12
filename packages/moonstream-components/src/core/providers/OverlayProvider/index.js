@@ -21,7 +21,6 @@ import {
 } from "@chakra-ui/react";
 const HubspotForm = React.lazy(() => import("../../../components/HubspotForm"));
 const FileUpload = React.lazy(() => import("../../../components/FileUpload"));
-const CSVDiff = React.lazy(() => import("../../../components/CSVDiff"));
 
 const OverlayProvider = ({ children }) => {
   const [modal, toggleModal] = useState({
@@ -114,15 +113,7 @@ const OverlayProvider = ({ children }) => {
       >
         <ModalOverlay />
 
-        <ModalContent
-          borderRadius={modal.type === MODAL_TYPES.CSV_DIFF ? "148px" : "148px"}
-          bgColor={
-            modal.type === MODAL_TYPES.CSV_DIFF ? "transparent" : "red.100"
-          }
-          w="full"
-          maxW={modal.type === MODAL_TYPES.CSV_DIFF ? "100%" : undefined}
-          mx={modal.type === MODAL_TYPES.CSV_DIFF ? "20px" : undefined}
-        >
+        <ModalContent borderRadius="48px" bgColor="red.100">
           <ModalHeader
             bgColor="orange.900"
             textColor="white.300"
@@ -133,22 +124,21 @@ const OverlayProvider = ({ children }) => {
             boxShadow={"lg"}
             textAlign={"center"}
           >
-            {modal.type === MODAL_TYPES.CSV_DIFF && "Review diff"}
+            {modal.type === MODAL_TYPES.NEW_SUBSCRIPTON &&
+              "Subscribe to a new address"}
+            {modal.type === MODAL_TYPES.FORGOT && "Forgot Password"}
+            {modal.type === MODAL_TYPES.HUBSPOT && "Join the waitlist"}
+            {modal.type === MODAL_TYPES.UPLOAD_ABI && "Assign ABI"}
+            {modal.type === MODAL_TYPES.FILL_BOTTLE &&
+              `Fill ${modal.props.bottle.name} bottles with UNIM`}
+            {modal.type === MODAL_TYPES.POUR_BOTTLE &&
+              `Open ${modal.props.bottle.name} bottles to extract UNIM`}
             {modal.type === MODAL_TYPES.FILE_UPLOAD && `Upload new csv file`}
           </ModalHeader>
           {modal.type !== MODAL_TYPES.FILL_BOTTLE &&
             modal.type !== MODAL_TYPES.POUR_BOTTLE && <Divider />}
           <ModalCloseButton mr={2} />
-          <ModalBody
-            zIndex={100002}
-            bgColor={"white.300"}
-            borderBottomRadius={"48px"}
-            maxW={modal.type === MODAL_TYPES.CSV_DIFF ? "100%" : undefined}
-            // w="100vw"
-            maxH={modal.type === MODAL_TYPES.CSV_DIFF ? "70vh" : "0px"}
-            overflowY={"hidden"}
-            px={"48px"}
-          >
+          <ModalBody zIndex={100002} bgColor={"white.300"} borderRadius="148px">
             <Suspense fallback={<Spinner />}>
               {modal.type === MODAL_TYPES.HUBSPOT && (
                 <HubspotForm
@@ -159,9 +149,6 @@ const OverlayProvider = ({ children }) => {
               )}
               {modal.type === MODAL_TYPES.FILE_UPLOAD && (
                 <FileUpload toggleModal={toggleModal} />
-              )}
-              {modal.type === MODAL_TYPES.CSV_DIFF && (
-                <CSVDiff toggleModal={toggleModal} {...modal.props} />
               )}
             </Suspense>
           </ModalBody>

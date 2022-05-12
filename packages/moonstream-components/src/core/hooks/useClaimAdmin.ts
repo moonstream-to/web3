@@ -1,6 +1,7 @@
 import React from "react";
 import {
   getAdminList,
+  getContracts,
   getTerminus,
   setClaimants,
 } from "../services/moonstream-engine.service";
@@ -22,40 +23,31 @@ const useClaimAdmin = ({
 }) => {
   const toast = useToast();
 
-  const [claimsPage, setClaimsPage] = React.useState(0);
-  const [claimsPageSize, setClaimsPageSize] = React.useState(10);
-
   const terminusList = useQuery(
     ["terminusAddresses"],
     () => getTerminus(targetChain.name)().then((response) => response.data),
     {
       ...queryCacheProps,
-      enabled: !!ctx.account,
     }
   );
 
   const _hasAdminPermissions = React.useCallback(async () => {
     if (terminusList.data) {
+      console.log("adminContracts terminusList.data", terminusList.data);
       const terminusAuthorizations = await Promise.all(
-        terminusList.data.map(
-          async (terminus: {
-            terminus_address: string;
-            terminus_pool_id: number;
-          }) => {
-            return [
+        terminusList.data.map(async (terminus: any) => {
+          return [
+            terminus.terminus_address,
+            terminus.terminus_pool_id,
+            await balanceOfAddress(
+              ctx.account,
               terminus.terminus_address,
               terminus.terminus_pool_id,
-              await balanceOfAddress(
-                ctx.account,
-                terminus.terminus_address,
-                terminus.terminus_pool_id,
-                ctx
-              )(),
-            ];
-          }
-        )
+              ctx
+            )(),
+          ];
+        })
       );
-      //terminusAuthorizations = [[terminus_addess, poolId, balance]]
       const terminusAdmin = terminusAuthorizations.filter(
         (item) => item[2] > 0
       );
@@ -64,15 +56,11 @@ const useClaimAdmin = ({
   }, [terminusList.data, ctx]);
 
   const adminPermissions = useQuery(
-    ["claimAdmin", "adminPermissions", ctx.account],
+    ["claimAdmin", "adminPermissions"],
     _hasAdminPermissions,
     {
-      ...queryCacheProps,
-      enabled: !!terminusList.data && !!ctx.account,
+      enabled: !!terminusList.data,
       onSuccess: () => {},
-      onError: (err) => {
-        console.error("adminPermissions err", err);
-      },
     }
   );
 
@@ -80,12 +68,11 @@ const useClaimAdmin = ({
     const claimsByPermission = adminPermissions.data
       ? await Promise.all(
           adminPermissions.data.map(async (permission) => {
+            console.log("permission map", permission);
             const response = await getAdminList(
               permission[0],
               targetChain.name,
-              permission[1],
-              claimsPage * claimsPageSize,
-              claimsPageSize
+              permission[1]
             )();
             return response.data.drops;
           })
@@ -97,18 +84,10 @@ const useClaimAdmin = ({
   };
 
   const adminClaims = useQuery(
-    [
-      "claimAdmin",
-      "adminClaims",
-      targetChain.chainId,
-      claimsPage,
-      claimsPageSize,
-    ],
+    ["claimAdmin", "adminClaims", targetChain.chainId],
     _getAdminClaimsList,
     {
-      ...queryCacheProps,
-      keepPreviousData: true,
-      enabled: !!adminPermissions.data && !!ctx.account,
+      enabled: !!adminPermissions.data,
     }
   );
 
@@ -127,18 +106,10 @@ const useClaimAdmin = ({
     onSettled: () => {},
   });
 
-  const pageOptions = {
-    page: claimsPage,
-    setPage: setClaimsPage,
-    pageSize: claimsPageSize,
-    setPageSize: setClaimsPageSize,
-  };
-
   return {
     adminClaims,
     isLoading,
     uploadFile,
-    pageOptions,
   };
 };
 

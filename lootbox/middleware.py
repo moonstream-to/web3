@@ -69,9 +69,6 @@ class DropperAuthMiddleware(BaseHTTPMiddleware):
         except MoonstreamAuthorizationVerificationError as e:
             logger.info("Moonstream authorization verification error: %s", e)
             return Response(status_code=403, content="Invalid authorization header")
-        except MoonstreamAuthorizationExpired as e:
-            logger.info("Moonstream authorization expired: %s", e)
-            return Response(status_code=403, content="Authorization expired")
         except Exception as e:
             logger.info("Unexpected exception: %s", e)
             raise

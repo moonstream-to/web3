@@ -1,21 +1,10 @@
 import React, { useContext } from "react";
-import {
-  Flex,
-  Button,
-  Image,
-  Center,
-  Spinner,
-  Heading,
-  ScaleFade,
-} from "@chakra-ui/react";
+import { Flex, Button, Image, Center, Spinner } from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
-import useDrops from "moonstream-components/src/core/hooks/useDrops";
-import Drop from "moonstream-components/src/components/Dropper/Drop";
-import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
-import Paginator from "moonstream-components/src/components/Paginator";
-import { useRouter } from "moonstream-components/src/core/hooks";
+import ContractCard from "moonstream-components/src/components/Dropper/ContractCard";
+import useClaimAdmin from "moonstream-components/src/core/hooks/useClaimAdmin";
 
 const assets = {
   onboarding:
@@ -30,21 +19,12 @@ const assets = {
 const Drops = () => {
   const web3Provider = useContext(Web3Context);
 
-  const { adminClaims, pageOptions } = useDrops({
+  const { adminClaims } = useClaimAdmin({
     targetChain: targetChain,
     ctx: web3Provider,
   });
 
-  const router = useRouter();
-  React.useEffect(() => {
-    router.appendQueries({
-      claimsLimit: pageOptions.pageSize,
-      claimsPage: pageOptions.page,
-    });
-    // eslint-disable-next-line
-  }, [pageOptions.page, pageOptions.pageSize]);
-
-  if (!adminClaims.data)
+  if (adminClaims.isLoading)
     return (
       <Flex minH="100vh">
         <Spinner />
@@ -52,82 +32,48 @@ const Drops = () => {
     );
 
   return (
-    <ScaleFade in>
-      <Flex
-        w="100%"
-        minH="100vh"
-        bgColor={"blue.1200"}
-        direction={"column"}
-        px="7%"
-      >
-        {adminClaims.data?.length == 0 && (
-          <Flex
-            w="100%"
-            minH="50vh"
-            bgColor={"blue.700"}
-            borderRadius="md"
-            placeContent={"center"}
-          >
-            <Center>
-              <Flex direction={"column"}>
-                <Heading>Your drops list is empty</Heading>
-                <Heading>
-                  <br />
-                  Please contact us on discord to create one
-                </Heading>
-              </Flex>
-            </Center>
-          </Flex>
+    <Flex
+      w="100%"
+      minH="100vh"
+      bgColor={"blue.1200"}
+      direction={"column"}
+      px="7%"
+    >
+      {web3Provider.account &&
+        adminClaims?.data?.map((claim, idx) => {
+          return (
+            <ContractCard
+              key={`contract-card-${idx}}`}
+              address={claim.address}
+              claimId={claim.id}
+              deadline={claim.deadline}
+              title={claim.title}
+            />
+          );
+        })}
+      {!web3Provider.account &&
+        web3Provider.buttonText !== web3Provider.WALLET_STATES.CONNECTED && (
+          <Center>
+            <Button
+              mt={20}
+              colorScheme={
+                web3Provider.buttonText === web3Provider.WALLET_STATES.CONNECTED
+                  ? "orange"
+                  : "orange"
+              }
+              onClick={web3Provider.onConnectWalletClick}
+            >
+              {web3Provider.buttonText}
+              {"  "}
+              <Image
+                pl={2}
+                h="24px"
+                src="https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg"
+              />
+            </Button>
+          </Center>
         )}
-        {adminClaims.data?.length != 0 && (
-          <Paginator
-            onBack={() =>
-              pageOptions.setPage((_currentPage) => _currentPage - 1)
-            }
-            onForward={() =>
-              pageOptions.setPage((_currentPage) => _currentPage + 1)
-            }
-            paginatorKey={"claims"}
-            setLimit={pageOptions.setPageSize}
-            hasMore={adminClaims.data.length == pageOptions.pageSize}
-          >
-            {web3Provider.account &&
-              adminClaims?.data?.map((claim, idx) => {
-                return (
-                  <Drop
-                    key={`contract-card-${idx}}`}
-                    claim={claim}
-                    title={claim.title}
-                  />
-                );
-              })}
-          </Paginator>
-        )}
-        {!web3Provider.account &&
-          web3Provider.buttonText !== web3Provider.WALLET_STATES.CONNECTED && (
-            <Center>
-              <Button
-                mt={20}
-                colorScheme={
-                  web3Provider.buttonText ===
-                  web3Provider.WALLET_STATES.CONNECTED
-                    ? "orange"
-                    : "orange"
-                }
-                onClick={web3Provider.onConnectWalletClick}
-              >
-                {web3Provider.buttonText}
-                {"  "}
-                <Image
-                  pl={2}
-                  h="24px"
-                  src="https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg"
-                />
-              </Button>
-            </Center>
-          )}
-      </Flex>
-    </ScaleFade>
+    </Flex>
   );
 };
 
@@ -150,5 +96,4 @@ export async function getStaticProps() {
   };
 }
 
-Drops.getLayout = getLayout;
 export default Drops;

@@ -170,13 +170,13 @@ def delete_claim(db_session: Session, dropper_claim_id):
 
 def create_claim(
     db_session: Session,
-    dropper_contract_id: uuid.UUID,
-    claim_id: Optional[int] = None,
-    title: Optional[str] = None,
-    description: Optional[str] = None,
-    terminus_address: Optional[ChecksumAddress] = None,
-    terminus_pool_id: Optional[int] = None,
-    claim_block_deadline: Optional[int] = None,
+    dropper_contract_id,
+    claim_id,
+    title,
+    description,
+    terminus_address,
+    terminus_pool_id,
+    claim_block_deadline,
 ):
     """
     Create a new dropper claim.
@@ -203,76 +203,6 @@ def create_claim(
     db_session.commit()
     db_session.refresh(dropper_claim)  # refresh the object to get the id
     return dropper_claim
-
-
-def activate_drop(db_session: Session, dropper_claim_id: uuid.UUID):
-    """
-    Activate a claim
-    """
-
-    claim = (
-        db_session.query(DropperClaim).filter(DropperClaim.id == dropper_claim_id).one()
-    )
-
-    claim.active = True
-    db_session.commit()
-
-    return claim
-
-
-def deactivate_drop(db_session: Session, dropper_claim_id: uuid.UUID):
-    """
-    Activate a claim
-    """
-
-    claim = (
-        db_session.query(DropperClaim).filter(DropperClaim.id == dropper_claim_id).one()
-    )
-
-    claim.active = False
-    db_session.commit()
-
-    return claim
-
-
-def update_drop(
-    db_session: Session,
-    dropper_claim_id: uuid.UUID,
-    title: Optional[str] = None,
-    description: Optional[str] = None,
-    terminus_address: Optional[str] = None,
-    terminus_pool_id: Optional[int] = None,
-    claim_block_deadline: Optional[int] = None,
-    claim_id: Optional[int] = None,
-    address: Optional[str] = None,
-):
-    """
-    Update a claim
-    """
-
-    claim = (
-        db_session.query(DropperClaim).filter(DropperClaim.id == dropper_claim_id).one()
-    )
-
-    if title:
-        claim.title = title
-    if description:
-        claim.description = description
-    if terminus_address or terminus_pool_id:
-        ensure_dropper_contract_owner(db_session, claim.dropper_contract_id, address)
-        if terminus_address:
-            terminus_address = Web3.toChecksumAddress(terminus_address)
-            claim.terminus_address = terminus_address
-        if terminus_pool_id:
-            claim.terminus_pool_id = terminus_pool_id
-    if claim_block_deadline:
-        claim.claim_block_deadline = claim_block_deadline
-    if claim_id:
-        claim.claim_id = claim_id
-
-    db_session.commit()
-
-    return claim
 
 
 def add_claimants(db_session: Session, dropper_claim_id, claimants, added_by):
@@ -329,7 +259,7 @@ def transform_claim_amount(
     erc20_contract = MockErc20.MockErc20(claim_info[1])
     decimals = cast(int, erc20_contract.decimals())
 
-    return db_amount * (10 ** decimals)
+    return db_amount * (10**decimals)
 
 
 def get_claimants(db_session: Session, dropper_claim_id, limit=None, offset=None):
@@ -481,7 +411,10 @@ def get_claims(
     return query
 
 
-def get_claim_admin_pool(db_session: Session, dropper_claim_id: uuid.UUID,) -> Any:
+def get_claim_admin_pool(
+    db_session: Session,
+    dropper_claim_id: uuid.UUID,
+) -> Any:
     """
     Search for a claimant by address
     """

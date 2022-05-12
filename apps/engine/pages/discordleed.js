@@ -2,6 +2,7 @@ import React from "react";
 import { useRouter } from "moonstream-components/src/core/hooks";
 
 const DiscordLeed = () => {
+  console.log("disc");
   const router = useRouter();
 
   React.useLayoutEffect(() => {

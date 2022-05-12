@@ -4,8 +4,7 @@ import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 // import { getLayout } from "../src/layouts/AppLayout";
 import FeatureCard from "../../../packages/moonstream-components/src/components/FeatureCard";
-// import useClaimAdmin from "moonstream-components/src/core/hooks/useClaimAdmin";
-// import {targetChain } from "moonstream-components/src/core/providers/Web3Provider";
+
 const assets: any = {
   onboarding:
     "https://s3.amazonaws.com/static.simiotics.com/unicorn_bazaar/unim-onboarding.png",

@@ -27,7 +27,7 @@ PARAMETERS_SCRIPT="${SCRIPT_DIR}/parameters.py"
 
 
 # API server service file
-ENGINE_SERVICE_FILE="engine.service"
+LOOTBOX_SERVICE_FILE="lootbox.service"
 
 set -eu
 
@@ -88,10 +88,10 @@ set -e
 
 echo
 echo
-echo -e "${PREFIX_INFO} Replacing existing Engine signing API server service definition with ${ENGINE_SERVICE_FILE}"
-chmod 644 "${SCRIPT_DIR}/${ENGINE_SERVICE_FILE}"
-cp "${SCRIPT_DIR}/${ENGINE_SERVICE_FILE}" "/etc/systemd/system/${ENGINE_SERVICE_FILE}"
+echo -e "${PREFIX_INFO} Replacing existing Lootbox signing API server service definition with ${LOOTBOX_SERVICE_FILE}"
+chmod 644 "${SCRIPT_DIR}/${LOOTBOX_SERVICE_FILE}"
+cp "${SCRIPT_DIR}/${LOOTBOX_SERVICE_FILE}" "/etc/systemd/system/${LOOTBOX_SERVICE_FILE}"
 systemctl daemon-reload
-systemctl restart "${ENGINE_SERVICE_FILE}"
-systemctl status "${ENGINE_SERVICE_FILE}"
+systemctl restart "${LOOTBOX_SERVICE_FILE}"
+systemctl status "${LOOTBOX_SERVICE_FILE}"
 

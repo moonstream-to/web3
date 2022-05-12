@@ -1,3 +1,4 @@
+export const SPIRE_URL = process.env.NEXT_PUBLIC_SIMIOTICS_JOURNALS_URL;
 const defaultTimeRanges = {
   day: 86400,
   week: 86400 * 7,

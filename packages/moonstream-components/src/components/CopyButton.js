@@ -10,15 +10,9 @@ import {
 } from "@chakra-ui/react";
 import { BiCopy } from "react-icons/bi";
 
-/**
- * @dev if children is text then just wrap it, otherwise pass string as
- * @param text string to put in buffer, overrrides children
- */
 const CopyButton = (props) => {
   const children = props.children ? props.children : "";
-  const copyString = props.prefix
-    ? props.prefix + props.text ?? children
-    : props.text ?? children;
+  const copyString = props.prefix ? props.prefix + children : children;
 
   const { onCopy } = useClipboard(copyString);
 
@@ -62,6 +56,5 @@ const CopyButton = (props) => {
     </Fragment>
   );
 };
-
 
 export default CopyButton;

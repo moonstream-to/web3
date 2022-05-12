@@ -9,7 +9,7 @@ const DropCard = ({ drop }) => {
   const web3Provider = useContext(Web3Context);
 
   const claimer = useDropperClaim({
-    dropperAddress: "",
+    dropperAddress: process.env.NEXT_PUBLIC_DROPPER_ADDRESS ?? "",
     targetChain: targetChain,
     ctx: web3Provider,
     claimId: drop.id,
