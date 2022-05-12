@@ -14,7 +14,10 @@ from .auth import (
 class TestAuth(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        network.connect()
+        try:
+            network.connect()
+        except:
+            pass
         cls.signer = accounts.add()
 
     def test_authorization_and_verification(self):

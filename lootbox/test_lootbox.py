@@ -283,6 +283,7 @@ class LootboxBaseTest(LootboxTestCase):
                     token_amount=10 * 10 ** 18,
                 )
             ],
+            0,
             {"from": accounts[0]},
         )
 

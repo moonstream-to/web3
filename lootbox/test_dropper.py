@@ -34,7 +34,7 @@ class DropperTestCase(unittest.TestCase):
 
         # ERC20 setup
         cls.erc20_contract = MockErc20.MockErc20(None)
-        cls.erc20_contract.deploy({"from": accounts[0]})
+        cls.erc20_contract.deploy("test", "test", {"from": accounts[0]})
         cls.erc20_contract.mint(accounts[0], 100 * 10 ** 18, {"from": accounts[0]})
 
         # ERC721 setup
