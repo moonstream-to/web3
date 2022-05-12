@@ -1,6 +1,5 @@
 import React, { useContext, useState } from "react";
 import {
-<<<<<<< HEAD
   chakra,
   Button,
   Flex,
@@ -8,13 +7,6 @@ import {
   ListItem,
   UnorderedList,
   Image,
-=======
-  chakra,
-  Flex,
-  Heading,
-  ListItem,
-  UnorderedList,
->>>>>>> main
 } from "@chakra-ui/react";
 import { targetChain } from "../../core/providers/Web3Provider";
 import Web3Context from "../../core/providers/Web3Provider/context";
