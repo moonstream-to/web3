@@ -11,13 +11,9 @@ from . import Lootbox, MockTerminus
 
 
 def lootbox_item_to_tuple(
-    reward_type: int,
-    token_address: str,
-    token_id: int,
-    token_amount: int,
-    weight: int = 0,
+    reward_type: int, token_address: str, token_id: int, token_amount: int
 ):
-    return (reward_type, token_address, token_id, token_amount, weight)
+    return (reward_type, token_address, token_id, token_amount)
 
 
 def lootbox_item_tuple_to_json_file(tuple_item, file_path: str):
@@ -26,7 +22,6 @@ def lootbox_item_tuple_to_json_file(tuple_item, file_path: str):
         "tokenAddress": tuple_item[1],
         "tokenId": tuple_item[2],
         "tokenAmount": tuple_item[3],
-        "weight": tuple_item[4],
     }
     with open(file_path, "w") as f:
         json.dump(item, f)
@@ -38,7 +33,6 @@ def _lootbox_item_from_json_object(item: Dict[str, Any]) -> Any:
         item["tokenAddress"],
         item["tokenId"],
         item["tokenAmount"],
-        item["weight"],
     )
 
 
@@ -92,14 +86,13 @@ def create_lootboxes_from_config(
             if item["rewardType"] == 20:
                 erc20_contract = MockErc20(item["tokenAddress"])
                 erc20_decimals = erc20_contract.decimals()
-                item["tokenAmount"] *= 10 ** erc20_decimals
+                item["tokenAmount"] *= 10**erc20_decimals
             lootbox_items.append(_lootbox_item_from_json_object(item))
 
         lootboxes.append(
             {
                 "name": lootbox["name"],
-                "lootboxType": lootbox["lootboxType"],
-                "tokenUri": lootbox.get("tokenUri"),
+                "tokenUri": lootbox["tokenUri"],
                 "items": lootbox_items,
             }
         )
@@ -120,7 +113,6 @@ def create_lootboxes_from_config(
 
             lootbox_contract.create_lootbox(
                 lootbox["items"],
-                lootbox["lootboxType"],
                 tx_config,
             )
 
@@ -158,12 +150,9 @@ def create_lootboxes_from_config(
                 }
             )
 
-            if lootbox.get("tokenUri") is not None:
-                print(f"Setting lootbox {lootbox['name']} lootbox URI...")
-                lootbox_contract.set_lootbox_uri(
-                    lootbox_id, lootbox["tokenUri"], tx_config
-                )
-                print("\n")
+            print(f"Setting lootbox {lootbox['name']} lootbox URI...")
+            lootbox_contract.set_lootbox_uri(lootbox_id, lootbox["tokenUri"], tx_config)
+            print("\n")
     finally:
         print(
             f"Surrendering Terminus control back to caller: {tx_config['from'].address}"
@@ -173,14 +162,7 @@ def create_lootboxes_from_config(
     return results
 
 
-def gogogo(
-    terminus_address,
-    vrf_coordinator_address,
-    link_token_address,
-    chainlik_vrf_fee,
-    chainlik_vrf_keyhash,
-    tx_config,
-) -> Dict[str, Any]:
+def gogogo(terminus_address, tx_config) -> Dict[str, Any]:
     deployer = tx_config["from"]
     terminus_contract = MockTerminus.MockTerminus(terminus_address)
 
@@ -206,15 +188,7 @@ def gogogo(
 
     print("Deploying lootbox...")
     lootbox_contract = Lootbox.Lootbox(None)
-    lootbox_contract.deploy(
-        terminus_address,
-        admin_token_pool_id,
-        vrf_coordinator_address,
-        link_token_address,
-        chainlik_vrf_fee,
-        chainlik_vrf_keyhash,
-        tx_config,
-    )
+    lootbox_contract.deploy(terminus_address, admin_token_pool_id, tx_config)
 
     print("Setting pool controller...")
     terminus_contract.set_pool_controller(
@@ -233,15 +207,7 @@ def handle_gogogo(args: argparse.Namespace) -> None:
     network.connect(args.network)
     terminus_address = args.terminus_address
     transaction_config = MockTerminus.get_transaction_config(args)
-    result = gogogo(
-        terminus_address,
-        args.vrf_coordinator_address,
-        args.link_token_address,
-        args.chainlik_vrf_fee,
-        args.chainlik_vrf_keyhash,
-        transaction_config,
-    )
-
+    result = gogogo(terminus_address, transaction_config)
     if args.outfile is not None:
         with args.outfile:
             json.dump(result, args.outfile)
@@ -288,34 +254,6 @@ def generate_cli():
         type=str,
         required=True,
         help="Address of the terminus contract",
-    )
-
-    gogogo_parser.add_argument(
-        "--vrf-coordinator-address",
-        type=str,
-        required=True,
-        help="Address of the vrf coordinator contract",
-    )
-
-    gogogo_parser.add_argument(
-        "--link-token-address",
-        type=str,
-        required=True,
-        help="Address of the link token contract",
-    )
-
-    gogogo_parser.add_argument(
-        "--chainlik-vrf-fee",
-        type=int,
-        required=True,
-        help="Chainlink vrf fee",
-    )
-
-    gogogo_parser.add_argument(
-        "--chainlik-vrf-keyhash",
-        type=str,
-        required=True,
-        help="Chainlink vrf keyhash",
     )
 
     MockTerminus.add_default_arguments(gogogo_parser, transact=True)

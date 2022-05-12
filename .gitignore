@@ -132,6 +132,7 @@ dmypy.json
 .lootbox/
 .secrets/
 .vscode/
+.engine/
 
 prod.env
 test.env
@@ -146,6 +147,7 @@ alembic.test.ini
 
 #Node
 node_modules/
+yarn.lock
 
 #next
 .next/
