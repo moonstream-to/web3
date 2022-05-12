@@ -27,15 +27,15 @@ export type LootboxCreated = ContractEventLog<{
 }>;
 export type LootboxItemAdded = ContractEventLog<{
   lootboxId: string;
-  lootboxItem: [string, string, string, string, string];
+  lootboxItem: [string, string, string, string];
   0: string;
-  1: [string, string, string, string, string];
+  1: [string, string, string, string];
 }>;
 export type LootboxItemRemoved = ContractEventLog<{
   lootboxId: string;
-  lootboxItem: [string, string, string, string, string];
+  lootboxItem: [string, string, string, string];
   0: string;
-  1: [string, string, string, string, string];
+  1: [string, string, string, string];
 }>;
 export type LootboxOpened = ContractEventLog<{
   lootboxId: string;
@@ -44,22 +44,6 @@ export type LootboxOpened = ContractEventLog<{
   0: string;
   1: string;
   2: string;
-}>;
-export type LootboxOpeningBegan = ContractEventLog<{
-  lootboxOwner: string;
-  lootboxId: string;
-  0: string;
-  1: string;
-}>;
-export type LootboxOpeningCompleted = ContractEventLog<{
-  lootboxOwner: string;
-  lootboxId: string;
-  requestId: string;
-  randomness: string;
-  0: string;
-  1: string;
-  2: string;
-  3: string;
 }>;
 export type OwnershipTransferred = ContractEventLog<{
   previousOwner: string;
@@ -84,35 +68,15 @@ export interface Lootbox extends BaseContract {
   ): Lootbox;
   clone(): Lootbox;
   methods: {
-    ActiveLootboxOpenings(
-      arg0: string | number[]
-    ): NonPayableTransactionObject<{
-      status: string;
-      user: string;
-      lootboxId: string;
-      randomness: string;
-      0: string;
-      1: string;
-      2: string;
-      3: string;
-    }>;
-
-    CurrentOpeningforUser(arg0: string): NonPayableTransactionObject<string>;
-
     ERC1155_REWARD_TYPE(): NonPayableTransactionObject<string>;
 
     ERC20_REWARD_TYPE(): NonPayableTransactionObject<string>;
-
-    ORDINARY_LOOTBOX_TYPE(): NonPayableTransactionObject<string>;
-
-    RANDOM_LOOTBOX_TYPE_1(): NonPayableTransactionObject<string>;
 
     addLootboxItem(
       lootboxId: number | string | BN,
       item: [
         number | string | BN,
         string,
-        number | string | BN,
         number | string | BN,
         number | string | BN
       ]
@@ -136,17 +100,13 @@ export interface Lootbox extends BaseContract {
       _administratorPoolId: number | string | BN
     ): NonPayableTransactionObject<void>;
 
-    completeRandomLootboxOpening(): NonPayableTransactionObject<void>;
-
     createLootbox(
       items: [
         number | string | BN,
         string,
         number | string | BN,
-        number | string | BN,
         number | string | BN
-      ][],
-      lootboxType: number | string | BN
+      ][]
     ): NonPayableTransactionObject<void>;
 
     createLootboxWithTerminusPool(
@@ -154,16 +114,10 @@ export interface Lootbox extends BaseContract {
         number | string | BN,
         string,
         number | string | BN,
-        number | string | BN,
         number | string | BN
       ][],
-      terminusPoolId: number | string | BN,
-      lootboxType: number | string | BN
+      terminusPoolId: number | string | BN
     ): NonPayableTransactionObject<void>;
-
-    getChainlinkVRFFee(): NonPayableTransactionObject<string>;
-
-    getChainlinkVRFKeyhash(): NonPayableTransactionObject<string>;
 
     getLootboxBalance(
       lootboxId: number | string | BN,
@@ -173,7 +127,7 @@ export interface Lootbox extends BaseContract {
     getLootboxItemByIndex(
       lootboxId: number | string | BN,
       itemIndex: number | string | BN
-    ): NonPayableTransactionObject<[string, string, string, string, string]>;
+    ): NonPayableTransactionObject<[string, string, string, string]>;
 
     getLootboxURI(
       lootboxId: number | string | BN
@@ -187,10 +141,6 @@ export interface Lootbox extends BaseContract {
 
     lootboxItemCount(
       lootboxId: number | string | BN
-    ): NonPayableTransactionObject<string>;
-
-    lootboxTypebyLootboxId(
-      arg0: number | string | BN
     ): NonPayableTransactionObject<string>;
 
     mintLootbox(
@@ -226,11 +176,6 @@ export interface Lootbox extends BaseContract {
     pause(): NonPayableTransactionObject<void>;
 
     paused(): NonPayableTransactionObject<boolean>;
-
-    rawFulfillRandomness(
-      requestId: string | number[],
-      randomness: number | string | BN
-    ): NonPayableTransactionObject<void>;
 
     removeLootboxItem(
       lootboxId: number | string | BN,
@@ -304,20 +249,6 @@ export interface Lootbox extends BaseContract {
       cb?: Callback<LootboxOpened>
     ): EventEmitter;
 
-    LootboxOpeningBegan(cb?: Callback<LootboxOpeningBegan>): EventEmitter;
-    LootboxOpeningBegan(
-      options?: EventOptions,
-      cb?: Callback<LootboxOpeningBegan>
-    ): EventEmitter;
-
-    LootboxOpeningCompleted(
-      cb?: Callback<LootboxOpeningCompleted>
-    ): EventEmitter;
-    LootboxOpeningCompleted(
-      options?: EventOptions,
-      cb?: Callback<LootboxOpeningCompleted>
-    ): EventEmitter;
-
     OwnershipTransferred(cb?: Callback<OwnershipTransferred>): EventEmitter;
     OwnershipTransferred(
       options?: EventOptions,
@@ -359,23 +290,6 @@ export interface Lootbox extends BaseContract {
     event: "LootboxOpened",
     options: EventOptions,
     cb: Callback<LootboxOpened>
-  ): void;
-
-  once(event: "LootboxOpeningBegan", cb: Callback<LootboxOpeningBegan>): void;
-  once(
-    event: "LootboxOpeningBegan",
-    options: EventOptions,
-    cb: Callback<LootboxOpeningBegan>
-  ): void;
-
-  once(
-    event: "LootboxOpeningCompleted",
-    cb: Callback<LootboxOpeningCompleted>
-  ): void;
-  once(
-    event: "LootboxOpeningCompleted",
-    options: EventOptions,
-    cb: Callback<LootboxOpeningCompleted>
   ): void;
 
   once(event: "OwnershipTransferred", cb: Callback<OwnershipTransferred>): void;

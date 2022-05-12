@@ -67,7 +67,6 @@ const LandingNavbar = () => {
           <Spacer />
           <ButtonGroup variant="solid" spacing={4} pr={16}>
             {SITEMAP.map((item, idx) => {
-              console.log("item", item);
               return (
                 <React.Fragment key={`Fragment-${idx}`}>
                   {!item.children && (

@@ -15,29 +15,18 @@ import "@openzeppelin-contracts/contracts/security/Pausable.sol";
 import "@openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 
-import "./ControllableWithTerminus.sol";
-import "./LootboxRandomness.sol";
-
 /**
  * @title Moonstream Lootbox managing contract
  * @author Moonstream Engineering (engineering@moonstream.to)
  * @notice You can create lootboxes represented by terminus pools that includes ERC20 and ERC1155 tokens
  */
-contract Lootbox is
-    ERC1155Holder,
-    ControllableWithTerminus,
-    LootboxRandomness,
-    Pausable,
-    ReentrancyGuard
-{
+contract Lootbox is ERC1155Holder, Ownable, Pausable, ReentrancyGuard {
+    uint256 public administratorPoolId;
     address public terminusAddress;
     uint256 private _totalLootboxCount;
 
     uint256 public ERC20_REWARD_TYPE = 20;
     uint256 public ERC1155_REWARD_TYPE = 1155;
-
-    uint256 public ORDINARY_LOOTBOX_TYPE = 0;
-    uint256 public RANDOM_LOOTBOX_TYPE_1 = 1;
 
     /**
      * @dev Lootbox item structure
@@ -45,11 +34,10 @@ contract Lootbox is
      */
 
     struct LootboxItem {
-        uint256 rewardType; // reward type: 20 for ERC20, 1155 for ERC1155
+        uint256 rewardType;
         address tokenAddress; // address of the token
-        uint256 tokenId; // id of the token, any number for erc20
-        uint256 amount; // amount of the token
-        uint256 weight; // weight of item (only for random lootboxes)
+        uint256 tokenId;
+        uint256 amount;
     }
 
     // Mapping from lootbox id to lootbox items (access by index)
@@ -59,10 +47,6 @@ contract Lootbox is
 
     mapping(uint256 => uint256) public terminusPoolIdbyLootboxId;
     mapping(uint256 => uint256) public lootboxIdbyTerminusPoolId;
-
-    mapping(uint256 => uint256) public lootboxTypebyLootboxId;
-    // 0 => ordinary lootbox
-    // 1 => random lootbox
 
     event LootboxCreated(uint256 indexed lootboxId);
     event LootboxItemAdded(uint256 indexed lootboxId, LootboxItem lootboxItem);
@@ -82,23 +66,52 @@ contract Lootbox is
      * @param _terminusAddress The address of the Terminus contract.
      * @param _administratorPoolId The id of the administrator terminus pool.
      */
-    constructor(
-        address _terminusAddress,
-        uint256 _administratorPoolId,
-        address _VRFCoordinatorAddress,
-        address _LinkTokenAddress,
-        uint256 _ChainlinkVRFFee,
-        bytes32 _ChainlinkVRFKeyhash
-    )
-        ControllableWithTerminus(_terminusAddress, _administratorPoolId)
-        LootboxRandomness(
-            _VRFCoordinatorAddress,
-            _LinkTokenAddress,
-            _ChainlinkVRFFee,
-            _ChainlinkVRFKeyhash
-        )
-    {
+    constructor(address _terminusAddress, uint256 _administratorPoolId) {
+        administratorPoolId = _administratorPoolId;
         terminusAddress = _terminusAddress;
+    }
+
+    /**
+     * @dev throws if called by account that doesn't hold the administrator pool token
+     * or is the contract owner
+     */
+    modifier onlyAdministrator() {
+        require(
+            getTerminusContract().balanceOf(msg.sender, administratorPoolId) >
+                0 ||
+                msg.sender == owner(),
+            "Lootbox.sol: Sender is not an administrator"
+        );
+        _;
+    }
+
+    function changeAdministratorPoolId(uint256 _administratorPoolId)
+        public
+        onlyOwner
+    {
+        administratorPoolId = _administratorPoolId;
+    }
+
+    function grantAdminRole(address to) public onlyOwner {
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+        require(
+            address(this) ==
+                terminusContract.terminusPoolController(administratorPoolId),
+            "The contract is not the pool controller for the administrator pool. Please transfer the controller role to the contract."
+        );
+        terminusContract.mint(to, administratorPoolId, 1, "");
+    }
+
+    function revokeAdminRole(address from) public onlyOwner {
+        TerminusFacet terminusContract = TerminusFacet(terminusAddress);
+        require(
+            address(this) ==
+                terminusContract.terminusPoolController(administratorPoolId),
+            "The contract is not the pool controller for the administrator pool. Please transfer the controller role to the contract."
+        );
+
+        uint256 balance = terminusContract.balanceOf(from, administratorPoolId);
+        terminusContract.burn(from, administratorPoolId, balance);
     }
 
     function mintLootbox(
@@ -216,15 +229,8 @@ contract Lootbox is
      */
     function createLootboxWithTerminusPool(
         LootboxItem[] memory items,
-        uint256 terminusPoolId,
-        uint256 lootboxType
+        uint256 terminusPoolId
     ) public {
-        require(
-            lootboxType == ORDINARY_LOOTBOX_TYPE ||
-                lootboxType == RANDOM_LOOTBOX_TYPE_1,
-            "Unknown lootbox type"
-        );
-
         uint256 lootboxId = _totalLootboxCount + 1;
         _totalLootboxCount++;
 
@@ -247,22 +253,15 @@ contract Lootbox is
 
         // Add the lootbox items
         for (uint256 i = 0; i < items.length; i++) {
-            if (lootboxType == RANDOM_LOOTBOX_TYPE_1) {
-                require(
-                    items[i].weight > 0,
-                    "Lootbox item weight must be greater than 0"
-                );
-            }
             lootboxItems[lootboxId][i] = items[i];
             emit LootboxItemAdded(lootboxId, items[i]);
         }
 
         // Add the lootbox item count
         lootboxItemCounts[lootboxId] = items.length;
-        lootboxTypebyLootboxId[lootboxId] = lootboxType;
     }
 
-    function createLootbox(LootboxItem[] memory items, uint256 lootboxType)
+    function createLootbox(LootboxItem[] memory items)
         public
         onlyAdministrator
     {
@@ -283,7 +282,7 @@ contract Lootbox is
             true
         );
 
-        createLootboxWithTerminusPool(items, terminusPoolId, lootboxType);
+        createLootboxWithTerminusPool(items, terminusPoolId);
     }
 
     /**
@@ -295,10 +294,6 @@ contract Lootbox is
         public
         onlyAdministrator
     {
-        uint256 lootboxType = lootboxTypebyLootboxId[lootboxId];
-        if (lootboxType == RANDOM_LOOTBOX_TYPE_1) {
-            require(item.weight > 0, "Item weight must be greater than 0");
-        }
         uint256 itemIndex = lootboxItemCounts[lootboxId];
         lootboxItems[lootboxId][itemIndex] = item;
         lootboxItemCounts[lootboxId]++;
@@ -328,27 +323,6 @@ contract Lootbox is
         lootboxItemCounts[lootboxId]--;
     }
 
-    function _sendItem(
-        uint256 lootboxId,
-        uint256 itemIndex,
-        uint256 count
-    ) internal {
-        LootboxItem memory item = lootboxItems[lootboxId][itemIndex];
-        if (item.rewardType == ERC20_REWARD_TYPE) {
-            IERC20(item.tokenAddress).transfer(msg.sender, item.amount * count);
-        } else if (item.rewardType == ERC1155_REWARD_TYPE) {
-            IERC1155(item.tokenAddress).safeTransferFrom(
-                address(this),
-                msg.sender,
-                item.tokenId,
-                item.amount * count,
-                ""
-            );
-        } else {
-            revert("Unsupported reward type");
-        }
-    }
-
     /**
      * @dev user opens a lootbox and gets a lootbox items from it
      * @param lootboxId The id of the lootbox
@@ -370,49 +344,25 @@ contract Lootbox is
         );
 
         terminusContract.burn(msg.sender, terminusPoolForLootbox, count);
-        if (lootboxTypebyLootboxId[lootboxId] == ORDINARY_LOOTBOX_TYPE) {
-            for (uint256 i = 0; i < lootboxItemCounts[lootboxId]; i++) {
-                _sendItem(lootboxId, i, count);
-            }
-        } else if (lootboxTypebyLootboxId[lootboxId] == RANDOM_LOOTBOX_TYPE_1) {
-            require(count == 1, "Count must be 1 for random lootbox");
-            _startRandomLootboxOpening(lootboxId);
-        } else {
-            revert("Unknown lootbox type");
-        }
-    }
-
-    function completeRandomLootboxOpening() public nonReentrant {
-        bytes32 currentOpeningRequestId = CurrentOpeningforUser[msg.sender];
-        LootboxOpening memory opening = ActiveLootboxOpenings[
-            currentOpeningRequestId
-        ];
-
-        require(
-            opening.status != 0,
-            "There is no active opening for this user"
-        );
-        require(opening.status == 2, "Lootbox opening is not ready");
-
-        uint256 weightSums = 0;
-        uint256 currentLootboxItemCount = lootboxItemCounts[opening.lootboxId];
-        for (uint256 i = 0; i < currentLootboxItemCount; i++) {
-            weightSums += lootboxItems[opening.lootboxId][i].weight;
-        }
-
-        uint256 randomNumber = opening.randomness % weightSums;
-
-        uint256 currentWeightSum = 0;
-
-        for (uint256 i = 0; i < currentLootboxItemCount; i++) {
-            currentWeightSum += lootboxItems[opening.lootboxId][i].weight;
-            if (randomNumber < currentWeightSum) {
-                _sendItem(opening.lootboxId, i, 1);
-                break;
+        for (uint256 i = 0; i < lootboxItemCounts[lootboxId]; i++) {
+            LootboxItem memory item = lootboxItems[lootboxId][i];
+            if (item.rewardType == ERC20_REWARD_TYPE) {
+                IERC20(item.tokenAddress).transfer(
+                    msg.sender,
+                    item.amount * count
+                );
+            } else if (item.rewardType == ERC1155_REWARD_TYPE) {
+                IERC1155(item.tokenAddress).safeTransferFrom(
+                    address(this),
+                    msg.sender,
+                    item.tokenId,
+                    item.amount * count,
+                    ""
+                );
+            } else {
+                revert("Unsupported reward type");
             }
         }
-        delete ActiveLootboxOpenings[currentOpeningRequestId];
-        delete CurrentOpeningforUser[msg.sender];
     }
 
     /**
