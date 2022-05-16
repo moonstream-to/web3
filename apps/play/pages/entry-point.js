@@ -1,14 +1,14 @@
 //Use this page to redirect from s3 error routes to ensure app can be entered from non statically generated routes correctly
 import { useRouter } from "next/router";
 import { useContext, useLayoutEffect } from "react";
-import UserContext from "../src/core/providers/UserProvider/context";
+
 import { getLayout } from "../src/layouts/EntryPointLayout";
 
 const EntryPoint = () => {
   const router = useRouter();
-  const { isInit } = useContext(UserContext);
+
   useLayoutEffect(() => {
-    if (router.isReady && isInit && router.asPath !== router.pathname + `/`) {
+    if (router.isReady && router.asPath !== router.pathname + `/`) {
       if (localStorage.getItem("entry_point")) {
         router.replace("/404", router.asPath);
       } else {
@@ -18,7 +18,7 @@ const EntryPoint = () => {
         });
       }
     }
-  }, [router, isInit]);
+  }, [router]);
 
   return "";
 };

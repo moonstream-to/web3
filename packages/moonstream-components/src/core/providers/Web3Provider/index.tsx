@@ -108,9 +108,10 @@ const signAccessToken = async (account: string) => {
 };
 
 if (!process.env.NEXT_PUBLIC_ENGINE_TARGET_CHAIN)
-  throw "NEXT_PUBLIC_ENGINE_API_URL not defined";
+  throw "NEXT_PUBLIC_ENGINE_TARGET_CHAIN not defined";
 export const targetChain =
   chains[`${process.env.NEXT_PUBLIC_ENGINE_TARGET_CHAIN}`];
+console.log("targetChain", targetChain);
 
 const Web3Provider = ({ children }: { children: JSX.Element }) => {
   const [web3] = React.useState<Web3>(new Web3(null));

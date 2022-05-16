@@ -3,7 +3,7 @@ import { Flex, Button, Image, Center, Spinner } from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
-import ContractCard from "moonstream-components/src/components/Dropper/ContractCard";
+
 
 import LootboxCard from "moonstream-components/src/components/lootbox/LootboxCard";
 import useLootbox from "moonstream-components/src/core/hooks/useLootbox";
