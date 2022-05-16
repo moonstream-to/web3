@@ -30,10 +30,11 @@ const assets = {
 const Drops = () => {
   const web3Provider = useContext(Web3Context);
 
-  const { adminClaims, pageOptions } = useDrops({
-    targetChain: targetChain,
-    ctx: web3Provider,
-  });
+  const { adminClaims, pageOptions, update, activateDrop, deactivateDrop } =
+    useDrops({
+      targetChain: targetChain,
+      ctx: web3Provider,
+    });
 
   const router = useRouter();
   React.useEffect(() => {
@@ -92,12 +93,14 @@ const Drops = () => {
             hasMore={adminClaims.data.length == pageOptions.pageSize}
           >
             {web3Provider.account &&
-              adminClaims?.data?.map((claim, idx) => {
+              adminClaims?.data?.map((claim) => {
                 return (
                   <Drop
-                    key={`contract-card-${idx}}`}
+                    key={`contract-card-${claim.id}}`}
                     claim={claim}
-                    title={claim.title}
+                    onUpdate={update}
+                    deactivateDrop={deactivateDrop}
+                    activateDrop={activateDrop}
                   />
                 );
               })}

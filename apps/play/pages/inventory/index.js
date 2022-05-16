@@ -4,7 +4,6 @@ import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
 import ContractCard from "moonstream-components/src/components/Dropper/ContractCard";
-import useLootbox from "moonstream-components/src/core/hooks/useLootbox";
 
 const assets = {
   onboarding:

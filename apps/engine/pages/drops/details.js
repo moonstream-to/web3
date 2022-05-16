@@ -4,7 +4,7 @@ import Web3Context from "moonstream-components/src/core/providers/Web3Provider/c
 import Details from "moonstream-components/src/components/Dropper/Details";
 
 import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
-import { useRouter } from "moonstream-components/src/core/hooks";
+import { useDrops, useRouter } from "moonstream-components/src/core/hooks";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
 import useDrop from "moonstream-components/src/core/hooks/useDrop";
 import Drop from "moonstream-components/src/components/Dropper/Drop";
@@ -20,12 +20,22 @@ const Drops = () => {
     claimId: dropId,
   });
 
+  const { update, activateDrop, deactivateDrop } = useDrops({
+    targetChain: targetChain,
+    ctx: web3ctx,
+  });
   if (!dropId) return "drop Id must be specifed";
   if (!claim) return "";
   return (
     <ScaleFade in transition={"2s"}>
       <Flex>
-        <Drop claim={claim} title={claim.title}>
+        <Drop
+          claim={claim}
+          title={claim.title}
+          onUpdate={update}
+          deactivateDrop={deactivateDrop}
+          activateDrop={activateDrop}
+        >
           <Details dropId={dropId} claimants={claimants} />
         </Drop>
       </Flex>

@@ -23,6 +23,8 @@ export interface MoonstreamWeb3ProviderInterface {
   signAccessToken: Function;
 }
 
-
-
-
+export interface updateDropArguments {
+  title: string;
+  description: string;
+  deadline: number;
+}

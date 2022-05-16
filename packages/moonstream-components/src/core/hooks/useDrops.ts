@@ -1,13 +1,17 @@
 import React from "react";
 import {
+  activate,
+  deactivate,
   getAdminList,
   getTerminus,
   setClaimants,
+  updateDrop,
 } from "../services/moonstream-engine.service";
 import { useMutation, useQuery } from "react-query";
 import {
   ChainInterface,
   MoonstreamWeb3ProviderInterface,
+  updateDropArguments,
 } from "../../../../../types/Moonstream";
 import { useToast } from ".";
 import { balanceOfAddress } from "../contracts/terminus.contracts";
@@ -134,11 +138,58 @@ const useClaimAdmin = ({
     setPageSize: setClaimsPageSize,
   };
 
+  const update = useMutation(
+    ({ id, data }: { id: string; data: updateDropArguments }) =>
+      updateDrop({ dropperClaimId: id })({ ...data }),
+    {
+      onSuccess: () => {
+        adminClaims.refetch();
+        toast("Updated drop info", "success");
+      },
+      onError: () => {
+        toast("Updating drop failed >.<", "error");
+      },
+    }
+  );
+
+  const activateDrop = useMutation(
+    (id: string) => activate({ dropperClaimId: id }),
+    {
+      onSuccess: () => {
+        toast("Activated drop", "success");
+        adminClaims.refetch();
+      },
+      onError: () => {
+        toast("Activating drop failed", "error", "Error! >.<");
+      },
+      onSettled: () => {},
+    }
+  );
+
+  const deactivateDrop = useMutation(
+    (id: string) => deactivate({ dropperClaimId: id }),
+    {
+      onSuccess: () => {
+        toast("Deactivated drop", "success");
+        adminClaims.refetch();
+      },
+      onError: () => {
+        toast("Deactivating drop failed", "error", "Error! >.<");
+      },
+      onSettled: () => {
+        deactivateDrop.reset();
+      },
+    }
+  );
+
   return {
     adminClaims,
     isLoading,
     uploadFile,
     pageOptions,
+    update,
+    activateDrop,
+    deactivateDrop,
   };
 };
 
