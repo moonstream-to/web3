@@ -1,8 +1,8 @@
 //Use this page to redirect from s3 error routes to ensure app can be entered from non statically generated routes correctly
 import { useRouter } from "next/router";
-import { useContext, useLayoutEffect } from "react";
+import { useLayoutEffect } from "react";
 
-import { getLayout } from "../src/layouts/EntryPointLayout";
+import { getLayout } from "../../../packages/moonstream-components/src/layouts/EntryPointLayout";
 
 const EntryPoint = () => {
   const router = useRouter();

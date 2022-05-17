@@ -4,7 +4,6 @@ import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
 
-
 import LootboxCard from "moonstream-components/src/components/lootbox/LootboxCard";
 import useLootbox from "moonstream-components/src/core/hooks/useLootbox";
 
@@ -20,7 +19,7 @@ const assets = {
 
 const Lootboxes = () => {
   const web3Provider = useContext(Web3Context);
-  const contractAddress = "0x8B013c13538D37C73C7A32278D4Dba4910c85977"
+  const contractAddress = "0x8B013c13538D37C73C7A32278D4Dba4910c85977";
   const { state } = useLootbox({
     contractAddress: contractAddress,
     targetChain: targetChain,
@@ -50,7 +49,9 @@ const Lootboxes = () => {
             <LootboxCard
               key={`contract-card-${lootboxId}}`}
               contractAddress={contractAddress}
-              hasActiveOpening={parseInt(state.data.activeOpening?.lootboxId) === lootboxId}
+              hasActiveOpening={
+                parseInt(state.data.activeOpening?.lootboxId) === lootboxId
+              }
               activeOpening={state.data.activeOpening}
               lootboxId={lootboxId}
             />
@@ -85,12 +86,12 @@ const Lootboxes = () => {
 export async function getStaticProps() {
   const assetPreload = assets
     ? Object.keys(assets).map((key) => {
-      return {
-        rel: "preload",
-        href: assets[key],
-        as: "image",
-      };
-    })
+        return {
+          rel: "preload",
+          href: assets[key],
+          as: "image",
+        };
+      })
     : [];
   const preconnects = [{ rel: "preconnect", href: "https://s3.amazonaws.com" }];
 
