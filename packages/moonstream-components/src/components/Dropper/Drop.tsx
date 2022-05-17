@@ -28,13 +28,14 @@ import {
 } from "@chakra-ui/react";
 import Papa from "papaparse";
 import FileUpload from "../FileUpload";
-import OverlayContext from "../../core/providers/OverlayProvider/context";
 import { useDrop, useDrops, useRouter } from "../../core/hooks";
 import { EditIcon } from "@chakra-ui/icons";
 import FocusLock from "react-focus-lock";
 import { useForm } from "react-hook-form";
 import { targetChain } from "../../core/providers/Web3Provider";
 import Web3Context from "../../core/providers/Web3Provider/context";
+import { UseMutationResult } from "react-query";
+import { updateDropArguments } from "../../../../../types/Moonstream";
 
 interface ClaimInterface {
   active: boolean;
@@ -50,22 +51,29 @@ interface ClaimInterface {
 
 const DropCard = ({
   claim,
+  onUpdate,
+  activateDrop,
+  deactivateDrop,
   children,
   ...props
 }: {
   claim: ClaimInterface;
+  activateDrop: UseMutationResult<unknown, unknown, string, unknown>;
+  deactivateDrop: UseMutationResult<unknown, unknown, string, unknown>;
+  onUpdate: UseMutationResult<
+    unknown,
+    unknown,
+    {
+      id: string;
+      data: updateDropArguments;
+    },
+    unknown
+  >;
   children: React.ReactNode;
 }) => {
   const router = useRouter();
   const web3ctx = useContext(Web3Context);
-
   const { register, handleSubmit } = useForm();
-
-  const { update, activateDrop, deactivateDrop } = useDrop({
-    targetChain,
-    ctx: web3ctx,
-    claimId: claim.id,
-  });
 
   const { uploadFile } = useDrops({ targetChain, ctx: web3ctx });
   const query = router.query;
@@ -87,14 +95,15 @@ const DropCard = ({
   const { onOpen, onClose, isOpen } = useDisclosure();
 
   React.useEffect(() => {
-    if (isOpen && update.isSuccess) {
+    if (isOpen && onUpdate.isSuccess) {
       onClose();
-      update.reset();
+      onUpdate.reset();
     }
-  }, [isOpen, update, onClose]);
+  }, [isOpen, onUpdate, onClose]);
   const firstFieldRef = React.useRef(null);
 
-  const onSubmit = (data: any) => update.mutate({ ...data });
+  const onSubmit = (data: any) =>
+    onUpdate.mutate({ id: claim.id, data: { ...data } });
 
   return (
     <Flex
@@ -191,14 +200,14 @@ const DropCard = ({
                     <Button
                       variant="outline"
                       onClick={onClose}
-                      isLoading={update.isLoading}
+                      isLoading={onUpdate.isLoading}
                     >
                       Cancel
                     </Button>
                     <Button
                       colorScheme="orange"
                       type="submit"
-                      isLoading={update.isLoading}
+                      isLoading={onUpdate.isLoading}
                     >
                       Save
                     </Button>
@@ -260,7 +269,7 @@ const DropCard = ({
           variant={"outline"}
           colorScheme="green"
           isDisabled={!!claim.active}
-          onClick={() => activateDrop.mutate()}
+          onClick={() => activateDrop.mutate(claim.id)}
         >
           Activate
         </Button>
@@ -268,7 +277,7 @@ const DropCard = ({
           variant={"outline"}
           colorScheme="red"
           isDisabled={!claim.active}
-          onClick={() => deactivateDrop.mutate()}
+          onClick={() => deactivateDrop.mutate(claim.id)}
         >
           Deactivate
         </Button>
