@@ -56,6 +56,7 @@ whitelist_paths.update(
         "/ping": "GET",
         "/docs": "GET",
         "/drops": "GET",
+        "/drops/batch": "GET",
         "/drops/claims": "GET",
         "/drops/contracts": "GET",
         "/drops/terminus": "GET",
@@ -155,6 +156,74 @@ async def get_drop_handler(
         block_deadline=claimant.claim_block_deadline,
         signature=signature,
     )
+
+
+@app.get("/drops/batch", response_model=List[data.DropBatchResponseItem])
+async def get_drop_batch_handler(
+    address: str,
+    limit: int = 10,
+    offset: int = 0,
+    db_session: Session = Depends(db.yield_db_session),
+) -> List[data.DropBatchResponseItem]:
+    """
+    Get signed transaction for all user drops.
+    """
+
+    address = Web3.toChecksumAddress(address)
+
+    try:
+        claimant_drops = actions.get_claimant_drops(db_session, address, limit, offset)
+    except NoResultFound:
+        raise DropperHTTPException(
+            status_code=403, detail="You are not authorized to claim that reward"
+        )
+    except Exception as e:
+        raise DropperHTTPException(status_code=500, detail="Can't get claimant")
+
+    # generate list of claims
+
+    claims: List[data.DropBatchResponseItem] = []
+
+    for claimant_drop in claimant_drops:
+
+        transformed_amount = actions.transform_claim_amount(
+            db_session, claimant_drop.dropper_claim_id, claimant_drop.amount
+        )
+
+        dropper_contract = Dropper.Dropper(claimant_drop.dropper_contract_address)
+
+        message_hash = dropper_contract.claim_message_hash(
+            claimant_drop.claim_id,
+            claimant_drop.address,
+            claimant_drop.claim_block_deadline,
+            transformed_amount,
+        )
+
+        try:
+            signature = signatures.DROP_SIGNER.sign_message(message_hash)
+        except signatures.AWSDescribeInstancesFail:
+            raise DropperHTTPException(status_code=500)
+        except signatures.SignWithInstanceFail:
+            raise DropperHTTPException(status_code=500)
+        except Exception as err:
+            logger.error(f"Unexpected error in signing message process: {err}")
+            raise DropperHTTPException(status_code=500)
+
+        claims.append(
+            data.DropBatchResponseItem(
+                claimant=claimant_drop.address,
+                amount=transformed_amount,
+                claim_id=claimant_drop.claim_id,
+                block_deadline=claimant_drop.claim_block_deadline,
+                signature=signature,
+                dropper_claim_id=claimant_drop.dropper_claim_id,
+                dropper_contract_address=claimant_drop.dropper_contract_address,
+                blockchain=claimant_drop.blockchain,
+                active=claimant_drop.active,
+            )
+        )
+
+    return claims
 
 
 @app.get("/drops/contracts", response_model=List[data.DropperContractResponse])
@@ -296,7 +365,7 @@ async def get_drop_list_handler(
 
 
 @app.get("/drops/terminus/claims", response_model=data.DropListResponse)
-async def get_drop_list_handler(
+async def get_drop_terminus_list_handler(
     blockchain: str,
     terminus_address: str,
     terminus_pool_id: int,
@@ -545,7 +614,7 @@ async def get_claimants(
     limit: int = 10,
     offset: int = 0,
     db_session: Session = Depends(db.yield_db_session),
-) -> List[str]:
+) -> data.DropListResponse:
     """
     Get list of claimants for a given dropper contract.
     """
