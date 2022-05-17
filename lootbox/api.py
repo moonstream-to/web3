@@ -160,6 +160,7 @@ async def get_drop_handler(
 
 @app.get("/drops/batch", response_model=List[data.DropBatchResponseItem])
 async def get_drop_batch_handler(
+    blockchain: str,
     address: str,
     limit: int = 10,
     offset: int = 0,
@@ -172,7 +173,9 @@ async def get_drop_batch_handler(
     address = Web3.toChecksumAddress(address)
 
     try:
-        claimant_drops = actions.get_claimant_drops(db_session, address, limit, offset)
+        claimant_drops = actions.get_claimant_drops(
+            db_session, blockchain, address, limit, offset
+        )
     except NoResultFound:
         raise DropperHTTPException(
             status_code=403, detail="You are not authorized to claim that reward"
@@ -277,7 +280,9 @@ async def get_drops_blockchains_handler(
         raise DropperHTTPException(status_code=500, detail="Can't get drops")
 
     response = [
-        data.DropperBlockchainResponse(blockchain=result.blockchain,)
+        data.DropperBlockchainResponse(
+            blockchain=result.blockchain,
+        )
         for result in results
     ]
 
@@ -286,7 +291,8 @@ async def get_drops_blockchains_handler(
 
 @app.get("/drops/terminus")
 async def get_drops_terminus_handler(
-    blockchain: str = Query(None), db_session: Session = Depends(db.yield_db_session),
+    blockchain: str = Query(None),
+    db_session: Session = Depends(db.yield_db_session),
 ) -> List[data.DropperTerminusResponse]:
 
     """
@@ -488,7 +494,8 @@ async def activate_drop(
 
     try:
         drop = actions.activate_drop(
-            db_session=db_session, dropper_claim_id=dropper_claim_id,
+            db_session=db_session,
+            dropper_claim_id=dropper_claim_id,
         )
     except NoResultFound:
         raise DropperHTTPException(status_code=404, detail="Drop not found")
@@ -534,7 +541,8 @@ async def deactivate_drop(
 
     try:
         drop = actions.deactivate_drop(
-            db_session=db_session, dropper_claim_id=dropper_claim_id,
+            db_session=db_session,
+            dropper_claim_id=dropper_claim_id,
         )
     except NoResultFound:
         raise DropperHTTPException(status_code=404, detail="Drop not found")
@@ -564,8 +572,8 @@ async def update_drop(
 ) -> data.DropUpdatedResponse:
 
     """
-        Update a given drop by drop id.
-        """
+    Update a given drop by drop id.
+    """
     try:
         actions.ensure_admin_token_holder(
             db_session, dropper_claim_id, request.state.address

@@ -372,7 +372,7 @@ def get_claimant(db_session: Session, dropper_claim_id, address):
     return claimant_query.one()
 
 
-def get_claimant_drops(db_session: Session, address, limit=None, offset=None):
+def get_claimant_drops(db_session: Session, blockchain: str, address, limit=None, offset=None):
     """
     Search for a claimant by address
     """
@@ -392,6 +392,7 @@ def get_claimant_drops(db_session: Session, address, limit=None, offset=None):
         .join(DropperContract, DropperClaim.dropper_contract_id == DropperContract.id)
         .filter(DropperClaim.active == True)
         .filter(DropperClaimant.address == address)
+        .filter(DropperContract.blockchain == blockchain)
         .order_by(DropperClaimant.created_at.asc())
     )
 
