@@ -104,6 +104,17 @@ class DropResponse(BaseModel):
     signature: str
 
 
+class DropBatchResponseItem(BaseModel):
+    claimant: str
+    claim_id: int
+    amount: int
+    block_deadline: int
+    signature: str
+    dropper_claim_id: UUID
+    dropper_contract_address: str
+    blockchain: str
+
+
 class DropListResponse(BaseModel):
     drops: List[Any] = Field(default_factory=list)
 

@@ -372,6 +372,38 @@ def get_claimant(db_session: Session, dropper_claim_id, address):
     return claimant_query.one()
 
 
+def get_claimant_drops(db_session: Session, address, limit=None, offset=None):
+    """
+    Search for a claimant by address
+    """
+
+    claimant_query = (
+        db_session.query(
+            DropperClaimant.address,
+            DropperClaimant.amount,
+            DropperClaim.id.label("dropper_claim_id"),
+            DropperClaim.claim_id,
+            DropperClaim.active,
+            DropperClaim.claim_block_deadline,
+            DropperContract.address.label("dropper_contract_address"),
+            DropperContract.blockchain,
+        )
+        .join(DropperClaim, DropperClaimant.dropper_claim_id == DropperClaim.id)
+        .join(DropperContract, DropperClaim.dropper_contract_id == DropperContract.id)
+        .filter(DropperClaim.active == True)
+        .filter(DropperClaimant.address == address)
+        .order_by(DropperClaimant.created_at.asc())
+    )
+
+    if limit:
+        claimant_query = claimant_query.limit(limit)
+
+    if offset:
+        claimant_query = claimant_query.offset(offset)
+
+    return claimant_query.all()
+
+
 def get_terminus_claims(
     db_session: Session,
     blockchain: str,
