@@ -10,6 +10,26 @@
         "internalType": "uint256",
         "name": "_administratorPoolId",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_VRFCoordinatorAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_LinkTokenAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_ChainlinkVRFFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_ChainlinkVRFKeyhash",
+        "type": "bytes32"
       }
     ],
     "stateMutability": "nonpayable",
@@ -58,6 +78,11 @@
             "internalType": "uint256",
             "name": "amount",
             "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "weight",
+            "type": "uint256"
           }
         ],
         "indexed": false,
@@ -99,6 +124,11 @@
             "internalType": "uint256",
             "name": "amount",
             "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "weight",
+            "type": "uint256"
           }
         ],
         "indexed": false,
@@ -133,6 +163,56 @@
       }
     ],
     "name": "LootboxOpened",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "lootboxOwner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "lootboxId",
+        "type": "uint256"
+      }
+    ],
+    "name": "LootboxOpeningBegan",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "lootboxOwner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "lootboxId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "requestId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "randomness",
+        "type": "uint256"
+      }
+    ],
+    "name": "LootboxOpeningCompleted",
     "type": "event"
   },
   {
@@ -181,6 +261,59 @@
     "type": "event"
   },
   {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "ActiveLootboxOpenings",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "status",
+        "type": "uint32"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lootboxId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "randomness",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "CurrentOpeningforUser",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "ERC1155_REWARD_TYPE",
     "outputs": [
@@ -196,6 +329,32 @@
   {
     "inputs": [],
     "name": "ERC20_REWARD_TYPE",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ORDINARY_LOOTBOX_TYPE",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "RANDOM_LOOTBOX_TYPE_1",
     "outputs": [
       {
         "internalType": "uint256",
@@ -233,6 +392,11 @@
           {
             "internalType": "uint256",
             "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "weight",
             "type": "uint256"
           }
         ],
@@ -319,6 +483,13 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "completeRandomLootboxOpening",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "components": [
@@ -341,11 +512,21 @@
             "internalType": "uint256",
             "name": "amount",
             "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "weight",
+            "type": "uint256"
           }
         ],
         "internalType": "struct Lootbox.LootboxItem[]",
         "name": "items",
         "type": "tuple[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lootboxType",
+        "type": "uint256"
       }
     ],
     "name": "createLootbox",
@@ -376,6 +557,11 @@
             "internalType": "uint256",
             "name": "amount",
             "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "weight",
+            "type": "uint256"
           }
         ],
         "internalType": "struct Lootbox.LootboxItem[]",
@@ -386,11 +572,42 @@
         "internalType": "uint256",
         "name": "terminusPoolId",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lootboxType",
+        "type": "uint256"
       }
     ],
     "name": "createLootboxWithTerminusPool",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getChainlinkVRFFee",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getChainlinkVRFKeyhash",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -452,6 +669,11 @@
           {
             "internalType": "uint256",
             "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "weight",
             "type": "uint256"
           }
         ],
@@ -523,6 +745,25 @@
       }
     ],
     "name": "lootboxItemCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "lootboxTypebyLootboxId",
     "outputs": [
       {
         "internalType": "uint256",
@@ -688,6 +929,24 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "requestId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "randomness",
+        "type": "uint256"
+      }
+    ],
+    "name": "rawFulfillRandomness",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
