@@ -388,7 +388,7 @@ def get_claimant_drops(
             DropperClaim.active,
             DropperClaim.claim_block_deadline,
             DropperClaim.title,
-            DropperClaim.desription,
+            DropperClaim.description,
             DropperContract.address.label("dropper_contract_address"),
             DropperContract.blockchain,
         )
