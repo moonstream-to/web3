@@ -329,7 +329,7 @@ def transform_claim_amount(
     erc20_contract = MockErc20.MockErc20(claim_info[1])
     decimals = cast(int, erc20_contract.decimals())
 
-    return db_amount * (10 ** decimals)
+    return db_amount * (10**decimals)
 
 
 def get_claimants(db_session: Session, dropper_claim_id, limit=None, offset=None):
@@ -372,7 +372,9 @@ def get_claimant(db_session: Session, dropper_claim_id, address):
     return claimant_query.one()
 
 
-def get_claimant_drops(db_session: Session, blockchain: str, address, limit=None, offset=None):
+def get_claimant_drops(
+    db_session: Session, blockchain: str, address, limit=None, offset=None
+):
     """
     Search for a claimant by address
     """
@@ -385,6 +387,8 @@ def get_claimant_drops(db_session: Session, blockchain: str, address, limit=None
             DropperClaim.claim_id,
             DropperClaim.active,
             DropperClaim.claim_block_deadline,
+            DropperClaim.title,
+            DropperClaim.desription,
             DropperContract.address.label("dropper_contract_address"),
             DropperContract.blockchain,
         )
@@ -514,7 +518,10 @@ def get_claims(
     return query
 
 
-def get_claim_admin_pool(db_session: Session, dropper_claim_id: uuid.UUID,) -> Any:
+def get_claim_admin_pool(
+    db_session: Session,
+    dropper_claim_id: uuid.UUID,
+) -> Any:
     """
     Search for a claimant by address
     """

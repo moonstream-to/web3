@@ -223,6 +223,8 @@ async def get_drop_batch_handler(
                 dropper_contract_address=claimant_drop.dropper_contract_address,
                 blockchain=claimant_drop.blockchain,
                 active=claimant_drop.active,
+                title=claimant_drop.title,
+                description=claimant_drop.description,
             )
         )
 

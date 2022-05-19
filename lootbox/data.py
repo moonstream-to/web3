@@ -107,6 +107,8 @@ class DropResponse(BaseModel):
 class DropBatchResponseItem(BaseModel):
     claimant: str
     claim_id: int
+    title: str
+    description: str
     amount: int
     block_deadline: int
     signature: str
