@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import {
   chakra,
   Flex,
@@ -80,7 +80,12 @@ const DropCard = ({
   const { uploadFile } = useDrops({ targetChain, ctx: web3ctx });
   const query = router.query;
 
+  const [isUploading, setIsUploading] = useState(false);
+
+  var parserLineNumber = 0;
+
   const handleParsingError = function (error: string): void {
+    setIsUploading(false);
     toast(error, "error", "CSV Parse Error");
     throw error;
   };
@@ -89,6 +94,7 @@ const DropCard = ({
     headerValue: string,
     column: number
   ): string {
+    parserLineNumber = 0;
     const header = headerValue.trim().toLowerCase();
     if (column == 0 && header != "address") {
       handleParsingError("First column hedaer must be 'address'.");
@@ -102,18 +108,20 @@ const DropCard = ({
   const validateCellValue = function (cellValue: string, column: any): string {
     const value = cellValue.trim();
     if (column == "address") {
+      parserLineNumber++;
       try {
         web3ctx.web3.utils.toChecksumAddress(value);
       } catch (error) {
         handleParsingError(
-          `Error parsing value: ${value}. Value in 'address' column must be a valid address.`
+          `Error parsing value '${value}' on line ${parserLineNumber}. Value in 'address' column must be a valid address.`
         );
       }
     }
     if (column == "amount") {
-      if (isNaN(parseInt(value))) {
+      const numVal = parseInt(value);
+      if (isNaN(numVal) || numVal < 0) {
         handleParsingError(
-          `Error parsing value: ${value}. Value in 'amount' column must be an integer.`
+          `Error parsing value: '${value}' on line ${parserLineNumber}. Value in 'amount' column must be an integer.`
         );
       }
     }
@@ -121,6 +129,7 @@ const DropCard = ({
   };
 
   const onDrop = (file: any) => {
+    setIsUploading(true);
     Papa.parse(file[0], {
       header: true,
       skipEmptyLines: true,
@@ -128,10 +137,17 @@ const DropCard = ({
       transform: validateCellValue,
       transformHeader: validateHeader,
       complete: (result: any) => {
-        uploadFile.mutate({
-          dropperClaimId: claim.id,
-          claimants: result.data,
-        });
+        uploadFile.mutate(
+          {
+            dropperClaimId: claim.id,
+            claimants: result.data,
+          },
+          {
+            onSettled: () => {
+              setIsUploading(false);
+            },
+          }
+        );
       },
       error: (err: Error) => handleParsingError(err.message),
     });
@@ -306,6 +322,7 @@ const DropCard = ({
             alignSelf="center"
             // as={Flex}
             minW="220px"
+            isUploading={isUploading}
           />
         </Flex>
       </Flex>

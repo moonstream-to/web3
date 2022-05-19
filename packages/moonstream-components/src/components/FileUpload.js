@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, chakra, Container } from "@chakra-ui/react";
+import { Box, Center, Spinner, chakra, Container } from "@chakra-ui/react";
 import { useDropzone } from "react-dropzone";
 
 const baseStyle = {
@@ -30,7 +30,8 @@ const rejectStyle = {
   borderColor: "#ff1744",
 };
 
-function FileUpload(props) {
+function FileUpload({ isUploading, ...props }) {
+  console.log("Render file upload");
   const { getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } =
     useDropzone({ accept: ".csv", onDrop: props.onDrop });
 
@@ -52,11 +53,20 @@ function FileUpload(props) {
       alignItems={"center"}
       {...props}
     >
-      <Box {...getRootProps({ style })}>
-        <input {...getInputProps()} />
-        <p>{`Drag 'n' drop some files here, or click to select files`}</p>
-        <p>{`We expect csv file in format: "address,amount" `}</p>
-      </Box>
+      {isUploading ? (
+        // <Center h="100%" w="100%" bgColor="white.100">
+        //   <Spinner colorScheme="blue" speed="1s" size="md" pt="5px" pb="5px" />
+        // </Center>
+        <Box {...getRootProps({ style })}>
+          <Spinner colorScheme="blue" speed="1s" size="md" pt="5px" pb="5px" />
+        </Box>
+      ) : (
+        <Box {...getRootProps({ style })}>
+          <input {...getInputProps()} />
+          <p>{`Drag 'n' drop some files here, or click to select files`}</p>
+          <p>{`We expect csv file in format: "address,amount" `}</p>
+        </Box>
+      )}
     </Container>
   );
 }
