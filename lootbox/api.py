@@ -181,6 +181,7 @@ async def get_drop_batch_handler(
             status_code=403, detail="You are not authorized to claim that reward"
         )
     except Exception as e:
+        logger.error(e)
         raise DropperHTTPException(status_code=500, detail="Can't get claimant")
 
     # generate list of claims
