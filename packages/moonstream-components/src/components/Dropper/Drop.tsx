@@ -97,7 +97,7 @@ const DropCard = ({
     parserLineNumber = 0;
     const header = headerValue.trim().toLowerCase();
     if (column == 0 && header != "address") {
-      handleParsingError("First column hedaer must be 'address'.");
+      handleParsingError("First column header must be 'address'.");
     }
     if (column == 1 && header != "amount") {
       handleParsingError("Second column header must be 'amount'");

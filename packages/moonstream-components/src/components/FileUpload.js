@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Center, Spinner, chakra, Container } from "@chakra-ui/react";
+import { Box, Spinner, chakra, Container } from "@chakra-ui/react";
 import { useDropzone } from "react-dropzone";
 
 const baseStyle = {
@@ -53,17 +53,17 @@ function FileUpload({ isUploading, ...props }) {
       alignItems={"center"}
       {...props}
     >
-      {isUploading ? (
-        <Box {...getRootProps({ style })}>
-          <Spinner colorScheme="blue" speed="1s" size="md" pt="5px" pb="5px" />
-        </Box>
-      ) : (
-        <Box {...getRootProps({ style })}>
-          <input {...getInputProps()} />
-          <p>{`Drag 'n' drop some files here, or click to select files`}</p>
-          <p>{`We expect csv file in format: "address,amount" `}</p>
-        </Box>
-      )}
+      <Box h={[null, null, "105px"]} {...getRootProps({ style })}>
+        {isUploading ? (
+          <Spinner colorScheme="blue" speed="1s" size="xl" p="0" m="0" />
+        ) : (
+          <>
+            <input {...getInputProps()} />
+            <p>{`Drag 'n' drop some files here, or click to select files`}</p>
+            <p>{`We expect csv file in format: "address,amount" `}</p>
+          </>
+        )}
+      </Box>
     </Container>
   );
 }
