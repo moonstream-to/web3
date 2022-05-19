@@ -94,7 +94,6 @@ const DropCard = ({
     headerValue: string,
     column: number
   ): string {
-    parserLineNumber = 0;
     const header = headerValue.trim().toLowerCase();
     if (column == 0 && header != "address") {
       handleParsingError("First column header must be 'address'.");
@@ -129,6 +128,7 @@ const DropCard = ({
   };
 
   const onDrop = (file: any) => {
+    parserLineNumber = 0;
     setIsUploading(true);
     Papa.parse(file[0], {
       header: true,
