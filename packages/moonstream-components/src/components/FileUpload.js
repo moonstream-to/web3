@@ -54,9 +54,6 @@ function FileUpload({ isUploading, ...props }) {
       {...props}
     >
       {isUploading ? (
-        // <Center h="100%" w="100%" bgColor="white.100">
-        //   <Spinner colorScheme="blue" speed="1s" size="md" pt="5px" pb="5px" />
-        // </Center>
         <Box {...getRootProps({ style })}>
           <Spinner colorScheme="blue" speed="1s" size="md" pt="5px" pb="5px" />
         </Box>
