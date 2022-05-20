@@ -642,7 +642,7 @@ def get_position(
         LeaderboardScores.address,
         LeaderboardScores.score,
         func.rank().over(order_by=LeaderboardScores.score.desc()).label("rank"),
-        # LeaderboardPosition.total_claims, # hah intresting idea
+        func.row_number().over(order_by=LeaderboardScores.score.desc()).label("number"),
     ).filter(LeaderboardScores.leaderboard_id == leaderboard_id)
 
     ranked_leaderboard = query.cte(name="ranked_leaderboard")
@@ -651,6 +651,7 @@ def get_position(
         ranked_leaderboard.c.address,
         ranked_leaderboard.c.score,
         ranked_leaderboard.c.rank,
+        ranked_leaderboard.c.number,
     ).filter(
         ranked_leaderboard.c.address == address,
     )
@@ -663,10 +664,11 @@ def get_position(
         ranked_leaderboard.c.address,
         ranked_leaderboard.c.score,
         ranked_leaderboard.c.rank,
+        ranked_leaderboard.c.number,
     ).filter(
-        ranked_leaderboard.c.rank.between(  # taking off my hat!
-            my_position.c.rank - window_size,
-            my_position.c.rank + window_size,
+        ranked_leaderboard.c.number.between(  # taking off my hat!
+            my_position.c.number - window_size,
+            my_position.c.number + window_size,
         )
     )
 
