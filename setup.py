@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-with open("lootbox/version.txt") as ifp:
+with open("engineapi/version.txt") as ifp:
     VERSION = ifp.read().strip()
 
 long_description = ""
@@ -8,7 +8,7 @@ with open("README.md") as ifp:
     long_description = ifp.read()
 
 setup(
-    name="lootbox",
+    name="engine",
     version=VERSION,
     packages=find_packages(),
     install_requires=[
@@ -44,7 +44,7 @@ setup(
     python_requires=">=3.6",
     entry_points={
         "console_scripts": [
-            "lootbox=lootbox.cli:main",
+            "engine=engineapi.cli:main",
         ]
     },
     include_package_data=True,

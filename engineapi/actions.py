@@ -5,13 +5,23 @@ import uuid
 from brownie import network
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.expression import cast
+from sqlalchemy.sql.functions import percentile_disc
+from sqlalchemy import func, text, Integer
 from web3 import Web3
 from web3.types import ChecksumAddress
 
-from lootbox.Dropper import Dropper
+from engineapi.Dropper import Dropper
+from engineapi.routes.leaderboard import quartiles
 
 from . import Dropper, MockErc20, MockTerminus
-from .models import DropperClaimant, DropperContract, DropperClaim
+from .models import (
+    DropperClaimant,
+    DropperContract,
+    DropperClaim,
+    Leaderboard,
+    LeaderboardScores,
+)
 from .settings import BLOCKCHAINS_TO_BROWNIE_NETWORKS
 
 
@@ -329,7 +339,7 @@ def transform_claim_amount(
     erc20_contract = MockErc20.MockErc20(claim_info[1])
     decimals = cast(int, erc20_contract.decimals())
 
-    return db_amount * (10 ** decimals)
+    return db_amount * (10**decimals)
 
 
 def get_claimants(db_session: Session, dropper_claim_id, limit=None, offset=None):
@@ -372,7 +382,9 @@ def get_claimant(db_session: Session, dropper_claim_id, address):
     return claimant_query.one()
 
 
-def get_claimant_drops(db_session: Session, blockchain: str, address, limit=None, offset=None):
+def get_claimant_drops(
+    db_session: Session, blockchain: str, address, limit=None, offset=None
+):
     """
     Search for a claimant by address
     """
@@ -514,7 +526,10 @@ def get_claims(
     return query
 
 
-def get_claim_admin_pool(db_session: Session, dropper_claim_id: uuid.UUID,) -> Any:
+def get_claim_admin_pool(
+    db_session: Session,
+    dropper_claim_id: uuid.UUID,
+) -> Any:
     """
     Search for a claimant by address
     """
@@ -602,3 +617,194 @@ def delete_claimants(db_session: Session, dropper_claim_id, addresses):
     db_session.commit()
 
     return was_deleted
+
+
+def get_leaderboard_total_count(db_session: Session, leaderboard_id):
+    """
+    Get the total number of claimants in the leaderboard
+    """
+    print(leaderboard_id)
+    return (
+        db_session.query(LeaderboardScores)
+        .filter(LeaderboardScores.leaderboard_id == leaderboard_id)
+        .count()
+    )
+
+
+def get_position(
+    db_session: Session, leaderboard_id, address, window_size, limit: int, offset: int
+):
+    """
+
+    Return position by address with window size
+    """
+    query = db_session.query(
+        LeaderboardScores.address,
+        LeaderboardScores.score,
+        func.rank().over(order_by=LeaderboardScores.score.desc()).label("rank"),
+        # LeaderboardPosition.total_claims, # hah intresting idea
+    ).filter(LeaderboardScores.leaderboard_id == leaderboard_id)
+
+    ranked_leaderboard = query.cte(name="ranked_leaderboard")
+
+    query = db_session.query(
+        ranked_leaderboard.c.address,
+        ranked_leaderboard.c.score,
+        ranked_leaderboard.c.rank,
+    ).filter(
+        ranked_leaderboard.c.address == address,
+    )
+
+    my_position = query.cte(name="my_position")
+
+    # get the position with the window size
+
+    query = db_session.query(
+        ranked_leaderboard.c.address,
+        ranked_leaderboard.c.score,
+        ranked_leaderboard.c.rank,
+    ).filter(
+        ranked_leaderboard.c.rank.between(  # taking off my hat!
+            my_position.c.rank - window_size,
+            my_position.c.rank + window_size,
+        )
+    )
+
+    if limit:
+        query = query.limit(limit)
+
+    if offset:
+        query = query.offset(offset)
+
+    return query.all()
+
+
+def get_leaderboard_positions(
+    db_session: Session, leaderboard_id, limit: int, offset: int
+):
+    """
+    Get the leaderboard positions
+    """
+    query = (
+        db_session.query(
+            LeaderboardScores.address,
+            LeaderboardScores.score,
+            LeaderboardScores.points_data,
+            func.rank().over(order_by=LeaderboardScores.score.desc()).label("rank"),
+        )
+        .filter(LeaderboardScores.leaderboard_id == leaderboard_id)
+        .order_by(text("rank asc"))
+    )
+
+    if limit:
+        query = query.limit(limit)
+
+    if offset:
+        query = query.offset(offset)
+
+    return query.all()
+
+
+def get_qurtiles(db_session: Session, leaderboard_id):
+    """
+    Get the leaderboard qurtiles
+    https://docs.sqlalchemy.org/en/14/core/functions.html#sqlalchemy.sql.functions.percentile_disc
+    """
+
+    query = db_session.query(
+        LeaderboardScores.address,
+        LeaderboardScores.score,
+        func.rank().over(order_by=LeaderboardScores.score.desc()).label("rank"),
+    ).filter(LeaderboardScores.leaderboard_id == leaderboard_id)
+
+    ranked_leaderboard = query.cte(name="ranked_leaderboard")
+
+    current_count = db_session.query(ranked_leaderboard).count()
+
+    index_75 = int(current_count / 4)
+
+    index_50 = int(current_count / 2)
+
+    index_25 = int(current_count * 3 / 4)
+
+    q1 = db_session.query(ranked_leaderboard).limit(1).offset(index_25).first()
+
+    q2 = db_session.query(ranked_leaderboard).limit(1).offset(index_50).first()
+
+    q3 = db_session.query(ranked_leaderboard).limit(1).offset(index_75).first()
+
+    return q1, q2, q3
+
+
+def create_leaderboard(db_session: Session, title: str, description: str):
+    """
+    Create a leaderboard
+    """
+
+    leaderboard = Leaderboard(title=title, description=description)
+    db_session.add(leaderboard)
+    db_session.commit()
+
+    return leaderboard.id
+
+
+def get_leaderboard_by_id(db_session: Session, leaderboard_id):
+    """
+    Get the leaderboard by id
+    """
+    return db_session.query(Leaderboard).filter(Leaderboard.id == leaderboard_id).one()
+
+
+def get_leaderboard_by_title(db_session: Session, title):
+    """
+    Get the leaderboard by title
+    """
+    return db_session.query(Leaderboard).filter(Leaderboard.title == title).one()
+
+
+def list_leaderboards(db_session: Session, limit: int, offset: int):
+    """
+    List all leaderboards
+    """
+    query = db_session.query(Leaderboard.id, Leaderboard.title, Leaderboard.description)
+
+    if limit:
+        query = query.limit(limit)
+
+    if offset:
+        query = query.offset(offset)
+
+    return query.all()
+
+
+def add_scores(db_session: Session, leaderboard_id, scores):
+    """
+    Add scores to the leaderboard
+    """
+
+    leaderboard_scores = []
+
+    for score in scores:
+        leaderboard_scores.append(
+            {
+                "leaderboard_id": leaderboard_id,
+                "address": score["address"],
+                "score": score["score"],
+                "points_data": score["points_data"],
+            }
+        )
+
+    insert_statement = insert(LeaderboardScores).values(leaderboard_scores)
+
+    result_stmt = insert_statement.on_conflict_do_update(
+        index_elements=[LeaderboardScores.address, LeaderboardScores.leaderboard_id],
+        set_=dict(
+            score=insert_statement.excluded.score,
+            points_data=insert_statement.excluded.points_data,
+            updated_at=datetime.now(),
+        ),
+    )
+    db_session.execute(result_stmt)
+    db_session.commit()
+
+    return leaderboard_scores
