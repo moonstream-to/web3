@@ -37,6 +37,7 @@ router = APIRouter(
     prefix="/drops",
 )
 
+
 @router.get("/", response_model=data.DropResponse)
 async def get_drop_handler(
     dropper_claim_id: UUID,
@@ -75,7 +76,7 @@ async def get_drop_handler(
         )
 
     dropper_contract = Dropper.Dropper(claimant.dropper_contract_address)
-    message_hash = dropper_contract.claim_message_hash(
+    message_hash = await dropper_contract.claim_message_hash(
         claimant.claim_id,
         claimant.address,
         claimant.claim_block_deadline,
