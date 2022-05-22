@@ -12,6 +12,7 @@ from eth_account._utils.signing import sign_message_hash
 import eth_keys
 import requests
 from hexbytes import HexBytes
+import httpx
 
 from .settings import (
     SIGNER_KEYSTORE,
@@ -124,21 +125,29 @@ class InstanceSigner(Signer):
 
         self.current_signer_uri = f"http://{instances[0]['private_ip_address']}:{MOONSTREAM_AWS_SIGNER_INSTANCE_PORT}/sign"
 
-    def sign_message(self, message: str):
+    async def sign_message(self, message: str):
         # TODO(kompotkot): What to do if self.current_signer_uri is not None but the signing server went down?
         if self.current_signer_uri is None:
             self.refresh_signer()
 
         signed_message = ""
         try:
-            resp = requests.post(
-                self.current_signer_uri,
-                headers={"Content-Type": "application/json"},
-                json={"unsigned_data": str(message)},
-            )
-            resp.raise_for_status()
-            body = resp.json()
-            signed_message = body["signed_data"]
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    self.current_signer_uri,
+                    json={"message": message},
+                    headers={"Content-Type": "application/json"},
+                )
+                response.raise_for_status()
+                signed_message = response.json()["signed_message"]
+            # resp = requests.post(
+            #     self.current_signer_uri,
+            #     headers={"Content-Type": "application/json"},
+            #     json={"unsigned_data": str(message)},
+            # )
+            # resp.raise_for_status()
+            # body = resp.json()
+            # signed_message = body["signed_data"]
         except Exception as err:
             logger.error(f"Failed signing of message with instance server, {err}")
             raise SignWithInstanceFail("Failed signing of message with instance server")

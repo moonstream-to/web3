@@ -16,6 +16,7 @@ setup(
         "boto3",
         "eth-brownie",
         "fastapi",
+        "httpx",
         "psycopg2-binary",
         "pydantic",
         "sqlalchemy",
