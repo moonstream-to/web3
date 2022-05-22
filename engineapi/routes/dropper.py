@@ -76,7 +76,7 @@ async def get_drop_handler(
         )
 
     dropper_contract = Dropper.Dropper(claimant.dropper_contract_address)
-    message_hash = await dropper_contract.claim_message_hash(
+    message_hash = dropper_contract.claim_message_hash(
         claimant.claim_id,
         claimant.address,
         claimant.claim_block_deadline,
@@ -84,7 +84,7 @@ async def get_drop_handler(
     )
 
     try:
-        signature = signatures.DROP_SIGNER.sign_message(message_hash)
+        signature = await signatures.DROP_SIGNER.sign_message(message_hash)
     except signatures.AWSDescribeInstancesFail:
         raise DropperHTTPException(status_code=500)
     except signatures.SignWithInstanceFail:
