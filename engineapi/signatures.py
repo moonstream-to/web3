@@ -139,7 +139,7 @@ class InstanceSigner(Signer):
                     headers={"Content-Type": "application/json"},
                 )
                 response.raise_for_status()
-                signed_message = await response.json()["signed_message"]
+                signed_message = response.json()["signed_message"]
             # resp = requests.post(
             #     self.current_signer_uri,
             #     headers={"Content-Type": "application/json"},
