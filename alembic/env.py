@@ -18,8 +18,9 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from lootbox.models import Base as LootboxBase
+#from lootbox.models import Base as LootboxBase
 
+from engineapi.models import Base as LootboxBase
 target_metadata = LootboxBase.metadata
 
 # other values from the config, defined by the needs of env.py,

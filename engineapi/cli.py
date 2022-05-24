@@ -1,5 +1,10 @@
 import argparse
+from ast import arg
+import csv
+import json
 import logging
+
+from engineapi.models import Leaderboard
 
 from . import actions
 from . import db
@@ -140,7 +145,8 @@ def dropper_activate_drop_handler(args: argparse.Namespace) -> None:
     try:
         with db.yield_db_session_ctx() as db_session:
             activated_claim = actions.activate_claim(
-                db_session=db_session, dropper_claim_id=args.dropper_claim_id,
+                db_session=db_session,
+                dropper_claim_id=args.dropper_claim_id,
             )
     except Exception as err:
         logger.error(f"Unhandled exception: {err}")
@@ -152,7 +158,8 @@ def dropper_deactivate_drop_handler(args: argparse.Namespace) -> None:
     try:
         with db.yield_db_session_ctx() as db_session:
             deactivated_claim = actions.deactivate_claim(
-                db_session=db_session, dropper_claim_id=args.dropper_claim_id,
+                db_session=db_session,
+                dropper_claim_id=args.dropper_claim_id,
             )
     except Exception as err:
         logger.error(f"Unhandled exception: {err}")
@@ -197,7 +204,8 @@ def dropper_delete_drop_handler(args: argparse.Namespace) -> None:
     try:
         with db.yield_db_session_ctx() as db_session:
             removed_claim = actions.delete_claim(
-                db_session=db_session, dropper_claim_id=args.dropper_claim_id,
+                db_session=db_session,
+                dropper_claim_id=args.dropper_claim_id,
             )
     except Exception as err:
         logger.error(f"Unhandled /delete_dropper_claim exception: {err}")
@@ -210,8 +218,6 @@ def add_claimants_handler(args: argparse.Namespace) -> None:
     """
     Load list of claimats from csv file and add them to the database.
     """
-
-    import csv
 
     claimants = []
 
@@ -304,6 +310,51 @@ def list_claimants_handler(args: argparse.Namespace) -> None:
     print(claimants)
 
 
+def add_scores_handler(args: argparse.Namespace) -> None:
+
+    scores = []
+
+    with open(args.input_file, "r") as f:
+
+        json_input = json.load(f)
+
+        with db.yield_db_session_ctx() as db_session:
+
+            try:
+                scores = actions.add_scores(
+                    db_session=db_session,
+                    leaderboard_id=args.leaderboard_id,
+                    scores=json_input,
+                )
+            except Exception as err:
+                logger.error(f"Unhandled /add_scores exception: {err}")
+                return
+
+
+def list_leaderboards_handler(args: argparse.Namespace) -> None:
+
+    with db.yield_db_session_ctx() as db_session:
+        Leaderboards = actions.list_leaderboards(
+            db_session=db_session,
+            limit=args.limit,
+            offset=args.offset,
+        )
+
+        print(Leaderboards)
+
+
+def create_leaderboard_handler(args: argparse.Namespace) -> None:
+
+    with db.yield_db_session_ctx() as db_session:
+        Leaderboard = actions.create_leaderboard(
+            db_session=db_session,
+            title=args.title,
+            description=args.description,
+        )
+
+        print(Leaderboard)
+
+
 def main() -> None:
 
     parser = argparse.ArgumentParser(
@@ -345,7 +396,10 @@ def main() -> None:
         "list", description="List signing servers"
     )
     parser_signing_server_list.add_argument(
-        "-i", "--instance", type=str, help="Instance id to get",
+        "-i",
+        "--instance",
+        type=str,
+        help="Instance id to get",
     )
     parser_signing_server_list.set_defaults(func=signing_server_list_handler)
 
@@ -370,7 +424,11 @@ def main() -> None:
         "sleep", description="Terminate signing server"
     )
     parser_signing_server_sleep.add_argument(
-        "-i", "--instance", type=str, required=True, help="Instance id to terminate",
+        "-i",
+        "--instance",
+        type=str,
+        required=True,
+        help="Instance id to terminate",
     )
     parser_signing_server_sleep.add_argument(
         "-c",
@@ -401,6 +459,65 @@ def main() -> None:
         description="Engine-db commands"
     )
 
+    parser_leaderboard = subparsers_engine_database.add_parser(
+        "leaderboard", description="Leaderboard db commands"
+    )
+    parser_leaderboard.set_defaults(func=lambda _: parser_dropper.print_help())
+
+    subparsers_leaderboard = parser_leaderboard.add_subparsers(
+        description="Leaderboard db commands"
+    )
+
+    parser_leaderboard_create = subparsers_leaderboard.add_parser(
+        "create-leaderboard", description="Create dropper contract"
+    )
+    parser_leaderboard_create.add_argument(
+        "-t",
+        "--title",
+        type=str,
+        required=False,
+        help="Leaderboard title",
+    )
+    parser_leaderboard_create.add_argument(
+        "-d",
+        "--description",
+        type=str,
+        required=False,
+        help="Leaderboard description",
+    )
+
+    parser_leaderboard_create.set_defaults(func=create_leaderboard_handler)
+
+    parser_leaderboards_list = subparsers_leaderboard.add_parser(
+        "list-leaderboards", description="List leaderboards"
+    )
+    parser_leaderboards_list.add_argument(
+        "--limit",
+        type=int,
+        default=10,
+    )
+    parser_leaderboards_list.add_argument("--offset", type=int, default=0)
+    parser_leaderboards_list.set_defaults(func=list_leaderboards_handler)
+
+    parser_leaderboard_score = subparsers_leaderboard.add_parser(
+        "add-scores", description="Add position to leaderboards score"
+    )
+
+    parser_leaderboard_score.add_argument(
+        "--leaderboard-id",
+        type=str,
+        required=True,
+        help="Contract description",
+    )
+    parser_leaderboard_score.add_argument(
+        "--input-file",
+        type=str,
+        required=True,
+        help="File with scores",
+    )
+
+    parser_leaderboard_score.set_defaults(func=add_scores_handler)
+
     parser_dropper = subparsers_engine_database.add_parser(
         "dropper", description="Dropper db commands"
     )
@@ -421,16 +538,32 @@ def main() -> None:
         help="Blockchain in wich contract was deployed",
     )
     parser_dropper_contract_create.add_argument(
-        "-a", "--address", type=str, required=True, help="Contract address",
+        "-a",
+        "--address",
+        type=str,
+        required=True,
+        help="Contract address",
     )
     parser_dropper_contract_create.add_argument(
-        "-t", "--title", type=str, required=False, help="Contract title",
+        "-t",
+        "--title",
+        type=str,
+        required=False,
+        help="Contract title",
     )
     parser_dropper_contract_create.add_argument(
-        "-d", "--description", type=str, required=False, help="Contract description",
+        "-d",
+        "--description",
+        type=str,
+        required=False,
+        help="Contract description",
     )
     parser_dropper_contract_create.add_argument(
-        "-i", "--image-uri", type=str, required=False, help="Contract image uri",
+        "-i",
+        "--image-uri",
+        type=str,
+        required=False,
+        help="Contract image uri",
     )
 
     parser_dropper_contract_create.set_defaults(func=create_dropper_contract_handler)
@@ -458,7 +591,11 @@ def main() -> None:
         help="Blockchain in wich contract was deployed",
     )
     parser_dropper_contract_delete.add_argument(
-        "-a", "--address", type=str, required=True, help="Contract address",
+        "-a",
+        "--address",
+        type=str,
+        required=True,
+        help="Contract address",
     )
     parser_dropper_contract_delete.set_defaults(func=delete_dropper_contract_handler)
 
@@ -473,10 +610,18 @@ def main() -> None:
         help="Dropper contract id",
     )
     parser_dropper_create_drop.add_argument(
-        "-t", "--title", type=str, required=True, help="Drop title",
+        "-t",
+        "--title",
+        type=str,
+        required=True,
+        help="Drop title",
     )
     parser_dropper_create_drop.add_argument(
-        "-d", "--description", type=str, required=True, help="Drop description",
+        "-d",
+        "--description",
+        type=str,
+        required=True,
+        help="Drop description",
     )
     parser_dropper_create_drop.add_argument(
         "-b",
@@ -486,13 +631,24 @@ def main() -> None:
         help="Block deadline at which signature will be not returned",
     )
     parser_dropper_create_drop.add_argument(
-        "-T", "--terminus-address", type=str, required=True, help="Terminus address",
+        "-T",
+        "--terminus-address",
+        type=str,
+        required=True,
+        help="Terminus address",
     )
     parser_dropper_create_drop.add_argument(
-        "-p", "--terminus-pool-id", type=int, required=True, help="Terminus pool id",
+        "-p",
+        "--terminus-pool-id",
+        type=int,
+        required=True,
+        help="Terminus pool id",
     )
     parser_dropper_create_drop.add_argument(
-        "-m", "--claim-id", type=int, help="Claim id",
+        "-m",
+        "--claim-id",
+        type=int,
+        help="Claim id",
     )
 
     parser_dropper_create_drop.set_defaults(func=dropper_create_drop_handler)
@@ -501,7 +657,11 @@ def main() -> None:
         "activate-drop", description="Activate dropper drop"
     )
     parser_dropper_activate_drop.add_argument(
-        "-c", "--dropper-claim-id", type=str, required=True, help="Dropper claim id",
+        "-c",
+        "--dropper-claim-id",
+        type=str,
+        required=True,
+        help="Dropper claim id",
     )
     parser_dropper_activate_drop.set_defaults(func=dropper_activate_drop_handler)
 
@@ -509,7 +669,11 @@ def main() -> None:
         "deactivate-drop", description="Deactivate dropper drop"
     )
     parser_dropper_deactivate_drop.add_argument(
-        "-c", "--dropper-claim-id", type=str, required=True, help="Dropper claim id",
+        "-c",
+        "--dropper-claim-id",
+        type=str,
+        required=True,
+        help="Dropper claim id",
     )
     parser_dropper_deactivate_drop.set_defaults(func=dropper_deactivate_drop_handler)
 
@@ -525,7 +689,11 @@ def main() -> None:
         "list-drops", description="List dropper drops"
     )
     parser_dropper_list_drops.add_argument(
-        "-a", "--active", type=bool, required=True, help="Claim is active flag",
+        "-a",
+        "--active",
+        type=bool,
+        required=True,
+        help="Claim is active flag",
     )
     parser_dropper_list_drops.add_argument(
         "-c",
@@ -540,7 +708,11 @@ def main() -> None:
         "delete-drop", description="Delete dropper drop"
     )
     parser_dropper_delete_drop.add_argument(
-        "-d", "--dropper-claim-id", type=str, required=True, help="Drop id in database",
+        "-d",
+        "--dropper-claim-id",
+        type=str,
+        required=True,
+        help="Drop id in database",
     )
     parser_dropper_delete_drop.set_defaults(func=dropper_delete_drop_handler)
 

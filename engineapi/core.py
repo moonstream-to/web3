@@ -6,7 +6,7 @@ import sys
 import time
 from typing import Any, Dict, Optional, List, Set
 
-from lootbox.MockErc20 import MockErc20
+from engineapi.MockErc20 import MockErc20
 from brownie import network
 
 
@@ -289,7 +289,7 @@ def create_lootboxes_from_config(
             if item["rewardType"] == 20:
                 erc20_contract = MockErc20(item["tokenAddress"])
                 erc20_decimals = erc20_contract.decimals()
-                item["tokenAmount"] *= 10 ** erc20_decimals
+                item["tokenAmount"] *= 10**erc20_decimals
             lootbox_items.append(_lootbox_item_from_json_object(item))
 
         lootboxes.append(
