@@ -5,7 +5,6 @@ import Web3Context from "../../core/providers/Web3Provider/context";
 import useDrops from "../../core/hooks/dropper/useDrops";
 import useClaim from "../../core/hooks/dropper/useDrop";
 import Claimers from "../Claimers";
-import { useRouter } from "../../core/hooks";
 
 const _Drop = ({
   dropId,

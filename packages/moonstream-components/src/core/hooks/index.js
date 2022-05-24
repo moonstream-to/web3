@@ -8,7 +8,6 @@ export { default as useLootboxToken } from "./useLootboxToken";
 export { default as usePresignedURL } from "./usePresignedURL";
 export { default as useQuery } from "./useQuery";
 export { default as useRouter } from "./useRouter";
-export { default as useStatus } from "./useStatus";
 export { default as useStorage } from "./useStorage";
 export { default as useTerminus } from "./useTerminus";
 export { default as useTerminusPools } from "./useTerminusPools";

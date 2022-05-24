@@ -112,6 +112,10 @@ export interface Dropper extends BaseContract {
       claimId: number | string | BN
     ): NonPayableTransactionObject<boolean>;
 
+    claimUri(
+      claimId: number | string | BN
+    ): NonPayableTransactionObject<string>;
+
     createClaim(
       tokenType: number | string | BN,
       tokenAddress: string,
@@ -166,6 +170,11 @@ export interface Dropper extends BaseContract {
     setClaimStatus(
       claimId: number | string | BN,
       status: boolean
+    ): NonPayableTransactionObject<void>;
+
+    setClaimUri(
+      claimId: number | string | BN,
+      uri: string
     ): NonPayableTransactionObject<void>;
 
     setSignerForClaim(

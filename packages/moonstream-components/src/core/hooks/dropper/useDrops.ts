@@ -61,7 +61,7 @@ const useDrops = ({
       );
       //terminusAuthorizations = [[terminus_addess, poolId, balance]]
       const terminusAdmin = terminusAuthorizations.filter(
-        (item) => item[2] > 0
+        (item: any) => item[2] > 0
       );
       return terminusAdmin;
     }
@@ -83,7 +83,7 @@ const useDrops = ({
   const _getAdminClaimsList = async () => {
     const claimsByPermission = adminPermissions.data
       ? await Promise.all(
-          adminPermissions.data.map(async (permission) => {
+          adminPermissions.data.map(async (permission: any) => {
             const response = await getAdminList(
               permission[0],
               targetChain.name,

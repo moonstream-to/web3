@@ -45,7 +45,7 @@ export const getActiveOpening = async (
   contractAddress: any,
   ctx: MoonstreamWeb3ProviderInterface
 ) => {
-  const lootbox = lootboxContract(contractAddress, ctx);
+  const lootbox = lootboxContract(contractAddress, ctx) as any as Lootbox;
   const requestHash = await lootbox.methods
     //eslint-disable-next-line
     .CurrentOpeningforUser(ctx.account)
@@ -59,6 +59,7 @@ export const getActiveOpening = async (
     return null;
   }
   const opening = await lootbox.methods
+    //eslint-disable-next-line
     .ActiveLootboxOpenings(requestHash)
     .call();
   console.log("opening", opening);
