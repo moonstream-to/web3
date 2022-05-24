@@ -9,8 +9,6 @@ import { queryHttp } from "../../utils/http";
 const usePlayerClaims = ({
   targetChain,
   ctx,
-  initialPageSize,
-  initialPage,
   playerAddress,
   contractAddress,
 }: {
@@ -21,8 +19,8 @@ const usePlayerClaims = ({
   playerAddress?: string;
   contractAddress?: string;
 }) => {
-  const [page, setPage] = React.useState(initialPage ?? 0);
-  const [pageSize, setPageSize] = React.useState(initialPageSize ?? 10);
+  const [page, setPage] = React.useState(0);
+  const [pageSize, setPageSize] = React.useState(0);
 
   const claimsList = useQuery(
     [
@@ -57,6 +55,7 @@ const usePlayerClaims = ({
       keepPreviousData: true,
       onSuccess: () => {},
       enabled:
+        pageSize !== 0 &&
         ctx.web3?.utils.isAddress(playerAddress ?? ctx.account) &&
         ctx.chainId === ctx.chainId,
     }

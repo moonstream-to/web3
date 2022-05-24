@@ -78,7 +78,7 @@ export const PAGE_SIZE = 20;
 AWS assets path where you store images. It will be preconnected to speed up. Preloading images will work by defining those in assets array
 and getStaticProps of the page (see /pages_templates for examples)
 */
-export const AWS_ASSETS_PATH = `assets/path`;
+export const AWS_ASSETS_PATH = `https://s3.amazonaws.com/static.simiotics.com/moonstream/assets`;
 
 /*
 White Logo with text URL (.png)

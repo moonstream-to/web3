@@ -286,9 +286,7 @@ const _DropCard = ({
           as={Link}
           colorScheme={"orange"}
           variant="outline"
-          // href={`/drops/details/`}
           onClick={() => {
-            // router.appendQuery("dropId", claim.id);
             if (query?.dropId) {
               router.push({
                 pathname: "/drops",

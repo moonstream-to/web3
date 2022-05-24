@@ -19,7 +19,9 @@ const useDropper = ({
       ...queryCacheProps,
       onSuccess: () => {},
       enabled:
-        ctx.web3?.utils.isAddress(ctx.account) && ctx.chainId === ctx.chainId,
+        !!dropperAddress &&
+        ctx.web3?.utils.isAddress(ctx.account) &&
+        ctx.chainId === ctx.chainId,
     }
   );
 
