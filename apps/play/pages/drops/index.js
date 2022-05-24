@@ -120,6 +120,7 @@ const Drops = () => {
               <Image
                 pl={2}
                 h="24px"
+                alt={"metamask"}
                 src="https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg"
               />
             </Button>
