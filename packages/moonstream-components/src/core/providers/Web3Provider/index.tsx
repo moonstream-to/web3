@@ -1,7 +1,10 @@
 import React from "react";
 import Web3Context, { WALLET_STATES } from "./context";
 import Web3 from "web3";
-import { ChainInterface } from "../../../../../../types/Moonstream";
+import {
+  ChainInterface,
+  GetMethodsAbiType,
+} from "../../../../../../types/Moonstream";
 
 declare global {
   interface Window {
@@ -15,6 +18,17 @@ interface TokenInterface {
   deadline: number;
   signed_message: string;
 }
+
+export const getMethodsABI: typeof GetMethodsAbiType = (abi, name) => {
+  const index = abi.findIndex(
+    (item) => item.name === name && item.type == "function"
+  );
+  if (index !== -1) {
+    const item = abi[index];
+    return item;
+  } else throw "accesing wrong abi element";
+};
+
 export const chains: { [index: string]: ChainInterface } = {
   local: {
     chainId: 1337,
@@ -111,7 +125,6 @@ if (!process.env.NEXT_PUBLIC_ENGINE_TARGET_CHAIN)
   throw "NEXT_PUBLIC_ENGINE_TARGET_CHAIN not defined";
 export const targetChain =
   chains[`${process.env.NEXT_PUBLIC_ENGINE_TARGET_CHAIN}`];
-
 
 const Web3Provider = ({ children }: { children: JSX.Element }) => {
   const [web3] = React.useState<Web3>(new Web3(null));
@@ -265,7 +278,6 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
 
   const defaultTxConfig = { from: account };
 
-
   return (
     <Web3Context.Provider
       value={{
@@ -277,6 +289,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
         chainId,
         defaultTxConfig,
         signAccessToken,
+        getMethodsABI,
       }}
     >
       {children}

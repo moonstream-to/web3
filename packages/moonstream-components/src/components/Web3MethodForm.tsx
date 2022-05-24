@@ -1,32 +1,62 @@
-import React from "react";
+import React, { Fragment, useContext } from "react";
 import {
   Flex,
   Button,
   chakra,
   Fade,
   Input,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-  NumberIncrementStepper,
-  NumberDecrementStepper,
+  Stack,
+  Text,
+  Heading,
+  Box,
 } from "@chakra-ui/react";
+import { AbiInput, AbiItem } from "web3-utils";
+import { useMutation } from "react-query";
+import Web3Context from "../core/providers/Web3Provider/context";
+import { useToast } from "../core/hooks";
+
+interface argumentField {
+  placeholder: string;
+  initialValue: string;
+  // hide: boolean;
+}
+interface argumentFields {
+  [Key: string]: argumentField;
+}
+
+interface extendedInputs extends AbiInput {
+  meta?: {
+    value: number | string;
+    placeholder: number | string;
+    hide: boolean;
+  };
+}
+interface stateInterface extends Omit<AbiItem, "inputs"> {
+  inputs: Array<extendedInputs>;
+}
+
+// interface
 
 const Web3MethodForm = ({
   method,
   argumentFields,
+  hide,
   rendered,
   onClick,
-  isLoading,
   onCancel,
+  contractAddress,
+  ...props
 }: {
-  method: any;
-  argumentFields: any;
-  rendered: any;
-  onClick: any;
-  isLoading: any;
-  onCancel: any;
+  method: AbiItem;
+  argumentFields?: argumentFields;
+  hide?: string[];
+  rendered: boolean;
+  onClick?: Function;
+  onCancel?: Function;
+  contractAddress: string;
+  props?: any;
 }) => {
+  console.log("method,", method);
   const setArguments = (
     state: any,
     { value, index }: { value: any; index: any }
@@ -37,13 +67,17 @@ const Web3MethodForm = ({
     return { ...newState };
   };
 
+  const toast = useToast();
   const initialState = React.useMemo(() => {
-    // console.debug("memo trig");
-    const newState = { ...method };
-    newState.inputs.forEach((element: any, index: any) => {
+    const newState: stateInterface = { ...(method as any) };
+    newState.inputs?.forEach((element: any, index: number) => {
       newState.inputs[index]["meta"] = {
-        placeholder: argumentFields[element.name]?.placeholder ?? element.name,
-        value: argumentFields[element.name]?.initialValue ?? "",
+        placeholder:
+          (argumentFields && argumentFields[element.name]?.placeholder) ??
+          element.name,
+        value:
+          (argumentFields && argumentFields[element.name]?.initialValue) ?? "",
+        hide: hide?.includes(element.name) ?? false,
       };
     });
     return newState;
@@ -60,30 +94,58 @@ const Web3MethodForm = ({
   const handleClose = React.useCallback(() => {
     state.inputs.forEach((inputElement: any, index: any) => {
       dispatchArguments({
-        value: argumentFields[inputElement.name]?.initialValue ?? undefined,
+        value:
+          (argumentFields && argumentFields[inputElement.name]?.initialValue) ??
+          undefined,
         index,
       });
     });
-    onCancel();
+    onCancel && onCancel();
   }, [state, argumentFields, onCancel]);
+
+  const web3call = async ({ args }: { args: any }) => {
+    const contract = new web3ctx.web3.eth.Contract([method]);
+    contract.options.address = contractAddress;
+    console.log("args", ...args);
+    const response =
+      method.name &&
+      (await contract.methods[method.name](...args).send({
+        from: web3ctx.account,
+      }));
+    return response;
+  };
+  const tx = useMutation(({ args }: { args: any }) => web3call({ args }), {
+    onSuccess: () => {
+      toast("Transaction went to the moon!", "success");
+    },
+    onError: () => {
+      toast("Transaction failed >.<", "error");
+    },
+  });
+
   const handleSubmit = () => {
-    const returnedObject: any = {};
-    state.inputs.forEach((inputElement: any) => {
-      returnedObject[inputElement.name] = inputElement.meta.value;
+    const returnedObject: any = [];
+    state.inputs.forEach((inputElement: any, index: number) => {
+      console.log("inputElement.type", inputElement.type);
+      returnedObject[index] =
+        inputElement.type === "address"
+          ? web3ctx.web3.utils.toChecksumAddress(inputElement.meta.value)
+          : inputElement.meta.value;
     });
 
-    onClick(returnedObject);
+    tx.mutate({ args: returnedObject });
+    onClick && onClick(returnedObject);
   };
 
   React.useEffect(() => {
-    if (!isLoading && wasSent) {
+    if (!tx.isLoading && wasSent) {
       setWasSent(false);
       handleClose();
     }
-    if (!wasSent && isLoading) {
+    if (!wasSent && tx.isLoading) {
       setWasSent(true);
     }
-  }, [isLoading, state, argumentFields, onCancel, wasSent, handleClose]);
+  }, [tx.isLoading, state, argumentFields, onCancel, wasSent, handleClose]);
 
   const handleKeypress = (e: any) => {
     console.debug("handleKeypress!", e.charCode);
@@ -93,22 +155,37 @@ const Web3MethodForm = ({
     }
   };
 
+  const web3ctx = useContext(Web3Context);
+
+  console.log("state,", state);
   if (!rendered) return <></>;
   return (
-    <Fade in={rendered} style={{ width: "100%" }}>
-      <Flex w="100%" justifyContent="center" px={20} alignItems="center">
+    <Fade in={rendered}>
+      <Stack justifyContent="center" px={2} alignItems="center" {...props}>
+        <Heading
+          wordBreak={"break-all"}
+          fontSize={
+            method?.name?.length && method?.name?.length > 12 ? "xl" : "3xl"
+          }
+        >
+          {method.name}
+        </Heading>
         {state.inputs.map((inputItem: any, index: any) => {
-          if (
-            Object.keys(argumentFields).includes(inputItem.name) &&
-            inputItem.name
-          ) {
+          if (!inputItem.hide) {
             return (
-              <>
-                {inputItem.type === "string" && (
+              <Box key={`${inputItem.name}-${index}-abiitems`} w="100%">
+                <Text mb="8px" wordBreak={"break-all"}>
+                  {inputItem.name}
+                  {` [${inputItem.type}]`}
+                </Text>
+                {(inputItem.type === "string" ||
+                  inputItem.type === "bytes" ||
+                  inputItem.type === "uint256" ||
+                  inputItem.type === "uint256[]") && (
                   <Input
                     onKeyPress={handleKeypress}
                     type="search"
-                    key={`argument-string-${inputItem.name}`}
+                    key={`argument-string-${inputItem.name}${inputItem.type}`}
                     value={inputItem.meta.value}
                     onChange={(event) =>
                       dispatchArguments({
@@ -116,12 +193,15 @@ const Web3MethodForm = ({
                         index,
                       })
                     }
-                    placeholder={inputItem.meta.placeholder}
+                    placeholder={
+                      inputItem.meta.placeholder ??
+                      inputItem.name ??
+                      inputItem.type
+                    }
                     size="sm"
                     fontSize={"sm"}
                     w="100%"
                     variant={"outline"}
-                    minW="420px"
                   />
                 )}
                 {inputItem.type === "address" && (
@@ -136,60 +216,40 @@ const Web3MethodForm = ({
                         index,
                       })
                     }
-                    placeholder={inputItem.meta.placeholder}
+                    placeholder={inputItem.meta.placeholder ?? inputItem.name}
                     size="sm"
                     fontSize={"sm"}
                     w="100%"
                     variant={"outline"}
-                    minW="420px"
+                    // minW="420px"
                   />
                 )}
-                {inputItem.type === "uint256" && (
-                  <NumberInput
-                    key={`argument-num-${inputItem.name}`}
-                    onKeyPress={handleKeypress}
-                    defaultValue={0}
-                    onChange={(value) =>
-                      dispatchArguments({
-                        value: value,
-                        index,
-                      })
-                    }
-                    value={inputItem.meta.value}
-                    size="sm"
-                    mx={2}
-                    isDisabled={isLoading}
-                    variant="outline"
-                  >
-                    <NumberInputField />
-                    <NumberInputStepper>
-                      <NumberIncrementStepper />
-                      <NumberDecrementStepper />
-                    </NumberInputStepper>
-                  </NumberInput>
-                )}
-              </>
+              </Box>
             );
           }
         })}
-        <Button
-          variant={"solid"}
-          colorScheme={"orange"}
-          size="sm"
-          onClick={handleSubmit}
-          isLoading={isLoading}
-        >
-          Submit
-        </Button>
-        <Button
-          variant={"solid"}
-          colorScheme={"orange"}
-          size="sm"
-          onClick={() => handleClose()}
-        >
-          Cancel
-        </Button>
-      </Flex>
+        <Flex direction={"row"} flexWrap="wrap">
+          <Button
+            variant={"solid"}
+            colorScheme={"orange"}
+            size="sm"
+            onClick={handleSubmit}
+            isLoading={tx.isLoading}
+          >
+            Submit
+          </Button>
+          {onCancel && (
+            <Button
+              variant={"solid"}
+              colorScheme={"orange"}
+              size="sm"
+              onClick={() => handleClose()}
+            >
+              Cancel
+            </Button>
+          )}
+        </Flex>
+      </Stack>
     </Fade>
   );
 };

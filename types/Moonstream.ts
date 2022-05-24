@@ -1,4 +1,5 @@
 import Web3 from "web3/types";
+import { AbiItem } from "web3-utils";
 
 export interface WalletStatesInterface {
   ONBOARD: String;
@@ -12,6 +13,10 @@ export interface ChainInterface {
   rpcs: Array<string>;
 }
 
+export declare function GetMethodsAbiType<T>(
+  abi: AbiItem[],
+  name: keyof T
+): AbiItem;
 export interface MoonstreamWeb3ProviderInterface {
   web3: Web3;
   onConnectWalletClick: Function;
@@ -21,6 +26,7 @@ export interface MoonstreamWeb3ProviderInterface {
   chainId: number;
   defaultTxConfig: Object;
   signAccessToken: Function;
+  getMethodsABI: typeof GetMethodsAbiType;
 }
 
 export interface updateDropArguments {

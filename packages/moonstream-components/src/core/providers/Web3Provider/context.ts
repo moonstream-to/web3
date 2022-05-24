@@ -4,6 +4,7 @@ import {
   WalletStatesInterface,
   MoonstreamWeb3ProviderInterface,
 } from "../../../../../../types/Moonstream";
+import { getMethodsABI } from ".";
 
 export enum txStatus {
   READY = 0,
@@ -34,6 +35,7 @@ const Web3Context = createContext<MoonstreamWeb3ProviderInterface>({
   chainId: 0,
   defaultTxConfig: {},
   signAccessToken: () => console.error("not intied"),
+  getMethodsABI: getMethodsABI,
 });
 
 export default Web3Context;
