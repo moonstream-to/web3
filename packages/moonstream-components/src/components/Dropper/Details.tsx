@@ -35,16 +35,6 @@ const _Drop = ({
     claimId: dropId,
   });
 
-  const router = useRouter();
-
-  React.useEffect(() => {
-    router.appendQueries({
-      claimantsLimit: claimantsPageSize,
-      claimantsPage: claimantsPage,
-    });
-    //eslint-disable-next-line
-  }, [claimantsPageSize, claimantsPage]);
-
   if (!claim || !claimants.data || !adminClaims.data || adminClaims.isLoading)
     return <Spinner />;
 
@@ -67,6 +57,8 @@ const _Drop = ({
           }}
           setPage={setClaimantsPage}
           setLimit={setClaimantsPageSize}
+          page={claimantsPage}
+          limit={claimantsPageSize}
           hasMore={claimants.data.length == claimantsPageSize ? true : false}
         />
       </Flex>
