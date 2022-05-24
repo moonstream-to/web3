@@ -39,6 +39,7 @@ router = APIRouter(
 
 
 @router.get("", response_model=data.DropResponse)
+@router.get("/", response_model=data.DropResponse)
 async def get_drop_handler(
     dropper_claim_id: UUID,
     address: str,
