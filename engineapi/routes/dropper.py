@@ -1,18 +1,15 @@
 """
 Lootbox API.
 """
-from atexit import register
 import logging
-import time
-from typing import List, Dict, Optional
+from typing import List, Optional
 from uuid import UUID
 
 from web3 import Web3
 from brownie import network
 
 
-from fastapi import APIRouter, Body, FastAPI, Request, Depends, Query
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter, Body, Request, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -21,12 +18,8 @@ from .. import data
 from .. import db
 from .. import Dropper
 from .. import signatures
-from ..middleware import DropperHTTPException, DropperAuthMiddleware
-from ..settings import (
-    ENGINE_BROWNIE_NETWORK,
-    DOCS_TARGET_PATH,
-    ORIGINS,
-)
+from ..middleware import DropperHTTPException
+from ..settings import ENGINE_BROWNIE_NETWORK
 
 network.connect(ENGINE_BROWNIE_NETWORK)
 
@@ -161,6 +154,7 @@ async def get_drop_batch_handler(
             data.DropBatchResponseItem(
                 claimant=claimant_drop.address,
                 amount=transformed_amount,
+                amount_string=str(transformed_amount),
                 claim_id=claimant_drop.claim_id,
                 block_deadline=claimant_drop.claim_block_deadline,
                 signature=signature,
