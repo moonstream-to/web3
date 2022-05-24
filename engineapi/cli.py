@@ -3,7 +3,9 @@ from ast import arg
 import csv
 import json
 import logging
+from uuid import UUID
 
+from brownie import network
 from engineapi.models import Leaderboard
 
 from . import actions
@@ -11,6 +13,8 @@ from . import db
 from . import signatures
 from . import data
 from . import Lootbox, core, drop, MockErc20, Dropper, auth, MockTerminus
+from .settings import BLOCKCHAINS_TO_BROWNIE_NETWORKS
+from .models import DropperClaim, DropperContract
 
 
 logging.basicConfig(level=logging.INFO)
@@ -358,12 +362,22 @@ def create_leaderboard_handler(args: argparse.Namespace) -> None:
 def claimant_signature_refetch_handler(args: argparse.Namespace) -> None:
 
     with db.yield_db_session_ctx() as db_session:
+
+        blockchain = (
+            db_session.query(DropperContract.blockchain)
+            .join(DropperClaim, DropperClaim.dropper_contract_id == DropperContract.id)
+            .filter(DropperClaim.id == UUID(args.dropper_claim_id))
+        ).one()
+
+        network.connect(BLOCKCHAINS_TO_BROWNIE_NETWORKS[blockchain.blockchain])
+
         claimant_signature = actions.refetch_drop_signatures(
             db_session=db_session,
             dropper_claim_id=args.dropper_claim_id,
+            added_by="cli",
         )
 
-        print(claimant_signature)
+        print(f"Amount of updated claimants: {len(claimant_signature)}")
 
 
 def main() -> None:

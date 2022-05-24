@@ -34,6 +34,9 @@ class DropWithNotSettedBlockDeadline(Exception):
     pass
 
 
+BATCH_SIGNATURE_PAGE_SIZE = 500
+
+
 def create_dropper_contract(
     db_session: Session,
     blockchain: Optional[str],
@@ -347,6 +350,26 @@ def transform_claim_amount(
     return db_amount * (10**decimals)
 
 
+def batch_transform_claim_amounts(
+    db_session: Session, dropper_claim_id: uuid.UUID, db_amounts: List[int]
+) -> List[int]:
+    claim = (
+        db_session.query(DropperClaim.claim_id, DropperContract.address)
+        .join(DropperContract, DropperContract.id == DropperClaim.dropper_contract_id)
+        .filter(DropperClaim.id == dropper_claim_id)
+        .one()
+    )
+    dropper_contract = Dropper.Dropper(claim.address)
+    claim_info = dropper_contract.get_claim(claim.claim_id)
+    if claim_info[0] != 20:
+        return db_amounts
+
+    erc20_contract = MockErc20.MockErc20(claim_info[1])
+    decimals = int(erc20_contract.decimals())
+
+    return [db_amount * (10**decimals) for db_amount in db_amounts]
+
+
 def get_claimants(db_session: Session, dropper_claim_id, limit=None, offset=None):
     """
     Search for a claimant by address
@@ -625,14 +648,18 @@ def delete_claimants(db_session: Session, dropper_claim_id, addresses):
 
 
 def refetch_drop_signatures(
-    db_session: Session, dropper_claim_id: uuid.UUID, added_by: ChecksumAddress
+    db_session: Session, dropper_claim_id: uuid.UUID, added_by: str
 ):
     """
     Refetch signatures for drop
     """
 
     claim = (
-        db_session.query(DropperClaim.claim_block_deadline, DropperContract.address)
+        db_session.query(
+            DropperClaim.claim_id,
+            DropperClaim.claim_block_deadline,
+            DropperContract.address,
+        )
         .join(DropperContract, DropperClaim.dropper_contract_id == DropperContract.id)
         .filter(DropperClaim.id == dropper_claim_id)
     ).one()
@@ -656,32 +683,51 @@ def refetch_drop_signatures(
                 DropperClaimant.signature == None,
             )
         )
-    )
+    ).limit(BATCH_SIGNATURE_PAGE_SIZE)
+
+    current_offset = 0
 
     users_hashes = {}
-
+    users_amount = {}
     hashes_signature = {}
 
     dropper_contract = Dropper.Dropper(claim.address)
 
-    for index, outdated_signature in enumerate(outdated_signatures):
-        transform_claim_amount = transform_claim_amount(outdated_signature.amount)
-        message_hash = dropper_contract.claim_message_hash(
-            claim.claim_id,
-            outdated_signature.address,
-            outdated_signature.claim_block_deadline,
-            transform_claim_amount,
+    while True:
+        signature_requests = []
+
+        page = outdated_signatures.offset(current_offset).all()
+
+        claim_amounts = [outdated_signature.amount for outdated_signature in page]
+
+        transformed_claim_amounts = batch_transform_claim_amounts(
+            db_session, dropper_claim_id, claim_amounts
         )
 
-        users_hashes[outdated_signature.addres] = message_hash
+        for outdated_signature, transformed_claim_amount in zip(
+            page, transformed_claim_amounts
+        ):
 
-        if index % 100 == 0:
-
-            signed_messages = signatures.DROP_SIGNER.batch_sign_message(
-                list(users_hashes.values())
+            message_hash = dropper_contract.claim_message_hash(
+                claim.claim_id,
+                outdated_signature.address,
+                claim.claim_block_deadline,
+                transformed_claim_amount,
             )
+            signature_requests.append(message_hash)
+            users_hashes[outdated_signature.address] = message_hash.hex()
+            users_amount[outdated_signature.address] = outdated_signature.amount
 
-            hashes_signature.update(signed_messages)
+        signed_messages = signatures.DROP_SIGNER.batch_sign_message(
+            [signature_request.hex() for signature_request in signature_requests]
+        )
+
+        hashes_signature.update(signed_messages)
+
+        if len(page) == 0:
+            break
+
+        current_offset += BATCH_SIGNATURE_PAGE_SIZE
 
     claimant_objects = []
 
@@ -691,6 +737,7 @@ def refetch_drop_signatures(
                 "dropper_claim_id": dropper_claim_id,
                 "address": address,
                 "signature": hashes_signature[hash],
+                "amount": users_amount[address],
                 "added_by": added_by,
                 "created_at": datetime.now(),
                 "updated_at": datetime.now(),
