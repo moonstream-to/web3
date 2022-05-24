@@ -108,6 +108,7 @@ class DropBatchResponseItem(BaseModel):
     claimant: str
     claim_id: int
     amount: int
+    amount_string: str
     block_deadline: int
     signature: str
     dropper_claim_id: UUID
