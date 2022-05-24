@@ -28,7 +28,8 @@ import {
 } from "@chakra-ui/react";
 import Papa from "papaparse";
 import FileUpload from "../FileUpload";
-import { useDrop, useDrops, useRouter } from "../../core/hooks";
+import { useRouter } from "../../core/hooks";
+import { useDrops } from "../../core/hooks/dropper";
 import { EditIcon } from "@chakra-ui/icons";
 import FocusLock from "react-focus-lock";
 import { useForm } from "react-hook-form";
@@ -49,7 +50,7 @@ interface ClaimInterface {
   title: string;
 }
 
-const DropCard = ({
+const _DropCard = ({
   claim,
   onUpdate,
   activateDrop,
@@ -308,4 +309,5 @@ const DropCard = ({
   );
 };
 
-export default chakra(DropCard);
+const DropCard = chakra(_DropCard);
+export default DropCard;
