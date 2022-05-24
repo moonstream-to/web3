@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import {
   chakra,
   Flex,
@@ -37,6 +37,7 @@ import { targetChain } from "../../core/providers/Web3Provider";
 import Web3Context from "../../core/providers/Web3Provider/context";
 import { UseMutationResult } from "react-query";
 import { updateDropArguments } from "../../../../../types/Moonstream";
+import { useToast } from "../../core/hooks";
 
 interface ClaimInterface {
   active: boolean;
@@ -74,22 +75,82 @@ const _DropCard = ({
 }) => {
   const router = useRouter();
   const web3ctx = useContext(Web3Context);
+  const toast = useToast();
   const { register, handleSubmit } = useForm();
 
   const { uploadFile } = useDrops({ targetChain, ctx: web3ctx });
   const query = router.query;
 
+  const [isUploading, setIsUploading] = useState(false);
+
+  var parserLineNumber = 0;
+
+  const handleParsingError = function (error: string): void {
+    setIsUploading(false);
+    toast(error, "error", "CSV Parse Error");
+    throw error;
+  };
+
+  const validateHeader = function (
+    headerValue: string,
+    column: number
+  ): string {
+    const header = headerValue.trim().toLowerCase();
+    if (column == 0 && header != "address") {
+      handleParsingError("First column header must be 'address'.");
+    }
+    if (column == 1 && header != "amount") {
+      handleParsingError("Second column header must be 'amount'");
+    }
+    return header;
+  };
+
+  const validateCellValue = function (cellValue: string, column: any): string {
+    const value = cellValue.trim();
+    if (column == "address") {
+      parserLineNumber++;
+      try {
+        web3ctx.web3.utils.toChecksumAddress(value);
+      } catch (error) {
+        handleParsingError(
+          `Error parsing value '${value}' on line ${parserLineNumber}. Value in 'address' column must be a valid address.`
+        );
+      }
+    }
+    if (column == "amount") {
+      const numVal = parseInt(value);
+      if (isNaN(numVal) || numVal < 0) {
+        handleParsingError(
+          `Error parsing value: '${value}' on line ${parserLineNumber}. Value in 'amount' column must be an integer.`
+        );
+      }
+    }
+    return value;
+  };
+
   const onDrop = (file: any) => {
+    parserLineNumber = 0;
+    setIsUploading(true);
     Papa.parse(file[0], {
       header: true,
       skipEmptyLines: true,
+      fastMode: true,
+      transform: validateCellValue,
+      transformHeader: validateHeader,
       complete: (result: any) => {
-        uploadFile.mutate({
-          dropperClaimId: claim.id,
-          claimants: result.data,
-        });
+        uploadFile.mutate(
+          {
+            dropperClaimId: claim.id,
+            claimants: result.data,
+          },
+          {
+            onSettled: () => {
+              setIsUploading(false);
+            },
+          }
+        );
       },
-      error: (err: Error) => console.log("acceptedFiles csv:", err.message),
+      error: (err: Error) => handleParsingError(err.message),
     });
   };
 
@@ -262,6 +323,7 @@ const _DropCard = ({
             alignSelf="center"
             // as={Flex}
             minW="220px"
+            isUploading={isUploading}
           />
         </Flex>
       </Flex>
