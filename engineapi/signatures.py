@@ -90,6 +90,22 @@ class BrownieAccountSigner(Signer):
         )
         return signed_message_bytes.hex()
 
+    def batch_sign_message(self, messages_list: List[str]):
+
+        signed_messages_list = {}
+
+        for message in messages_list:
+            eth_private_key = eth_keys.keys.PrivateKey(
+                HexBytes(self.signer.private_key)
+            )
+            message_hash_bytes = HexBytes(message)
+            _, _, _, signed_message_bytes = sign_message_hash(
+                eth_private_key, message_hash_bytes
+            )
+            signed_messages_list[message] = signed_message_bytes.hex()
+
+        return signed_messages_list
+
 
 def get_signing_account(raw_message: str, signature: str) -> str:
     return web3.eth.account.recover_message(raw_message, signature=signature)
@@ -155,6 +171,39 @@ class InstanceSigner(Signer):
             )
 
         return signature
+
+    def batch_sign_message(self, messages_list: List[str]):
+        if self.current_signer_uri is None:
+            self.refresh_signer()
+
+        signed_messages = []
+        try:
+            resp = requests.post(
+                self.current_signer_uri,
+                headers={"Content-Type": "application/json"},
+                json={"unsigned_data": str(messages_list)},
+            )
+            resp.raise_for_status()
+            signed_messages = resp.json()
+        except Exception as err:
+            logger.error(f"Failed signing of message with instance server, {err}")
+            raise SignWithInstanceFail("Failed signing of message with instance server")
+
+        # Hack as per: https://medium.com/@yaoshiang/ethereums-ecrecover-openzeppelin-s-ecdsa-and-web3-s-sign-8ff8d16595e1
+        for key, signed_message in signed_messages.items():
+
+            signature = signed_message[2:]
+            if signature[-2:] == "00":
+                signature = f"{signature[:-2]}1b"
+            elif signature[-2:] == "01":
+                signature = f"{signature[:-2]}1c"
+            else:
+                raise SignWithInstanceFail(
+                    f"Unexpected v-value on signed message: {signed_message[-2:]}"
+                )
+            signed_message[key] = signature
+
+        return signed_messages
 
 
 DROP_SIGNER: Optional[Signer] = None

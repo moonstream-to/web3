@@ -6,12 +6,13 @@ from brownie import network
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.functions import percentile_disc
-from sqlalchemy import func, text, Integer
+from sqlalchemy import func, text, or_
 from web3 import Web3
 from web3.types import ChecksumAddress
 
 from engineapi.Dropper import Dropper
 from engineapi.routes.leaderboard import quartiles
+
 
 from . import Dropper, MockErc20, MockTerminus
 from .models import (
@@ -21,10 +22,15 @@ from .models import (
     Leaderboard,
     LeaderboardScores,
 )
+from . import signatures
 from .settings import BLOCKCHAINS_TO_BROWNIE_NETWORKS
 
 
 class AuthorizationError(Exception):
+    pass
+
+
+class DropWithNotSettedBlockDeadline(Exception):
     pass
 
 
@@ -618,11 +624,98 @@ def delete_claimants(db_session: Session, dropper_claim_id, addresses):
     return was_deleted
 
 
+def refetch_drop_signatures(
+    db_session: Session, dropper_claim_id: uuid.UUID, added_by: ChecksumAddress
+):
+    """
+    Refetch signatures for drop
+    """
+
+    claim = (
+        db_session.query(DropperClaim.claim_block_deadline, DropperContract.address)
+        .join(DropperContract, DropperClaim.dropper_contract_id == DropperContract.id)
+        .filter(DropperClaim.id == dropper_claim_id)
+    ).one()
+
+    if claim.claim_block_deadline is None:
+        raise DropWithNotSettedBlockDeadline(
+            f"Claim block deadline is not set for dropper claim: {dropper_claim_id}"
+        )
+
+    outdated_signatures = (
+        db_session.query(
+            DropperClaim.claim_id,
+            DropperClaimant.address,
+            DropperClaimant.amount,
+        )
+        .join(DropperClaimant, DropperClaimant.dropper_claim_id == DropperClaim.id)
+        .filter(DropperClaim.id == dropper_claim_id)
+        .filter(
+            or_(
+                DropperClaimant.updated_at < DropperClaim.updated_at,
+                DropperClaimant.signature == None,
+            )
+        )
+    )
+
+    users_hashes = {}
+
+    hashes_signature = {}
+
+    dropper_contract = Dropper.Dropper(claim.address)
+
+    for index, outdated_signature in enumerate(outdated_signatures):
+        transform_claim_amount = transform_claim_amount(outdated_signature.amount)
+        message_hash = dropper_contract.claim_message_hash(
+            claim.claim_id,
+            outdated_signature.address,
+            outdated_signature.claim_block_deadline,
+            transform_claim_amount,
+        )
+
+        users_hashes[outdated_signature.addres] = message_hash
+
+        if index % 100 == 0:
+
+            signed_messages = signatures.DROP_SIGNER.batch_sign_message(
+                list(users_hashes.values())
+            )
+
+            hashes_signature.update(signed_messages)
+
+    claimant_objects = []
+
+    for address, hash in users_hashes.items():
+        claimant_objects.append(
+            {
+                "dropper_claim_id": dropper_claim_id,
+                "address": address,
+                "signature": hashes_signature[hash],
+                "added_by": added_by,
+                "created_at": datetime.now(),
+                "updated_at": datetime.now(),
+            }
+        )
+
+    insert_statement = insert(DropperClaimant).values(claimant_objects)
+
+    result_stmt = insert_statement.on_conflict_do_update(
+        index_elements=[DropperClaimant.address, DropperClaimant.dropper_claim_id],
+        set_=dict(
+            signature=insert_statement.excluded.signature,
+            updated_at=datetime.now(),
+        ),
+    )
+    db_session.execute(result_stmt)
+    db_session.commit()
+
+    return claimant_objects
+
+
 def get_leaderboard_total_count(db_session: Session, leaderboard_id):
     """
     Get the total number of claimants in the leaderboard
     """
-    print(leaderboard_id)
     return (
         db_session.query(LeaderboardScores)
         .filter(LeaderboardScores.leaderboard_id == leaderboard_id)

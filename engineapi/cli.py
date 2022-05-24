@@ -355,6 +355,17 @@ def create_leaderboard_handler(args: argparse.Namespace) -> None:
         print(Leaderboard)
 
 
+def claimant_signature_refetch_handler(args: argparse.Namespace) -> None:
+
+    with db.yield_db_session_ctx() as db_session:
+        claimant_signature = actions.refetch_drop_signatures(
+            db_session=db_session,
+            dropper_claim_id=args.dropper_claim_id,
+        )
+
+        print(claimant_signature)
+
+
 def main() -> None:
 
     parser = argparse.ArgumentParser(
@@ -761,6 +772,17 @@ def main() -> None:
         "-c", "--dropper-claim-id", type=str, required=True, help="Dropper claim id"
     )
     parser_dropper_list_claimants.set_defaults(func=list_claimants_handler)
+
+    parser_dropper_claimant_signature_refetch = subparsers_dropper.add_parser(
+        "signature-refetch", description="Refetch signature for claimant"
+    )
+    parser_dropper_claimant_signature_refetch.add_argument(
+        "--dropper-claim-id", type=str, required=True
+    )
+
+    parser_dropper_claimant_signature_refetch.set_defaults(
+        func=claimant_signature_refetch_handler
+    )
 
     args = parser.parse_args()
     args.func(args)

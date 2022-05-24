@@ -671,3 +671,39 @@ async def delete_claimants(
         raise DropperHTTPException(status_code=500, detail=f"Error removing claimants")
 
     return data.RemoveClaimantsResponse(addresses=results)
+
+
+@router.post("/drop/{dropper_claim_id}/refetch", response_model=data.RefetchResponse)
+async def refetch_drop_signatures(
+    request: Request,
+    dropper_claim_id: UUID,
+    db_session: Session = Depends(db.yield_db_session),
+) -> data.RefetchResponse:
+    """
+    Refetch signatures for a drop
+    """
+
+    try:
+        actions.ensure_admin_token_holder(
+            db_session, dropper_claim_id, request.state.address
+        )
+    except actions.AuthorizationError as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=403)
+    except Exception as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=500)
+
+    try:
+        actions.refetch_drop_signatures(
+            db_session=db_session, dropper_claim_id=dropper_claim_id
+        )
+    except Exception as e:
+        logger.info(
+            f"Can't refetch signatures for drop {dropper_claim_id} with error: {e}"
+        )
+        raise DropperHTTPException(
+            status_code=500, detail=f"Error refetching signatures"
+        )
+
+    return data.RefetchResponse()
