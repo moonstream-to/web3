@@ -2,7 +2,7 @@
 Lootbox API.
 """
 import logging
-from typing import List, Optional
+from typing import List, Optional, Any
 from uuid import UUID
 
 from web3 import Web3
@@ -667,12 +667,12 @@ async def delete_claimants(
     return data.RemoveClaimantsResponse(addresses=results)
 
 
-@router.post("/drop/{dropper_claim_id}/refetch", response_model=data.RefetchResponse)
+@router.post("/drop/{dropper_claim_id}/refetch")
 async def refetch_drop_signatures(
     request: Request,
     dropper_claim_id: UUID,
     db_session: Session = Depends(db.yield_db_session),
-) -> data.RefetchResponse:
+) -> Any:
     """
     Refetch signatures for a drop
     """
@@ -689,7 +689,7 @@ async def refetch_drop_signatures(
         raise DropperHTTPException(status_code=500)
 
     try:
-        actions.refetch_drop_signatures(
+        signatures = actions.refetch_drop_signatures(
             db_session=db_session, dropper_claim_id=dropper_claim_id
         )
     except Exception as e:
@@ -700,4 +700,4 @@ async def refetch_drop_signatures(
             status_code=500, detail=f"Error refetching signatures"
         )
 
-    return data.RefetchResponse()
+    return signatures
