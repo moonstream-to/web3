@@ -2,8 +2,8 @@ import React, { useContext } from "react";
 import { chakra, Flex, Spinner } from "@chakra-ui/react";
 import { targetChain } from "../../core/providers/Web3Provider";
 import Web3Context from "../../core/providers/Web3Provider/context";
-import useDrops from "../../core/hooks/useDrops";
-import useClaim from "../../core/hooks/useDrop";
+import useDrops from "../../core/hooks/dropper/useDrops";
+import useClaim from "../../core/hooks/dropper/useDrop";
 import Claimers from "../Claimers";
 import { useRouter } from "../../core/hooks";
 

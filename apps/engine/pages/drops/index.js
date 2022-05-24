@@ -11,7 +11,7 @@ import {
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
-import useDrops from "moonstream-components/src/core/hooks/useDrops";
+import useDrops from "moonstream-components/src/core/hooks/dropper/useDrops";
 import Drop from "moonstream-components/src/components/Dropper/Drop";
 import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
 import Paginator from "moonstream-components/src/components/Paginator";
