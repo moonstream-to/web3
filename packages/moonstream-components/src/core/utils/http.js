@@ -18,5 +18,15 @@ const http = (config) => {
   return axios(options);
 };
 
+const API = process.env.NEXT_PUBLIC_ENGINE_API_URL;
+
+export const queryHttp = (query) => {
+  return http({
+    method: "GET",
+    url: `${API}${query.queryKey[0]}`,
+    params: { ...query.queryKey[1] },
+  });
+};
+
 export { axios };
 export default http;

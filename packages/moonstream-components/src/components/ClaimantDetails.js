@@ -8,7 +8,7 @@ import {
   IconButton,
   Heading,
 } from "@chakra-ui/react";
-import { useClaimant } from "../core/hooks";
+import useClaimant from "../core/hooks/dropper/useClaimant";
 import Web3Context from "../core/providers/Web3Provider/context";
 import { targetChain } from "../core/providers/Web3Provider";
 import CopyButton from "./CopyButton";

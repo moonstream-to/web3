@@ -15,7 +15,15 @@ import Paginator from "./Paginator";
 import ClaimantDetails from "./ClaimantDetails";
 import { useRouter } from "../core/hooks";
 
-const Claimers = ({ list, onDeleteClaimant, setPage, setLimit, hasMore }) => {
+const Claimers = ({
+  list,
+  onDeleteClaimant,
+  setPage,
+  setLimit,
+  hasMore,
+  page,
+  limit,
+}) => {
   const { onOpen, onClose, isOpen } = useDisclosure();
   const [filter, setFilter] = useState("");
 
@@ -82,11 +90,12 @@ const Claimers = ({ list, onDeleteClaimant, setPage, setLimit, hasMore }) => {
         )}
 
         <Paginator
-          onBack={() => setPage((_currentPage) => _currentPage - 1)}
-          onForward={() => setPage((_currentPage) => _currentPage + 1)}
           paginatorKey={"claimants"}
+          setPage={setPage}
           setLimit={setLimit}
           hasMore={hasMore}
+          page={page}
+          pageSize={limit}
         >
           <ClaimersList data={list} onDeleteClaimant={onDeleteClaimant} />
         </Paginator>

@@ -28,7 +28,8 @@ import {
 } from "@chakra-ui/react";
 import Papa from "papaparse";
 import FileUpload from "../FileUpload";
-import { useDrops, useRouter } from "../../core/hooks";
+import { useRouter } from "../../core/hooks";
+import { useDrops } from "../../core/hooks/dropper";
 import { EditIcon } from "@chakra-ui/icons";
 import FocusLock from "react-focus-lock";
 import { useForm } from "react-hook-form";
@@ -50,7 +51,7 @@ interface ClaimInterface {
   title: string;
 }
 
-const DropCard = ({
+const _DropCard = ({
   claim,
   onUpdate,
   activateDrop,
@@ -347,9 +348,7 @@ const DropCard = ({
           as={Link}
           colorScheme={"orange"}
           variant="outline"
-          // href={`/drops/details/`}
           onClick={() => {
-            // router.appendQuery("dropId", claim.id);
             if (query?.dropId) {
               router.push({
                 pathname: "/drops",
@@ -370,4 +369,5 @@ const DropCard = ({
   );
 };
 
-export default chakra(DropCard);
+const DropCard = chakra(_DropCard);
+export default DropCard;

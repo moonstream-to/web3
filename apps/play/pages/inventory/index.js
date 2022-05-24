@@ -3,7 +3,7 @@ import { Flex, Button, Image, Center, Spinner } from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
-
+import { getLayout } from "../../../../packages/moonstream-components/src/layouts/EngineLayout";
 import LootboxCard from "moonstream-components/src/components/lootbox/LootboxCard";
 import useLootbox from "moonstream-components/src/core/hooks/useLootbox";
 
@@ -101,5 +101,5 @@ export async function getStaticProps() {
     props: { metaTags: DEFAULT_METATAGS, preloads },
   };
 }
-
+Lootboxes.getLayout = getLayout;
 export default Lootboxes;

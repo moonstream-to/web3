@@ -6,18 +6,18 @@ import {
   getTerminus,
   setClaimants,
   updateDrop,
-} from "../services/moonstream-engine.service";
+} from "../../services/moonstream-engine.service";
 import { useMutation, useQuery } from "react-query";
 import {
   ChainInterface,
   MoonstreamWeb3ProviderInterface,
   updateDropArguments,
-} from "../../../../../types/Moonstream";
-import { useToast } from ".";
-import { balanceOfAddress } from "../contracts/terminus.contracts";
-import queryCacheProps from "./hookCommon";
+} from "../../../../../../types/Moonstream";
+import { useToast } from "..";
+import { balanceOfAddress } from "../../contracts/terminus.contracts";
+import queryCacheProps from "../hookCommon";
 
-const useClaimAdmin = ({
+const useDrops = ({
   targetChain,
   ctx,
 }: {
@@ -193,4 +193,4 @@ const useClaimAdmin = ({
   };
 };
 
-export default useClaimAdmin;
+export default useDrops;

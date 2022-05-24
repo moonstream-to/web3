@@ -1,25 +1,6 @@
 import { http } from "../utils";
 const API = process.env.NEXT_PUBLIC_ENGINE_API_URL;
 
-export const getContracts = () => async () => {
-  return http({
-    method: "GET",
-    url: `${API}/drops/contracts`,
-  });
-};
-
-export const getDropList = (dropperAddress, chainName) => async (address) => {
-  return http({
-    method: "GET",
-    url: `${API}/drops/claims`,
-    params: {
-      dropper_contract_address: encodeURIComponent(dropperAddress),
-      blockchain: chainName,
-      claimant_address: address,
-    },
-  });
-};
-
 export const getAdminList =
   (terminusAddress, chainName, poolId, offset, limit) => async () => {
     return http({
@@ -35,7 +16,7 @@ export const getAdminList =
     });
   };
 
-export const getClaim = (claimId, address) => {
+export const getClaimSignature = (claimId, address) => {
   return http({
     method: "GET",
     url: `${API}/drops/`,
