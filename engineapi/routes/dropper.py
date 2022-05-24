@@ -57,6 +57,7 @@ async def get_drop_handler(
             status_code=403, detail="You are not authorized to claim that reward"
         )
     except Exception as e:
+        logger.error(f"Error in get claimant: {e}")
         raise DropperHTTPException(status_code=500, detail="Can't get claimant")
 
     transformed_amount = actions.transform_claim_amount(
@@ -86,8 +87,10 @@ async def get_drop_handler(
     try:
         signature = await signatures.DROP_SIGNER.sign_message(message_hash)
     except signatures.AWSDescribeInstancesFail:
+        logger.error("AWSDescribeInstancesFail")
         raise DropperHTTPException(status_code=500)
     except signatures.SignWithInstanceFail:
+        logger.error("SignWithInstanceFail")
         raise DropperHTTPException(status_code=500)
     except Exception as err:
         logger.error(f"Unexpected error in signing message process: {err}")
@@ -125,6 +128,7 @@ async def get_drop_batch_handler(
             status_code=403, detail="You are not authorized to claim that reward"
         )
     except Exception as e:
+        logger.error(f"Error in get batch of claimant claims: {e}")
         raise DropperHTTPException(status_code=500, detail="Can't get claimant")
 
     # generate list of claims
@@ -145,12 +149,13 @@ async def get_drop_batch_handler(
             claimant_drop.claim_block_deadline,
             transformed_amount,
         )
-
         try:
-            signature = signatures.DROP_SIGNER.sign_message(message_hash)
+            signature = await signatures.DROP_SIGNER.sign_message(message_hash)
         except signatures.AWSDescribeInstancesFail:
+            logger.error("AWSDescribeInstancesFail")
             raise DropperHTTPException(status_code=500)
         except signatures.SignWithInstanceFail:
+            logger.error("SignWithInstanceFail")
             raise DropperHTTPException(status_code=500)
         except Exception as err:
             logger.error(f"Unexpected error in signing message process: {err}")
@@ -167,6 +172,8 @@ async def get_drop_batch_handler(
                 dropper_contract_address=claimant_drop.dropper_contract_address,
                 blockchain=claimant_drop.blockchain,
                 active=claimant_drop.active,
+                title=claimant_drop.title,
+                description=claimant_drop.description,
             )
         )
 

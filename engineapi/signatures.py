@@ -4,6 +4,7 @@ Signing and signature verification functionality and interfaces.
 import abc
 import logging
 from typing import Any, List, Optional
+import traceback
 
 import boto3
 from brownie import accounts
@@ -83,7 +84,7 @@ class BrownieAccountSigner(Signer):
     def __init__(self, keystore_file: str, password: str) -> None:
         self.signer = accounts.load(keystore_file, password)
 
-    def sign_message(self, message):
+    async def sign_message(self, message):
         eth_private_key = eth_keys.keys.PrivateKey(HexBytes(self.signer.private_key))
         message_hash_bytes = HexBytes(message)
         _, _, _, signed_message_bytes = sign_message_hash(
@@ -135,20 +136,13 @@ class InstanceSigner(Signer):
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     self.current_signer_uri,
-                    json={"message": message},
+                    json={"unsigned_data": str(message)},
                     headers={"Content-Type": "application/json"},
                 )
                 response.raise_for_status()
-                signed_message = response.text
-            # resp = requests.post(
-            #     self.current_signer_uri,
-            #     headers={"Content-Type": "application/json"},
-            #     json={"unsigned_data": str(message)},
-            # )
-            # resp.raise_for_status()
-            # body = resp.json()
-            # signed_message = body["signed_data"]
+                signed_message = response.json()["signed_data"]
         except Exception as err:
+            traceback.print_exc()
             logger.error(f"Failed signing of message with instance server, {err}")
             raise SignWithInstanceFail("Failed signing of message with instance server")
 
