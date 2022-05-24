@@ -21,7 +21,6 @@ const _Drop = ({
   });
 
   const {
-    claim,
     claimants,
     deleteClaimants,
     setClaimantsPage,

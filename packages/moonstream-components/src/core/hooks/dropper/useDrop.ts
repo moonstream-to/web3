@@ -11,23 +11,11 @@ import {
   ChainInterface,
   MoonstreamWeb3ProviderInterface,
 } from "../../../../../../types/Moonstream";
-import { useToast } from "..";
+import useToast from "../useToast";
 import queryCacheProps from "../hookCommon";
 import useDrops from "./useDrops";
 
-interface ClaimInterface {
-  active: boolean;
-  claim_block_deadline: number;
-  claim_id: number;
-  description: string;
-  dropper_contract_address: string;
-  id: string;
-  terminus_address: string;
-  terminus_pool_id: number;
-  title: string;
-}
-
-const useClaim = ({
+const useDrop = ({
   targetChain,
   ctx,
   claimId,
@@ -42,19 +30,6 @@ const useClaim = ({
 }) => {
   const admin = useDrops({ targetChain, ctx });
   const toast = useToast();
-
-  const [claim, setClaim] = React.useState<ClaimInterface>(
-    admin.adminClaims.data
-  );
-  React.useEffect(() => {
-    if (admin.adminClaims.data || !admin.adminClaims.isLoading) {
-      setClaim(
-        admin.adminClaims.data?.find(
-          (element: ClaimInterface) => element.id === claimId
-        )
-      );
-    }
-  }, [admin.adminClaims, claimId]);
 
   const [claimantsPage, setClaimantsPage] = React.useState(0);
   const [claimantsPageSize, setClaimantsPageSize] = React.useState(
@@ -167,7 +142,7 @@ const useClaim = ({
   });
 
   return {
-    claim,
+    // claim,
     claimants,
     deleteClaimants,
     setClaimantsPage,
@@ -181,4 +156,4 @@ const useClaim = ({
   };
 };
 
-export default useClaim;
+export default useDrop;

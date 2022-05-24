@@ -13,7 +13,7 @@ import {
   MoonstreamWeb3ProviderInterface,
   updateDropArguments,
 } from "../../../../../../types/Moonstream";
-import { useToast } from "..";
+import useToast from "../useToast";
 import { balanceOfAddress } from "../../contracts/terminus.contracts";
 import queryCacheProps from "../hookCommon";
 

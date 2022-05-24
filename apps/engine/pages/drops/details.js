@@ -6,7 +6,7 @@ import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
 import { useRouter } from "moonstream-components/src/core/hooks";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
 import useDrop from "moonstream-components/src/core/hooks/dropper/useDrop";
-import { useDrops } from "moonstream-components/src/core/hooks/dropper";
+import useDrops from "moonstream-components/src/core/hooks/dropper/useDrops";
 import Drop from "moonstream-components/src/components/Dropper/Drop";
 
 const Drops = () => {
