@@ -1,11 +1,10 @@
 from datetime import datetime
-from typing import List, Any, Optional, Dict, cast
+from typing import List, Any, Optional, Dict
 import uuid
 
 from brownie import network
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
-from sqlalchemy.sql.expression import cast
 from sqlalchemy.sql.functions import percentile_disc
 from sqlalchemy import func, text, Integer
 from web3 import Web3
@@ -337,7 +336,7 @@ def transform_claim_amount(
         return db_amount
 
     erc20_contract = MockErc20.MockErc20(claim_info[1])
-    decimals = cast(int, erc20_contract.decimals())
+    decimals = int(erc20_contract.decimals())
 
     return db_amount * (10**decimals)
 

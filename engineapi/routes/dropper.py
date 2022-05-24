@@ -37,6 +37,7 @@ router = APIRouter(
     prefix="/drops",
 )
 
+
 @router.get("/", response_model=data.DropResponse)
 async def get_drop_handler(
     dropper_claim_id: UUID,
@@ -159,6 +160,7 @@ async def get_drop_batch_handler(
             data.DropBatchResponseItem(
                 claimant=claimant_drop.address,
                 amount=transformed_amount,
+                amount_string=str(transformed_amount),
                 claim_id=claimant_drop.claim_id,
                 block_deadline=claimant_drop.claim_block_deadline,
                 signature=signature,
