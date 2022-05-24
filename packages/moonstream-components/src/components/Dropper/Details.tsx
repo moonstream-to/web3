@@ -33,7 +33,7 @@ const _Drop = ({
     claimId: dropId,
   });
 
-  if (!claim || !claimants.data || !adminClaims.data || adminClaims.isLoading)
+  if (!claimants.data || !adminClaims.data || adminClaims.isLoading)
     return <Spinner />;
 
   return (
