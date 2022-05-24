@@ -5,15 +5,15 @@ import {
   activate,
   deactivate,
   updateDrop,
-} from "../services/moonstream-engine.service";
+} from "../../services/moonstream-engine.service";
 import { useMutation, useQuery } from "react-query";
 import {
   ChainInterface,
   MoonstreamWeb3ProviderInterface,
-} from "../../../../../types/Moonstream";
-import { useToast } from ".";
-import queryCacheProps from "./hookCommon";
-import useClaimAdmin from "./useDrops";
+} from "../../../../../../types/Moonstream";
+import { useToast } from "..";
+import queryCacheProps from "../hookCommon";
+import useDrops from "./useDrops";
 
 interface ClaimInterface {
   active: boolean;
@@ -40,7 +40,7 @@ const useClaim = ({
   initialPageSize?: number;
   getAll?: boolean;
 }) => {
-  const admin = useClaimAdmin({ targetChain, ctx });
+  const admin = useDrops({ targetChain, ctx });
   const toast = useToast();
 
   const [claim, setClaim] = React.useState<ClaimInterface>(
@@ -78,7 +78,6 @@ const useClaim = ({
       onSuccess: () => {},
     }
   );
-
 
   const deleteClaimants = useMutation(
     _deleteClaimants({ dropperClaimId: claimId }),
