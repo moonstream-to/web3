@@ -470,6 +470,16 @@ def get_terminus_claims(
     return query
 
 
+def get_drop(db_session: Session, dropper_claim_id: uuid.UUID):
+    """
+    Return particular drop
+    """
+    drop = (
+        db_session.query(DropperClaim).filter(DropperClaim.id == dropper_claim_id).one()
+    )
+    return drop
+
+
 def get_claims(
     db_session: Session,
     blockchain: str,

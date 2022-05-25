@@ -279,7 +279,6 @@ async def get_drop_list_handler(
 ) -> data.DropListResponse:
     """
     Get list of drops for a given dropper contract and claimant address.
-    dasdasd
     """
 
     if dropper_contract_address:
@@ -312,6 +311,50 @@ async def get_drop_list_handler(
         raise DropperHTTPException(status_code=500, detail="Can't get claims")
 
     return data.DropListResponse(drops=[result for result in results])
+
+
+@router.get("/claims/{dropper_claim_id}", response_model=data.DropperClaimResponse)
+async def get_drop_handler(
+    request: Request,
+    dropper_claim_id: str,
+    db_session: Session = Depends(db.yield_db_session),
+) -> data.DropperClaimResponse:
+    """
+    Get list of drops for a given dropper contract and claimant address.
+    """
+
+    try:
+        drop = actions.get_drop(
+            db_session=db_session, dropper_claim_id=dropper_claim_id
+        )
+    except NoResultFound:
+        raise DropperHTTPException(status_code=404, detail="No drops found.")
+    except Exception as e:
+        logger.error(f"Can't get drop {dropper_claim_id} end with error: {e}")
+        raise DropperHTTPException(status_code=500, detail="Can't get drop")
+
+    if drop.terminus_address is not None and drop.terminus_pool_id is not None:
+        try:
+            actions.ensure_admin_token_holder(
+                db_session, dropper_claim_id, request.state.address
+            )
+        except actions.AuthorizationError as e:
+            logger.error(e)
+            raise DropperHTTPException(status_code=403)
+        except NoResultFound:
+            raise DropperHTTPException(status_code=404, detail="Drop not found")
+
+    return data.DropperClaimResponse(
+        id=drop.id,
+        dropper_contract_id=drop.dropper_contract_id,
+        title=drop.title,
+        description=drop.description,
+        active=drop.active,
+        claim_block_deadline=drop.claim_block_deadline,
+        terminus_address=drop.terminus_address,
+        terminus_pool_id=drop.terminus_pool_id,
+        claim_id=drop.claim_id,
+    )
 
 
 @router.get("/terminus/claims", response_model=data.DropListResponse)
