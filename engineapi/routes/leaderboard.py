@@ -35,7 +35,9 @@ router = APIRouter(
 )
 
 
-@router.get("/count/addresses")
+@router.get(
+    "/count/addresses", response_model=data.CountAddressesResponse, tags=["leaderboard"]
+)
 async def count_addresses(
     request: Request,
     leaderboard_id: UUID,
@@ -51,7 +53,7 @@ async def count_addresses(
     return data.CountAddressesResponse(count=count)
 
 
-@router.get("/quartiles")
+@router.get("/quartiles", response_model=data.QuartilesResponse, tags=["leaderboard"])
 async def quartiles(
     request: Request,
     leaderboard_id: UUID,
@@ -73,7 +75,7 @@ async def quartiles(
     )
 
 
-@router.get("/position")
+@router.get("/position", tags=["leaderboard"])
 async def position(
     request: Request,
     leaderboard_id: UUID,
@@ -98,7 +100,7 @@ async def position(
     return positions
 
 
-@router.get("/")
+@router.get("/", tags=["leaderboard"])
 async def leaderboard(
     request: Request,
     leaderboard_id: UUID,

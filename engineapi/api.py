@@ -79,7 +79,7 @@ app.add_middleware(
 )
 
 
-@app.get("/ping", response_model=data.PingResponse)
+@app.get("/ping", response_model=data.PingResponse, tags=["status"])
 async def ping_handler() -> data.PingResponse:
     """
     Check server status.
