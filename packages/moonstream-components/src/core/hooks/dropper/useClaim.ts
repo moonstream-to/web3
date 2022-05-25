@@ -26,13 +26,12 @@ const useClaim = ({
   userAccess?: boolean;
 }) => {
   const toast = useToast();
-  const { state, claimWeb3Drop } = useDropperContract({
+  const { claimWeb3Drop } = useDropperContract({
     dropperAddress,
     ctx,
     targetChain,
   });
 
-  console.log("useClaim", claimId);
   const claimSeq = useMutation(
     () => getClaimSignature({ claimId, address: ctx.account }),
     {
@@ -79,13 +78,10 @@ const useClaim = ({
   }, [claimWeb3Drop.isLoading, claim.isLoading]);
 
   return {
-    // state: state.data,
-    state,
     claim,
     isLoadingClaim,
     claimSeq,
     signature,
-    // isLoadingState: state.isLoading,
   };
 };
 

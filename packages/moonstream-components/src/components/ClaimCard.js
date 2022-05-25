@@ -22,6 +22,7 @@ const _ClaimCard = ({ drop, children, ...props }) => {
     ctx: web3Provider,
     claimId: drop.dropper_claim_id,
     userAccess: true,
+    claimantAddress: web3Provider.account,
   });
 
   const dropperContract = useDropperContract({
@@ -38,10 +39,13 @@ const _ClaimCard = ({ drop, children, ...props }) => {
   )
     if (
       claimer.isLoadingClaim ||
-      dropperContract.dropperWeb3State.data?.isLoading
+      dropperContract.dropperWeb3State.data?.isLoading ||
+      dropperContract.claimState.isLoading ||
+      claimer.signature.isLoading
     )
       return <Spinner />;
 
+  console.log("drop", drop);
 
   return (
     <Flex
@@ -91,15 +95,17 @@ const _ClaimCard = ({ drop, children, ...props }) => {
               </ListItem>
               <ListItem>
                 Reward Type:{" "}
-                <code>{dropperContract.state.data?.claim.tokenType}</code>
+                <code>{dropperContract.claimState.data?.claim.tokenType}</code>
               </ListItem>
               <ListItem>
                 Reward address:{" "}
-                <code>{dropperContract.state.data?.claim.tokenAddress}</code>
+                <code>
+                  {dropperContract.claimState.data?.claim.tokenAddress}
+                </code>
               </ListItem>
               <ListItem>
                 Token id:{" "}
-                <code>{dropperContract.state.data?.claim.tokenId}</code>
+                <code>{dropperContract.claimState.data?.claim.tokenId}</code>
               </ListItem>
               <ListItem>claimd id: {drop.claim_id}</ListItem>
             </UnorderedList>
@@ -121,17 +127,17 @@ const _ClaimCard = ({ drop, children, ...props }) => {
           size="xl"
           isLoading={dropperContract.claimWeb3Drop.isLoading}
           colorScheme="green"
-          isDisabled={!dropperContract.dropperWeb3State.data?.canClaim}
+          isDisabled={!dropperContract.claimState.data?.canClaim}
           onClick={() =>
             dropperContract.claimWeb3Drop.mutate({
-              message: drop.signature,
-              blockDeadline: drop.block_deadline,
-              claimId: drop.claim_id,
-              amount: drop.amount_string,
+              message: claimer.signature.data?.signature,
+              blockDeadline: claimer.signature.data?.block_deadline,
+              claimId: claimer.signature.data?.claim_id,
+              amount: claimer.signature.data?.amount,
             })
           }
         >
-          {dropperContract.dropperWeb3State.data?.canClaim
+          {dropperContract.claimState.data?.canClaim
             ? "Claim now"
             : "Already claimed"}
         </Button>

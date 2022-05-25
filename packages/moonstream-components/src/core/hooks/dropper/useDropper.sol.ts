@@ -30,8 +30,6 @@ const useDropperContract = ({
     ctx: MoonstreamWeb3ProviderInterface,
     claimId: string
   ) => {
-    // let retval: ClaimerState = { canClaim: false, claim: [], status: "" };
-
     let canClaim = false;
     const response = await getClaim(dropperAddress, ctx)(claimId);
 
@@ -42,7 +40,7 @@ const useDropperContract = ({
     return { canClaim, ...response };
   };
 
-  const state = useQuery(
+  const claimState = useQuery(
     ["dropperContractClaimState", dropperAddress, targetChain.chainId, claimId],
     () => _getClaim(dropperAddress ?? "", ctx, claimId ?? ""),
     {
@@ -64,10 +62,9 @@ const useDropperContract = ({
   const claimWeb3Drop = useMutation(claimDrop(dropperAddress, ctx), {
     onSuccess: () => {
       toast("Claim successful!", "success");
-      state.refetch();
     },
-    onError: (err) => {
-      console.log("error", err);
+    onError: (err: any) => {
+      console.error(err);
       toast("Web3 call failed >_<", "error");
     },
   });
@@ -99,7 +96,7 @@ const useDropperContract = ({
     }
   );
 
-  return { state, claimWeb3Drop, dropperWeb3State, signerForClaim };
+  return { claimState, claimWeb3Drop, dropperWeb3State, signerForClaim };
 };
 
 export default useDropperContract;

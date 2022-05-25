@@ -29,33 +29,33 @@ import {
 import Papa from "papaparse";
 import FileUpload from "../FileUpload";
 import { useRouter } from "../../core/hooks";
-import { useClaim, useDrops } from "../../core/hooks/dropper";
+import { useClaim, useDrop } from "../../core/hooks/dropper";
 import { EditIcon } from "@chakra-ui/icons";
 import FocusLock from "react-focus-lock";
 import { useForm } from "react-hook-form";
 import { targetChain } from "../../core/providers/Web3Provider";
 import Web3Context from "../../core/providers/Web3Provider/context";
-import { UseMutationResult } from "react-query";
-import { updateDropArguments } from "../../../../../types/Moonstream";
 import { useToast } from "../../core/hooks";
+
+interface ClaimInterface {
+  active: boolean;
+  claim_block_deadline: number;
+  claim_id: number;
+  description: string;
+  dropper_contract_address: string;
+  id: string;
+  terminus_address: string;
+  terminus_pool_id: number;
+  title: string;
+}
 
 const _DropCard = ({
   dropId,
   children,
   ...props
 }: {
+  initalClaim: ClaimInterface;
   dropId: string;
-  activateDrop: UseMutationResult<unknown, unknown, string, unknown>;
-  deactivateDrop: UseMutationResult<unknown, unknown, string, unknown>;
-  update: UseMutationResult<
-    unknown,
-    unknown,
-    {
-      id: string;
-      data: updateDropArguments;
-    },
-    unknown
-  >;
   children: React.ReactNode;
 }) => {
   const router = useRouter();
@@ -69,14 +69,13 @@ const _DropCard = ({
     claimId: dropId,
   });
 
-  const { uploadFile } = useDrops({ targetChain, ctx: web3ctx });
   const query = router.query;
 
   const [isUploading, setIsUploading] = useState(false);
 
   var parserLineNumber = 0;
 
-  const { update, activateDrop, deactivateDrop } = useDrops({
+  const { update, uploadFile, activateDrop, deactivateDrop } = useDrop({
     targetChain: targetChain,
     ctx: web3ctx,
   });
@@ -162,7 +161,7 @@ const _DropCard = ({
 
   const onSubmit = (data: any) =>
     update.mutate(
-      { id: claim.data?.id, data: { ...data } },
+      { dropperClaimId: claim.data?.id, ...data },
       {
         onSuccess: () => {
           claim.refetch();
@@ -342,11 +341,14 @@ const _DropCard = ({
           isDisabled={!!claim.data?.active}
           isLoading={activateDrop.isLoading}
           onClick={() =>
-            activateDrop.mutate(dropId, {
-              onSuccess: () => {
-                claim.refetch();
-              },
-            })
+            activateDrop.mutate(
+              { dropperClaimId: dropId },
+              {
+                onSuccess: () => {
+                  claim.refetch();
+                },
+              }
+            )
           }
         >
           Activate
@@ -357,11 +359,14 @@ const _DropCard = ({
           isDisabled={!claim.data?.active}
           isLoading={deactivateDrop.isLoading}
           onClick={() =>
-            deactivateDrop.mutate(dropId, {
-              onSuccess: () => {
-                claim.refetch();
-              },
-            })
+            deactivateDrop.mutate(
+              { dropperClaimId: dropId },
+              {
+                onSuccess: () => {
+                  claim.refetch();
+                },
+              }
+            )
           }
         >
           Deactivate
