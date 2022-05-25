@@ -17,7 +17,10 @@ const useToast = () => {
           ? ""
           : type;
 
-      if (mixpanel.get_distinct_id() && type === "error") {
+      if (
+        Object.prototype.hasOwnProperty.call(mixpanel, "get_distinct_id") &&
+        type === "error"
+      ) {
         mixpanel.track(`${MIXPANEL_EVENTS.TOAST_ERROR_DISPLAYED}`, {
           status: message?.response?.status,
           title: userTitle,
