@@ -100,7 +100,9 @@ const Web3MethodForm = ({
         index,
       });
     });
-    onCancel && onCancel();
+    if (onCancel) {
+      onCancel();
+    }
   }, [state, argumentFields, onCancel]);
 
   const web3call = async ({ args }: { args: any }) => {
@@ -148,7 +150,6 @@ const Web3MethodForm = ({
   }, [tx.isLoading, state, argumentFields, onCancel, wasSent, handleClose]);
 
   const handleKeypress = (e: any) => {
-    console.debug("handleKeypress!", e.charCode);
     //it triggers by pressing the enter key
     if (e.charCode === 13) {
       handleSubmit();
@@ -194,8 +195,8 @@ const Web3MethodForm = ({
                       })
                     }
                     placeholder={
-                      inputItem.meta.placeholder ??
-                      inputItem.name ??
+                      inputItem.meta.placeholder ||
+                      inputItem.name ||
                       inputItem.type
                     }
                     size="sm"
@@ -208,6 +209,11 @@ const Web3MethodForm = ({
                   <Input
                     onKeyPress={handleKeypress}
                     type="search"
+                    placeholder={
+                      inputItem.meta.placeholder ||
+                      inputItem.name ||
+                      inputItem.type
+                    }
                     key={`argument-address-${inputItem.name}`}
                     value={inputItem.meta.value}
                     onChange={(event) =>
@@ -216,12 +222,10 @@ const Web3MethodForm = ({
                         index,
                       })
                     }
-                    placeholder={inputItem.meta.placeholder ?? inputItem.name}
                     size="sm"
                     fontSize={"sm"}
                     w="100%"
                     variant={"outline"}
-                    // minW="420px"
                   />
                 )}
               </Box>
