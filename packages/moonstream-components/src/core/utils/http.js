@@ -21,10 +21,11 @@ const http = (config) => {
 const API = process.env.NEXT_PUBLIC_ENGINE_API_URL;
 
 export const queryHttp = (query) => {
+  const _query = query.queryKey.length >= 1 ? query.queryKey[1] : undefined;
   return http({
     method: "GET",
     url: `${API}${query.queryKey[0]}`,
-    params: { ...query.queryKey[1] },
+    params: { ..._query },
   });
 };
 

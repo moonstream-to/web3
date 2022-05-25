@@ -2,95 +2,76 @@ import React from "react";
 import { getClaimSignature } from "../../services/moonstream-engine.service";
 import { useMutation, useQuery } from "react-query";
 import {
-  claimDrop,
-  getClaim,
-  getSignerForClaim,
-} from "../../contracts/dropper.contract";
-import { MoonstreamWeb3ProviderInterface } from "../../../../../../types/Moonstream";
+  ChainInterface,
+  MoonstreamWeb3ProviderInterface,
+} from "../../../../../../types/Moonstream";
 import { useToast } from "..";
 import queryCacheProps from "../hookCommon";
+import useDropperContract from "./useDropper.sol";
+import { queryHttp } from "../../utils/http";
 
 const useClaim = ({
   dropperAddress,
   targetChain,
   ctx,
   claimId,
+  claimantAddress,
+  userAccess,
 }: {
-  dropperAddress: string;
-  targetChain: any;
+  claimantAddress?: string;
+  dropperAddress?: string;
+  targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
   claimId: string;
+  userAccess?: boolean;
 }) => {
   const toast = useToast();
+  const { state, claimWeb3Drop } = useDropperContract({
+    dropperAddress,
+    ctx,
+    targetChain,
+  });
 
-  console.log("useClaim", dropperAddress, claimId);
-  const _getClaim = async (
-    dropperAddress: string,
-    ctx: MoonstreamWeb3ProviderInterface,
-    claimId: string
-  ) => {
-    // let retval: ClaimerState = { canClaim: false, claim: [], status: "" };
-    console.log("_getClaim", dropperAddress, ctx.account, claimId);
-    let canClaim = false;
-    const response = await getClaim(dropperAddress, ctx)(claimId);
-
-    if (Number(response.status) > 0 || response.claim[0] == "0")
-      canClaim = false;
-    else canClaim = true;
-
-    return { canClaim, ...response };
-  };
-
-  const state = useQuery(
-    ["Claim", dropperAddress, targetChain.chainId, claimId],
-    () => _getClaim(dropperAddress, ctx, claimId),
+  console.log("useClaim", claimId);
+  const claimSeq = useMutation(
+    () => getClaimSignature({ claimId, address: ctx.account }),
     {
-      ...queryCacheProps,
-      onSuccess: () => {},
-      placeholderData: {
-        canClaim: false,
-        claim: ["", "", "", ""],
-        status: "",
+      onMutate: () => {},
+      onSuccess: (data: any) => {
+        claimWeb3Drop.mutate({
+          message: data.signature,
+          blockDeadline: data.block_deadline,
+          amount: data.amount,
+          claimId: data.claim_id,
+        });
       },
-      enabled: ctx.web3?.utils.isAddress(ctx.account) && !!ctx.chainId,
+      onError: (error) => {
+        console.log("error", error);
+        toast("Failed to get claim signature from API >.<", "error");
+      },
+      onSettled: () => {},
     }
   );
 
-  const claimWeb3Drop = useMutation(claimDrop(dropperAddress, ctx), {
-    onSuccess: () => {
-      toast("Claim successful!", "success");
-      state.refetch();
-    },
-    onError: (err) => {
-      console.log("error", err);
-    },
-  });
-
-  const signerForClaim = useQuery(
-    ["signerForClaim", dropperAddress, targetChain.chainId, claimId],
-    () => getSignerForClaim(dropperAddress, ctx)(claimId),
+  const claim = useQuery(
+    [`/drops/claims/${claimId}`],
+    (query: any) => queryHttp(query).then((r: any) => r.data),
     {
       ...queryCacheProps,
-      enabled: ctx.web3?.utils.isAddress(ctx.account) && !!ctx.chainId,
+      // cacheTime: 0,
+      enabled: !!claimId && !userAccess,
     }
   );
 
-  const claim = useMutation(() => getClaimSignature(claimId, ctx.account), {
-    onMutate: () => {},
-    onSuccess: (response: any) => {
-      console.log("response claim", response);
-      claimWeb3Drop.mutate({
-        message: response.data.signature,
-        blockDeadline: response.data.block_deadline,
-        amount: response.amount,
-        claimId: claimId,
-      });
-    },
-    onError: (error) => {
-      console.log("error", error);
-    },
-    onSettled: () => {},
-  });
+  const signature = useQuery(
+    [`/drops`, { dropper_claim_id: claimId, address: claimantAddress }],
+    (query: any) => queryHttp(query).then((r: any) => r.data),
+    {
+      ...queryCacheProps,
+      // cacheTime: 0,
+      enabled: !!claimId && ctx.web3.utils.isAddress(claimantAddress ?? ""),
+    }
+  );
 
   const isLoadingClaim = React.useMemo(() => {
     if (claimWeb3Drop.isLoading || claim.isLoading) return true;
@@ -98,12 +79,13 @@ const useClaim = ({
   }, [claimWeb3Drop.isLoading, claim.isLoading]);
 
   return {
-    state: state.data,
+    // state: state.data,
+    state,
     claim,
     isLoadingClaim,
-    isLoadingState: state.isLoading,
-    claimWeb3Drop,
-    signerForClaim,
+    claimSeq,
+    signature,
+    // isLoadingState: state.isLoading,
   };
 };
 

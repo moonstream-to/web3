@@ -16,7 +16,7 @@ export const getAdminList =
     });
   };
 
-export const getClaimSignature = (claimId, address) => {
+export const getClaimSignature = ({ claimId, address }) => {
   return http({
     method: "GET",
     url: `${API}/drops/`,

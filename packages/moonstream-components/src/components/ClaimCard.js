@@ -11,6 +11,7 @@ import {
 import useClaim from "../core/hooks/dropper/useClaim";
 import Web3Context from "../core/providers/Web3Provider/context";
 import { targetChain } from "../core/providers/Web3Provider";
+import { useDropperContract } from "../core/hooks/dropper";
 
 const _ClaimCard = ({ drop, children, ...props }) => {
   const web3Provider = useContext(Web3Context);
@@ -19,6 +20,14 @@ const _ClaimCard = ({ drop, children, ...props }) => {
     dropperAddress: drop.dropper_contract_address,
     targetChain: targetChain,
     ctx: web3Provider,
+    claimId: drop.dropper_claim_id,
+    userAccess: true,
+  });
+
+  const dropperContract = useDropperContract({
+    dropperAddress: drop.dropper_contract_address,
+    ctx: web3Provider,
+    targetChain: targetChain,
     claimId: drop.claim_id,
   });
 
@@ -27,10 +36,12 @@ const _ClaimCard = ({ drop, children, ...props }) => {
     (claimer.claimStatus?.data.status > 0 ||
       claimer.claimStatus?.data.claim[0] == "0")
   )
-    if (claimer.isLoadingClaim) return <Spinner />;
+    if (
+      claimer.isLoadingClaim ||
+      dropperContract.dropperWeb3State.data?.isLoading
+    )
+      return <Spinner />;
 
-  console.log("claimCard", drop);
-  console.log("type is", claimer.state.claim.tokenType);
 
   return (
     <Flex
@@ -78,7 +89,18 @@ const _ClaimCard = ({ drop, children, ...props }) => {
               <ListItem>
                 Amount: <code>{drop.amount}</code>
               </ListItem>
-              <ListItem>tokenType: {claimer.state.claim.tokenType}</ListItem>
+              <ListItem>
+                Reward Type:{" "}
+                <code>{dropperContract.state.data?.claim.tokenType}</code>
+              </ListItem>
+              <ListItem>
+                Reward address:{" "}
+                <code>{dropperContract.state.data?.claim.tokenAddress}</code>
+              </ListItem>
+              <ListItem>
+                Token id:{" "}
+                <code>{dropperContract.state.data?.claim.tokenId}</code>
+              </ListItem>
               <ListItem>claimd id: {drop.claim_id}</ListItem>
             </UnorderedList>
           </Flex>
@@ -97,11 +119,11 @@ const _ClaimCard = ({ drop, children, ...props }) => {
         <Button
           variant={"solid"}
           size="xl"
-          isLoading={claimer.claimWeb3Drop.isLoading}
+          isLoading={dropperContract.claimWeb3Drop.isLoading}
           colorScheme="green"
-          isDisabled={!claimer.state.canClaim}
+          isDisabled={!dropperContract.dropperWeb3State.data?.canClaim}
           onClick={() =>
-            claimer.claimWeb3Drop.mutate({
+            dropperContract.claimWeb3Drop.mutate({
               message: drop.signature,
               blockDeadline: drop.block_deadline,
               claimId: drop.claim_id,
@@ -109,7 +131,9 @@ const _ClaimCard = ({ drop, children, ...props }) => {
             })
           }
         >
-          {claimer.state.canClaim ? "Claim now" : "Already claimed"}
+          {dropperContract.dropperWeb3State.data?.canClaim
+            ? "Claim now"
+            : "Already claimed"}
         </Button>
       </Flex>
       {children && children}

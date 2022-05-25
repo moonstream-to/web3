@@ -1,24 +1,27 @@
 import React, { useContext } from "react";
-import { chakra, Flex, Spinner } from "@chakra-ui/react";
+import {
+  chakra,
+  Flex,
+  Spinner,
+  VStack,
+  Stack,
+  Input,
+  Box,
+  Button,
+  Heading,
+  useDisclosure,
+  InputGroup,
+  ScaleFade,
+} from "@chakra-ui/react";
 import { targetChain } from "../../core/providers/Web3Provider";
 import Web3Context from "../../core/providers/Web3Provider/context";
-import useDrops from "../../core/hooks/dropper/useDrops";
-import useClaim from "../../core/hooks/dropper/useDrop";
-import Claimers from "../Claimers";
+import useDrop from "../../core/hooks/dropper/useDrop";
+import Paginator from "../Paginator";
+import ClaimantDetails from "../ClaimantDetails";
+import ClaimersList from "../ClaimersList";
 
-const _Drop = ({
-  dropId,
-  ...props
-}: {
-  dropId: string;
-  claimants: Array<String>;
-}) => {
+const _Drop = ({ dropId, ...props }: { dropId: string }) => {
   const web3ctx = useContext(Web3Context);
-
-  const { adminClaims } = useDrops({
-    targetChain: targetChain,
-    ctx: web3ctx,
-  });
 
   const {
     claimants,
@@ -27,14 +30,16 @@ const _Drop = ({
     claimantsPage,
     setClaimantsPageSize,
     claimantsPageSize,
-  } = useClaim({
+  } = useDrop({
     targetChain,
     ctx: web3ctx,
     claimId: dropId,
   });
 
-  if (!claimants.data || !adminClaims.data || adminClaims.isLoading)
-    return <Spinner />;
+  const { onOpen, onClose, isOpen } = useDisclosure();
+  const [filter, setFilter] = React.useState("");
+
+  console.log("claimants", filter, isOpen);
 
   return (
     <Flex
@@ -48,17 +53,81 @@ const _Drop = ({
       {...props}
     >
       <Flex bgColor={"blue.1200"} borderRadius="md" p={2} direction="column">
-        <Claimers
-          list={claimants.data}
-          onDeleteClaimant={(address: string) => {
-            deleteClaimants.mutate({ list: [address] });
-          }}
-          setPage={setClaimantsPage}
-          setLimit={setClaimantsPageSize}
-          page={claimantsPage}
-          limit={claimantsPageSize}
-          hasMore={claimants.data.length == claimantsPageSize ? true : false}
-        />
+        <Box>
+          {/* <ScaleFade in> */}
+          <Heading variant="tokensScreen"> Claimants </Heading>
+          <VStack
+            overflow="initial"
+            maxH="unset"
+            height="100%"
+            w="100%"
+            maxW="100%"
+          >
+            {!isOpen && (
+              <>
+                <Stack direction={["column", "row", null]} w="100%">
+                  {" "}
+                  <InputGroup size="sm" variant="outline" w="100%">
+                    <Input
+                      type="search"
+                      maxW="800px"
+                      flexBasis="50px"
+                      flexGrow={1}
+                      display="flex"
+                      minW="150px"
+                      w="unset"
+                      borderRadius="md"
+                      placeholder="Check if address is on the list"
+                      value={filter}
+                      onChange={(e) => setFilter(e.target.value)}
+                    />
+                  </InputGroup>
+                  <Button
+                    alignSelf="flex-end"
+                    onClick={onOpen}
+                    colorScheme="orange"
+                    variant="solid"
+                    px="2rem"
+                    size="sm"
+                  >
+                    Check now
+                  </Button>
+                </Stack>
+              </>
+            )}
+            {isOpen && (
+              <ScaleFade in>
+                <ClaimantDetails
+                  onClose={onClose}
+                  address={filter}
+                  claimId={dropId}
+                  onDeleteClaimant={(address: string) => {
+                    deleteClaimants.mutate({ list: [address] });
+                  }}
+                />
+              </ScaleFade>
+            )}
+
+            <Paginator
+              paginatorKey={"claimants"}
+              setPage={setClaimantsPage}
+              setLimit={setClaimantsPageSize}
+              hasMore={
+                claimants.data?.length == claimantsPageSize ? true : false
+              }
+              page={claimantsPage}
+              pageSize={claimantsPageSize}
+            >
+              {!claimants.isLoading && (
+                <ClaimersList
+                  data={claimants.data}
+                  onDeleteClaimant={deleteClaimants}
+                />
+              )}
+              {claimants.isLoading && <Spinner />}
+            </Paginator>
+          </VStack>
+        </Box>
       </Flex>
     </Flex>
   );

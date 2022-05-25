@@ -28,7 +28,7 @@ export const claimDrop =
     return response;
   };
 
-export const getState = (address: any, ctx: any) => async () => {
+  export const getState = (address: any, ctx: any) => async () => {
   const web3 = ctx.web3;
   const dropper = new web3.eth.Contract(dropperAbi) as any as Dropper;
   dropper.options.address = address;

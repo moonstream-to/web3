@@ -35,13 +35,6 @@ const Drops = () => {
       ctx: web3Provider,
     });
 
-  if (!adminClaims.data)
-    return (
-      <Flex minH="100vh">
-        <Spinner />
-      </Flex>
-    );
-
   return (
     <ScaleFade in>
       <Flex
@@ -76,14 +69,15 @@ const Drops = () => {
           paginatorKey={"claims"}
           setPage={pageOptions.setPage}
           setLimit={pageOptions.setPageSize}
-          hasMore={adminClaims.data.length == pageOptions.pageSize}
+          hasMore={adminClaims?.data?.length == pageOptions.pageSize}
         >
+          {adminClaims.isLoading && <Spinner />}
           {web3Provider.account &&
             adminClaims?.data?.map((claim) => {
               return (
                 <Drop
                   key={`contract-card-${claim.id}}`}
-                  claim={claim}
+                  dropId={claim.id}
                   onUpdate={update}
                   deactivateDrop={deactivateDrop}
                   activateDrop={activateDrop}
@@ -109,6 +103,7 @@ const Drops = () => {
                 <Image
                   pl={2}
                   h="24px"
+                  alt={"metamask"}
                   src="https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg"
                 />
               </Button>

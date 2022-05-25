@@ -15,7 +15,7 @@ import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
 import { useRouter } from "moonstream-components/src/core/hooks";
 import DropperContract from "moonstream-components/src/components/DropperContract";
 import usePlayerClaims from "moonstream-components/src/core/hooks/dropper/useClaims";
-import { useDropper } from "moonstream-components/src/core/hooks/dropper";
+import { useDrops } from "moonstream-components/src/core/hooks/dropper";
 const assets = {
   onboarding:
     "https://s3.amazonaws.com/static.simiotics.com/unicorn_bazaar/unim-onboarding.png",
@@ -32,7 +32,7 @@ const Drops = () => {
   const router = useRouter();
   const { query } = router;
 
-  const dropper = useDropper({
+  const dropper = useDrops({
     targetChain: targetChain,
     ctx: web3Provider,
   });
@@ -97,7 +97,7 @@ const Drops = () => {
                   >
                     {query?.dropId ? `Back to list` : `See claims`}
                   </Button>
-                  <Button>Claim all at once </Button>
+                  <Button disabled>Claim all at once </Button>
                 </ButtonGroup>
               </DropperContract>
             );

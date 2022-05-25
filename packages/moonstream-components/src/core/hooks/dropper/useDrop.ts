@@ -19,7 +19,6 @@ const useDrop = ({
   targetChain,
   ctx,
   claimId,
-  initialPageSize,
   getAll,
 }: {
   targetChain: ChainInterface;
@@ -32,9 +31,7 @@ const useDrop = ({
   const toast = useToast();
 
   const [claimantsPage, setClaimantsPage] = React.useState(0);
-  const [claimantsPageSize, setClaimantsPageSize] = React.useState(
-    initialPageSize ?? 25
-  );
+  const [claimantsPageSize, setClaimantsPageSize] = React.useState(0);
   const _getClaimants = async (page: number) => {
     const response = await getClaimants({ dropperClaimId: claimId })({
       limit: claimantsPageSize,
@@ -48,7 +45,7 @@ const useDrop = ({
 
     {
       ...queryCacheProps,
-      enabled: !!ctx.account,
+      enabled: !!ctx.account && claimantsPageSize != 0,
       keepPreviousData: true,
       onSuccess: () => {},
     }

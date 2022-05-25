@@ -16,6 +16,7 @@ import {
 import useToast from "../useToast";
 import { balanceOfAddress } from "../../contracts/terminus.contracts";
 import queryCacheProps from "../hookCommon";
+import { queryHttp } from "../../utils/http";
 
 const useDrops = ({
   targetChain,
@@ -27,7 +28,7 @@ const useDrops = ({
   const toast = useToast();
 
   const [claimsPage, setClaimsPage] = React.useState(0);
-  const [claimsPageSize, setClaimsPageSize] = React.useState(10);
+  const [claimsPageSize, setClaimsPageSize] = React.useState(0);
 
   const terminusList = useQuery(
     ["terminusAddresses"],
@@ -101,18 +102,16 @@ const useDrops = ({
   };
 
   const adminClaims = useQuery(
-    [
-      "claimAdmin",
-      "adminClaims",
-      targetChain.chainId,
-      claimsPage,
-      claimsPageSize,
-    ],
+    ["claimAdmin", "adminClaims", targetChain.name, claimsPage, claimsPageSize],
     _getAdminClaimsList,
     {
       ...queryCacheProps,
       keepPreviousData: true,
-      enabled: !!adminPermissions.data && !!ctx.account,
+      enabled:
+        !!adminPermissions.data &&
+        !!ctx.account &&
+        !!targetChain.name &&
+        claimsPageSize != 0,
     }
   );
 
@@ -182,6 +181,17 @@ const useDrops = ({
     }
   );
 
+  const dropperContracts = useQuery(
+    ["/drops/contracts", { blockchain: targetChain.name }],
+    (query: any) => queryHttp(query).then((result: any) => result.data),
+    {
+      ...queryCacheProps,
+      onSuccess: () => {},
+      enabled:
+        ctx.web3?.utils.isAddress(ctx.account) && ctx.chainId === ctx.chainId,
+    }
+  );
+
   return {
     adminClaims,
     isLoading,
@@ -190,6 +200,7 @@ const useDrops = ({
     update,
     activateDrop,
     deactivateDrop,
+    dropperContracts,
   };
 };
 
