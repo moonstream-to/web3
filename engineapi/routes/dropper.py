@@ -759,6 +759,48 @@ async def delete_claimants(
     return data.RemoveClaimantsResponse(addresses=results)
 
 
+@router.get("/claimants/search", response_model=data.Claimant)
+async def get_claimant_in_drop(
+    request: Request,
+    dropper_claim_id: UUID,
+    address: str,
+    db_session: Session = Depends(db.yield_db_session),
+) -> data.Claimant:
+
+    """
+    Return claimant from drop
+    """
+    try:
+        actions.ensure_admin_token_holder(
+            db_session,
+            dropper_claim_id,
+            request.state.address,
+        )
+    except actions.AuthorizationError as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=403)
+    except Exception as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=500)
+
+    try:
+        claimant = actions.get_claimant(
+            db_session=db_session,
+            dropper_claim_id=dropper_claim_id,
+            address=address,
+        )
+
+    except NoResultFound:
+        raise DropperHTTPException(
+            status_code=404, detail="Address not present in that drop."
+        )
+    except Exception as e:
+        logger.error(f"Can't get claimant: {e}")
+        raise DropperHTTPException(status_code=500, detail="Can't get claimant")
+
+    return data.Claimant(address=claimant.address, amount=claimant.amount)
+
+
 @router.post("/drop/{dropper_claim_id}/refetch")
 async def refetch_drop_signatures(
     request: Request,
