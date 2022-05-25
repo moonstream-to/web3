@@ -43,16 +43,18 @@ You can get all the drops that a user is eligible to claim using the `/drops/bat
 To call this endpoint:
 
 <details>
-<summary>`curl`</summary>
-```bash
-curl "https://engineapi.moonstream.to/drops/batch?blockchain=<blockchain_name>&address=<user_address>&limit=10&offset=0"
+<summary><b>curl</b></summary>
+
+```
+curl "https://engineapi.moonstream.to/drops/batch?blockchain=$BLOCKCHAIN&address=$PLAYER_ADDRESS&limit=$PAGE_SIZE&offset=$PAGE_NUMBER"
 ```
 
 For example, to retrieve the first 10 drops for the address `0x1010000000000000000000000000000000000000` on the `polygon`
 blockchain:
 
-```bash
-curl "https://engineapi.moonstream.to/drops/batch?blockchain=polygon&address=0x1010000000000000000000000000000000000000&limit=10&offset=0"
+```
+BLOCKCHAIN=polygon PLAYER_ADDRESS=0x1010000000000000000000000000000000000000 PAGE_SIZE=10 PAGE_NUMBER=0
+curl "https://engineapi.moonstream.to/drops/batch?blockchain=$BLOCKCHAIN&address=$PLAYER_ADDRESS&limit=$PAGE_SIZE&offset=$PAGE_NUMBER"
 ```
 
 The response would look like this:
@@ -75,21 +77,24 @@ The response would look like this:
 </details>
 
 <details>
-<summary>`fetch`</summary>
-```javascript
-fetch(`https://engineapi.moonstream.to/drops/batch?blockchain=${blockchain}&address=${playerAddress}&limit=10&offset=0`)
+<summary><b>fetch</b></summary>
+
+```
+fetch(`https://engineapi.moonstream.to/drops/batch?blockchain=${blockchain}&address=${playerAddress}&limit=${pageSize}&offset=${pageNumber}`)
 ```
 
 For example, to retrieve the first 10 drops for the address `0x1010000000000000000000000000000000000000` on the `polygon`
 blockchain:
 
-```javascript
+```
 let blockchain = "polygon";
 let playerAddress = "0x1010000000000000000000000000000000000000";
+let pageSize = 10;
+let pageNumber = 0;
 fetch(`https://engineapi.moonstream.to/drops/batch?blockchain=${blockchain}&address=${playerAddress}&limit=10&offset=0`)
 ```
 
-The response would look like this:
+The response would look like this (assuming the player had only one drop eligible for claim):
 
 ```
 [
