@@ -73,6 +73,10 @@ class Signer:
     def refresh_signer(self):
         pass
 
+    @abc.abstractmethod
+    def batch_sign_message(self, messages_list):
+        pass
+
 
 class BrownieAccountSigner(Signer):
     """
@@ -90,6 +94,22 @@ class BrownieAccountSigner(Signer):
         )
         return signed_message_bytes.hex()
 
+    def batch_sign_message(self, messages_list: List[str]):
+
+        signed_messages_list = {}
+
+        for message in messages_list:
+            eth_private_key = eth_keys.keys.PrivateKey(
+                HexBytes(self.signer.private_key)
+            )
+            message_hash_bytes = HexBytes(message)
+            _, _, _, signed_message_bytes = sign_message_hash(
+                eth_private_key, message_hash_bytes
+            )
+            signed_messages_list[message.hex()] = signed_message_bytes.hex()
+
+        return signed_messages_list
+
 
 def get_signing_account(raw_message: str, signature: str) -> str:
     return web3.eth.account.recover_message(raw_message, signature=signature)
@@ -106,9 +126,13 @@ class InstanceSigner(Signer):
             self.current_signer_uri = (
                 f"http://{ip}:{MOONSTREAM_AWS_SIGNER_INSTANCE_PORT}/sign"
             )
+            self.current_signer_batch_uri = (
+                f"http://{ip}:{MOONSTREAM_AWS_SIGNER_INSTANCE_PORT}/batchsign"
+            )
 
     def clean_signer(self) -> None:
         self.current_signer_uri = None
+        self.current_signer_batch_uri = None
 
     def refresh_signer(self) -> None:
         try:
@@ -123,6 +147,7 @@ class InstanceSigner(Signer):
             raise SignWithInstanceFail("Unsupported number of signing instances")
 
         self.current_signer_uri = f"http://{instances[0]['private_ip_address']}:{MOONSTREAM_AWS_SIGNER_INSTANCE_PORT}/sign"
+        self.current_signer_batch_uri = f"http://{instances[0]['private_ip_address']}:{MOONSTREAM_AWS_SIGNER_INSTANCE_PORT}/batchsign"
 
     def sign_message(self, message: str):
         # TODO(kompotkot): What to do if self.current_signer_uri is not None but the signing server went down?
@@ -155,6 +180,39 @@ class InstanceSigner(Signer):
             )
 
         return signature
+
+    def batch_sign_message(self, messages_list: List[str]):
+        if self.current_signer_uri is None:
+            self.refresh_signer()
+
+        try:
+            resp = requests.post(
+                self.current_signer_batch_uri,
+                headers={"Content-Type": "application/json"},
+                json={"unsigned_data": [str(message) for message in messages_list]},
+            )
+            resp.raise_for_status()
+            signed_messages = resp.json()["signed_data"]
+        except Exception as err:
+            logger.error(f"Failed signing of message with instance server, {err}")
+            raise SignWithInstanceFail("Failed signing of message with instance server")
+
+        results = {}
+
+        # Hack as per: https://medium.com/@yaoshiang/ethereums-ecrecover-openzeppelin-s-ecdsa-and-web3-s-sign-8ff8d16595e1
+        for unsigned_message, signed_message in signed_messages.items():
+            signature = signed_message[2:]
+            if signature[-2:] == "00":
+                signature = f"{signature[:-2]}1b"
+            elif signature[-2:] == "01":
+                signature = f"{signature[:-2]}1c"
+            else:
+                raise SignWithInstanceFail(
+                    f"Unexpected v-value on signed message: {signed_message[-2:]}"
+                )
+            results[unsigned_message] = signature
+
+        return results
 
 
 DROP_SIGNER: Optional[Signer] = None

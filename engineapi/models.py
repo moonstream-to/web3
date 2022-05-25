@@ -141,6 +141,7 @@ class DropperClaimant(Base):  # type: ignore
     address = Column(VARCHAR(256), nullable=False, index=True)
     amount = Column(BigInteger, nullable=False)
     added_by = Column(VARCHAR(256), nullable=False, index=True)
+    signature = Column(String, nullable=True, index=True)
 
     created_at = Column(
         DateTime(timezone=True), server_default=utcnow(), nullable=False
