@@ -718,19 +718,20 @@ def refetch_drop_signatures(
             page, transformed_claim_amounts
         ):
 
-            message_hash = dropper_contract.claim_message_hash(
+            message_hash_raw = dropper_contract.claim_message_hash(
                 claim.claim_id,
                 outdated_signature.address,
                 claim.claim_block_deadline,
                 transformed_claim_amount,
             )
+            message_hash = str(message_hash_raw)
             signature_requests.append(message_hash)
-            users_hashes[outdated_signature.address] = message_hash.hex()
+            users_hashes[outdated_signature.address] = message_hash
             users_amount[outdated_signature.address] = outdated_signature.amount
 
-        signed_messages = signatures.DROP_SIGNER.batch_sign_message(
-            [signature_request.hex() for signature_request in signature_requests]
-        )
+        message_hashes = [signature_request for signature_request in signature_requests]
+
+        signed_messages = signatures.DROP_SIGNER.batch_sign_message(message_hashes)
 
         hashes_signature.update(signed_messages)
 

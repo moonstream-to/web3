@@ -189,7 +189,7 @@ class InstanceSigner(Signer):
             resp = requests.post(
                 self.current_signer_batch_uri,
                 headers={"Content-Type": "application/json"},
-                json={"unsigned_data": [f"0x{message}" for message in messages_list]},
+                json={"unsigned_data": [str(message) for message in messages_list]},
             )
             resp.raise_for_status()
             signed_messages = resp.json()["signed_data"]
@@ -200,8 +200,7 @@ class InstanceSigner(Signer):
         results = {}
 
         # Hack as per: https://medium.com/@yaoshiang/ethereums-ecrecover-openzeppelin-s-ecdsa-and-web3-s-sign-8ff8d16595e1
-        for key, signed_message in zip(messages_list, signed_messages.values()):
-
+        for unsigned_message, signed_message in signed_messages.items():
             signature = signed_message[2:]
             if signature[-2:] == "00":
                 signature = f"{signature[:-2]}1b"
@@ -211,7 +210,7 @@ class InstanceSigner(Signer):
                 raise SignWithInstanceFail(
                     f"Unexpected v-value on signed message: {signed_message[-2:]}"
                 )
-            results[key] = signature
+            results[unsigned_message] = signature
 
         return results
 
