@@ -12,7 +12,7 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import expression, and_
@@ -142,6 +142,61 @@ class DropperClaimant(Base):  # type: ignore
     amount = Column(BigInteger, nullable=False)
     added_by = Column(VARCHAR(256), nullable=False, index=True)
 
+    created_at = Column(
+        DateTime(timezone=True), server_default=utcnow(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=utcnow(),
+        onupdate=utcnow(),
+        nullable=False,
+    )
+
+
+class Leaderboard(Base):  # type: ignore
+    __tablename__ = "leaderboards"
+    # __table_args__ = (UniqueConstraint("dropper_contract_id", "address"),)
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    title = Column(VARCHAR(128), nullable=False)
+    description = Column(String, nullable=True)
+    created_at = Column(
+        DateTime(timezone=True), server_default=utcnow(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=utcnow(),
+        onupdate=utcnow(),
+        nullable=False,
+    )
+
+
+class LeaderboardScores(Base):  # type: ignore
+
+    __tablename__ = "leaderboard_scores"
+    __table_args__ = (UniqueConstraint("leaderboard_id", "address"),)
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+    leaderboard_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("leaderboards.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    address = Column(VARCHAR(256), nullable=False, index=True)
+    score = Column(BigInteger, nullable=False)
+    points_data = Column(JSONB, nullable=True)
     created_at = Column(
         DateTime(timezone=True), server_default=utcnow(), nullable=False
     )

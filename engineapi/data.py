@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 from uuid import UUID
@@ -110,6 +110,7 @@ class DropBatchResponseItem(BaseModel):
     title: str
     description: str
     amount: int
+    amount_string: str
     block_deadline: int
     signature: str
     dropper_claim_id: UUID
@@ -144,3 +145,13 @@ class DropUpdatedResponse(BaseModel):
     terminus_pool_id: Optional[int] = None
     claim_id: Optional[int] = None
     active: bool = True
+
+
+class QuartilesResponse(BaseModel):
+    percentile_25: Dict[str, Any]
+    percentile_50: Dict[str, Any]
+    percentile_75: Dict[str, Any]
+
+
+class CountAddressesResponse(BaseModel):
+    count: int = Field(default_factory=int)
