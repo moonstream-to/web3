@@ -73,6 +73,10 @@ class Signer:
     def refresh_signer(self):
         pass
 
+    @abc.abstractmethod
+    def batch_sign_message(self, messages_list):
+        pass
+
 
 class BrownieAccountSigner(Signer):
     """
