@@ -18,14 +18,14 @@ class RandomLootboxTest(LootboxTestCase):
                 reward_type=20,
                 token_address=self.erc20_contracts[1].address,
                 token_id=0,
-                token_amount=1 * 10 ** 18,
+                token_amount=1 * 10**18,
                 weight=4,
             ),
             lootbox_item_to_tuple(
                 reward_type=20,
                 token_address=self.erc20_contracts[1].address,
                 token_id=0,
-                token_amount=400 * 10 ** 18,
+                token_amount=400 * 10**18,
                 weight=0,
             ),
         ]
@@ -41,7 +41,7 @@ class RandomLootboxTest(LootboxTestCase):
                 reward_type=20,
                 token_address=self.erc20_contracts[1].address,
                 token_id=0,
-                token_amount=400 * 10 ** 18,
+                token_amount=400 * 10**18,
                 weight=1,
             ),
         ]
@@ -57,7 +57,7 @@ class RandomLootboxTest(LootboxTestCase):
                     reward_type=20,
                     token_address=self.erc20_contracts[1].address,
                     token_id=0,
-                    token_amount=400 * 10 ** 18,
+                    token_amount=400 * 10**18,
                     weight=0,
                 ),
                 {"from": accounts[0]},
@@ -69,14 +69,14 @@ class RandomLootboxTest(LootboxTestCase):
                 reward_type=20,
                 token_address=self.erc20_contracts[1].address,
                 token_id=0,
-                token_amount=400 * 10 ** 18,
+                token_amount=400 * 10**18,
                 weight=1,
             ),
             lootbox_item_to_tuple(
                 reward_type=20,
                 token_address=self.erc20_contracts[1].address,
                 token_id=0,
-                token_amount=1 * 10 ** 18,
+                token_amount=1 * 10**18,
                 weight=4,
             ),
         ]
@@ -136,7 +136,7 @@ class RandomLootboxTest(LootboxTestCase):
     def test_complex_random_lootbox(self):
         weigths = [1, 2, 3, 5, 5, 2, 1, 8, 9, 10]
 
-        token_amounts = [weight * 10 ** 18 for weight in weigths]
+        token_amounts = [weight * 10**18 for weight in weigths]
         new_lootbox = [
             lootbox_item_to_tuple(
                 reward_type=20,
