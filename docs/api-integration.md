@@ -91,7 +91,7 @@ let blockchain = "polygon";
 let playerAddress = "0x1010000000000000000000000000000000000000";
 let pageSize = 10;
 let pageNumber = 0;
-fetch(`https://engineapi.moonstream.to/drops/batch?blockchain=${blockchain}&address=${playerAddress}&limit=10&offset=0`)
+fetch(`https://engineapi.moonstream.to/drops/batch?blockchain=${blockchain}&address=${playerAddress}&limit=${pageSize}&offset=${pageNumber}`)
 ```
 
 The response would look like this (assuming the player had only one drop eligible for claim):
