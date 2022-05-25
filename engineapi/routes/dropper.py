@@ -93,6 +93,8 @@ async def get_drop_handler(
         claim_id=claimant.claim_id,
         block_deadline=claimant.claim_block_deadline,
         signature=signature,
+        title=claimant.title,
+        description=claimant.description,
     )
 
 

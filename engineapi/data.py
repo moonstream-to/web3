@@ -102,6 +102,8 @@ class DropResponse(BaseModel):
     amount: int
     block_deadline: int
     signature: str
+    title: str
+    description: str
 
 
 class DropBatchResponseItem(BaseModel):
