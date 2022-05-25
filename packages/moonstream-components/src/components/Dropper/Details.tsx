@@ -39,7 +39,6 @@ const _Drop = ({ dropId, ...props }: { dropId: string }) => {
   const { onOpen, onClose, isOpen } = useDisclosure();
   const [filter, setFilter] = React.useState("");
 
-  console.log("claimants", filter, isOpen);
 
   return (
     <Flex

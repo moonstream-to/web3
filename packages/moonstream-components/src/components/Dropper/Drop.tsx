@@ -169,7 +169,6 @@ const _DropCard = ({
       }
     );
 
-  console.log("claim", claim);
 
   // if (true) return <Spinner />;
   return (

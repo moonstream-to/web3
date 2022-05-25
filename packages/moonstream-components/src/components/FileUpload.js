@@ -31,7 +31,6 @@ const rejectStyle = {
 };
 
 function FileUpload({ isUploading, ...props }) {
-  console.log("Render file upload");
   const { getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } =
     useDropzone({ accept: ".csv", onDrop: props.onDrop });
 

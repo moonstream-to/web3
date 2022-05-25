@@ -26,8 +26,6 @@ const Lootboxes = () => {
     ctx: web3Provider,
   });
 
-  console.log("state", state.activeOpening);
-
   if (state.isLoading)
     return (
       <Flex minH="100vh">

@@ -56,7 +56,6 @@ const Web3MethodForm = ({
   contractAddress: string;
   props?: any;
 }) => {
-  console.log("method,", method);
   const setArguments = (
     state: any,
     { value, index }: { value: any; index: any }
@@ -108,7 +107,6 @@ const Web3MethodForm = ({
   const web3call = async ({ args }: { args: any }) => {
     const contract = new web3ctx.web3.eth.Contract([method]);
     contract.options.address = contractAddress;
-    console.log("args", ...args);
     const response =
       method.name &&
       (await contract.methods[method.name](...args).send({
@@ -128,7 +126,6 @@ const Web3MethodForm = ({
   const handleSubmit = () => {
     const returnedObject: any = [];
     state.inputs.forEach((inputElement: any, index: number) => {
-      console.log("inputElement.type", inputElement.type);
       returnedObject[index] =
         inputElement.type === "address"
           ? web3ctx.web3.utils.toChecksumAddress(inputElement.meta.value)
@@ -158,7 +155,6 @@ const Web3MethodForm = ({
 
   const web3ctx = useContext(Web3Context);
 
-  console.log("state,", state);
   if (!rendered) return <></>;
   return (
     <Fade in={rendered}>

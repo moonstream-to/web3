@@ -145,7 +145,6 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
 
   const onConnectWalletClick = () => {
     if (window.ethereum) {
-      console.log("wallet provider detected -> connecting wallet");
       setWeb3ProviderAsWindowEthereum().then((result) => {
         if (result) console.log("wallet setup was successfull");
         else

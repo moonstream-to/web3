@@ -45,7 +45,6 @@ const _ClaimCard = ({ drop, children, ...props }) => {
     )
       return <Spinner />;
 
-  console.log("drop", drop);
 
   return (
     <Flex

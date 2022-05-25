@@ -26,7 +26,6 @@ const useTerminusPool = ({
     ctx,
   });
 
-  console.log("useTerminusPool", terminusAddress, poolId);
   const terminusPoolCache = useQuery(
     ["terminusPoolState", poolId, terminusAddress, targetChain.chainId],
     getTerminusFacetPoolState(ctx, terminusAddress, poolId),

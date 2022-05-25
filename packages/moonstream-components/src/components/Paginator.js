@@ -99,7 +99,6 @@ const _Paginator = ({
           maxW="150px"
           placeholder="Select page size"
           onChange={(e) => {
-            console.log("appending new limit");
             router.appendQuery(`${paginatorKey}Limit`, e.target.value);
           }}
           value={router.query[`${paginatorKey}Limit`] ?? _pageOptions[0]}

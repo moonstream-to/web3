@@ -21,7 +21,7 @@ import {
 
 const AppContext = (props) => {
   useEffect(() => {
-    const version = "0.1";
+    const version = "0.2";
     if (version) console.log(`Frontend version: ${version}`);
     else
       console.error(

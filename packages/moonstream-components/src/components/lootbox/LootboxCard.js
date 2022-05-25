@@ -9,6 +9,7 @@ const LootboxCard = ({
   lootboxId,
   hasActiveOpening,
   activeOpening,
+  ...props
 }) => {
   const web3ctx = useContext(Web3Context);
   const [metadata, setMetadata] = useState(null);
