@@ -63,5 +63,4 @@ const CopyButton = (props) => {
   );
 };
 
-
 export default CopyButton;

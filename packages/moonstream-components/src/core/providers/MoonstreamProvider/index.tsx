@@ -11,7 +11,6 @@ const MoonstreamProvider = ({
 }) => {
   const [values] = React.useState(constants);
 
-
   return (
     <MoonstreamContext.Provider value={{ ...values }}>
       {children}

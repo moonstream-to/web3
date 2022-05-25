@@ -29,11 +29,10 @@ const assets = {
 const Drops = () => {
   const web3Provider = useContext(Web3Context);
 
-  const { adminClaims, pageOptions, update, activateDrop, deactivateDrop } =
-    useDrops({
-      targetChain: targetChain,
-      ctx: web3Provider,
-    });
+  const { adminClaims, pageOptions } = useDrops({
+    targetChain: targetChain,
+    ctx: web3Provider,
+  });
 
   return (
     <ScaleFade in>
@@ -75,13 +74,7 @@ const Drops = () => {
           {web3Provider.account &&
             adminClaims?.data?.map((claim) => {
               return (
-                <Drop
-                  key={`contract-card-${claim.id}}`}
-                  dropId={claim.id}
-                  onUpdate={update}
-                  deactivateDrop={deactivateDrop}
-                  activateDrop={activateDrop}
-                />
+                <Drop key={`contract-card-${claim.id}}`} dropId={claim.id} />
               );
             })}
         </Paginator>
