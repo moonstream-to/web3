@@ -393,13 +393,18 @@ def get_claimant(db_session: Session, dropper_claim_id, address):
 
     claimant_query = (
         db_session.query(
+            DropperClaimant.id.label("dropper_claimant_id"),
             DropperClaimant.address,
             DropperClaimant.amount,
+            DropperClaimant.signature,
             DropperClaim.id.label("dropper_claim_id"),
             DropperClaim.claim_id,
             DropperClaim.active,
             DropperClaim.claim_block_deadline,
             DropperContract.address.label("dropper_contract_address"),
+            (DropperClaim.updated_at < DropperClaimant.updated_at).label(
+                "is_recent_signature"
+            ),
         )
         .join(DropperClaim, DropperClaimant.dropper_claim_id == DropperClaim.id)
         .join(DropperContract, DropperClaim.dropper_contract_id == DropperContract.id)
@@ -419,14 +424,19 @@ def get_claimant_drops(
 
     claimant_query = (
         db_session.query(
+            DropperClaimant.id.label("dropper_claimant_id"),
             DropperClaimant.address,
             DropperClaimant.amount,
+            DropperClaimant.signature,
             DropperClaim.id.label("dropper_claim_id"),
             DropperClaim.claim_id,
             DropperClaim.active,
             DropperClaim.claim_block_deadline,
             DropperContract.address.label("dropper_contract_address"),
             DropperContract.blockchain,
+            (DropperClaim.updated_at < DropperClaimant.updated_at).label(
+                "is_recent_signature"
+            ),
         )
         .join(DropperClaim, DropperClaimant.dropper_claim_id == DropperClaim.id)
         .join(DropperContract, DropperClaim.dropper_contract_id == DropperContract.id)
