@@ -14,10 +14,27 @@ import {
 } from "@chakra-ui/react";
 import ClaimantDetails from "../ClaimantDetails";
 import ClaimersList from "../ClaimersList";
+import Web3 from "web3";
+import { useToast } from "../../core/hooks";
 
 const _Drop = ({ dropId, ...props }: { dropId: string }) => {
   const { onOpen, onClose, isOpen } = useDisclosure();
   const [filter, setFilter] = React.useState("");
+  const toast = useToast();
+  const handleCheckNow = () => {
+    const web3 = new Web3();
+    if (web3.utils.isAddress(filter)) {
+      onOpen();
+    } else {
+      toast("Not a valid address", "error");
+    }
+  };
+  const handleKeypress = (e: any) => {
+    //it triggers by pressing the enter key
+    if (e.charCode === 13) {
+      handleCheckNow();
+    }
+  };
 
   return (
     <Flex
@@ -47,6 +64,7 @@ const _Drop = ({ dropId, ...props }: { dropId: string }) => {
                   {" "}
                   <InputGroup size="sm" variant="outline" w="100%">
                     <Input
+                      onKeyPress={handleKeypress}
                       type="search"
                       maxW="800px"
                       flexBasis="50px"
@@ -62,7 +80,7 @@ const _Drop = ({ dropId, ...props }: { dropId: string }) => {
                   </InputGroup>
                   <Button
                     alignSelf="flex-end"
-                    onClick={onOpen}
+                    onClick={handleCheckNow}
                     colorScheme="orange"
                     variant="solid"
                     px="2rem"
