@@ -7,7 +7,7 @@ import {
   updateDrop,
   setClaimants,
 } from "../../services/moonstream-engine.service";
-import { useMutation, useQuery } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import {
   ChainInterface,
   MoonstreamWeb3ProviderInterface,
@@ -30,6 +30,7 @@ const useDrop = ({
 }) => {
   const admin = useDrops({ targetChain, ctx });
   const toast = useToast();
+  const queryClient = useQueryClient();
 
   const [claimantsPage, setClaimantsPage] = React.useState(0);
   const [claimantsPageSize, setClaimantsPageSize] = React.useState(0);
@@ -58,6 +59,8 @@ const useDrop = ({
       onSuccess: () => {
         toast("Revoked claim", "success");
         claimants.refetch();
+        queryClient.refetchQueries("/drops/claimants/search");
+        queryClient.refetchQueries(["claimants", "claimId", claimId]);
       },
       onError: () => {
         toast("Revoking claim failed", "error", "Error! >.<");
