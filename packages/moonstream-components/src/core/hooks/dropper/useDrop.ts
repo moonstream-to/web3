@@ -48,7 +48,6 @@ const useDrop = ({
     {
       ...queryCacheProps,
       enabled: !!ctx.account && claimantsPageSize != 0,
-      keepPreviousData: true,
       onSuccess: () => {},
     }
   );

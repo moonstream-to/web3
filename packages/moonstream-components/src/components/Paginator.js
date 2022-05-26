@@ -55,7 +55,7 @@ const _Paginator = ({
 
   const __page = router.query[`${paginatorKey}Page`];
   const __limit = router.query[`${paginatorKey}Limit`];
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     const _page = Number(router.query[`${paginatorKey}Page`]);
     const _limit = Number(router.query[`${paginatorKey}Limit`]);
 

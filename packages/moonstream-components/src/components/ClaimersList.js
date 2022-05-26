@@ -187,7 +187,7 @@ const _ClaimersList = ({ dropId }) => {
           </Tbody>
         </Table>
       )}
-      {claimants.isLoading && <Spinner />}
+      {(claimants.isLoading || claimants.isFetching) && <Spinner />}
     </Paginator>
   );
 };
