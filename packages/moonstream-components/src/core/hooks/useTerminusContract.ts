@@ -200,7 +200,6 @@ export const useTerminusContract = ({
     { ...commonProps }
   );
 
-  // console.log("poolState.data?.uri", poolState.data?.uri);
   const poolURI = useURI({ link: poolState.data?.uri });
 
   return {

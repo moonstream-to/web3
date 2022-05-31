@@ -58,7 +58,7 @@ const LootboxCard = ({
       p={4}
       mt={2}
       textColor={"gray.300"}
-      // {...props}
+      {...props}
     >
       <Heading as={"h2"} fontSize="lg" borderBottomWidth={1}>
         {"LootboxId: "}

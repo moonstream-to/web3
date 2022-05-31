@@ -100,7 +100,6 @@ const Web3MethodForm = ({
     initialState
   );
 
-  // console.log("formstate:", state, method);
   const [wasSent, setWasSent] = React.useState(false);
 
   const handleClose = React.useCallback(() => {
@@ -150,7 +149,6 @@ const Web3MethodForm = ({
             : console.error("not an address")
           : inputElement.meta.value;
     });
-    console.log("returnedObject", returnedObject);
     tx.mutate({ args: returnedObject });
     // if (onClose) {
     //   onClose();
@@ -298,36 +296,13 @@ const Web3MethodForm = ({
                 <Switch
                   display={"inline"}
                   colorScheme="orange"
-                  // isChecked={inputItem.meta.value}
                   onChange={(e) => {
-                    console.log("switch", e.target.value);
                     dispatchArguments({
                       value: !e.target.value,
                       index,
                     });
                   }}
                 />
-                // <Input
-                //   onKeyPress={handleKeypress}
-                //   type="search"
-                //   placeholder={
-                //     inputItem.meta.placeholder ||
-                //     inputItem.name ||
-                //     inputItem.type
-                //   }
-                //   key={`argument-address-${inputItem.name}`}
-                //   value={inputItem.meta.value}
-                //   onChange={(event) =>
-                //     dispatchArguments({
-                //       value: event.target.value,
-                //       index,
-                //     })
-                //   }
-                //   size="sm"
-                //   fontSize={"sm"}
-                //   w="100%"
-                //   variant={"outline"}
-                // />
               )}
             </Box>
           );
@@ -354,9 +329,7 @@ const Web3MethodForm = ({
                 fastMode: true,
                 transformHeader: validateHeader,
                 complete: (result: any) => {
-                  console.log("rrrresult", result);
                   BatchInputs.forEach((v) => {
-                    console.log("vvvv", v);
                     const index = state.inputs.findIndex(
                       (item: AbiInput) => item.name === v
                     );

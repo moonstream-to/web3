@@ -45,7 +45,6 @@ const useClaim = ({
         });
       },
       onError: (error) => {
-        console.log("error", error);
         toast("Failed to get claim signature from API >.<", "error");
       },
       onSettled: () => {},

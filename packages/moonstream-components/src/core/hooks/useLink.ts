@@ -6,7 +6,6 @@ const useURI = ({ link }: { link: string | undefined }) => {
   const contents = useQuery(
     ["link", link],
     (query: any) => {
-      console.log("useQuery", query.queryKey[1]);
       return queryPublic(query.queryKey[1]).then((r: any) => r.data);
     },
     {

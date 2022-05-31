@@ -169,8 +169,6 @@ const _DropCard = ({
       }
     );
 
-
-  // if (true) return <Spinner />;
   return (
     <Flex
       borderRadius={"md"}

@@ -128,6 +128,11 @@ export const targetChain =
 
 const Web3Provider = ({ children }: { children: JSX.Element }) => {
   const [web3] = React.useState<Web3>(new Web3(null));
+  web3.eth.transactionBlockTimeout = 100;
+  // TODO: this flag should allow to read revert messages
+  // However there seems to be abug in web3js, and setting this flag will upset metamsk badly..
+  // issue: https://github.com/ChainSafe/web3.js/issues/4787
+  // web3.eth.handleRevert = true;
   const [buttonText, setButtonText] = React.useState(WALLET_STATES.ONBOARD);
   const [account, setAccount] = React.useState<string>("");
   const [chainId, setChainId] = React.useState<number>(0);
