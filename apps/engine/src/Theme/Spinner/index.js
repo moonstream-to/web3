@@ -30,9 +30,11 @@ const defaultProps = {
   size: "md",
 };
 
-export default {
+const SpinnerTheme = {
   baseStyle,
   sizes,
   defaultProps,
   variants,
 };
+
+export default SpinnerTheme;

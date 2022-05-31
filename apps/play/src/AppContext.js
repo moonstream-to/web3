@@ -21,7 +21,7 @@ import {
 
 const AppContext = (props) => {
   useEffect(() => {
-    const version = "0.1";
+    const version = "0.2";
     if (version) console.log(`Frontend version: ${version}`);
     else
       console.error(
@@ -47,7 +47,11 @@ const AppContext = (props) => {
         >
           <UIProvider>
             <OverlayProvider>
-              <AnalyticsProvider mixpanelToken={process.env.NEXT_PUBLIC_PLAY_MIXPANEL_TOKEN}>{props.children}</AnalyticsProvider>
+              <AnalyticsProvider
+                mixpanelToken={process.env.NEXT_PUBLIC_PLAY_MIXPANEL_TOKEN}
+              >
+                {props.children}
+              </AnalyticsProvider>
             </OverlayProvider>
           </UIProvider>
         </MoonstreamProvider>

@@ -2,10 +2,8 @@ import React, { useContext } from "react";
 import { Flex, Center } from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
-// import { getLayout } from "../src/layouts/AppLayout";
+import { getLayout } from "../../../packages/moonstream-components/src/layouts/EngineLayout";
 import FeatureCard from "../../../packages/moonstream-components/src/components/FeatureCard";
-// import useClaimAdmin from "moonstream-components/src/core/hooks/useClaimAdmin";
-// import {targetChain } from "moonstream-components/src/core/providers/Web3Provider";
 const assets: any = {
   onboarding:
     "https://s3.amazonaws.com/static.simiotics.com/unicorn_bazaar/unim-onboarding.png",
@@ -32,6 +30,7 @@ const Homepage = () => {
           <Flex>
             <FeatureCard
               w="300px"
+              h="460px"
               link="/drops"
               text=" Set up a loyalty program and reward your players with tokens, items, badges, and achievements"
               heading="Loyalty and Drops"
@@ -42,17 +41,18 @@ const Homepage = () => {
             />
             <FeatureCard
               w="300px"
-              link="/loot"
-              text="Create lootboxes as rewards for encounters, challenges, and boss fights"
-              heading="Lootboxes"
+              h="460px"
+              link="/terminus"
+              text="Manage your access lists and more"
+              heading="Terminus"
               imageUrl={assets["DAO"]}
-              alt="Lootboxes"
+              alt="terminus"
               textColor={"white.100"}
               level="h2"
-              disabled={true}
             />
             <FeatureCard
               w="300px"
+              h="460px"
               link="/crafting"
               text="Create on-chain crafting recipes for your blockchain game"
               heading="Crafting"
@@ -98,4 +98,5 @@ export async function getStaticProps() {
   };
 }
 
+Homepage.getLayout = getLayout;
 export default Homepage;

@@ -5,61 +5,34 @@ import {
   activate,
   deactivate,
   updateDrop,
-} from "../services/moonstream-engine.service";
+  setClaimants,
+} from "../../services/moonstream-engine.service";
 import { useMutation, useQuery } from "react-query";
 import {
   ChainInterface,
   MoonstreamWeb3ProviderInterface,
-} from "../../../../../types/Moonstream";
-import { useToast } from ".";
-import queryCacheProps from "./hookCommon";
-import useClaimAdmin from "./useDrops";
+} from "../../../../../../types/Moonstream";
+import useToast from "../useToast";
+import queryCacheProps from "../hookCommon";
+import useDrops from "./useDrops";
 
-interface ClaimInterface {
-  active: boolean;
-  claim_block_deadline: number;
-  claim_id: number;
-  description: string;
-  dropper_contract_address: string;
-  id: string;
-  terminus_address: string;
-  terminus_pool_id: number;
-  title: string;
-}
-
-const useClaim = ({
+const useDrop = ({
   targetChain,
   ctx,
   claimId,
-  initialPageSize,
   getAll,
 }: {
   targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
-  claimId: string;
+  claimId?: string;
   initialPageSize?: number;
   getAll?: boolean;
 }) => {
-  const admin = useClaimAdmin({ targetChain, ctx });
+  const admin = useDrops({ targetChain, ctx });
   const toast = useToast();
 
-  const [claim, setClaim] = React.useState<ClaimInterface>(
-    admin.adminClaims.data
-  );
-  React.useEffect(() => {
-    if (admin.adminClaims.data || !admin.adminClaims.isLoading) {
-      setClaim(
-        admin.adminClaims.data?.find(
-          (element: ClaimInterface) => element.id === claimId
-        )
-      );
-    }
-  }, [admin.adminClaims, claimId]);
-
   const [claimantsPage, setClaimantsPage] = React.useState(0);
-  const [claimantsPageSize, setClaimantsPageSize] = React.useState(
-    initialPageSize ?? 25
-  );
+  const [claimantsPageSize, setClaimantsPageSize] = React.useState(0);
   const _getClaimants = async (page: number) => {
     const response = await getClaimants({ dropperClaimId: claimId })({
       limit: claimantsPageSize,
@@ -73,12 +46,11 @@ const useClaim = ({
 
     {
       ...queryCacheProps,
-      enabled: !!ctx.account,
+      enabled: !!ctx.account && claimantsPageSize != 0,
       keepPreviousData: true,
       onSuccess: () => {},
     }
   );
-
 
   const deleteClaimants = useMutation(
     _deleteClaimants({ dropperClaimId: claimId }),
@@ -94,35 +66,29 @@ const useClaim = ({
     }
   );
 
-  const activateDrop = useMutation(
-    () => activate({ dropperClaimId: claimId }),
-    {
-      onSuccess: () => {
-        toast("Activated drop", "success");
-        admin.adminClaims.refetch();
-      },
-      onError: () => {
-        toast("Activating drop failed", "error", "Error! >.<");
-      },
-      onSettled: () => {},
-    }
-  );
+  const activateDrop = useMutation(activate, {
+    onSuccess: () => {
+      toast("Activated drop", "success");
+      admin.adminClaims.refetch();
+    },
+    onError: () => {
+      toast("Activating drop failed", "error", "Error! >.<");
+    },
+    onSettled: () => {},
+  });
 
-  const deactivateDrop = useMutation(
-    () => deactivate({ dropperClaimId: claimId }),
-    {
-      onSuccess: () => {
-        toast("Deactivated drop", "success");
-        admin.adminClaims.refetch();
-      },
-      onError: () => {
-        toast("Deactivating drop failed", "error", "Error! >.<");
-      },
-      onSettled: () => {
-        deactivateDrop.reset();
-      },
-    }
-  );
+  const deactivateDrop = useMutation(deactivate, {
+    onSuccess: () => {
+      toast("Deactivated drop", "success");
+      admin.adminClaims.refetch();
+    },
+    onError: () => {
+      toast("Deactivating drop failed", "error", "Error! >.<");
+    },
+    onSettled: () => {
+      deactivateDrop.reset();
+    },
+  });
 
   const _getAllclaimants = async () => {
     let _claimants = [];
@@ -157,7 +123,7 @@ const useClaim = ({
     }
   );
 
-  const update = useMutation(updateDrop({ dropperClaimId: claimId }), {
+  const update = useMutation(updateDrop, {
     onSuccess: () => {
       admin.adminClaims.refetch();
       toast("Updated drop info", "success");
@@ -167,8 +133,17 @@ const useClaim = ({
     },
   });
 
+  const uploadFile = useMutation(setClaimants, {
+    onSuccess: () => {
+      toast("File uploaded successfully", "success");
+    },
+    onError: () => {
+      toast("Uploading file failed", "error", "Error! >.<");
+    },
+    onSettled: () => {},
+  });
+
   return {
-    claim,
     claimants,
     deleteClaimants,
     setClaimantsPage,
@@ -179,7 +154,8 @@ const useClaim = ({
     activateDrop,
     AllClaimants,
     update,
+    uploadFile,
   };
 };
 
-export default useClaim;
+export default useDrop;

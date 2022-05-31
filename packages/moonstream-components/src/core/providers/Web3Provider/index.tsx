@@ -1,7 +1,10 @@
 import React from "react";
 import Web3Context, { WALLET_STATES } from "./context";
 import Web3 from "web3";
-import { ChainInterface } from "../../../../../../types/Moonstream";
+import {
+  ChainInterface,
+  GetMethodsAbiType,
+} from "../../../../../../types/Moonstream";
 
 declare global {
   interface Window {
@@ -15,6 +18,17 @@ interface TokenInterface {
   deadline: number;
   signed_message: string;
 }
+
+export const getMethodsABI: typeof GetMethodsAbiType = (abi, name) => {
+  const index = abi.findIndex(
+    (item) => item.name === name && item.type == "function"
+  );
+  if (index !== -1) {
+    const item = abi[index];
+    return item;
+  } else throw "accesing wrong abi element";
+};
+
 export const chains: { [index: string]: ChainInterface } = {
   local: {
     chainId: 1337,
@@ -112,9 +126,13 @@ if (!process.env.NEXT_PUBLIC_ENGINE_TARGET_CHAIN)
 export const targetChain =
   chains[`${process.env.NEXT_PUBLIC_ENGINE_TARGET_CHAIN}`];
 
-
 const Web3Provider = ({ children }: { children: JSX.Element }) => {
   const [web3] = React.useState<Web3>(new Web3(null));
+  web3.eth.transactionBlockTimeout = 100;
+  // TODO: this flag should allow to read revert messages
+  // However there seems to be abug in web3js, and setting this flag will upset metamsk badly..
+  // issue: https://github.com/ChainSafe/web3.js/issues/4787
+  // web3.eth.handleRevert = true;
   const [buttonText, setButtonText] = React.useState(WALLET_STATES.ONBOARD);
   const [account, setAccount] = React.useState<string>("");
   const [chainId, setChainId] = React.useState<number>(0);
@@ -132,7 +150,6 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
 
   const onConnectWalletClick = () => {
     if (window.ethereum) {
-      console.log("wallet provider detected -> connecting wallet");
       setWeb3ProviderAsWindowEthereum().then((result) => {
         if (result) console.log("wallet setup was successfull");
         else
@@ -265,7 +282,6 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
 
   const defaultTxConfig = { from: account };
 
-
   return (
     <Web3Context.Provider
       value={{
@@ -277,6 +293,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
         chainId,
         defaultTxConfig,
         signAccessToken,
+        getMethodsABI,
       }}
     >
       {children}

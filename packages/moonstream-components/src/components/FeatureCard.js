@@ -57,12 +57,12 @@ const FeatureCard = ({
           src={imageUrl}
           alt={alt}
         />
-        <Heading textAlign="center" as={level ?? "h2"}>
+        <Heading textAlign="center" as={level ?? "h2"} _hover={{}}>
           {heading}
         </Heading>
         <chakra.span
           textAlign={"center"}
-          textColor={textColor ?? "blue.600"}
+          textColor={textColor ?? "blue.400"}
           px={2}
         >
           {text}

@@ -1,30 +1,17 @@
-import React from "react";
+import { useQuery } from "react-query";
 
-import { useMutation, useQuery } from "react-query";
+const useTokenMetadata = ({ tokenURI }: { tokenURI: string }) => {
+  const metadata = useQuery(
+    ["TokenMetadata", tokenURI],
+    () => fetch(tokenURI).then((res) => res.json()),
+    {
+      onSuccess: () => {},
+    }
+  );
 
-import {
-    ChainInterface,
-    MoonstreamWeb3ProviderInterface,
-} from "../../../../../types/Moonstream";
-
-const useTokenMetadata = ({
-    tokenURI,
-}: {
-    tokenURI: string;
-}) => {
-    const metadata = useQuery(
-        ["TokenMetadata", tokenURI],
-        () => fetch(tokenURI).then(res => res.json()),
-        {
-            onSuccess: () => { },
-        }
-    );
-
-    return {
-        metadata,
-    };
-}
+  return {
+    metadata,
+  };
+};
 
 export default useTokenMetadata;
-
-
