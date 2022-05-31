@@ -1,8 +1,8 @@
 import { Button, ButtonGroup, Spinner, Flex } from "@chakra-ui/react";
 import React, { useContext, useState } from "react";
 import ReactDiffViewer, { DiffMethod } from "react-diff-viewer";
-import useDrop from "../core/hooks/useDrop";
-import useDrops from "../core/hooks/useDrops";
+import useDrop from "../core/hooks/dropper/useDrop";
+import useDrops from "../core/hooks/dropper/useDrops";
 import { targetChain } from "../core/providers/Web3Provider";
 import Web3Context from "../core/providers/Web3Provider/context";
 import { MODAL_TYPES } from "../core/providers/OverlayProvider/constants";

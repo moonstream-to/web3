@@ -59,7 +59,8 @@ const variants = {
   suggestion: variantSuggestion,
 };
 
-export default {
+const TooltipTheme = {
   baseStyle,
   variants,
 };
+export default TooltipTheme;

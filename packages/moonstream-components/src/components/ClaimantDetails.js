@@ -8,30 +8,30 @@ import {
   IconButton,
   Heading,
 } from "@chakra-ui/react";
-import { useClaimant } from "../core/hooks";
 import Web3Context from "../core/providers/Web3Provider/context";
 import { targetChain } from "../core/providers/Web3Provider";
 import CopyButton from "./CopyButton";
 import { CloseIcon } from "@chakra-ui/icons";
 import { BiTrash } from "react-icons/bi";
-const ClaimantDetails = ({ dropId, address, onClose, onDeleteClaimant }) => {
+import { useClaim } from "../core/hooks/dropper";
+const ClaimantDetails = ({ claimId, address, onClose, onDeleteClaimant }) => {
   const web3ctx = useContext(Web3Context);
 
-  const { claim } = useClaimant({
+  const { signature } = useClaim({
     targetChain,
     ctx: web3ctx,
-    dropId: dropId,
+    claimId: claimId,
     claimantAddress: address,
   });
-  if (claim.isLoading) return <Spinner />;
+  if (signature.isLoading) return <Spinner />;
   return (
     <Flex className="ClaimantDetails" direction={"row"}>
-      {claim.data?.signature && (
+      {signature.data?.signature && (
         <>
-          <CopyButton text={claim.data.signature}>Signature</CopyButton>
+          <CopyButton text={signature.data.signature}>Signature</CopyButton>
           <UnorderedList>
-            <ListItem>Deadline: {claim.data.block_deadline}</ListItem>
-            <ListItem>Amount: {claim.data.claim_id}</ListItem>
+            <ListItem>Deadline: {signature.data.block_deadline}</ListItem>
+            <ListItem>Amount: {signature.data.claim_id}</ListItem>
           </UnorderedList>
           <IconButton
             colorScheme="orange"
@@ -41,7 +41,7 @@ const ClaimantDetails = ({ dropId, address, onClose, onDeleteClaimant }) => {
           ></IconButton>
         </>
       )}
-      {!claim.data?.signature && <Heading>Not found</Heading>}
+      {!signature.data?.signature && <Heading>Not found</Heading>}
       <IconButton
         colorScheme="orange"
         onClick={onClose}

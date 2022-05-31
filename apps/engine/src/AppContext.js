@@ -22,7 +22,7 @@ import { PAGETYPE } from "../../../types/Site";
 
 const AppContext = (props) => {
   useEffect(() => {
-    const version = "0.2";
+    const version = "0.32";
     if (version) console.log(`Frontend version: ${version}`);
     else console.error("version variable is not set");
   }, []);
