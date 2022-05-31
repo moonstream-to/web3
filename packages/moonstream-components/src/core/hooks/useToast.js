@@ -16,26 +16,28 @@ const useToast = () => {
           : userTitle === type
           ? ""
           : type;
+      const id = `${userTitle}-${userMessage}-${type}`;
+      if (!chakraToast.isActive(id)) {
+        if (
+          Object.prototype.hasOwnProperty.call(mixpanel, "get_distinct_id") &&
+          type === "error"
+        ) {
+          mixpanel.track(`${MIXPANEL_EVENTS.TOAST_ERROR_DISPLAYED}`, {
+            status: message?.response?.status,
+            title: userTitle,
+            detail: userMessage,
+          });
+        }
 
-      if (
-        Object.prototype.hasOwnProperty.call(mixpanel, "get_distinct_id") &&
-        type === "error"
-      ) {
-        mixpanel.track(`${MIXPANEL_EVENTS.TOAST_ERROR_DISPLAYED}`, {
-          status: message?.response?.status,
+        chakraToast({
+          id: id,
+          position: "bottom",
           title: userTitle,
-          detail: userMessage,
+          description: userMessage,
+          status: type,
+          // duration: 3000,
         });
       }
-
-      chakraToast({
-        id: `${userTitle}${userMessage}${type}`,
-        position: "bottom",
-        title: userTitle,
-        description: userMessage,
-        status: type,
-        // duration: 3000,
-      });
     },
     [chakraToast]
   );
