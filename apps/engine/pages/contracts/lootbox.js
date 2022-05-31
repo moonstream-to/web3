@@ -1,5 +1,5 @@
 import React from "react";
-const abi = require("../../../../abi/MockErc20.json");
+const abi = require("../../../../abi/Lootbox.json");
 import ContractInterface from "moonstream-components/src/components/ContractInteface";
 import { useRouter } from "moonstream-components/src/core/hooks";
 import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
@@ -15,5 +15,6 @@ const Contract = () => {
     />
   );
 };
+
 Contract.getLayout = getLayout;
 export default Contract;

@@ -53,7 +53,13 @@ const _ContractInterface = ({
         <EditablePreview w="100%" px={2} />
         <EditableInput w="100%" px={2} />
       </_Editable>
-      <Flex placeSelf={"center"} direction={"row"} flexWrap="wrap">
+      <Flex
+        placeSelf={"center"}
+        direction={"row"}
+        flexWrap="wrap"
+        // justifyItems={"center"}
+        justifyContent={"center"}
+      >
         {contractAddress &&
           abi
             .filter(
