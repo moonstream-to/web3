@@ -106,7 +106,7 @@ class BrownieAccountSigner(Signer):
             _, _, _, signed_message_bytes = sign_message_hash(
                 eth_private_key, message_hash_bytes
             )
-            signed_messages_list[message.hex()] = signed_message_bytes.hex()
+            signed_messages_list[message] = signed_message_bytes.hex()
 
         return signed_messages_list
 

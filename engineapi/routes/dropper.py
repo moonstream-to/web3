@@ -733,7 +733,7 @@ async def refetch_drop_signatures(
         raise DropperHTTPException(status_code=500)
 
     try:
-        signatures = actions.refetch_drop_signatures(
+        updated_amount = actions.refetch_drop_signatures(
             db_session=db_session, dropper_claim_id=dropper_claim_id
         )
     except Exception as e:
@@ -744,4 +744,4 @@ async def refetch_drop_signatures(
             status_code=500, detail=f"Error refetching signatures"
         )
 
-    return signatures
+    return f"Amount of updated claimants: {updated_amount}"

@@ -371,13 +371,11 @@ def claimant_signature_refetch_handler(args: argparse.Namespace) -> None:
 
         network.connect(BLOCKCHAINS_TO_BROWNIE_NETWORKS[blockchain.blockchain])
 
-        claimant_signature = actions.refetch_drop_signatures(
-            db_session=db_session,
-            dropper_claim_id=args.dropper_claim_id,
-            added_by="cli",
+        updated_amount = actions.refetch_drop_signatures(
+            db_session=db_session, dropper_claim_id=args.dropper_claim_id
         )
 
-        print(f"Amount of updated claimants: {len(claimant_signature)}")
+        print(f"Amount of updated claimants: {updated_amount}")
 
 
 def main() -> None:

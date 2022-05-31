@@ -1,17 +1,16 @@
 from datetime import datetime
+import logging
 from typing import List, Any, Optional, Dict
 import uuid
 
 from brownie import network
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
-from sqlalchemy.sql.functions import percentile_disc
 from sqlalchemy import func, text, or_
 from web3 import Web3
 from web3.types import ChecksumAddress
 
 from engineapi.Dropper import Dropper
-from engineapi.routes.leaderboard import quartiles
 
 
 from . import Dropper, MockErc20, MockTerminus
@@ -24,6 +23,13 @@ from .models import (
 )
 from . import signatures
 from .settings import BLOCKCHAINS_TO_BROWNIE_NETWORKS
+
+
+logger = logging.getLogger(__name__)
+
+
+class SignatureRefetchSignatureError(Exception):
+    pass
 
 
 class AuthorizationError(Exception):
@@ -657,9 +663,7 @@ def delete_claimants(db_session: Session, dropper_claim_id, addresses):
     return was_deleted
 
 
-def refetch_drop_signatures(
-    db_session: Session, dropper_claim_id: uuid.UUID, added_by: str
-):
+def refetch_drop_signatures(db_session: Session, dropper_claim_id: uuid.UUID):
     """
     Refetch signatures for drop
     """
@@ -684,6 +688,7 @@ def refetch_drop_signatures(
             DropperClaim.claim_id,
             DropperClaimant.address,
             DropperClaimant.amount,
+            DropperClaimant.added_by,
         )
         .join(DropperClaimant, DropperClaimant.dropper_claim_id == DropperClaim.id)
         .filter(DropperClaim.id == dropper_claim_id)
@@ -697,77 +702,88 @@ def refetch_drop_signatures(
 
     current_offset = 0
 
-    users_hashes = {}
-    users_amount = {}
-    hashes_signature = {}
-
     dropper_contract = Dropper.Dropper(claim.address)
 
+    result = 0
+
+    if outdated_signatures.count() == 0:
+        return result
+
     while True:
-        signature_requests = []
+        try:
+            signature_requests = []
 
-        page = outdated_signatures.offset(current_offset).all()
+            page = outdated_signatures.offset(current_offset).all()
 
-        claim_amounts = [outdated_signature.amount for outdated_signature in page]
+            if len(page) == 0:
+                break
 
-        transformed_claim_amounts = batch_transform_claim_amounts(
-            db_session, dropper_claim_id, claim_amounts
-        )
+            claim_amounts = [outdated_signature.amount for outdated_signature in page]
 
-        for outdated_signature, transformed_claim_amount in zip(
-            page, transformed_claim_amounts
-        ):
-
-            message_hash_raw = dropper_contract.claim_message_hash(
-                claim.claim_id,
-                outdated_signature.address,
-                claim.claim_block_deadline,
-                transformed_claim_amount,
+            transformed_claim_amounts = batch_transform_claim_amounts(
+                db_session, dropper_claim_id, claim_amounts
             )
-            message_hash = str(message_hash_raw)
-            signature_requests.append(message_hash)
-            users_hashes[outdated_signature.address] = message_hash
-            users_amount[outdated_signature.address] = outdated_signature.amount
 
-        message_hashes = [signature_request for signature_request in signature_requests]
+            hash_claimant_dict = {}
 
-        signed_messages = signatures.DROP_SIGNER.batch_sign_message(message_hashes)
+            for outdated_signature, transformed_claim_amount in zip(
+                page, transformed_claim_amounts
+            ):
 
-        hashes_signature.update(signed_messages)
+                message_hash_raw = dropper_contract.claim_message_hash(
+                    claim.claim_id,
+                    outdated_signature.address,
+                    claim.claim_block_deadline,
+                    transformed_claim_amount,
+                )
+                message_hash = str(message_hash_raw)
+                signature_requests.append(message_hash)
 
-        if len(page) == 0:
-            break
+                hash_claimant_dict[message_hash] = {
+                    "dropper_claim_id": dropper_claim_id,
+                    "address": outdated_signature.address,
+                    "amount": outdated_signature.amount,
+                    "added_by": outdated_signature.added_by,
+                    "created_at": datetime.now(),
+                    "updated_at": datetime.now(),
+                }
+            message_hashes = [
+                signature_request for signature_request in signature_requests
+            ]
 
-        current_offset += BATCH_SIGNATURE_PAGE_SIZE
+            # response:  {"address": <signature>, ...}
+            signed_messages = signatures.DROP_SIGNER.batch_sign_message(message_hashes)
 
-    claimant_objects = []
+            claimant_objects = []
 
-    for address, hash in users_hashes.items():
-        claimant_objects.append(
-            {
-                "dropper_claim_id": dropper_claim_id,
-                "address": address,
-                "signature": hashes_signature[hash],
-                "amount": users_amount[address],
-                "added_by": added_by,
-                "created_at": datetime.now(),
-                "updated_at": datetime.now(),
-            }
-        )
+            for hash_string, claimant_dict in hash_claimant_dict.items():
+                claimant_dict["signature"] = signed_messages[hash_string]
+                claimant_objects.append(claimant_dict)
 
-    insert_statement = insert(DropperClaimant).values(claimant_objects)
+            insert_statement = insert(DropperClaimant).values(claimant_objects)
 
-    result_stmt = insert_statement.on_conflict_do_update(
-        index_elements=[DropperClaimant.address, DropperClaimant.dropper_claim_id],
-        set_=dict(
-            signature=insert_statement.excluded.signature,
-            updated_at=datetime.now(),
-        ),
-    )
-    db_session.execute(result_stmt)
-    db_session.commit()
+            result_stmt = insert_statement.on_conflict_do_update(
+                index_elements=[
+                    DropperClaimant.address,
+                    DropperClaimant.dropper_claim_id,
+                ],
+                set_=dict(
+                    signature=insert_statement.excluded.signature,
+                    updated_at=datetime.now(),
+                ),
+            )
+            db_session.execute(result_stmt)
+            db_session.commit()
 
-    return claimant_objects
+            result += len(claimant_objects)
+
+            current_offset += BATCH_SIGNATURE_PAGE_SIZE
+        except Exception as e:
+            logger.error("Error while refetching drop signatures", e)
+            raise SignatureRefetchSignatureError(
+                "Error while refetching drop signatures"
+            )
+    return result
 
 
 def get_leaderboard_total_count(db_session: Session, leaderboard_id):
@@ -860,7 +876,6 @@ def get_leaderboard_positions(
 def get_qurtiles(db_session: Session, leaderboard_id):
     """
     Get the leaderboard qurtiles
-    https://docs.sqlalchemy.org/en/14/core/functions.html#sqlalchemy.sql.functions.percentile_disc
     """
 
     query = db_session.query(
