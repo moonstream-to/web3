@@ -110,6 +110,8 @@ async def get_drop_handler(
         claim_id=claimant.claim_id,
         block_deadline=claimant.claim_block_deadline,
         signature=signature,
+        title=claimant.title,
+        description=claimant.description,
     )
 
 
@@ -136,6 +138,7 @@ async def get_drop_batch_handler(
             status_code=403, detail="You are not authorized to claim that reward"
         )
     except Exception as e:
+        logger.error(e)
         raise DropperHTTPException(status_code=500, detail="Can't get claimant")
 
     # get claimants
@@ -203,6 +206,8 @@ async def get_drop_batch_handler(
                 dropper_contract_address=claimant_drop.dropper_contract_address,
                 blockchain=claimant_drop.blockchain,
                 active=claimant_drop.active,
+                title=claimant_drop.title,
+                description=claimant_drop.description,
             )
         )
 
@@ -318,7 +323,6 @@ async def get_drop_list_handler(
 ) -> data.DropListResponse:
     """
     Get list of drops for a given dropper contract and claimant address.
-    dasdasd
     """
 
     if dropper_contract_address:
@@ -351,6 +355,50 @@ async def get_drop_list_handler(
         raise DropperHTTPException(status_code=500, detail="Can't get claims")
 
     return data.DropListResponse(drops=[result for result in results])
+
+
+@router.get("/claims/{dropper_claim_id}", response_model=data.DropperClaimResponse)
+async def get_drop_handler(
+    request: Request,
+    dropper_claim_id: str,
+    db_session: Session = Depends(db.yield_db_session),
+) -> data.DropperClaimResponse:
+    """
+    Get list of drops for a given dropper contract and claimant address.
+    """
+
+    try:
+        drop = actions.get_drop(
+            db_session=db_session, dropper_claim_id=dropper_claim_id
+        )
+    except NoResultFound:
+        raise DropperHTTPException(status_code=404, detail="No drops found.")
+    except Exception as e:
+        logger.error(f"Can't get drop {dropper_claim_id} end with error: {e}")
+        raise DropperHTTPException(status_code=500, detail="Can't get drop")
+
+    if drop.terminus_address is not None and drop.terminus_pool_id is not None:
+        try:
+            actions.ensure_admin_token_holder(
+                db_session, dropper_claim_id, request.state.address
+            )
+        except actions.AuthorizationError as e:
+            logger.error(e)
+            raise DropperHTTPException(status_code=403)
+        except NoResultFound:
+            raise DropperHTTPException(status_code=404, detail="Drop not found")
+
+    return data.DropperClaimResponse(
+        id=drop.id,
+        dropper_contract_id=drop.dropper_contract_id,
+        title=drop.title,
+        description=drop.description,
+        active=drop.active,
+        claim_block_deadline=drop.claim_block_deadline,
+        terminus_address=drop.terminus_address,
+        terminus_pool_id=drop.terminus_pool_id,
+        claim_id=drop.claim_id,
+    )
 
 
 @router.get("/terminus/claims", response_model=data.DropListResponse)
@@ -709,6 +757,48 @@ async def delete_claimants(
         raise DropperHTTPException(status_code=500, detail=f"Error removing claimants")
 
     return data.RemoveClaimantsResponse(addresses=results)
+
+
+@router.get("/claimants/search", response_model=data.Claimant)
+async def get_claimant_in_drop(
+    request: Request,
+    dropper_claim_id: UUID,
+    address: str,
+    db_session: Session = Depends(db.yield_db_session),
+) -> data.Claimant:
+
+    """
+    Return claimant from drop
+    """
+    try:
+        actions.ensure_admin_token_holder(
+            db_session,
+            dropper_claim_id,
+            request.state.address,
+        )
+    except actions.AuthorizationError as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=403)
+    except Exception as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=500)
+
+    try:
+        claimant = actions.get_claimant(
+            db_session=db_session,
+            dropper_claim_id=dropper_claim_id,
+            address=address,
+        )
+
+    except NoResultFound:
+        raise DropperHTTPException(
+            status_code=404, detail="Address not present in that drop."
+        )
+    except Exception as e:
+        logger.error(f"Can't get claimant: {e}")
+        raise DropperHTTPException(status_code=500, detail="Can't get claimant")
+
+    return data.Claimant(address=claimant.address, amount=claimant.amount)
 
 
 @router.post("/drop/{dropper_claim_id}/refetch")

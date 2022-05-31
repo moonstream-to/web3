@@ -401,6 +401,8 @@ def get_claimant(db_session: Session, dropper_claim_id, address):
             DropperClaim.claim_id,
             DropperClaim.active,
             DropperClaim.claim_block_deadline,
+            DropperClaim.title,
+            DropperClaim.description,
             DropperContract.address.label("dropper_contract_address"),
             (DropperClaim.updated_at < DropperClaimant.updated_at).label(
                 "is_recent_signature"
@@ -432,6 +434,8 @@ def get_claimant_drops(
             DropperClaim.claim_id,
             DropperClaim.active,
             DropperClaim.claim_block_deadline,
+            DropperClaim.title,
+            DropperClaim.description,
             DropperContract.address.label("dropper_contract_address"),
             DropperContract.blockchain,
             (DropperClaim.updated_at < DropperClaimant.updated_at).label(
@@ -503,6 +507,16 @@ def get_terminus_claims(
         query = query.offset(offset)
 
     return query
+
+
+def get_drop(db_session: Session, dropper_claim_id: uuid.UUID):
+    """
+    Return particular drop
+    """
+    drop = (
+        db_session.query(DropperClaim).filter(DropperClaim.id == dropper_claim_id).one()
+    )
+    return drop
 
 
 def get_claims(

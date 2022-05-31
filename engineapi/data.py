@@ -96,17 +96,33 @@ class RemoveClaimantsResponse(BaseModel):
     addresses: List[str] = Field(default_factory=list)
 
 
+class DropperClaimResponse(BaseModel):
+    id: UUID
+    dropper_contract_id: UUID
+    title: str
+    description: str
+    active: bool
+    claim_block_deadline: Optional[int] = None
+    terminus_address: Optional[str] = None
+    terminus_pool_id: Optional[int] = None
+    claim_id: Optional[int] = None
+
+
 class DropResponse(BaseModel):
     claimant: str
     claim_id: int
     amount: int
     block_deadline: int
     signature: str
+    title: str
+    description: str
 
 
 class DropBatchResponseItem(BaseModel):
     claimant: str
     claim_id: int
+    title: str
+    description: str
     amount: int
     amount_string: str
     block_deadline: int
