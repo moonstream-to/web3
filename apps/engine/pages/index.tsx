@@ -12,7 +12,6 @@ const assets: any = {
   lender: `${AWS_ASSETS_PATH}/lender.png`,
   DAO: `${AWS_ASSETS_PATH}/DAO .png`,
   NFT: `${AWS_ASSETS_PATH}/NFT.png`,
-  suit: `${AWS_ASSETS_PATH}/ant_w_suit.png`,
 };
 const Homepage = () => {
   const web3Provider = useContext(Web3Context);
@@ -46,7 +45,7 @@ const Homepage = () => {
               link="/terminus"
               text="Manage your access lists and more"
               heading="Terminus"
-              imageUrl={assets["suit"]}
+              imageUrl={assets["DAO"]}
               alt="terminus"
               textColor={"white.100"}
               level="h2"
