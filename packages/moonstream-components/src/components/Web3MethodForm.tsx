@@ -3,17 +3,21 @@ import {
   Flex,
   Button,
   chakra,
-  Fade,
+  // Fade,
   Input,
   Stack,
-  Text,
+  // Text,
   Heading,
   Box,
+  Switch,
+  FormLabel,
 } from "@chakra-ui/react";
 import { AbiInput, AbiItem } from "web3-utils";
 import { useMutation } from "react-query";
 import Web3Context from "../core/providers/Web3Provider/context";
 import { useToast } from "../core/hooks";
+import FileUpload from "./FileUpload";
+import Papa from "papaparse";
 
 interface argumentField {
   placeholder: string;
@@ -41,18 +45,26 @@ const Web3MethodForm = ({
   method,
   argumentFields,
   hide,
+  key,
   rendered,
-  onClick,
+  // onClose,
   onCancel,
+  onSuccess,
+  // mutateSubmit,
   contractAddress,
+  BatchInputs,
   ...props
 }: {
+  key: string;
   method: AbiItem;
   argumentFields?: argumentFields;
   hide?: string[];
+  BatchInputs?: string[];
   rendered: boolean;
-  onClick?: Function;
-  onCancel?: Function;
+  onClose?: () => void;
+  onCancel?: () => void;
+  onSuccess?: (resp: any) => void;
+  // mutateSubmit?: () => any;
   contractAddress: string;
   props?: any;
 }) => {
@@ -88,6 +100,7 @@ const Web3MethodForm = ({
     initialState
   );
 
+  // console.log("formstate:", state, method);
   const [wasSent, setWasSent] = React.useState(false);
 
   const handleClose = React.useCallback(() => {
@@ -106,34 +119,42 @@ const Web3MethodForm = ({
 
   const web3call = async ({ args }: { args: any }) => {
     const contract = new web3ctx.web3.eth.Contract([method]);
+
     contract.options.address = contractAddress;
     const response =
       method.name &&
       (await contract.methods[method.name](...args).send({
         from: web3ctx.account,
+        gasPrice:
+          process.env.NODE_ENV !== "production" ? "100000000000" : undefined,
       }));
     return response;
   };
   const tx = useMutation(({ args }: { args: any }) => web3call({ args }), {
-    onSuccess: () => {
+    onSuccess: (resp) => {
       toast("Transaction went to the moon!", "success");
+      onSuccess && onSuccess(resp);
     },
     onError: () => {
       toast("Transaction failed >.<", "error");
     },
   });
-
+  const web3ctx = useContext(Web3Context);
   const handleSubmit = () => {
     const returnedObject: any = [];
     state.inputs.forEach((inputElement: any, index: number) => {
       returnedObject[index] =
         inputElement.type === "address"
-          ? web3ctx.web3.utils.toChecksumAddress(inputElement.meta.value)
+          ? web3ctx.web3.utils.isAddress(inputElement.meta.value)
+            ? web3ctx.web3.utils.toChecksumAddress(inputElement.meta.value)
+            : console.error("not an address")
           : inputElement.meta.value;
     });
-
+    console.log("returnedObject", returnedObject);
     tx.mutate({ args: returnedObject });
-    onClick && onClick(returnedObject);
+    // if (onClose) {
+    //   onClose();
+    // }
   };
 
   React.useEffect(() => {
@@ -153,33 +174,80 @@ const Web3MethodForm = ({
     }
   };
 
-  const web3ctx = useContext(Web3Context);
+  const [isUploading, setIsUploading] = React.useState(false);
+  const handleParsingError = function (error: string): void {
+    setIsUploading(false);
+    toast(error, "error", "CSV Parse Error");
+    throw error;
+  };
+
+  const validateHeader = function (
+    headerValue: string,
+    column: number
+    // expected: string
+  ): string {
+    const expected = BatchInputs && BatchInputs[column].trim().toLowerCase();
+    const header = headerValue.trim().toLowerCase();
+    if (column == 0 && header != expected) {
+      handleParsingError(
+        `First column header must be '${expected}' but got ${headerValue}.`
+      );
+    }
+    if (column == 1 && header != expected) {
+      handleParsingError(
+        `Second column header must be '${expected}' but got ${headerValue}`
+      );
+    }
+    return header;
+  };
 
   if (!rendered) return <></>;
   return (
-    <Fade in={rendered}>
-      <Stack justifyContent="center" px={2} alignItems="center" {...props}>
-        <Heading
-          wordBreak={"break-all"}
-          fontSize={
-            method?.name?.length && method?.name?.length > 12 ? "xl" : "3xl"
-          }
-        >
-          {method.name}
-        </Heading>
-        {state.inputs.map((inputItem: any, index: any) => {
-          if (!inputItem.hide) {
-            return (
-              <Box key={`${inputItem.name}-${index}-abiitems`} w="100%">
-                <Text mb="8px" wordBreak={"break-all"}>
-                  {inputItem.name}
-                  {` [${inputItem.type}]`}
-                </Text>
-                {(inputItem.type === "string" ||
-                  inputItem.type === "bytes" ||
-                  inputItem.type === "uint256" ||
-                  inputItem.type === "uint256[]") && (
+    <Stack
+      justifyContent="center"
+      px={2}
+      alignItems="center"
+      m={0}
+      key={key}
+      {...props}
+    >
+      {/* <Fade in={rendered}> */}
+      <Heading
+        wordBreak={"break-all"}
+        fontSize={
+          method?.name?.length && method?.name?.length > 12 ? "xl" : "3xl"
+        }
+      >
+        {method.name}
+      </Heading>
+      {state.inputs.map((inputItem: any, index: any) => {
+        if (!inputItem.meta.hide && !BatchInputs?.includes(inputItem.name)) {
+          return (
+            <Box
+              key={`${inputItem.name}-${index}-abiitems`}
+              w="100%"
+              display={inputItem.type === "bool" ? "flex" : "block"}
+            >
+              {/* <Text mb="8px" wordBreak={"break-all"}>
+                {inputItem.name}
+                {` [${inputItem.type}]`}
+              </Text>*/}
+              <FormLabel mb="8px" wordBreak={"break-all"} w="fit-content">
+                {inputItem.name}
+                {` [${inputItem.type}]`}
+              </FormLabel>
+              {(inputItem.type === "string" ||
+                inputItem.type === "bytes" ||
+                inputItem.type === "uint256" ||
+                inputItem.type === "uint256[]") && (
+                <>
+                  {/* <FormLabel mb="8px" wordBreak={"break-all"}>
+                    {inputItem.name}
+                    {` [${inputItem.type}]`}
+                  </FormLabel> */}
                   <Input
+                    // colorScheme={"blue"}
+                    textColor={"blue.800"}
                     onKeyPress={handleKeypress}
                     type="search"
                     key={`argument-string-${inputItem.name}${inputItem.type}`}
@@ -200,57 +268,136 @@ const Web3MethodForm = ({
                     w="100%"
                     variant={"outline"}
                   />
-                )}
-                {inputItem.type === "address" && (
-                  <Input
-                    onKeyPress={handleKeypress}
-                    type="search"
-                    placeholder={
-                      inputItem.meta.placeholder ||
-                      inputItem.name ||
-                      inputItem.type
-                    }
-                    key={`argument-address-${inputItem.name}`}
-                    value={inputItem.meta.value}
-                    onChange={(event) =>
-                      dispatchArguments({
-                        value: event.target.value,
-                        index,
-                      })
-                    }
-                    size="sm"
-                    fontSize={"sm"}
-                    w="100%"
-                    variant={"outline"}
-                  />
-                )}
-              </Box>
-            );
-          }
-        })}
-        <Flex direction={"row"} flexWrap="wrap">
+                </>
+              )}
+              {inputItem.type === "address" && (
+                <Input
+                  textColor={"blue.800"}
+                  onKeyPress={handleKeypress}
+                  type="search"
+                  placeholder={
+                    inputItem.meta.placeholder ||
+                    inputItem.name ||
+                    inputItem.type
+                  }
+                  key={`argument-address-${inputItem.name}`}
+                  value={inputItem.meta.value}
+                  onChange={(event) =>
+                    dispatchArguments({
+                      value: event.target.value,
+                      index,
+                    })
+                  }
+                  size="sm"
+                  fontSize={"sm"}
+                  w="100%"
+                  variant={"outline"}
+                />
+              )}
+              {inputItem.type === "bool" && (
+                <Switch
+                  display={"inline"}
+                  colorScheme="orange"
+                  // isChecked={inputItem.meta.value}
+                  onChange={(e) => {
+                    console.log("switch", e.target.value);
+                    dispatchArguments({
+                      value: !e.target.value,
+                      index,
+                    });
+                  }}
+                />
+                // <Input
+                //   onKeyPress={handleKeypress}
+                //   type="search"
+                //   placeholder={
+                //     inputItem.meta.placeholder ||
+                //     inputItem.name ||
+                //     inputItem.type
+                //   }
+                //   key={`argument-address-${inputItem.name}`}
+                //   value={inputItem.meta.value}
+                //   onChange={(event) =>
+                //     dispatchArguments({
+                //       value: event.target.value,
+                //       index,
+                //     })
+                //   }
+                //   size="sm"
+                //   fontSize={"sm"}
+                //   w="100%"
+                //   variant={"outline"}
+                // />
+              )}
+            </Box>
+          );
+        }
+      })}
+      {BatchInputs && BatchInputs?.length > 0 && (
+        <Flex w="100%" p={0} m={0} flexGrow={1} direction="column">
+          <FormLabel mb="8px" wordBreak={"break-all"} w="fit-content">
+            Batch:{" "}
+            {BatchInputs.map((input, idx) => {
+              return `${input}${idx < BatchInputs.length - 1 ? ", " : ""}`;
+            })}
+          </FormLabel>
+          <FileUpload
+            w="100%"
+            isUploading={isUploading}
+            m={0}
+            maxW="100%"
+            columns={BatchInputs}
+            onDrop={(file: any) => {
+              Papa.parse(file[0], {
+                header: true,
+                skipEmptyLines: true,
+                fastMode: true,
+                transformHeader: validateHeader,
+                complete: (result: any) => {
+                  console.log("rrrresult", result);
+                  BatchInputs.forEach((v) => {
+                    console.log("vvvv", v);
+                    const index = state.inputs.findIndex(
+                      (item: AbiInput) => item.name === v
+                    );
+                    dispatchArguments({
+                      value: result.data.map(
+                        (resultItem: any) =>
+                          resultItem[`${v.trim().toLowerCase()}`]
+                      ),
+                      index,
+                    });
+                  });
+                },
+                error: (err: Error) => handleParsingError(err.message),
+              });
+            }}
+          />
+        </Flex>
+      )}
+      <Flex direction={"row"} flexWrap="wrap">
+        <Button
+          variant={"solid"}
+          colorScheme={"orange"}
+          size="sm"
+          onClick={handleSubmit}
+          isLoading={tx.isLoading}
+        >
+          Submit
+        </Button>
+        {onCancel && (
           <Button
             variant={"solid"}
             colorScheme={"orange"}
             size="sm"
-            onClick={handleSubmit}
-            isLoading={tx.isLoading}
+            onClick={() => handleClose()}
           >
-            Submit
+            Cancel
           </Button>
-          {onCancel && (
-            <Button
-              variant={"solid"}
-              colorScheme={"orange"}
-              size="sm"
-              onClick={() => handleClose()}
-            >
-              Cancel
-            </Button>
-          )}
-        </Flex>
-      </Stack>
-    </Fade>
+        )}
+      </Flex>
+      {/* </Fade> */}
+    </Stack>
   );
 };
 

@@ -30,7 +30,7 @@ const rejectStyle = {
   borderColor: "#ff1744",
 };
 
-function FileUpload({ isUploading, ...props }) {
+function FileUpload({ isUploading, columns, ...props }) {
   const { getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } =
     useDropzone({ accept: ".csv", onDrop: props.onDrop });
 
@@ -44,13 +44,14 @@ function FileUpload({ isUploading, ...props }) {
     [isFocused, isDragAccept, isDragReject]
   );
 
+  const str = columns ? columns.map((item) => item) : `address,amount`;
   return (
     <Container
+      {...props}
       size="md"
       minH="50px"
       className="container"
       alignItems={"center"}
-      {...props}
     >
       <Box h={[null, null, "105px"]} {...getRootProps({ style })}>
         {isUploading ? (
@@ -59,7 +60,7 @@ function FileUpload({ isUploading, ...props }) {
           <>
             <input {...getInputProps()} />
             <p>{`Drag 'n' drop some files here, or click to select files`}</p>
-            <p>{`We expect csv file in format: "address,amount" `}</p>
+            <p>{`We expect csv file in format: "${str}" `}</p>
           </>
         )}
       </Box>

@@ -1,7 +1,7 @@
 import {
   chakra,
   Flex,
-  Editable,
+  Editable as _Editable,
   EditablePreview,
   EditableInput,
 } from "@chakra-ui/react";
@@ -32,7 +32,7 @@ const _ContractInterface = ({
       justifyContent="flex-start"
       minH="100vh"
     >
-      <Editable
+      <_Editable
         bgColor={"blue.700"}
         size="sm"
         fontSize={"sm"}
@@ -40,14 +40,9 @@ const _ContractInterface = ({
         w="100%"
         minW={["300px", "300px", "360px", "420px", null]}
         variant={"outline"}
-        // borderRadius="md"
-        //   mx={2}
-        // px={2}
-        //   h="min-content"
-        //   colorScheme={"orange"}
         defaultValue={initalContractAddress}
         placeholder="Contract address"
-        onSubmit={(nextValue) => {
+        onSubmit={(nextValue: any) => {
           if (web3.utils.isAddress(nextValue)) {
             setContractAddress(nextValue);
           } else {
@@ -57,7 +52,7 @@ const _ContractInterface = ({
       >
         <EditablePreview w="100%" px={2} />
         <EditableInput w="100%" px={2} />
-      </Editable>
+      </_Editable>
       <Flex placeSelf={"center"} direction={"row"} flexWrap="wrap">
         {contractAddress &&
           abi

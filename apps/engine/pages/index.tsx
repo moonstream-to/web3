@@ -12,6 +12,7 @@ const assets: any = {
   lender: `${AWS_ASSETS_PATH}/lender.png`,
   DAO: `${AWS_ASSETS_PATH}/DAO .png`,
   NFT: `${AWS_ASSETS_PATH}/NFT.png`,
+  suit: `${AWS_ASSETS_PATH}/ant_w_suit.png`,
 };
 const Homepage = () => {
   const web3Provider = useContext(Web3Context);
@@ -30,6 +31,7 @@ const Homepage = () => {
           <Flex>
             <FeatureCard
               w="300px"
+              h="460px"
               link="/drops"
               text=" Set up a loyalty program and reward your players with tokens, items, badges, and achievements"
               heading="Loyalty and Drops"
@@ -40,17 +42,18 @@ const Homepage = () => {
             />
             <FeatureCard
               w="300px"
-              link="/loot"
-              text="Create lootboxes as rewards for encounters, challenges, and boss fights"
-              heading="Lootboxes"
-              imageUrl={assets["DAO"]}
-              alt="Lootboxes"
+              h="460px"
+              link="/terminus"
+              text="Manage your access lists and more"
+              heading="Terminus"
+              imageUrl={assets["suit"]}
+              alt="terminus"
               textColor={"white.100"}
               level="h2"
-              disabled={true}
             />
             <FeatureCard
               w="300px"
+              h="460px"
               link="/crafting"
               text="Create on-chain crafting recipes for your blockchain game"
               heading="Crafting"

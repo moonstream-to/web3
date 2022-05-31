@@ -18,6 +18,10 @@ const http = (config) => {
   return axios(options);
 };
 
+export const queryPublic = (uri) => {
+  return axios({ method: "GET", url: uri });
+};
+
 const API = process.env.NEXT_PUBLIC_ENGINE_API_URL;
 
 export const queryHttp = (query) => {

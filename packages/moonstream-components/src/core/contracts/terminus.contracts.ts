@@ -15,12 +15,13 @@ export const getTerminusFacetState =
     const paymentToken = await terminusFacet.methods.paymentToken().call();
     const contractURI = await terminusFacet.methods.contractURI().call();
     const totalPools = await terminusFacet.methods.totalPools().call();
-
+    const controller = await terminusFacet.methods.terminusController().call();
     return {
       poolBasePrice,
       paymentToken,
       contractURI,
       totalPools,
+      controller,
     };
   };
 

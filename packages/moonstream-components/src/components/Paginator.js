@@ -26,6 +26,7 @@ const _Paginator = ({
 
   const _pageOptions = pageOptions ?? ["25", "50", "100", "300", "500"];
   const [pageUpdate, setpageUpdate] = React.useState(true);
+  const [isMounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
     let timer1;
@@ -49,13 +50,16 @@ const _Paginator = ({
       queries[`${paginatorKey}Limit`] = _pageOptions[0];
     }
     router.appendQueries({ ...queries });
+    if (!isMounted) {
+      setMounted(true);
+    }
 
     //eslint-disable-next-line
   }, []);
 
   const __page = router.query[`${paginatorKey}Page`];
   const __limit = router.query[`${paginatorKey}Limit`];
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     const _page = Number(router.query[`${paginatorKey}Page`]);
     const _limit = Number(router.query[`${paginatorKey}Limit`]);
 
@@ -63,6 +67,10 @@ const _Paginator = ({
       setPage(_page);
     }
     if (!isNaN(_limit) && pageSize !== _limit) {
+      if (isMounted) {
+        router.appendQuery(`${paginatorKey}Page`, 0);
+        setPage(0);
+      }
       setLimit(_limit);
     }
 
@@ -70,7 +78,7 @@ const _Paginator = ({
   }, [__page, __limit, page, pageSize, paginatorKey, setPage, setLimit]);
 
   const PageBar = () => (
-    <Flex justifyContent={"space-between"} pt={2}>
+    <Flex justifyContent={"space-between"} py={4} pt={2}>
       <ButtonGroup
         size="sm"
         variant={"outline"}
