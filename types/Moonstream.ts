@@ -29,8 +29,13 @@ export interface MoonstreamWeb3ProviderInterface {
   getMethodsABI: typeof GetMethodsAbiType;
 }
 
-export interface updateDropArguments {
-  title: string;
-  description: string;
-  deadline: number;
+export interface UpdateClaim {
+  claim_block_deadline?: string;
+  claim_id?: string;
+  description?: string;
+  dropper_claim_id?: string;
+  dropper_contract_id?: string;
+  terminus_address?: string;
+  terminus_pool_id?: string;
+  title?: string;
 }

@@ -4,17 +4,18 @@ import {
   getClaimants,
   activate,
   deactivate,
-  updateDrop,
   setClaimants,
 } from "../../services/moonstream-engine.service";
 import { useMutation, useQuery } from "react-query";
 import {
   ChainInterface,
   MoonstreamWeb3ProviderInterface,
+  UpdateClaim,
 } from "../../../../../../types/Moonstream";
 import useToast from "../useToast";
 import queryCacheProps from "../hookCommon";
 import useDrops from "./useDrops";
+import { putHttp } from "../../utils/http";
 
 const useDrop = ({
   targetChain,
@@ -123,15 +124,21 @@ const useDrop = ({
     }
   );
 
-  const update = useMutation(updateDrop, {
-    onSuccess: () => {
-      admin.adminClaims.refetch();
-      toast("Updated drop info", "success");
+  const update = useMutation(
+    (data: updateClaim) => {
+      if (claimId) return putHttp(`/drops/claims/${claimId}`, { ...data });
+      else throw new Error("Cannot use update without claimid");
     },
-    onError: () => {
-      toast("Updating drop failed >.<", "error");
-    },
-  });
+    {
+      onSuccess: () => {
+        admin.adminClaims.refetch();
+        toast("Updated drop info", "success");
+      },
+      onError: () => {
+        toast("Updating drop failed >.<", "error");
+      },
+    }
+  );
 
   const uploadFile = useMutation(setClaimants, {
     onSuccess: () => {
