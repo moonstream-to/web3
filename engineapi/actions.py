@@ -805,6 +805,7 @@ def get_position(
     query = db_session.query(
         LeaderboardScores.address,
         LeaderboardScores.score,
+        LeaderboardScores.points_data.label("points_data"),
         func.rank().over(order_by=LeaderboardScores.score.desc()).label("rank"),
         func.row_number().over(order_by=LeaderboardScores.score.desc()).label("number"),
     ).filter(LeaderboardScores.leaderboard_id == leaderboard_id)
@@ -829,6 +830,7 @@ def get_position(
         ranked_leaderboard.c.score,
         ranked_leaderboard.c.rank,
         ranked_leaderboard.c.number,
+        ranked_leaderboard.c.points_data,
     ).filter(
         ranked_leaderboard.c.number.between(  # taking off my hat!
             my_position.c.number - window_size,
