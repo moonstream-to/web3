@@ -10,6 +10,7 @@ import {
   Text,
   Heading,
   SlideFade,
+  Skeleton,
 } from "@chakra-ui/react";
 import { getMethodsABI, targetChain } from "../core/providers/Web3Provider";
 
@@ -76,41 +77,46 @@ const Terminus = () => {
       id="flexid"
       alignSelf={"center"}
     >
-      <Flex bgColor="blue.1000" pt={4} px={2} direction="column">
-        <Heading as="h2" size="md" borderBottomWidth={"2px"}>
-          Contract panel
-        </Heading>
+      <Flex bgColor="blue.1000" p={[0, 0, 4, null]} direction="column">
+        <Skeleton isLoaded={!uri.isLoading}>
+          <Heading as="h2" size="md" borderBottomWidth={"2px"} mb={2} mx={2}>
+            {uri.data?.name}
+          </Heading>
+        </Skeleton>
         <Flex direction={"row"} bgColor="blue.1000" flexWrap={"wrap"}>
           {uri?.data && (
             <Metadata
               boxShadow={"md"}
-              zIndex={11}
-              flexGrow={1}
-              flexShrink={1}
-              flexBasis="150px"
-              minW="320px"
+              // flexGrow={1}
+              w="50%"
               borderRadius="md"
               borderColor={"blue.1200"}
               borderWidth={"3px"}
               p={4}
-              m={2}
-              h="420px"
-              maxW="420px"
+              // mx={4}
+              // my={2}
               metadata={uri?.data}
             />
           )}
-          {terminus.contractState.data.controller === web3ctx.account && (
-            <TerminusControllerPanel
-              flexBasis={"500px"}
-              flexGrow={1}
-              borderRadius={"md"}
-              my={2}
-              bgColor="blue.600"
-              py={4}
-              direction={["column", "row"]}
-              address={contractAddress}
-            />
-          )}
+          {/* {terminus.contractState.data.controller === web3ctx.account && ( */}
+          <TerminusControllerPanel
+            // flexBasis={"500px"}
+            flexGrow={1}
+            minW={["280px", "320px", "420px", null]}
+            w="50%"
+            borderRadius={"md"}
+            // my={2}
+            bgColor="blue.600"
+            py={4}
+            direction={["column", "row"]}
+            address={contractAddress}
+            isController={
+              terminus.contractState.data.controller === web3ctx.account
+                ? true
+                : false
+            }
+          />
+          {/* )} */}
         </Flex>
       </Flex>
       <Flex
@@ -120,7 +126,13 @@ const Terminus = () => {
         placeItems="center"
         my={4}
       >
-        <Flex w="100%" p={2} placeItems="center" direction={"row"}>
+        <Flex
+          w="100%"
+          p={2}
+          placeItems="center"
+          direction={"row"}
+          flexWrap="wrap"
+        >
           <FormLabel size="lg" pt={2}>
             See pool details:
           </FormLabel>
@@ -146,6 +158,11 @@ const Terminus = () => {
           </Button>
           <Spacer />
           <Button
+            hidden={
+              terminus.contractState.data.controller === web3ctx.account
+                ? false
+                : true
+            }
             isActive={state === STATES.batchMint && isOpen}
             key={`batchmint`}
             colorScheme={"orange"}
