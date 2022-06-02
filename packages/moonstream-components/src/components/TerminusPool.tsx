@@ -54,36 +54,43 @@ const TerminuPool = ({
   return (
     <Flex
       className="TerminuPool"
-      direction={"row"}
+      direction={"column"}
       bgColor="blue.1000"
       flexWrap={"wrap"}
+      // flexBasis="100px"
       pt={4}
-      px={2}
+      px={0}
+      w="100%"
       {...props}
     >
-      <Metadata
-        boxShadow={"md"}
-        flexGrow={1}
-        flexShrink={1}
-        flexBasis="150px"
-        minW="320px"
-        borderRadius="md"
-        borderColor={"blue.1200"}
-        borderWidth={"3px"}
-        p={4}
-        mx={4}
-        my={2}
-        h="420px"
-        maxW="420px"
-        bgImage={"gray.200"}
-        metadata={uri.data}
-      />
+      <Heading
+        size="sm"
+        borderBottomWidth={1}
+        w="100%"
+        my={1}
+        borderColor="blue.500"
+      >
+        Pool id {poolId}
+      </Heading>
+      <Flex p={1} direction={"row"} flexWrap="wrap" w="100%">
+        <Metadata
+          boxShadow={"md"}
+          w="30%"
+          borderRadius="md"
+          borderColor={"blue.1200"}
+          borderWidth={"3px"}
+          px={[0, 4]}
+          metadata={uri.data}
+        />
 
-      <Flex flexGrow={1} flexBasis="500px" direction={"column"}>
-        <Heading size="sm" borderBottomWidth={1} w="100%">
-          Pool id {poolId}
-        </Heading>
-        <Stack direction={"column"} py={4}>
+        <Stack
+          direction={"column"}
+          py={4}
+          w="70%"
+          flexBasis={"400"}
+          flexGrow={1}
+          px={[0, 4]}
+        >
           <code key={"Controller"}>
             Controller:
             <Skeleton
@@ -131,6 +138,7 @@ const TerminuPool = ({
             >
               {poolState.data?.supply} <Spacer />{" "}
               <Button
+                hidden={poolState.data?.controller !== web3ctx.account}
                 size="xs"
                 variant={"ghost"}
                 py={1}
@@ -214,7 +222,6 @@ const TerminuPool = ({
                 bgColor={"blue.700"}
                 size="sm"
                 fontSize={"sm"}
-                h="27px"
                 textColor="gray.500"
                 w="100%"
                 minW={["280px", "300px", "360px", "420px", null]}
@@ -259,6 +266,7 @@ const TerminuPool = ({
             )}
           </Skeleton>
         </Stack>
+        {/* </Flex> */}
       </Flex>
     </Flex>
   );

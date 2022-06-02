@@ -201,6 +201,7 @@ export const useTerminusContract = ({
   );
 
   const poolURI = useURI({ link: poolState.data?.uri });
+  const contractJSON = useURI({ link: contractState.data?.contractURI });
 
   return {
     contractState,
@@ -218,6 +219,7 @@ export const useTerminusContract = ({
     poolMintBatch,
     mintBatch,
     withdrawPayments,
+    contractJSON,
   };
 };
 
