@@ -108,20 +108,3 @@ export const activate = ({ dropperClaimId }) => {
     url: `${API}/drops/claims/${dropperClaimId}/activate`,
   });
 };
-
-export const updateDrop = ({
-  dropperClaimId,
-  title,
-  description,
-  deadline,
-}) => {
-  return http({
-    method: "PUT",
-    url: `${API}/drops/claims/${dropperClaimId}`,
-    data: {
-      title: title,
-      description: description,
-      claim_block_deadline: deadline,
-    },
-  });
-};
