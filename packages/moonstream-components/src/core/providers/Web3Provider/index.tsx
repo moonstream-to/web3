@@ -251,7 +251,8 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
       });
       //  ÷
     }
-  });
+    //eslint-disable-next-line
+  }, []);
 
   React.useEffect(() => {
     const outDated = (deadline: any) => {
