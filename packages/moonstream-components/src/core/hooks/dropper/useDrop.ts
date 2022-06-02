@@ -127,7 +127,7 @@ const useDrop = ({
   );
 
   const update = useMutation(
-    (data: updateClaim) => {
+    (data: UpdateClaim) => {
       if (claimId) return putHttp(`/drops/claims/${claimId}`, { ...data });
       else throw new Error("Cannot use update without claimid");
     },

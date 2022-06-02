@@ -20,7 +20,10 @@ import { useTerminusContract } from "../core/hooks/useTerminusContract";
 import Web3Context from "../core/providers/Web3Provider/context";
 import { MockTerminus } from "../../../../types/contracts/MockTerminus";
 import Web3MethodForm from "./Web3MethodForm";
-import ReactJson from "react-json-view";
+import dynamic from "next/dynamic";
+const ReactJson = dynamic(() => import("react-json-view"), {
+  ssr: false,
+});
 const terminusABI = require("../../../../abi/MockTerminus.json");
 const STATES = {
   withdraw: 1,
