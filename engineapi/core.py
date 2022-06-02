@@ -1,13 +1,210 @@
 import argparse
 from ast import arg
 import json
+import os
 import sys
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List, Set
 
 from engineapi.MockErc20 import MockErc20
 from brownie import network
-from . import Lootbox, MockTerminus
+
+
+from . import (
+    abi,
+    Lootbox,
+    MockTerminus,
+    Diamond,
+    DiamondCutFacet,
+    DiamondLoupeFacet,
+    OwnershipFacet,
+    ReentrancyExploitable,
+)
+
+FACETS: Dict[str, Any] = {
+    "DiamondCutFacet": DiamondCutFacet,
+    "DiamondLoupeFacet": DiamondLoupeFacet,
+    "OwnershipFacet": OwnershipFacet,
+    "ReentrancyExploitable": ReentrancyExploitable,
+}
+
+FACET_PRECEDENCE: List[str] = [
+    "DiamondCutFacet",
+    "OwnershipFacet",
+    "DiamondLoupeFacet",
+    "ReentrancyExploitable",
+]
+
+FACET_ACTIONS: Dict[str, int] = {"add": 0, "replace": 1, "remove": 2}
+
+ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
+
+def facet_cut(
+    diamond_address: str,
+    facet_name: str,
+    facet_address: str,
+    action: str,
+    transaction_config: Dict[str, Any],
+    initializer_address: str = ZERO_ADDRESS,
+    ignore_methods: Optional[List[str]] = None,
+    ignore_selectors: Optional[List[str]] = None,
+    methods: Optional[List[str]] = None,
+    selectors: Optional[List[str]] = None,
+) -> Any:
+    """
+    Cuts the given facet onto the given Diamond contract.
+
+    Resolves selectors in the precedence order defined by FACET_PRECEDENCE (highest precedence first).
+    """
+    assert (
+        facet_name in FACETS
+    ), f"Invalid facet: {facet_name}. Choices: {','.join(FACETS)}."
+
+    assert (
+        action in FACET_ACTIONS
+    ), f"Invalid cut action: {action}. Choices: {','.join(FACET_ACTIONS)}."
+
+    if ignore_methods is None:
+        ignore_methods = []
+    if ignore_selectors is None:
+        ignore_selectors = []
+    if methods is None:
+        methods = []
+    if selectors is None:
+        selectors = []
+
+    project_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+    abis = abi.project_abis(project_dir)
+
+    reserved_selectors: Set[str] = set()
+    for facet in FACET_PRECEDENCE:
+        if facet == facet_name:
+            break
+
+        facet_abi = abis.get(facet, [])
+        for item in facet_abi:
+            if item["type"] == "function":
+                reserved_selectors.add(abi.encode_function_signature(item))
+
+    facet_function_selectors: List[str] = []
+    facet_abi = abis.get(facet_name, [])
+
+    logical_operator = all
+    method_predicate = lambda method: method not in ignore_methods
+    selector_predicate = (
+        lambda selector: selector not in reserved_selectors
+        and selector not in ignore_selectors
+    )
+
+    if len(methods) > 0 or len(selectors) > 0:
+        logical_operator = any
+        method_predicate = lambda method: method in methods
+        selector_predicate = lambda selector: selector in selectors
+
+    for item in facet_abi:
+        if item["type"] == "function":
+            item_selector = abi.encode_function_signature(item)
+            if logical_operator(
+                [method_predicate(item["name"]), selector_predicate(item_selector)]
+            ):
+                facet_function_selectors.append(item_selector)
+
+    target_address = facet_address
+    if FACET_ACTIONS[action] == 2:
+        target_address = ZERO_ADDRESS
+
+    diamond_cut_action = [
+        target_address,
+        FACET_ACTIONS[action],
+        facet_function_selectors,
+    ]
+
+    diamond = DiamondCutFacet.DiamondCutFacet(diamond_address)
+    calldata = b""
+    transaction = diamond.diamond_cut(
+        [diamond_cut_action], initializer_address, calldata, transaction_config
+    )
+    return transaction
+
+
+def diamond_gogogo(
+    owner_address: str, transaction_config: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Deploy diamond along with all its basic facets and attach those facets to the diamond.
+
+    Returns addresses of all the deployed contracts with the contract names as keys.
+    """
+    result: Dict[str, Any] = {}
+
+    try:
+        diamond_cut_facet = DiamondCutFacet.DiamondCutFacet(None)
+        diamond_cut_facet.deploy(transaction_config)
+    except Exception as e:
+        print(e)
+        result["error"] = "Failed to deploy DiamondCutFacet"
+        return result
+    result["DiamondCutFacet"] = diamond_cut_facet.address
+
+    try:
+        diamond = Diamond.Diamond(None)
+        diamond.deploy(owner_address, diamond_cut_facet.address, transaction_config)
+    except Exception as e:
+        print(e)
+        result["error"] = "Failed to deploy Diamond"
+        return result
+    result["Diamond"] = diamond.address
+
+    try:
+        diamond_loupe_facet = DiamondLoupeFacet.DiamondLoupeFacet(None)
+        diamond_loupe_facet.deploy(transaction_config)
+    except Exception as e:
+        print(e)
+        result["error"] = "Failed to deploy DiamondLoupeFacet"
+        return result
+    result["DiamondLoupeFacet"] = diamond_loupe_facet.address
+
+    try:
+        ownership_facet = OwnershipFacet.OwnershipFacet(None)
+        ownership_facet.deploy(transaction_config)
+    except Exception as e:
+        print(e)
+        result["error"] = "Failed to deploy OwnershipFacet"
+        return result
+    result["OwnershipFacet"] = ownership_facet.address
+
+    result["attached"] = []
+
+    try:
+        facet_cut(
+            diamond.address,
+            "DiamondLoupeFacet",
+            diamond_loupe_facet.address,
+            "add",
+            transaction_config,
+        )
+    except Exception as e:
+        print(e)
+        result["error"] = "Failed to attach DiamondLoupeFacet"
+        return result
+    result["attached"].append("DiamondLoupeFacet")
+
+    try:
+        facet_cut(
+            diamond.address,
+            "OwnershipFacet",
+            ownership_facet.address,
+            "add",
+            transaction_config,
+        )
+    except Exception as e:
+        print(e)
+        result["error"] = "Failed to attach OwnershipFacet"
+        return result
+    result["attached"].append("OwnershipFacet")
+
+    return result
 
 
 def lootbox_item_to_tuple(
