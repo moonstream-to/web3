@@ -1,33 +1,26 @@
 import React from "react";
 import {
-  activate,
-  deactivate,
   getAdminList,
   getTerminus,
-  setClaimants,
-  updateDrop,
-} from "../services/moonstream-engine.service";
-import { useMutation, useQuery } from "react-query";
+} from "../../services/moonstream-engine.service";
+import { useQuery } from "react-query";
 import {
   ChainInterface,
   MoonstreamWeb3ProviderInterface,
-  updateDropArguments,
-} from "../../../../../types/Moonstream";
-import { useToast } from ".";
-import { balanceOfAddress } from "../contracts/terminus.contracts";
-import queryCacheProps from "./hookCommon";
+} from "../../../../../../types/Moonstream";
+import { balanceOfAddress } from "../../contracts/terminus.contracts";
+import queryCacheProps from "../hookCommon";
+import { queryHttp } from "../../utils/http";
 
-const useClaimAdmin = ({
+const useDrops = ({
   targetChain,
   ctx,
 }: {
   targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
 }) => {
-  const toast = useToast();
-
   const [claimsPage, setClaimsPage] = React.useState(0);
-  const [claimsPageSize, setClaimsPageSize] = React.useState(10);
+  const [claimsPageSize, setClaimsPageSize] = React.useState(0);
 
   const terminusList = useQuery(
     ["terminusAddresses"],
@@ -61,7 +54,7 @@ const useClaimAdmin = ({
       );
       //terminusAuthorizations = [[terminus_addess, poolId, balance]]
       const terminusAdmin = terminusAuthorizations.filter(
-        (item) => item[2] > 0
+        (item: any) => item[2] > 0
       );
       return terminusAdmin;
     }
@@ -83,7 +76,7 @@ const useClaimAdmin = ({
   const _getAdminClaimsList = async () => {
     const claimsByPermission = adminPermissions.data
       ? await Promise.all(
-          adminPermissions.data.map(async (permission) => {
+          adminPermissions.data.map(async (permission: any) => {
             const response = await getAdminList(
               permission[0],
               targetChain.name,
@@ -101,35 +94,18 @@ const useClaimAdmin = ({
   };
 
   const adminClaims = useQuery(
-    [
-      "claimAdmin",
-      "adminClaims",
-      targetChain.chainId,
-      claimsPage,
-      claimsPageSize,
-    ],
+    ["claimAdmin", "adminClaims", targetChain.name, claimsPage, claimsPageSize],
     _getAdminClaimsList,
     {
       ...queryCacheProps,
       keepPreviousData: true,
-      enabled: !!adminPermissions.data && !!ctx.account,
+      enabled:
+        !!adminPermissions.data &&
+        !!ctx.account &&
+        !!targetChain.name &&
+        claimsPageSize != 0,
     }
   );
-
-  const isLoading = React.useMemo(() => {
-    if (terminusList.isLoading) return true;
-    return false;
-  }, [terminusList.isLoading]);
-
-  const uploadFile = useMutation(setClaimants, {
-    onSuccess: () => {
-      toast("File uploaded successfully", "success");
-    },
-    onError: () => {
-      toast("Uploading file failed", "error", "Error! >.<");
-    },
-    onSettled: () => {},
-  });
 
   const pageOptions = {
     page: claimsPage,
@@ -138,59 +114,22 @@ const useClaimAdmin = ({
     setPageSize: setClaimsPageSize,
   };
 
-  const update = useMutation(
-    ({ id, data }: { id: string; data: updateDropArguments }) =>
-      updateDrop({ dropperClaimId: id })({ ...data }),
+  const dropperContracts = useQuery(
+    ["/drops/contracts", { blockchain: targetChain.name }],
+    (query: any) => queryHttp(query).then((result: any) => result.data),
     {
-      onSuccess: () => {
-        adminClaims.refetch();
-        toast("Updated drop info", "success");
-      },
-      onError: () => {
-        toast("Updating drop failed >.<", "error");
-      },
-    }
-  );
-
-  const activateDrop = useMutation(
-    (id: string) => activate({ dropperClaimId: id }),
-    {
-      onSuccess: () => {
-        toast("Activated drop", "success");
-        adminClaims.refetch();
-      },
-      onError: () => {
-        toast("Activating drop failed", "error", "Error! >.<");
-      },
-      onSettled: () => {},
-    }
-  );
-
-  const deactivateDrop = useMutation(
-    (id: string) => deactivate({ dropperClaimId: id }),
-    {
-      onSuccess: () => {
-        toast("Deactivated drop", "success");
-        adminClaims.refetch();
-      },
-      onError: () => {
-        toast("Deactivating drop failed", "error", "Error! >.<");
-      },
-      onSettled: () => {
-        deactivateDrop.reset();
-      },
+      ...queryCacheProps,
+      onSuccess: () => {},
+      enabled:
+        ctx.web3?.utils.isAddress(ctx.account) && ctx.chainId === ctx.chainId,
     }
   );
 
   return {
     adminClaims,
-    isLoading,
-    uploadFile,
     pageOptions,
-    update,
-    activateDrop,
-    deactivateDrop,
+    dropperContracts,
   };
 };
 
-export default useClaimAdmin;
+export default useDrops;

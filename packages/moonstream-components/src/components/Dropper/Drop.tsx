@@ -28,14 +28,13 @@ import {
 } from "@chakra-ui/react";
 import Papa from "papaparse";
 import FileUpload from "../FileUpload";
-import { useDrops, useRouter } from "../../core/hooks";
+import { useRouter } from "../../core/hooks";
+import { useClaim, useDrop } from "../../core/hooks/dropper";
 import { EditIcon } from "@chakra-ui/icons";
 import FocusLock from "react-focus-lock";
 import { useForm } from "react-hook-form";
 import { targetChain } from "../../core/providers/Web3Provider";
 import Web3Context from "../../core/providers/Web3Provider/context";
-import { UseMutationResult } from "react-query";
-import { updateDropArguments } from "../../../../../types/Moonstream";
 import { useToast } from "../../core/hooks";
 
 interface ClaimInterface {
@@ -50,39 +49,36 @@ interface ClaimInterface {
   title: string;
 }
 
-const DropCard = ({
-  claim,
-  onUpdate,
-  activateDrop,
-  deactivateDrop,
+const _DropCard = ({
+  dropId,
   children,
   ...props
 }: {
-  claim: ClaimInterface;
-  activateDrop: UseMutationResult<unknown, unknown, string, unknown>;
-  deactivateDrop: UseMutationResult<unknown, unknown, string, unknown>;
-  onUpdate: UseMutationResult<
-    unknown,
-    unknown,
-    {
-      id: string;
-      data: updateDropArguments;
-    },
-    unknown
-  >;
+  initalClaim: ClaimInterface;
+  dropId: string;
   children: React.ReactNode;
 }) => {
   const router = useRouter();
-  const web3ctx = useContext(Web3Context);
   const toast = useToast();
   const { register, handleSubmit } = useForm();
 
-  const { uploadFile } = useDrops({ targetChain, ctx: web3ctx });
+  const web3ctx = useContext(Web3Context);
+  const { claim } = useClaim({
+    targetChain,
+    ctx: web3ctx,
+    claimId: dropId,
+  });
+
   const query = router.query;
 
   const [isUploading, setIsUploading] = useState(false);
 
   var parserLineNumber = 0;
+
+  const { update, uploadFile, activateDrop, deactivateDrop } = useDrop({
+    targetChain: targetChain,
+    ctx: web3ctx,
+  });
 
   const handleParsingError = function (error: string): void {
     setIsUploading(false);
@@ -139,7 +135,7 @@ const DropCard = ({
       complete: (result: any) => {
         uploadFile.mutate(
           {
-            dropperClaimId: claim.id,
+            dropperClaimId: claim.data?.id,
             claimants: result.data,
           },
           {
@@ -156,15 +152,22 @@ const DropCard = ({
   const { onOpen, onClose, isOpen } = useDisclosure();
 
   React.useEffect(() => {
-    if (isOpen && onUpdate.isSuccess) {
+    if (isOpen && update.isSuccess) {
       onClose();
-      onUpdate.reset();
+      update.reset();
     }
-  }, [isOpen, onUpdate, onClose]);
+  }, [isOpen, update, onClose]);
   const firstFieldRef = React.useRef(null);
 
   const onSubmit = (data: any) =>
-    onUpdate.mutate({ id: claim.id, data: { ...data } });
+    update.mutate(
+      { dropperClaimId: claim.data?.id, ...data },
+      {
+        onSuccess: () => {
+          claim.refetch();
+        },
+      }
+    );
 
   return (
     <Flex
@@ -189,7 +192,7 @@ const DropCard = ({
           <PopoverAnchor>
             <Heading as={"h2"} fontSize="lg" w="90%" mt={2}>
               {"Drop: "}
-              {claim.title}
+              {claim.data?.title}
             </Heading>
           </PopoverAnchor>
 
@@ -222,7 +225,7 @@ const DropCard = ({
                       px={2}
                       variant={"flushed"}
                       colorScheme="orange"
-                      defaultValue={claim.title}
+                      defaultValue={claim.data?.title}
                       {...register("title")}
                     />
                   </FormControl>
@@ -234,7 +237,7 @@ const DropCard = ({
                       px={2}
                       variant={"flushed"}
                       colorScheme="orange"
-                      defaultValue={claim.description}
+                      defaultValue={claim.data?.description}
                       {...register("description")}
                     />
                   </FormControl>
@@ -247,7 +250,7 @@ const DropCard = ({
                       variant={"flushed"}
                       name="deadline"
                       colorScheme="orange"
-                      defaultValue={claim.claim_block_deadline}
+                      defaultValue={claim.data?.claim_block_deadline}
                     >
                       <NumberInputField px={2} {...register("deadline")} />
                       <NumberInputStepper>
@@ -261,14 +264,14 @@ const DropCard = ({
                     <Button
                       variant="outline"
                       onClick={onClose}
-                      isLoading={onUpdate.isLoading}
+                      isLoading={update.isLoading}
                     >
                       Cancel
                     </Button>
                     <Button
                       colorScheme="orange"
                       type="submit"
-                      isLoading={onUpdate.isLoading}
+                      isLoading={update.isLoading}
                     >
                       Save
                     </Button>
@@ -280,7 +283,7 @@ const DropCard = ({
         </Flex>
       </Popover>
       <Heading as={"h3"} fontSize="md">
-        {claim.description}
+        {claim.data?.description}
       </Heading>
       <Flex w="100%" direction={["row", null]} flexWrap="wrap">
         <Flex
@@ -303,16 +306,18 @@ const DropCard = ({
             <UnorderedList fontSize={"sm"}>
               <ListItem>
                 Deadline: &#9;&#9;&#9;&#9;&#9;&#9;&#9;
-                {claim.claim_block_deadline}
-              </ListItem>
-              <ListItem>Enabled: {claim.active ? "True" : "False"}</ListItem>
-              <ListItem>
-                Dropper: <code>{claim.dropper_contract_address}</code>
+                {claim.data?.claim_block_deadline}
               </ListItem>
               <ListItem>
-                Terminus: <code>{claim.terminus_address}</code>
+                Enabled: {claim.data?.active ? "True" : "False"}
               </ListItem>
-              <ListItem>Pool id: {claim.terminus_pool_id}</ListItem>
+              <ListItem>
+                Dropper: <code>{claim.data?.dropper_contract_address}</code>
+              </ListItem>
+              <ListItem>
+                Terminus: <code>{claim.data?.terminus_address}</code>
+              </ListItem>
+              <ListItem>Pool id: {claim.data?.terminus_pool_id}</ListItem>
             </UnorderedList>
           </Flex>
         </Flex>
@@ -330,16 +335,36 @@ const DropCard = ({
         <Button
           variant={"outline"}
           colorScheme="green"
-          isDisabled={!!claim.active}
-          onClick={() => activateDrop.mutate(claim.id)}
+          isDisabled={!!claim.data?.active}
+          isLoading={activateDrop.isLoading}
+          onClick={() =>
+            activateDrop.mutate(
+              { dropperClaimId: dropId },
+              {
+                onSuccess: () => {
+                  claim.refetch();
+                },
+              }
+            )
+          }
         >
           Activate
         </Button>
         <Button
           variant={"outline"}
           colorScheme="red"
-          isDisabled={!claim.active}
-          onClick={() => deactivateDrop.mutate(claim.id)}
+          isDisabled={!claim.data?.active}
+          isLoading={deactivateDrop.isLoading}
+          onClick={() =>
+            deactivateDrop.mutate(
+              { dropperClaimId: dropId },
+              {
+                onSuccess: () => {
+                  claim.refetch();
+                },
+              }
+            )
+          }
         >
           Deactivate
         </Button>
@@ -347,9 +372,7 @@ const DropCard = ({
           as={Link}
           colorScheme={"orange"}
           variant="outline"
-          // href={`/drops/details/`}
           onClick={() => {
-            // router.appendQuery("dropId", claim.id);
             if (query?.dropId) {
               router.push({
                 pathname: "/drops",
@@ -357,7 +380,9 @@ const DropCard = ({
             } else {
               router.push({
                 pathname: "drops/details",
-                query: { dropId: claim.id },
+                query: {
+                  dropId: claim.data?.id,
+                },
               });
             }
           }}
@@ -370,4 +395,6 @@ const DropCard = ({
   );
 };
 
-export default chakra(DropCard);
+const DropCard = chakra(_DropCard);
+
+export default DropCard;

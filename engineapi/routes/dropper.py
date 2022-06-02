@@ -1,32 +1,27 @@
 """
 Lootbox API.
 """
-from atexit import register
 import logging
-import time
-from typing import List, Dict, Optional
+from typing import List, Optional, Any
 from uuid import UUID
 
 from web3 import Web3
 from brownie import network
 
 
-from fastapi import APIRouter, Body, FastAPI, Request, Depends, Query
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter, Body, Request, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
+
+from engineapi.models import DropperClaimant
 
 from .. import actions
 from .. import data
 from .. import db
 from .. import Dropper
 from .. import signatures
-from ..middleware import DropperHTTPException, DropperAuthMiddleware
-from ..settings import (
-    ENGINE_BROWNIE_NETWORK,
-    DOCS_TARGET_PATH,
-    ORIGINS,
-)
+from ..middleware import DropperHTTPException
+from ..settings import ENGINE_BROWNIE_NETWORK
 
 network.connect(ENGINE_BROWNIE_NETWORK)
 
@@ -37,6 +32,8 @@ router = APIRouter(
     prefix="/drops",
 )
 
+
+@router.get("", response_model=data.DropResponse)
 @router.get("/", response_model=data.DropResponse)
 async def get_drop_handler(
     dropper_claim_id: UUID,
@@ -58,6 +55,18 @@ async def get_drop_handler(
     except Exception as e:
         raise DropperHTTPException(status_code=500, detail="Can't get claimant")
 
+    try:
+        claimant_db_object = (
+            db_session.query(DropperClaimant)
+            .filter(DropperClaimant.id == claimant.dropper_claimant_id)
+            .one()
+        )
+    except Exception as err:
+        logger.error(
+            f"Can't get claimant object for drop: {dropper_claim_id} and address: {address}"
+        )
+        raise DropperHTTPException(status_code=500, detail="Can't get claimant object.")
+
     transformed_amount = actions.transform_claim_amount(
         db_session, dropper_claim_id, claimant.amount
     )
@@ -73,24 +82,27 @@ async def get_drop_handler(
             status_code=403,
             detail="Cannot claim rewards for a claim with no block deadline",
         )
+    signature = claimant.signature
+    if signature is None or not claimant.is_recent_signature:
+        dropper_contract = Dropper.Dropper(claimant.dropper_contract_address)
+        message_hash = dropper_contract.claim_message_hash(
+            claimant.claim_id,
+            claimant.address,
+            claimant.claim_block_deadline,
+            transformed_amount,
+        )
 
-    dropper_contract = Dropper.Dropper(claimant.dropper_contract_address)
-    message_hash = dropper_contract.claim_message_hash(
-        claimant.claim_id,
-        claimant.address,
-        claimant.claim_block_deadline,
-        transformed_amount,
-    )
-
-    try:
-        signature = signatures.DROP_SIGNER.sign_message(message_hash)
-    except signatures.AWSDescribeInstancesFail:
-        raise DropperHTTPException(status_code=500)
-    except signatures.SignWithInstanceFail:
-        raise DropperHTTPException(status_code=500)
-    except Exception as err:
-        logger.error(f"Unexpected error in signing message process: {err}")
-        raise DropperHTTPException(status_code=500)
+        try:
+            signature = signatures.DROP_SIGNER.sign_message(message_hash)
+            claimant_db_object.signature = signature
+            db_session.commit()
+        except signatures.AWSDescribeInstancesFail:
+            raise DropperHTTPException(status_code=500)
+        except signatures.SignWithInstanceFail:
+            raise DropperHTTPException(status_code=500)
+        except Exception as err:
+            logger.error(f"Unexpected error in signing message process: {err}")
+            raise DropperHTTPException(status_code=500)
 
     return data.DropResponse(
         claimant=claimant.address,
@@ -98,6 +110,8 @@ async def get_drop_handler(
         claim_id=claimant.claim_id,
         block_deadline=claimant.claim_block_deadline,
         signature=signature,
+        title=claimant.title,
+        description=claimant.description,
     )
 
 
@@ -124,41 +138,67 @@ async def get_drop_batch_handler(
             status_code=403, detail="You are not authorized to claim that reward"
         )
     except Exception as e:
+        logger.error(e)
         raise DropperHTTPException(status_code=500, detail="Can't get claimant")
+
+    # get claimants
+    try:
+        claimants = (
+            db_session.query(DropperClaimant)
+            .filter(
+                DropperClaimant.id.in_(
+                    [item.dropper_claimant_id for item in claimant_drops]
+                )
+            )
+            .all()
+        )
+    except Exception as err:
+        logger.error(f"Can't get claimant objects for address: {address}")
+        raise DropperHTTPException(
+            status_code=500, detail="Can't get claimant objects."
+        )
+
+    claimants_dict = {item.id: item for item in claimants}
 
     # generate list of claims
 
     claims: List[data.DropBatchResponseItem] = []
+
+    commit_required = False
 
     for claimant_drop in claimant_drops:
 
         transformed_amount = actions.transform_claim_amount(
             db_session, claimant_drop.dropper_claim_id, claimant_drop.amount
         )
+        signature = claimant_drop.signature
+        if signature is None or not claimant_drop.is_recent_signature:
+            dropper_contract = Dropper.Dropper(claimant_drop.dropper_contract_address)
 
-        dropper_contract = Dropper.Dropper(claimant_drop.dropper_contract_address)
+            message_hash = dropper_contract.claim_message_hash(
+                claimant_drop.claim_id,
+                claimant_drop.address,
+                claimant_drop.claim_block_deadline,
+                transformed_amount,
+            )
 
-        message_hash = dropper_contract.claim_message_hash(
-            claimant_drop.claim_id,
-            claimant_drop.address,
-            claimant_drop.claim_block_deadline,
-            transformed_amount,
-        )
-
-        try:
-            signature = signatures.DROP_SIGNER.sign_message(message_hash)
-        except signatures.AWSDescribeInstancesFail:
-            raise DropperHTTPException(status_code=500)
-        except signatures.SignWithInstanceFail:
-            raise DropperHTTPException(status_code=500)
-        except Exception as err:
-            logger.error(f"Unexpected error in signing message process: {err}")
-            raise DropperHTTPException(status_code=500)
+            try:
+                signature = signatures.DROP_SIGNER.sign_message(message_hash)
+                claimants_dict[claimant_drop.dropper_claimant_id].signature = signature
+                commit_required = True
+            except signatures.AWSDescribeInstancesFail:
+                raise DropperHTTPException(status_code=500)
+            except signatures.SignWithInstanceFail:
+                raise DropperHTTPException(status_code=500)
+            except Exception as err:
+                logger.error(f"Unexpected error in signing message process: {err}")
+                raise DropperHTTPException(status_code=500)
 
         claims.append(
             data.DropBatchResponseItem(
                 claimant=claimant_drop.address,
                 amount=transformed_amount,
+                amount_string=str(transformed_amount),
                 claim_id=claimant_drop.claim_id,
                 block_deadline=claimant_drop.claim_block_deadline,
                 signature=signature,
@@ -166,8 +206,13 @@ async def get_drop_batch_handler(
                 dropper_contract_address=claimant_drop.dropper_contract_address,
                 blockchain=claimant_drop.blockchain,
                 active=claimant_drop.active,
+                title=claimant_drop.title,
+                description=claimant_drop.description,
             )
         )
+
+    if commit_required:
+        db_session.commit()
 
     return claims
 
@@ -278,7 +323,6 @@ async def get_drop_list_handler(
 ) -> data.DropListResponse:
     """
     Get list of drops for a given dropper contract and claimant address.
-    dasdasd
     """
 
     if dropper_contract_address:
@@ -311,6 +355,50 @@ async def get_drop_list_handler(
         raise DropperHTTPException(status_code=500, detail="Can't get claims")
 
     return data.DropListResponse(drops=[result for result in results])
+
+
+@router.get("/claims/{dropper_claim_id}", response_model=data.DropperClaimResponse)
+async def get_drop_handler(
+    request: Request,
+    dropper_claim_id: str,
+    db_session: Session = Depends(db.yield_db_session),
+) -> data.DropperClaimResponse:
+    """
+    Get list of drops for a given dropper contract and claimant address.
+    """
+
+    try:
+        drop = actions.get_drop(
+            db_session=db_session, dropper_claim_id=dropper_claim_id
+        )
+    except NoResultFound:
+        raise DropperHTTPException(status_code=404, detail="No drops found.")
+    except Exception as e:
+        logger.error(f"Can't get drop {dropper_claim_id} end with error: {e}")
+        raise DropperHTTPException(status_code=500, detail="Can't get drop")
+
+    if drop.terminus_address is not None and drop.terminus_pool_id is not None:
+        try:
+            actions.ensure_admin_token_holder(
+                db_session, dropper_claim_id, request.state.address
+            )
+        except actions.AuthorizationError as e:
+            logger.error(e)
+            raise DropperHTTPException(status_code=403)
+        except NoResultFound:
+            raise DropperHTTPException(status_code=404, detail="Drop not found")
+
+    return data.DropperClaimResponse(
+        id=drop.id,
+        dropper_contract_id=drop.dropper_contract_id,
+        title=drop.title,
+        description=drop.description,
+        active=drop.active,
+        claim_block_deadline=drop.claim_block_deadline,
+        terminus_address=drop.terminus_address,
+        terminus_pool_id=drop.terminus_pool_id,
+        claim_id=drop.claim_id,
+    )
 
 
 @router.get("/terminus/claims", response_model=data.DropListResponse)
@@ -669,3 +757,81 @@ async def delete_claimants(
         raise DropperHTTPException(status_code=500, detail=f"Error removing claimants")
 
     return data.RemoveClaimantsResponse(addresses=results)
+
+
+@router.get("/claimants/search", response_model=data.Claimant)
+async def get_claimant_in_drop(
+    request: Request,
+    dropper_claim_id: UUID,
+    address: str,
+    db_session: Session = Depends(db.yield_db_session),
+) -> data.Claimant:
+
+    """
+    Return claimant from drop
+    """
+    try:
+        actions.ensure_admin_token_holder(
+            db_session,
+            dropper_claim_id,
+            request.state.address,
+        )
+    except actions.AuthorizationError as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=403)
+    except Exception as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=500)
+
+    try:
+        claimant = actions.get_claimant(
+            db_session=db_session,
+            dropper_claim_id=dropper_claim_id,
+            address=address,
+        )
+
+    except NoResultFound:
+        raise DropperHTTPException(
+            status_code=404, detail="Address not present in that drop."
+        )
+    except Exception as e:
+        logger.error(f"Can't get claimant: {e}")
+        raise DropperHTTPException(status_code=500, detail="Can't get claimant")
+
+    return data.Claimant(address=claimant.address, amount=claimant.amount)
+
+
+@router.post("/drop/{dropper_claim_id}/refetch")
+async def refetch_drop_signatures(
+    request: Request,
+    dropper_claim_id: UUID,
+    db_session: Session = Depends(db.yield_db_session),
+) -> Any:
+    """
+    Refetch signatures for a drop
+    """
+
+    try:
+        actions.ensure_admin_token_holder(
+            db_session, dropper_claim_id, request.state.address
+        )
+    except actions.AuthorizationError as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=403)
+    except Exception as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=500)
+
+    try:
+        signatures = actions.refetch_drop_signatures(
+            db_session=db_session, dropper_claim_id=dropper_claim_id
+        )
+    except Exception as e:
+        logger.info(
+            f"Can't refetch signatures for drop {dropper_claim_id} with error: {e}"
+        )
+        raise DropperHTTPException(
+            status_code=500, detail=f"Error refetching signatures"
+        )
+
+    return signatures
