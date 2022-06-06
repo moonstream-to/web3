@@ -454,12 +454,14 @@ async def create_drop(
     Create a drop for a given dropper contract.
     """
     try:
-        actions.ensure_admin_token_holder(
+        actions.ensure_dropper_contract_owner(
             db_session, register_request.dropper_contract_id, request.state.address
         )
     except actions.AuthorizationError as e:
         logger.error(e)
-        raise DropperHTTPException(status_code=403)
+        raise DropperHTTPException(
+            status_code=403, detail="Must be owner of dropper contract"
+        )
     except NoResultFound:
         raise DropperHTTPException(status_code=404, detail="Dropper contract not found")
     except Exception as e:
