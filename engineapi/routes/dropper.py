@@ -454,7 +454,7 @@ async def create_drop(
     Create a drop for a given dropper contract.
     """
     try:
-        actions.ensure_dropper_contract_owner(
+        actions.ensure_admin_token_holder(
             db_session, register_request.dropper_contract_id, request.state.address
         )
     except actions.AuthorizationError as e:
