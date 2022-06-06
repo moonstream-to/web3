@@ -20,6 +20,8 @@ from .settings import (
 )
 from .routes.dropper import router as dropper_router
 from .routes.leaderboard import router as leaderboard_router
+from .routes.admin import app as admin_app
+from .routes.play import app as play_app
 
 
 logging.basicConfig(level=logging.INFO)
@@ -68,7 +70,7 @@ whitelist_paths.update(
     }
 )
 
-app.add_middleware(DropperAuthMiddleware, whitelist=whitelist_paths)
+# app.add_middleware(DropperAuthMiddleware, whitelist=whitelist_paths)
 
 app.add_middleware(
     CORSMiddleware,
@@ -97,3 +99,5 @@ async def now_handler() -> data.NowResponse:
 
 app.include_router(leaderboard_router)
 app.include_router(dropper_router)
+app.mount("/admin", admin_app)
+app.mount("/play", play_app)

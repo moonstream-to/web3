@@ -217,6 +217,32 @@ async def get_drop_batch_handler(
     return claims
 
 
+@router.get("/blockchains")
+async def get_drops_blockchains_handler(
+    db_session: Session = Depends(db.yield_db_session),
+) -> List[data.DropperBlockchainResponse]:
+    """
+    Get list of blockchains.
+    """
+
+    try:
+        results = actions.list_drops_blockchains(db_session=db_session)
+    except NoResultFound:
+        raise DropperHTTPException(status_code=404, detail="No drops found.")
+    except Exception as e:
+        logger.error(f"Can't get list of drops end with error: {e}")
+        raise DropperHTTPException(status_code=500, detail="Can't get drops")
+
+    response = [
+        data.DropperBlockchainResponse(
+            blockchain=result.blockchain,
+        )
+        for result in results
+    ]
+
+    return response
+
+
 @router.get("/contracts", response_model=List[data.DropperContractResponse])
 async def get_dropper_contracts_handler(
     blockchain: Optional[str] = Query(None),
@@ -244,32 +270,6 @@ async def get_dropper_contracts_handler(
             title=result.title,
             description=result.description,
             image_uri=result.image_uri,
-        )
-        for result in results
-    ]
-
-    return response
-
-
-@router.get("/blockchains")
-async def get_drops_blockchains_handler(
-    db_session: Session = Depends(db.yield_db_session),
-) -> List[data.DropperBlockchainResponse]:
-    """
-    Get list of blockchains.
-    """
-
-    try:
-        results = actions.list_drops_blockchains(db_session=db_session)
-    except NoResultFound:
-        raise DropperHTTPException(status_code=404, detail="No drops found.")
-    except Exception as e:
-        logger.error(f"Can't get list of drops end with error: {e}")
-        raise DropperHTTPException(status_code=500, detail="Can't get drops")
-
-    response = [
-        data.DropperBlockchainResponse(
-            blockchain=result.blockchain,
         )
         for result in results
     ]
@@ -413,7 +413,7 @@ async def get_drop_terminus_list_handler(
     db_session: Session = Depends(db.yield_db_session),
 ) -> data.DropListResponse:
     """
-    Get list of drops for a given dropper contract and claimant address.
+    Get list of drops for a given terminus address.
     """
 
     if dropper_contract_address:
