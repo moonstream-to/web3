@@ -49,9 +49,10 @@ const variants = {
   tokensScreen: variantTokensScreen,
 };
 
-export default {
+const HeadingTheme = {
   baseStyle,
   sizes,
   defaultProps,
   variants,
 };
+export default HeadingTheme;

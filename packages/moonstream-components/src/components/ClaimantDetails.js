@@ -1,50 +1,55 @@
 import React, { useContext } from "react";
-
-import {
-  Flex,
-  Spinner,
-  UnorderedList,
-  ListItem,
-  IconButton,
-  Heading,
-} from "@chakra-ui/react";
-import { useClaimant } from "../core/hooks";
+import { Flex, Spinner, IconButton, Heading } from "@chakra-ui/react";
 import Web3Context from "../core/providers/Web3Provider/context";
 import { targetChain } from "../core/providers/Web3Provider";
-import CopyButton from "./CopyButton";
 import { CloseIcon } from "@chakra-ui/icons";
 import { BiTrash } from "react-icons/bi";
-const ClaimantDetails = ({ dropId, address, onClose, onDeleteClaimant }) => {
+import { useDrop } from "../core/hooks/dropper";
+import useSearch from "../core/hooks/useSearch";
+const ClaimantDetails = ({ claimId, address, onClose }) => {
   const web3ctx = useContext(Web3Context);
 
-  const { claim } = useClaimant({
+  const { deleteClaimants } = useDrop({
     targetChain,
     ctx: web3ctx,
-    dropId: dropId,
-    claimantAddress: address,
+    claimId: claimId,
   });
-  if (claim.isLoading) return <Spinner />;
+
+  const { search } = useSearch({
+    pathname: "/drops/claimants/search",
+    query: { address: address, dropper_claim_id: claimId },
+  });
+  if (search.isLoading) return <Spinner size="sm" />;
   return (
-    <Flex className="ClaimantDetails" direction={"row"}>
-      {claim.data?.signature && (
+    <Flex className="ClaimantDetails" direction={"row"} alignItems="baseline">
+      {search.data?.address && (
         <>
-          <CopyButton text={claim.data.signature}>Signature</CopyButton>
-          <UnorderedList>
-            <ListItem>Deadline: {claim.data.block_deadline}</ListItem>
-            <ListItem>Amount: {claim.data.claim_id}</ListItem>
-          </UnorderedList>
+          <Heading size="sm">Amount: {search.data.amount}</Heading>
           <IconButton
+            size="sm"
             colorScheme="orange"
-            onClick={() => onDeleteClaimant(address)}
+            isLoading={deleteClaimants.isLoading}
+            onClick={() => {
+              deleteClaimants.mutate(
+                { list: [address] },
+                {
+                  onSuccess: () => {
+                    search.remove();
+                    onClose();
+                  },
+                }
+              );
+            }}
             version="ghost"
             icon={<BiTrash />}
           ></IconButton>
         </>
       )}
-      {!claim.data?.signature && <Heading>Not found</Heading>}
+      {!search.data?.address && <Heading size="sm">Not found</Heading>}
       <IconButton
         colorScheme="orange"
         onClick={onClose}
+        size="sm"
         version="ghost"
         icon={<CloseIcon />}
       ></IconButton>

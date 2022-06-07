@@ -40,9 +40,18 @@ const EngineLayout = (props) => {
           path.forEach((value, index) => {
             if (index <= idx) linkPath += value + "/";
           });
+
+          const query =
+            linkPath === "/terminus/" && router.query.contractAddress
+              ? { contractAddress: router.query.contractAddress }
+              : undefined;
           return (
             <BreadcrumbItem key={`bcl-${element}-${idx}`}>
-              <NextLink passHref href={`${linkPath}`}>
+              <NextLink
+                passHref
+                shallow
+                href={{ pathname: linkPath, query: { ...query } }}
+              >
                 <BreadcrumbLink
                   isCurrentPage={idx === path.length ? true : false}
                   fontWeight={idx === path.length - 1 ? "semibold" : "normal"}

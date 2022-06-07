@@ -1,6 +1,6 @@
 import { useQuery } from "react-query";
-import { ReactWeb3ProviderInterface } from "../../../types/Moonstream";
 import { getTokenState } from "../contracts/erc20.contracts";
+import { MoonstreamWeb3ProviderInterface } from "../../../../../types/Moonstream";
 
 const useERC20 = ({
   contractAddress,
@@ -9,7 +9,7 @@ const useERC20 = ({
 }: {
   contractAddress: string;
   targetChain: any;
-  ctx: ReactWeb3ProviderInterface;
+  ctx: MoonstreamWeb3ProviderInterface;
 }) => {
   const ERC20State = useQuery(
     ["ERC20State", contractAddress, targetChain.chainId],

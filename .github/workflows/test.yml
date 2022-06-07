@@ -1,7 +1,10 @@
-name: Test code
+name: Test smart contracts and backend code
 
 on:
   pull_request:
+    paths:
+      - "contracts/**"
+      - "engineapi/**"
     branches:
       - main
 

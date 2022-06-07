@@ -1,27 +1,53 @@
-import React, { useContext } from "react";
-import {
-  chakra,
-  Flex,
-  Heading,
-  ListItem,
-  UnorderedList,
-} from "@chakra-ui/react";
+import React, { useContext, useState } from "react";
+import { chakra, Button, Flex, Heading, Image } from "@chakra-ui/react";
 import { targetChain } from "../../core/providers/Web3Provider";
 import Web3Context from "../../core/providers/Web3Provider/context";
-import useLootbox from "../../core/hooks/useLootbox";
+import useLootboxToken from "../../core/hooks/useLootboxToken";
 
-const LootboxCard = ({ lootboxId, ...props }) => {
+const LootboxCard = ({
+  contractAddress,
+  lootboxId,
+  hasActiveOpening,
+  activeOpening,
+  ...props
+}) => {
   const web3ctx = useContext(Web3Context);
+  const [metadata, setMetadata] = useState(null);
 
-  //TODO(yhtiyar): remove hardcoded address
-  const { state } = useLootbox({
-    contractAddress: "0x44b43b762E15Fb3dFC132030672Ca47caD5aa68c",
+  const { state, openLootbox, completeLootboxOpening } = useLootboxToken({
+    contractAddress: contractAddress,
     lootboxId: lootboxId,
     targetChain: targetChain,
     ctx: web3ctx,
   });
 
-  const onOpen = () => {};
+  if (state.isFetched && !metadata) {
+    console.log(state.data);
+
+    if (state.data.lootboxUri === "") {
+      setMetadata({
+        name: "No metadata",
+        title: "No metadata",
+        description: "No metadata",
+      });
+
+      return;
+    } else {
+      console.log("it has url", state.data.lootboxUri);
+    }
+
+    fetch(state.data.lootboxUri).then((response) => {
+      response.json().then((data) => {
+        console.log(data);
+        setMetadata(data);
+      });
+    });
+  }
+
+  const openTheLootbox = () => {
+    console.log("openLootbox");
+    openLootbox(lootboxId, 1);
+  };
 
   return (
     <Flex
@@ -32,19 +58,46 @@ const LootboxCard = ({ lootboxId, ...props }) => {
       p={4}
       mt={2}
       textColor={"gray.300"}
-      // {...props}
+      {...props}
     >
       <Heading as={"h2"} fontSize="lg" borderBottomWidth={1}>
-        {"Claim: "}
+        {"LootboxId: "}
         {lootboxId}
       </Heading>
-      <UnorderedList>
-        <ListItem>Deadline: {props.claim_block_deadline}</ListItem>
-      </UnorderedList>
-      {description && <chakra.span as={"h3"}>{description}</chakra.span>}
-      <FileUpload onDrop={onDrop} />
+
+      {metadata && <chakra.span as={"h3"}>{metadata.name}</chakra.span>}
+      {state.isFetched && (
+        <chakra.span as={"h3"}>
+          Balance: {state.data.lootboxBalance}
+        </chakra.span>
+      )}
+      {metadata?.image && (
+        <Image
+          boxSize="200px"
+          src={metadata.image}
+          alt={metadata.description}
+        />
+      )}
+      {!hasActiveOpening && (
+        <Button
+          onClick={openTheLootbox}
+          isDisabled={!(state.isFetched && state.data.lootboxBalance !== "0")}
+        >
+          {" "}
+          Open{" "}
+        </Button>
+      )}
+      {hasActiveOpening && (
+        <Button
+          onClick={completeLootboxOpening}
+          isDisabled={!activeOpening.isReadyToComplete}
+        >
+          {" "}
+          Complete Opening{" "}
+        </Button>
+      )}
     </Flex>
   );
 };
 
-export default chakra(ContractCard);
+export default chakra(LootboxCard);

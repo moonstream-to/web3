@@ -9,6 +9,25 @@
   font-display: swap;
 }
 
+.markdown * a {
+  color: #4579D8;
+
+}
+.markdown * a:hover {
+  color: #F29C38;
+
+}
+
+.ShowMoreButton {
+  color: #F4894E;
+
+}
+
+.ShowMoreButton:hover {
+  color: white;
+
+}
+
 .Resizer {
   background: #000;
   opacity: 0.2;

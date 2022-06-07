@@ -1,52 +1,40 @@
-import React, { useContext } from "react";
-import { chakra, Flex, Spinner } from "@chakra-ui/react";
-import { targetChain } from "../../core/providers/Web3Provider";
-import Web3Context from "../../core/providers/Web3Provider/context";
-import useDrops from "../../core/hooks/useDrops";
-import useClaim from "../../core/hooks/useDrop";
-import Claimers from "../Claimers";
-import { useRouter } from "../../core/hooks";
+import React from "react";
+import {
+  chakra,
+  Flex,
+  VStack,
+  Stack,
+  Input,
+  Box,
+  Button,
+  Heading,
+  useDisclosure,
+  InputGroup,
+  ScaleFade,
+} from "@chakra-ui/react";
+import ClaimantDetails from "../ClaimantDetails";
+import ClaimersList from "../ClaimersList";
+import Web3 from "web3";
+import { useToast } from "../../core/hooks";
 
-const _Drop = ({
-  dropId,
-  ...props
-}: {
-  dropId: string;
-  claimants: Array<String>;
-}) => {
-  const web3ctx = useContext(Web3Context);
-
-  const { adminClaims } = useDrops({
-    targetChain: targetChain,
-    ctx: web3ctx,
-  });
-
-  const {
-    claim,
-    claimants,
-    deleteClaimants,
-    setClaimantsPage,
-    claimantsPage,
-    setClaimantsPageSize,
-    claimantsPageSize,
-  } = useClaim({
-    targetChain,
-    ctx: web3ctx,
-    claimId: dropId,
-  });
-
-  const router = useRouter();
-
-  React.useEffect(() => {
-    router.appendQueries({
-      claimantsLimit: claimantsPageSize,
-      claimantsPage: claimantsPage,
-    });
-    //eslint-disable-next-line
-  }, [claimantsPageSize, claimantsPage]);
-
-  if (!claim || !claimants.data || !adminClaims.data || adminClaims.isLoading)
-    return <Spinner />;
+const _Drop = ({ dropId, ...props }: { dropId: string }) => {
+  const { onOpen, onClose, isOpen } = useDisclosure();
+  const [filter, setFilter] = React.useState("");
+  const toast = useToast();
+  const handleCheckNow = () => {
+    const web3 = new Web3();
+    if (web3.utils.isAddress(filter)) {
+      onOpen();
+    } else {
+      toast("Not a valid address", "error");
+    }
+  };
+  const handleKeypress = (e: any) => {
+    //it triggers by pressing the enter key
+    if (e.charCode === 13) {
+      handleCheckNow();
+    }
+  };
 
   return (
     <Flex
@@ -60,15 +48,64 @@ const _Drop = ({
       {...props}
     >
       <Flex bgColor={"blue.1200"} borderRadius="md" p={2} direction="column">
-        <Claimers
-          list={claimants.data}
-          onDeleteClaimant={(address: string) => {
-            deleteClaimants.mutate({ list: [address] });
-          }}
-          setPage={setClaimantsPage}
-          setLimit={setClaimantsPageSize}
-          hasMore={claimants.data.length == claimantsPageSize ? true : false}
-        />
+        <Box>
+          {/* <ScaleFade in> */}
+          <Heading variant="tokensScreen"> Claimants </Heading>
+          <VStack
+            overflow="initial"
+            maxH="unset"
+            height="100%"
+            w="100%"
+            maxW="100%"
+          >
+            {!isOpen && (
+              <>
+                <Stack direction={["column", "row", null]} w="100%">
+                  {" "}
+                  <InputGroup size="sm" variant="outline" w="100%">
+                    <Input
+                      onKeyPress={handleKeypress}
+                      type="search"
+                      maxW="800px"
+                      flexBasis="50px"
+                      flexGrow={1}
+                      display="flex"
+                      minW="150px"
+                      w="unset"
+                      borderRadius="md"
+                      placeholder="Check if address is on the list"
+                      value={filter}
+                      onChange={(e) => setFilter(e.target.value)}
+                    />
+                  </InputGroup>
+                  <Button
+                    alignSelf="flex-end"
+                    onClick={handleCheckNow}
+                    colorScheme="orange"
+                    variant="solid"
+                    px="2rem"
+                    size="sm"
+                  >
+                    Check now
+                  </Button>
+                </Stack>
+              </>
+            )}
+            {isOpen && (
+              <ScaleFade in>
+                <ClaimantDetails
+                  onClose={() => {
+                    setFilter("");
+                    onClose();
+                  }}
+                  address={filter}
+                  claimId={dropId}
+                />
+              </ScaleFade>
+            )}
+            <ClaimersList dropId={dropId} />
+          </VStack>
+        </Box>
       </Flex>
     </Flex>
   );

@@ -24,7 +24,7 @@ const CopyButton = (props) => {
 
   return (
     <Fragment>
-      <Popover placement="bottom-start">
+      <Popover placement="bottom-start" returnFocusOnClose={false}>
         {({ isOpen, onClose }) => {
           if (isOpen) {
             setTimeout(() => onClose(), 1000);
@@ -62,6 +62,5 @@ const CopyButton = (props) => {
     </Fragment>
   );
 };
-
 
 export default CopyButton;

@@ -11,11 +11,10 @@ import {
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
-import useDrops from "moonstream-components/src/core/hooks/useDrops";
+import useDrops from "moonstream-components/src/core/hooks/dropper/useDrops";
 import Drop from "moonstream-components/src/components/Dropper/Drop";
 import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
 import Paginator from "moonstream-components/src/components/Paginator";
-import { useRouter } from "moonstream-components/src/core/hooks";
 
 const assets = {
   onboarding:
@@ -35,22 +34,6 @@ const Drops = () => {
     ctx: web3Provider,
   });
 
-  const router = useRouter();
-  React.useEffect(() => {
-    router.appendQueries({
-      claimsLimit: pageOptions.pageSize,
-      claimsPage: pageOptions.page,
-    });
-    // eslint-disable-next-line
-  }, [pageOptions.page, pageOptions.pageSize]);
-
-  if (!adminClaims.data)
-    return (
-      <Flex minH="100vh">
-        <Spinner />
-      </Flex>
-    );
-
   return (
     <ScaleFade in>
       <Flex
@@ -60,49 +43,41 @@ const Drops = () => {
         direction={"column"}
         px="7%"
       >
-        {adminClaims.data?.length == 0 && (
-          <Flex
-            w="100%"
-            minH="50vh"
-            bgColor={"blue.700"}
-            borderRadius="md"
-            placeContent={"center"}
-          >
-            <Center>
-              <Flex direction={"column"}>
-                <Heading>Your drops list is empty</Heading>
-                <Heading>
-                  <br />
-                  Please contact us on discord to create one
-                </Heading>
-              </Flex>
-            </Center>
-          </Flex>
-        )}
-        {adminClaims.data?.length != 0 && (
-          <Paginator
-            onBack={() =>
-              pageOptions.setPage((_currentPage) => _currentPage - 1)
-            }
-            onForward={() =>
-              pageOptions.setPage((_currentPage) => _currentPage + 1)
-            }
-            paginatorKey={"claims"}
-            setLimit={pageOptions.setPageSize}
-            hasMore={adminClaims.data.length == pageOptions.pageSize}
-          >
-            {web3Provider.account &&
-              adminClaims?.data?.map((claim, idx) => {
-                return (
-                  <Drop
-                    key={`contract-card-${idx}}`}
-                    claim={claim}
-                    title={claim.title}
-                  />
-                );
-              })}
-          </Paginator>
-        )}
+        {adminClaims.data?.length == 0 &&
+          pageOptions.page == 0 &&
+          pageOptions.pageSize != 0 && (
+            <Flex
+              w="100%"
+              minH="50vh"
+              bgColor={"blue.700"}
+              borderRadius="md"
+              placeContent={"center"}
+            >
+              <Center>
+                <Flex direction={"column"}>
+                  <Heading>Your drops list is empty</Heading>
+                  <Heading>
+                    <br />
+                    Please contact us on discord to create one
+                  </Heading>
+                </Flex>
+              </Center>
+            </Flex>
+          )}
+        <Paginator
+          paginatorKey={"claims"}
+          setPage={pageOptions.setPage}
+          setLimit={pageOptions.setPageSize}
+          hasMore={adminClaims?.data?.length == pageOptions.pageSize}
+        >
+          {adminClaims.isLoading && <Spinner />}
+          {web3Provider.account &&
+            adminClaims?.data?.map((claim) => {
+              return (
+                <Drop key={`contract-card-${claim.id}}`} dropId={claim.id} />
+              );
+            })}
+        </Paginator>
         {!web3Provider.account &&
           web3Provider.buttonText !== web3Provider.WALLET_STATES.CONNECTED && (
             <Center>
@@ -121,6 +96,7 @@ const Drops = () => {
                 <Image
                   pl={2}
                   h="24px"
+                  alt={"metamask"}
                   src="https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg"
                 />
               </Button>

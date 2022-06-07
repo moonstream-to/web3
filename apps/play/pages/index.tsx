@@ -4,6 +4,7 @@ import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 // import { getLayout } from "../src/layouts/AppLayout";
 import FeatureCard from "../../../packages/moonstream-components/src/components/FeatureCard";
+import { getLayout } from "../../../packages/moonstream-components/src/layouts/EngineLayout";
 
 const assets: any = {
   onboarding:
@@ -38,17 +39,18 @@ const Homepage = () => {
               alt="Inventory"
               textColor={"white.100"}
               level="h2"
+              h="450px"
             />
             <FeatureCard
               w="300px"
-              link="/loot"
-              text="Create lootboxes as rewards for encounters, challenges, and boss fights"
-              heading="Lootboxes"
+              link="/drops"
+              text="Claim drops that you are eligible "
+              heading="Claim drops"
               imageUrl={assets["DAO"]}
               alt="Lootboxes"
               textColor={"white.100"}
               level="h2"
-              disabled={true}
+              h="450px"
             />
             <FeatureCard
               w="300px"
@@ -97,4 +99,5 @@ export async function getStaticProps() {
   };
 }
 
+Homepage.getLayout = getLayout;
 export default Homepage;
