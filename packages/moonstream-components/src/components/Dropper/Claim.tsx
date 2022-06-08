@@ -15,6 +15,7 @@ import {
   EditableTextarea,
   useEditableControls,
   Heading,
+  Box,
 } from "@chakra-ui/react";
 import Papa from "papaparse";
 import FileUpload from "../FileUpload";
@@ -30,6 +31,10 @@ import Web3Context from "../../core/providers/Web3Provider/context";
 import { useToast } from "../../core/hooks";
 import { UpdateClaim } from "../../../../../types/Moonstream";
 import Metadata from "../Metadata";
+import dynamic from "next/dynamic";
+const ReactJson = dynamic(() => import("react-json-view"), {
+  ssr: false,
+});
 const _Claim = ({
   claimId,
   claimIdx,
@@ -231,13 +236,14 @@ const _Claim = ({
       <Flex p={1} direction={"row"} flexWrap="wrap" w="100%">
         <Metadata
           boxShadow={"md"}
-          w="30%"
+          w="15%"
           borderRadius="md"
           borderColor={"blue.1200"}
           borderWidth={"3px"}
           px={[0, 4]}
           metadata={claimUri.data}
-        />{" "}
+        />
+
         <Stack
           direction={"column"}
           py={4}
@@ -405,6 +411,7 @@ const _Claim = ({
                     </Editable>
                   </Skeleton>
                 </code>
+
                 <code key={`signer-${claimState.data?.signer}`}>
                   Signer:
                   <Skeleton
@@ -441,6 +448,25 @@ const _Claim = ({
                     </Editable>
                   </Skeleton>
                 </code>
+                <Skeleton isLoaded={!claimUri.isLoading}>
+                  {claimUri?.data && (
+                    <Box cursor="crosshair" overflowWrap={"break-word"}>
+                      <ReactJson
+                        name="metadata"
+                        collapsed
+                        style={{
+                          cursor: "text",
+                          lineBreak: "anywhere",
+                        }}
+                        src={claimUri?.data}
+                        theme="harmonic"
+                        displayDataTypes={false}
+                        displayObjectSize={false}
+                        collapseStringsAfterLength={128}
+                      />
+                    </Box>
+                  )}
+                </Skeleton>
               </Stack>
               {/* </Flex> */}
             </Flex>
