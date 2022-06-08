@@ -39,3 +39,15 @@ export interface UpdateClaim {
   terminus_pool_id?: string;
   title?: string;
 }
+
+export interface ClaimInterface {
+  active: boolean;
+  claim_block_deadline: number;
+  claim_id: number;
+  description: string;
+  dropper_contract_address: string;
+  id: string;
+  terminus_address: string;
+  terminus_pool_id: number;
+  title: string;
+}

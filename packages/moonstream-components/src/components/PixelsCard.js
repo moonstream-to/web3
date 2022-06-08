@@ -8,15 +8,6 @@ import {
   Link as ChakraLink,
   Flex,
 } from "@chakra-ui/react";
-// export interface FeatureCardArgs extends ChakraProps {
-//   text: string;
-//   heading: string;
-//   link: string;
-//   imageUrl: string;
-//   textColor: string;
-//   alt: string;
-//   level?: any;
-// }
 import Web3 from "web3";
 const PixelsCard = ({ text, heading, link, textColor, level, ...props }) => {
   const Wrapper = (wrapperProps) => {

@@ -39,7 +39,7 @@ const _ClaimCard = ({ drop, children, ...props }) => {
   )
     if (
       claimer.isLoadingClaim ||
-      dropperContract.dropperWeb3State.data?.isLoading ||
+      dropperContract.contractState.data?.isLoading ||
       dropperContract.claimState.isLoading ||
       claimer.signature.isLoading
     )

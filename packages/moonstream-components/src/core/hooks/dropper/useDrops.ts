@@ -15,7 +15,9 @@ import { queryHttp } from "../../utils/http";
 const useDrops = ({
   targetChain,
   ctx,
+  dropperAddress,
 }: {
+  dropperAddress?: string;
   targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
 }) => {
@@ -52,7 +54,6 @@ const useDrops = ({
           }
         )
       );
-      //terminusAuthorizations = [[terminus_addess, poolId, balance]]
       const terminusAdmin = terminusAuthorizations.filter(
         (item: any) => item[2] > 0
       );
@@ -94,7 +95,14 @@ const useDrops = ({
   };
 
   const adminClaims = useQuery(
-    ["claimAdmin", "adminClaims", targetChain.name, claimsPage, claimsPageSize],
+    [
+      "claimAdmin",
+      "adminClaims",
+      targetChain.name,
+      claimsPage,
+      claimsPageSize,
+      dropperAddress,
+    ],
     _getAdminClaimsList,
     {
       ...queryCacheProps,

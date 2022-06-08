@@ -1,21 +1,20 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import {
   Flex,
   Button,
   Image,
   Center,
   Spinner,
-  Heading,
   ScaleFade,
 } from "@chakra-ui/react";
-import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
+import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
-import useDrops from "moonstream-components/src/core/hooks/dropper/useDrops";
-import Drop from "moonstream-components/src/components/Dropper/Drop";
 import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
+import { useDropperContract } from "moonstream-components/src/core/hooks/dropper";
+import { useRouter } from "moonstream-components/src/core/hooks";
+import Claim from "moonstream-components/src/components/Dropper/Claim";
 import Paginator from "moonstream-components/src/components/Paginator";
-
 const assets = {
   onboarding:
     "https://s3.amazonaws.com/static.simiotics.com/unicorn_bazaar/unim-onboarding.png",
@@ -29,10 +28,20 @@ const assets = {
 const Drops = () => {
   const web3Provider = useContext(Web3Context);
 
-  const { adminClaims, pageOptions } = useDrops({
+  const web3ctx = useContext(Web3Context);
+  const router = useRouter();
+  const { contractAddress } = router.query;
+
+  const [page, setPage] = useState(0);
+  const [limit, setLimit] = useState(0);
+  const dropper = useDropperContract({
+    dropperAddress: contractAddress,
     targetChain: targetChain,
-    ctx: web3Provider,
+    ctx: web3ctx,
   });
+
+  if (!contractAddress) return "contract address plz";
+  if (dropper.contractState.isLoading) return <Spinner />;
 
   return (
     <ScaleFade in>
@@ -43,41 +52,30 @@ const Drops = () => {
         direction={"column"}
         px="7%"
       >
-        {adminClaims.data?.length == 0 &&
-          pageOptions.page == 0 &&
-          pageOptions.pageSize != 0 && (
-            <Flex
-              w="100%"
-              minH="50vh"
-              bgColor={"blue.700"}
-              borderRadius="md"
-              placeContent={"center"}
-            >
-              <Center>
-                <Flex direction={"column"}>
-                  <Heading>Your drops list is empty</Heading>
-                  <Heading>
-                    <br />
-                    Please contact us on discord to create one
-                  </Heading>
-                </Flex>
-              </Center>
-            </Flex>
-          )}
         <Paginator
-          paginatorKey={"claims"}
-          setPage={pageOptions.setPage}
-          setLimit={pageOptions.setPageSize}
-          hasMore={adminClaims?.data?.length == pageOptions.pageSize}
+          setPage={setPage}
+          setLimit={setLimit}
+          paginatorKey={`pools`}
+          hasMore={page * limit < Number(dropper.contractState.data?.numClaims)}
+          page={page}
+          pageSize={limit}
+          pageOptions={["5", "10", "25", "50"]}
+          my={2}
         >
-          {adminClaims.isLoading && <Spinner />}
-          {web3Provider.account &&
-            adminClaims?.data?.map((claim) => {
+          {Array.from(
+            Array(Number(dropper.contractState.data.numClaims)),
+            (v, i) => {
               return (
-                <Drop key={`contract-card-${claim.id}}`} dropId={claim.id} />
+                <Claim
+                  key={i}
+                  dropperAddress={contractAddress}
+                  claimIdx={i}
+                ></Claim>
               );
-            })}
+            }
+          )}
         </Paginator>
+
         {!web3Provider.account &&
           web3Provider.buttonText !== web3Provider.WALLET_STATES.CONNECTED && (
             <Center>

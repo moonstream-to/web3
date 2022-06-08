@@ -211,7 +211,7 @@ const TerminuPool = ({
               {poolState.data?.capacity} <Spacer />{" "}
             </Flex>
           </code>
-          <code key={"uri"}>
+          <code key={`uri-${poolState.data?.uri}`}>
             URI:
             <Skeleton
               colorScheme={"orange"}

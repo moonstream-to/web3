@@ -26,10 +26,21 @@ const useClaim = ({
   userAccess?: boolean;
 }) => {
   const toast = useToast();
+
+  const claim = useQuery(
+    [`/drops/claims/${claimId}`],
+    (query: any) => queryHttp(query).then((r: any) => r.data),
+    {
+      ...queryCacheProps,
+      enabled: !!claimId && !userAccess,
+    }
+  );
+
   const { claimWeb3Drop } = useDropperContract({
     dropperAddress,
     ctx,
     targetChain,
+    claimId: claim.data?.claim_id,
   });
 
   const claimSeq = useMutation(
@@ -48,16 +59,6 @@ const useClaim = ({
         toast("Failed to get claim signature from API >.<", "error");
       },
       onSettled: () => {},
-    }
-  );
-
-  const claim = useQuery(
-    [`/drops/claims/${claimId}`],
-    (query: any) => queryHttp(query).then((r: any) => r.data),
-    {
-      ...queryCacheProps,
-      // cacheTime: 0,
-      enabled: !!claimId && !userAccess,
     }
   );
 
