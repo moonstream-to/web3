@@ -63,7 +63,7 @@ const Drops = () => {
     >
       {web3Provider.account &&
         dropper.dropperContracts.data
-          .filter(
+          ?.filter(
             (contract) =>
               playerClaims.data?.findIndex(
                 (claim) => claim.dropper_contract_address === contract.address
