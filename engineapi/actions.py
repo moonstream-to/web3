@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Any, Optional, Dict
 import uuid
 
-from brownie import network
+from brownie import network, web3
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.functions import percentile_disc
@@ -370,13 +370,29 @@ def batch_transform_claim_amounts(
     return [db_amount * (10**decimals) for db_amount in db_amounts]
 
 
-def get_claimants(db_session: Session, dropper_claim_id, limit=None, offset=None):
+def get_claimants(
+    db_session: Session,
+    dropper_claim_id: uuid.UUID,
+    amount: Optional[int] = None,
+    added_by: Optional[str] = None,
+    address: Optional[ChecksumAddress] = None,
+    limit=None,
+    offset=None,
+):
     """
     Search for a claimant by address
     """
     claimants_query = db_session.query(
         DropperClaimant.address, DropperClaimant.amount, DropperClaimant.added_by
     ).filter(DropperClaimant.dropper_claim_id == dropper_claim_id)
+
+    if amount:
+        claimants_query = claimants_query.filter(DropperClaimant.amount == amount)
+    if added_by:
+        claimants_query = claimants_query.filter(DropperClaimant.added_by == added_by)
+    if address:
+        claimants_query = claimants_query.filter(DropperClaimant.address == address)
+
     if limit:
         claimants_query = claimants_query.limit(limit)
 
@@ -578,6 +594,63 @@ def get_claims(
     return query
 
 
+def get_drops(
+    db_session: Session,
+    blockchain: str,
+    dropper_contract_address: Optional[ChecksumAddress] = None,
+    drop_number: Optional[int] = None,
+    terminus_address: Optional[ChecksumAddress] = None,
+    terminus_pool_id: Optional[int] = None,
+    active: Optional[bool] = None,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+):
+    """
+    Get drops
+    """
+
+    query = (
+        db_session.query(
+            DropperClaim.id,
+            DropperClaim.title,
+            DropperClaim.description,
+            DropperClaim.terminus_address,
+            DropperClaim.terminus_pool_id,
+            DropperClaim.claim_block_deadline,
+            DropperClaim.claim_id.label("drop_number"),
+            DropperClaim.active,
+            DropperContract.address.label("dropper_contract_address"),
+        )
+        .join(DropperContract)
+        .filter(DropperContract.blockchain == blockchain)
+    )
+
+    if dropper_contract_address:
+        query = query.filter(DropperContract.address == dropper_contract_address)
+
+    if drop_number:
+        query = query.filter(DropperClaim.claim_id == drop_number)
+
+    if terminus_address:
+        query = query.filter(DropperClaim.terminus_address == terminus_address)
+
+    if terminus_pool_id:
+        query = query.filter(DropperClaim.terminus_pool_id == terminus_pool_id)
+
+    if active:
+        query = query.filter(DropperClaim.active == active)
+
+    query = query.order_by(DropperClaim.created_at.asc())
+
+    if limit:
+        query = query.limit(limit)
+
+    if offset:
+        query = query.offset(offset)
+
+    return query
+
+
 def get_claim_admin_pool(
     db_session: Session,
     dropper_claim_id: uuid.UUID,
@@ -613,6 +686,32 @@ def ensure_admin_token_holder(
     except Exception:
         pass
     terminus = MockTerminus.MockTerminus(terminus_address)
+    balance = terminus.balance_of(address, terminus_pool_id)
+    if balance == 0:
+        raise AuthorizationError(
+            f"Address has insufficient balance in Terminus pool: address={address}, blockchain={blockchain}, terminus_address={terminus_address}, terminus_pool_id={terminus_pool_id}"
+        )
+    return True
+
+
+def ensure_contract_admin_token_holder(
+    blockchain: str,
+    dropper_contract_address: ChecksumAddress,
+    address: ChecksumAddress,
+) -> bool:
+    brownie_network = BLOCKCHAINS_TO_BROWNIE_NETWORKS.get(blockchain)
+    if brownie_network is None:
+        raise ValueError(f"No brownie network for blockchain: {blockchain}")
+
+    try:
+        network.connect(brownie_network)
+    except Exception:
+        pass
+    dropper = Dropper.Dropper(dropper_contract_address)
+
+    terminus_address, terminus_pool_id = None  # dropper.get_terminus
+    terminus = MockTerminus.MockTerminus(terminus_address)
+
     balance = terminus.balance_of(address, terminus_pool_id)
     if balance == 0:
         raise AuthorizationError(

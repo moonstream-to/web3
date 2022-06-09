@@ -59,6 +59,59 @@ async def ping_handler() -> data.PingResponse:
     return data.PingResponse(status="ok")
 
 
+@app.get("/drops", response_model=data.DropListResponse)
+async def get_drop_list_handler(
+    request: Request,
+    blockchain: str,
+    contract_address: str,
+    drop_number: Optional[int] = Query(None),
+    terminus_address: Optional[str] = Query(None),
+    terminus_pool_id: Optional[int] = Query(None),
+    active: Optional[bool] = Query(None),
+    limit: int = 20,
+    offset: int = 0,
+    db_session: Session = Depends(db.yield_db_session),
+) -> data.DropListResponse:
+    """
+    Get list of drops for a given dropper contract and drop number.
+    """
+
+    contract_address = Web3.toChecksumAddress(contract_address)
+
+    try:
+        actions.ensure_contract_admin_token_holder(
+            blockchain, contract_address, request.state.address
+        )
+    except actions.AuthorizationError as e:
+        logger.error(e)
+        raise DropperHTTPException(status_code=403)
+    except NoResultFound:
+        raise DropperHTTPException(status_code=404, detail="Drop not found")
+
+    if terminus_address:
+        terminus_address = Web3.toChecksumAddress(terminus_address)
+
+    try:
+        results = actions.get_drops(
+            db_session=db_session,
+            dropper_contract_address=contract_address,
+            blockchain=blockchain,
+            drop_number=drop_number,
+            terminus_address=terminus_address,
+            terminus_pool_id=terminus_pool_id,
+            active=active,
+            limit=limit,
+            offset=offset,
+        )
+    except NoResultFound:
+        raise DropperHTTPException(status_code=404, detail="No drops found.")
+    except Exception as e:
+        logger.error(f"Can't get drops. Failed with error: {e}")
+        raise DropperHTTPException(status_code=500, detail="Can't get claims")
+
+    return data.DropListResponse(drops=[result for result in results])
+
+
 @app.post("/drops", response_model=data.DropCreatedResponse)
 async def create_drop(
     request: Request,
@@ -266,6 +319,9 @@ async def update_drop(
 async def get_claimants(
     request: Request,
     dropper_claim_id: UUID,
+    amount: Optional[int] = None,
+    added_by: Optional[str] = None,
+    address: Optional[str] = None,
     limit: int = 10,
     offset: int = 0,
     db_session: Session = Depends(db.yield_db_session),
@@ -273,6 +329,8 @@ async def get_claimants(
     """
     Get list of claimants for a given dropper contract.
     """
+    if address:
+        address = Web3.toChecksumAddress(address)
 
     try:
         actions.ensure_admin_token_holder(
@@ -289,6 +347,9 @@ async def get_claimants(
         results = actions.get_claimants(
             db_session=db_session,
             dropper_claim_id=dropper_claim_id,
+            amount=amount,
+            added_by=added_by,
+            address=address,
             limit=limit,
             offset=offset,
         )
@@ -337,10 +398,13 @@ async def add_claimants(
     return data.ClaimantsResponse(claimants=results)
 
 
-@app.delete("/claimants", response_model=data.RemoveClaimantsResponse)
+@app.delete(
+    "/drops/{dropper_claim_id}/claimants", response_model=data.RemoveClaimantsResponse
+)
 async def delete_claimants(
     request: Request,
-    remove_claimants_request: data.DropRemoveClaimantsRequest = Body(...),
+    dropper_claim_id: UUID,
+    addresses: List[str] = Body(...),
     db_session: Session = Depends(db.yield_db_session),
 ) -> data.RemoveClaimantsResponse:
 
@@ -351,7 +415,7 @@ async def delete_claimants(
     try:
         actions.ensure_admin_token_holder(
             db_session,
-            remove_claimants_request.dropper_claim_id,
+            dropper_claim_id,
             request.state.address,
         )
     except actions.AuthorizationError as e:
@@ -364,19 +428,19 @@ async def delete_claimants(
     try:
         results = actions.delete_claimants(
             db_session=db_session,
-            dropper_claim_id=remove_claimants_request.dropper_claim_id,
-            addresses=remove_claimants_request.addresses,
+            dropper_claim_id=dropper_claim_id,
+            addresses=addresses,
         )
     except Exception as e:
         logger.info(
-            f"Can't remove claimants for claim {remove_claimants_request.dropper_claim_id} with error: {e}"
+            f"Can't remove claimants for claim {dropper_claim_id} with error: {e}"
         )
         raise DropperHTTPException(status_code=500, detail=f"Error removing claimants")
 
     return data.RemoveClaimantsResponse(addresses=results)
 
 
-@app.get("/claimants/search", response_model=data.Claimant)
+@app.get("/drops/{dropper_claim_id}/claimants/search", response_model=data.Claimant)
 async def get_claimant_in_drop(
     request: Request,
     dropper_claim_id: UUID,

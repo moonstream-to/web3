@@ -136,6 +136,16 @@ class DropListResponse(BaseModel):
     drops: List[Any] = Field(default_factory=list)
 
 
+class DropClaimant(BaseModel):
+    amount: Optional[int]
+    added_by: Optional[str]
+    address: Optional[str]
+
+
+class DropClaimantsListResponse(BaseModel):
+    pass
+
+
 class DropActivateRequest(BaseModel):
     dropper_claim_id: UUID
 
