@@ -148,13 +148,35 @@ def upgrade():
     # update raw_amount column
     conn.execute(
         """
-        update dropper_claimants
-        set raw_amount = (CASE
-                           WHEN (select temptest.token_type from temptest inner join dropper_claims ON temptest.claim_id::int = dropper_claims.claim_id where dropper_claims.id = dropper_claimants.dropper_claim_id)::int = 20
-                             THEN CONCAT(CAST(dropper_claimants.amount as varchar), (select temptest.zeros from temptest inner join dropper_claims ON temptest.claim_id::int = dropper_claims.claim_id where dropper_claims.id = dropper_claimants.dropper_claim_id))
-                           WHEN true
-                             THEN CAST(dropper_claimants.amount as varchar)
-                           END);
+        update
+            dropper_claimants
+        set
+            raw_amount = (
+                CASE
+                    WHEN (
+                        select
+                            temptest.token_type
+                        from
+                            temptest
+                            inner join dropper_claims ON temptest.claim_id :: int = dropper_claims.claim_id
+                        where
+                            dropper_claims.id = dropper_claimants.dropper_claim_id
+                    ) :: int = 20 
+                        THEN CONCAT(
+                            CAST(dropper_claimants.amount as varchar),
+                            (
+                                select
+                                    temptest.zeros
+                                from
+                                    temptest
+                                    inner join dropper_claims ON temptest.claim_id :: int = dropper_claims.claim_id
+                                where
+                                    dropper_claims.id = dropper_claimants.dropper_claim_id
+                            )
+                    )
+                    WHEN true THEN CAST(dropper_claimants.amount as varchar)
+                END
+            );
         """
     )
 
