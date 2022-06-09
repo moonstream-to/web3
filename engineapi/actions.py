@@ -11,7 +11,6 @@ from web3 import Web3
 from web3.types import ChecksumAddress
 
 from engineapi.Dropper import Dropper
-from engineapi.routes.leaderboard import quartiles
 
 
 from . import Dropper, MockErc20, MockTerminus
@@ -308,6 +307,7 @@ def add_claimants(db_session: Session, dropper_claim_id, claimants, added_by):
                 "dropper_claim_id": dropper_claim_id,
                 "address": Web3.toChecksumAddress(claimant.address),
                 "amount": claimant.amount,
+                "raw_amount": str(claimant.amount),
                 "added_by": added_by,
                 "created_at": datetime.now(),
                 "updated_at": datetime.now(),
@@ -320,6 +320,7 @@ def add_claimants(db_session: Session, dropper_claim_id, claimants, added_by):
         index_elements=[DropperClaimant.address, DropperClaimant.dropper_claim_id],
         set_=dict(
             amount=insert_statement.excluded.amount,
+            raw_amount=str(claimant.amount),
             added_by=insert_statement.excluded.added_by,
             updated_at=datetime.now(),
         ),
@@ -375,7 +376,10 @@ def get_claimants(db_session: Session, dropper_claim_id, limit=None, offset=None
     Search for a claimant by address
     """
     claimants_query = db_session.query(
-        DropperClaimant.address, DropperClaimant.amount, DropperClaimant.added_by
+        DropperClaimant.address,
+        DropperClaimant.amount,
+        DropperClaimant.added_by,
+        DropperClaimant.raw_amount,
     ).filter(DropperClaimant.dropper_claim_id == dropper_claim_id)
     if limit:
         claimants_query = claimants_query.limit(limit)
@@ -429,6 +433,7 @@ def get_claimant_drops(
             DropperClaimant.id.label("dropper_claimant_id"),
             DropperClaimant.address,
             DropperClaimant.amount,
+            DropperClaimant.raw_amount,
             DropperClaimant.signature,
             DropperClaim.id.label("dropper_claim_id"),
             DropperClaim.claim_id,

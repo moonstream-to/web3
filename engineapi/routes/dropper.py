@@ -67,10 +67,6 @@ async def get_drop_handler(
         )
         raise DropperHTTPException(status_code=500, detail="Can't get claimant object.")
 
-    transformed_amount = actions.transform_claim_amount(
-        db_session, dropper_claim_id, claimant.amount
-    )
-
     if not claimant.active:
         raise DropperHTTPException(
             status_code=403, detail="Cannot claim rewards for an inactive claim"
@@ -89,7 +85,7 @@ async def get_drop_handler(
             claimant.claim_id,
             claimant.address,
             claimant.claim_block_deadline,
-            transformed_amount,
+            claimant.raw_amount,
         )
 
         try:
@@ -106,7 +102,8 @@ async def get_drop_handler(
 
     return data.DropResponse(
         claimant=claimant.address,
-        amount=transformed_amount,
+        amount=claimant.amount,
+        amount_string=claimant.raw_amount,
         claim_id=claimant.claim_id,
         block_deadline=claimant.claim_block_deadline,
         signature=signature,
@@ -168,9 +165,6 @@ async def get_drop_batch_handler(
 
     for claimant_drop in claimant_drops:
 
-        transformed_amount = actions.transform_claim_amount(
-            db_session, claimant_drop.dropper_claim_id, claimant_drop.amount
-        )
         signature = claimant_drop.signature
         if signature is None or not claimant_drop.is_recent_signature:
             dropper_contract = Dropper.Dropper(claimant_drop.dropper_contract_address)
@@ -179,7 +173,7 @@ async def get_drop_batch_handler(
                 claimant_drop.claim_id,
                 claimant_drop.address,
                 claimant_drop.claim_block_deadline,
-                transformed_amount,
+                claimant_drop.raw_amount,
             )
 
             try:
@@ -197,8 +191,8 @@ async def get_drop_batch_handler(
         claims.append(
             data.DropBatchResponseItem(
                 claimant=claimant_drop.address,
-                amount=transformed_amount,
-                amount_string=str(transformed_amount),
+                amount=claimant_drop.amount,
+                amount_string=claimant_drop.raw_amount,
                 claim_id=claimant_drop.claim_id,
                 block_deadline=claimant_drop.claim_block_deadline,
                 signature=signature,
