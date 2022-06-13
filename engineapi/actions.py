@@ -306,7 +306,7 @@ def add_claimants(db_session: Session, dropper_claim_id, claimants, added_by):
             {
                 "dropper_claim_id": dropper_claim_id,
                 "address": Web3.toChecksumAddress(claimant.address),
-                "amount": claimant.amount,
+                "amount": 0,
                 "raw_amount": str(claimant.amount),
                 "added_by": added_by,
                 "created_at": datetime.now(),
@@ -400,6 +400,7 @@ def get_claimant(db_session: Session, dropper_claim_id, address):
             DropperClaimant.id.label("dropper_claimant_id"),
             DropperClaimant.address,
             DropperClaimant.amount,
+            DropperClaimant.raw_amount,
             DropperClaimant.signature,
             DropperClaim.id.label("dropper_claim_id"),
             DropperClaim.claim_id,
