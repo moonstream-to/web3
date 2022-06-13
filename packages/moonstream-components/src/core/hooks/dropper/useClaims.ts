@@ -1,9 +1,6 @@
 import React from "react";
 import { useQuery } from "react-query";
-import {
-  ChainInterface,
-  MoonstreamWeb3ProviderInterface,
-} from "../../../../../../types/Moonstream";
+import { MoonstreamWeb3ProviderInterface } from "../../../../../../types/Moonstream";
 import queryCacheProps from "../hookCommon";
 import { queryHttp } from "../../utils/http";
 const usePlayerClaims = ({

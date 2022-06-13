@@ -4,10 +4,7 @@ import {
   getTerminusFacetState,
 } from "../contracts/terminus.contracts";
 import { getTokenState } from "../contracts/erc20.contracts";
-import {
-  ChainInterface,
-  MoonstreamWeb3ProviderInterface,
-} from "../../../../../types/Moonstream";
+import { MoonstreamWeb3ProviderInterface } from "../../../../../types/Moonstream";
 import { MockTerminus } from "../../../../../types/contracts/MockTerminus";
 import useToast from "./useToast";
 import useURI from "./useLink";

@@ -1,10 +1,7 @@
 import React from "react";
 import { getClaimSignature } from "../../services/moonstream-engine.service";
 import { useMutation, useQuery } from "react-query";
-import {
-  ChainInterface,
-  MoonstreamWeb3ProviderInterface,
-} from "../../../../../../types/Moonstream";
+import { MoonstreamWeb3ProviderInterface } from "../../../../../../types/Moonstream";
 import { useToast } from "..";
 import queryCacheProps from "../hookCommon";
 import useDropperContract from "./useDropper.sol";

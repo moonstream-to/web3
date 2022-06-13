@@ -239,13 +239,7 @@ const _Claim = ({
           metadata={claimUri.data}
         />
 
-        <Stack
-          direction={"column"}
-          py={4}
-          w="70%"
-          flexGrow={1}
-          px={[0, 4]}
-        >
+        <Stack direction={"column"} py={4} w="70%" flexGrow={1} px={[0, 4]}>
           <Skeleton colorScheme={"orange"} isLoaded={!claim.isLoading}>
             <Editable
               my={2}
@@ -273,8 +267,7 @@ const _Claim = ({
                 px={2}
               />
               <EditableTextarea w="100%" px={2}></EditableTextarea>
-              <EditableControls
-              />
+              <EditableControls />
             </Editable>
           </Skeleton>
           <Flex w="100%" direction={["row", null]} flexWrap="wrap">
