@@ -9,7 +9,7 @@ from ..Dropper import Dropper
 from ..MockErc20 import MockErc20
 
 
-def run_fill_raw_amount():
+def run_fill_raw_amount(args: argparse.Namespace):
     # sync raw_amount column with amount column
 
     # create chache of claim token type
@@ -54,11 +54,12 @@ def run_fill_raw_amount():
                 dropper_contract: Optional[Contract] = Dropper(address)
 
                 for claim_id in token_tytes[blockchain][address]:
-                    claim_info = dropper_contract.getClaim(claim_id)
+                    claim_info = dropper_contract.get_claim(claim_id)
                     zeros = None
                     if claim_info[0] == 20:
                         erc20_contract: Optional[Contract] = MockErc20(claim_info[1])
                         zeros = "0" * erc20_contract.decimals()
+
                     db_session.execute(
                         """
                                 insert into temptest
@@ -72,14 +73,20 @@ def run_fill_raw_amount():
                                 )
                                 values
                                 (
-                                    %s, 
-                                    %s, 
-                                    %s,
-                                    %s,
-                                    %s
+                                    :blockchain, 
+                                    :address, 
+                                    :claim_id,
+                                    :token_type,
+                                    :zeros
                                 )
                                 """,
-                        (blockchain, address, claim_id, str(claim_info[0]), zeros),
+                        {
+                            "blockchain": blockchain,
+                            "address": address,
+                            "claim_id": str(claim_id),
+                            "token_type": str(claim_info[0]),
+                            "zeros": zeros,
+                        },
                     )
 
             network.disconnect()
@@ -118,6 +125,7 @@ def run_fill_raw_amount():
                 );
             """
         )
+        db_session.commit()
 
 
 def main():
