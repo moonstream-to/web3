@@ -4,21 +4,16 @@ import {
   getTerminus,
 } from "../../services/moonstream-engine.service";
 import { useQuery } from "react-query";
-import {
-  ChainInterface,
-  MoonstreamWeb3ProviderInterface,
-} from "../../../../../../types/Moonstream";
+import { MoonstreamWeb3ProviderInterface } from "../../../../../../types/Moonstream";
 import { balanceOfAddress } from "../../contracts/terminus.contracts";
 import queryCacheProps from "../hookCommon";
 import { queryHttp } from "../../utils/http";
 
 const useDrops = ({
-  targetChain,
   ctx,
   dropperAddress,
 }: {
   dropperAddress?: string;
-  targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
 }) => {
   const [claimsPage, setClaimsPage] = React.useState(0);
@@ -26,10 +21,14 @@ const useDrops = ({
 
   const terminusList = useQuery(
     ["terminusAddresses"],
-    () => getTerminus(targetChain.name)().then((response) => response.data),
+    () =>
+      getTerminus(ctx.targetChain?.name)().then((response) => response.data),
     {
       ...queryCacheProps,
-      enabled: !!ctx.account,
+      enabled:
+        !!ctx.account &&
+        !!ctx.chainId &&
+        ctx.chainId === ctx.targetChain?.chainId,
     }
   );
 
@@ -80,7 +79,7 @@ const useDrops = ({
           adminPermissions.data.map(async (permission: any) => {
             const response = await getAdminList(
               permission[0],
-              targetChain.name,
+              ctx.targetChain?.name,
               permission[1],
               claimsPage * claimsPageSize,
               claimsPageSize
@@ -98,7 +97,7 @@ const useDrops = ({
     [
       "claimAdmin",
       "adminClaims",
-      targetChain.name,
+      ctx.targetChain?.name,
       claimsPage,
       claimsPageSize,
       dropperAddress,
@@ -110,7 +109,7 @@ const useDrops = ({
       enabled:
         !!adminPermissions.data &&
         !!ctx.account &&
-        !!targetChain.name &&
+        !!ctx.targetChain?.name &&
         claimsPageSize != 0,
     }
   );
@@ -123,7 +122,7 @@ const useDrops = ({
   };
 
   const dropperContracts = useQuery(
-    ["/drops/contracts", { blockchain: targetChain.name }],
+    ["/drops/contracts", { blockchain: ctx.targetChain?.name }],
     (query: any) => queryHttp(query).then((result: any) => result.data),
     {
       ...queryCacheProps,

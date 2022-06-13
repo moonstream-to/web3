@@ -26,7 +26,6 @@ import {
   useDropperContract,
 } from "../../core/hooks/dropper";
 import { CheckIcon, CloseIcon } from "@chakra-ui/icons";
-import { targetChain } from "../../core/providers/Web3Provider";
 import Web3Context from "../../core/providers/Web3Provider/context";
 import { useToast } from "../../core/hooks";
 import { UpdateClaim } from "../../../../../types/Moonstream";
@@ -52,7 +51,6 @@ const _Claim = ({
 
   const web3ctx = useContext(Web3Context);
   const { claim } = useClaim({
-    targetChain,
     ctx: web3ctx,
     claimId: claimId,
     dropperAddress: dropperAddress,
@@ -62,7 +60,6 @@ const _Claim = ({
     useDropperContract({
       dropperAddress,
       ctx: web3ctx,
-      targetChain,
       claimId: claimIdx.toString(),
     });
 
@@ -73,7 +70,6 @@ const _Claim = ({
   var parserLineNumber = 0;
 
   const { update, uploadFile, activateDrop, deactivateDrop } = useDrop({
-    targetChain: targetChain,
     ctx: web3ctx,
     claimId: claimId,
   });
@@ -195,7 +191,6 @@ const _Claim = ({
       direction={"column"}
       bgColor="blue.1000"
       flexWrap={"wrap"}
-      // flexBasis="100px"
       pt={4}
       px={0}
       w="100%"
@@ -248,7 +243,6 @@ const _Claim = ({
           direction={"column"}
           py={4}
           w="70%"
-          // flexBasis={"400"}
           flexGrow={1}
           px={[0, 4]}
         >
@@ -256,13 +250,7 @@ const _Claim = ({
             <Editable
               my={2}
               p={2}
-              // selectAllOnFocus={true}
               submitOnBlur={false}
-              // isPreviewFocusable={false}
-              // onEdit={() => {
-              //   setIsEditing(true);
-              // }}
-              // onBlur={() => setIsEditing(false)}
               bgColor={"blue.800"}
               size="lg"
               fontSize={"lg"}
@@ -286,8 +274,6 @@ const _Claim = ({
               />
               <EditableTextarea w="100%" px={2}></EditableTextarea>
               <EditableControls
-              // isEditing={isEditing}
-              // key={isEditing ? `sadadadediting` : `asdadahidden`}
               />
             </Editable>
           </Skeleton>
@@ -347,12 +333,6 @@ const _Claim = ({
                       <EditableInput w="100%" px={2} />
                     </Editable>
                   </Skeleton>
-                  {/* <Input
-                          defaultValue={claim.data?.terminus_address}
-                          placeholder={
-                            "Terminus contract address that manages access tokens"
-                          }
-                        ></Input> */}
                 </code>
                 <code key={`claimDeadline-${claim.data?.claim_block_deadline}`}>
                   Deadline:
@@ -468,13 +448,11 @@ const _Claim = ({
                   )}
                 </Skeleton>
               </Stack>
-              {/* </Flex> */}
             </Flex>
             <Flex flexGrow={1} h="auto" flexBasis={"220px"} placeSelf="center">
               <FileUpload
                 onDrop={onDrop}
                 alignSelf="center"
-                // as={Flex}
                 minW="220px"
                 isUploading={isUploading}
               />

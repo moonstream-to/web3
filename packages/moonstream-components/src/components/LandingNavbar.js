@@ -22,6 +22,7 @@ import RouteButton from "./RouteButton";
 import router from "next/router";
 import Web3Context from "../core/providers/Web3Provider/context";
 import MoonstreamContext from "../core/providers/MoonstreamProvider/context";
+import ChainSelector from "./ChainSelector";
 
 const LandingNavbar = () => {
   const { SITEMAP, WHITE_LOGO_W_TEXT_URL } = useContext(MoonstreamContext);
@@ -114,6 +115,10 @@ const LandingNavbar = () => {
           </ButtonGroup>
           {web3Provider.buttonText !== web3Provider.WALLET_STATES.CONNECTED && (
             <Button
+              isDisabled={
+                web3Provider.WALLET_STATES.UNKNOWN_CHAIN ===
+                web3Provider.buttonText
+              }
               colorScheme={
                 web3Provider.buttonText === web3Provider.WALLET_STATES.CONNECTED
                   ? "green"
@@ -130,12 +135,14 @@ const LandingNavbar = () => {
               />
             </Button>
           )}
+
           {web3Provider.buttonText === web3Provider.WALLET_STATES.CONNECTED && (
             <Flex>
               <Badge
                 colorScheme={"blue"}
                 variant={"subtle"}
-                size="sm"
+                size="md"
+                fontSize="16px"
                 borderRadius={"md"}
                 mr={2}
                 p={0}
@@ -155,6 +162,7 @@ const LandingNavbar = () => {
               </Badge>
             </Flex>
           )}
+          <ChainSelector />
         </Flex>
       )}
     </>

@@ -12,7 +12,6 @@ import { queryHttp } from "../../utils/http";
 
 const useClaim = ({
   dropperAddress,
-  targetChain,
   ctx,
   claimId,
   claimantAddress,
@@ -20,7 +19,6 @@ const useClaim = ({
 }: {
   claimantAddress?: string;
   dropperAddress?: string;
-  targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
   claimId: string;
   userAccess?: boolean;
@@ -39,7 +37,6 @@ const useClaim = ({
   const { claimWeb3Drop } = useDropperContract({
     dropperAddress,
     ctx,
-    targetChain,
     claimId: claim.data?.claim_id,
   });
 

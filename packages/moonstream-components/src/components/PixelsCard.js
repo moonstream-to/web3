@@ -21,7 +21,6 @@ const PixelsCard = ({ text, heading, link, textColor, level, ...props }) => {
   const web3 = new Web3();
   const pixelseed = web3.utils.keccak256(heading);
   const dimensions = Math.floor(pixelseed.length / 4);
-  console.log("PixelsCard", dimensions);
   const boxSize = 20;
   return (
     <Wrapper>

@@ -5,10 +5,7 @@ import {
   getState,
   getSignerForClaim,
 } from "../../contracts/dropper.contract";
-import {
-  ChainInterface,
-  MoonstreamWeb3ProviderInterface,
-} from "../../../../../../types/Moonstream";
+import { MoonstreamWeb3ProviderInterface } from "../../../../../../types/Moonstream";
 import queryCacheProps from "../hookCommon";
 import useToast from "../useToast";
 import useURI from "../useLink";
@@ -18,10 +15,8 @@ const useDropperContract = ({
   dropperAddress,
   ctx,
   claimId,
-  targetChain,
 }: {
   dropperAddress?: string;
-  targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
   claimId?: string;
 }) => {
@@ -52,7 +47,7 @@ const useDropperContract = ({
       "dropperContract",
       "claimState",
       dropperAddress,
-      targetChain.chainId,
+      ctx.targetChain?.chainId,
       claimId,
     ],
     () => _getClaim(dropperAddress ?? "", ctx, claimId ?? ""),
@@ -70,6 +65,7 @@ const useDropperContract = ({
         !!dropperAddress &&
         ctx.web3?.utils.isAddress(ctx.account) &&
         !!ctx.chainId &&
+        ctx.chainId === ctx.targetChain?.chainId &&
         !!claimId,
     }
   );
@@ -85,7 +81,7 @@ const useDropperContract = ({
   });
 
   const contractState = useQuery(
-    ["dropperContract", "state", dropperAddress, targetChain.chainId],
+    ["dropperContract", "state", dropperAddress, ctx.targetChain?.chainId],
     () => getState(dropperAddress, ctx)(),
     {
       ...queryCacheProps,
@@ -93,12 +89,13 @@ const useDropperContract = ({
       enabled:
         !!dropperAddress &&
         ctx.web3?.utils.isAddress(ctx.account) &&
-        ctx.chainId === ctx.chainId,
+        !!ctx.chainId &&
+        ctx.chainId === ctx.targetChain?.chainId,
     }
   );
 
   const signerForClaim = useQuery(
-    ["signerForClaim", dropperAddress, targetChain.name, claimId],
+    ["signerForClaim", dropperAddress, ctx.targetChain?.name, claimId],
     () => getSignerForClaim(dropperAddress, ctx)(claimId ?? ""),
     {
       ...queryCacheProps,
@@ -107,7 +104,8 @@ const useDropperContract = ({
         !!ctx.chainId &&
         !!claimId &&
         !!dropperAddress &&
-        !!targetChain.name,
+        !!ctx.chainId &&
+        ctx.targetChain?.chainId === ctx.chainId,
     }
   );
 

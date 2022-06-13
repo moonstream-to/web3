@@ -9,7 +9,6 @@ import {
 } from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
-import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
 import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
 import { useDropperContract } from "moonstream-components/src/core/hooks/dropper";
 import { useRouter } from "moonstream-components/src/core/hooks";
@@ -36,7 +35,6 @@ const Drops = () => {
   const [limit, setLimit] = useState(0);
   const dropper = useDropperContract({
     dropperAddress: contractAddress,
-    targetChain: targetChain,
     ctx: web3ctx,
   });
 

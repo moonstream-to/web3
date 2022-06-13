@@ -14,24 +14,23 @@ import {
 const useLootboxToken = ({
   contractAddress,
   lootboxId,
-  targetChain,
   ctx,
 }: {
   contractAddress: string;
   lootboxId: number;
-  targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
 }) => {
   const toast = useToast();
 
   const state = useQuery(
-    ["LootboxTokenState", contractAddress, targetChain.chainId, lootboxId],
+    ["LootboxTokenState", contractAddress, ctx.targetChain?.chainId, lootboxId],
     () => getLootboxTokenState(contractAddress, ctx, lootboxId)(),
     {
       onSuccess: () => {},
       enabled:
         ctx.web3?.utils.isAddress(ctx.account) &&
-        ctx.chainId === targetChain.chainId,
+        !!ctx.chainId &&
+        ctx.chainId === ctx.targetChain?.chainId,
     }
   );
 

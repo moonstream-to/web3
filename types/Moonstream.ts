@@ -6,6 +6,7 @@ export interface WalletStatesInterface {
   CONNECT: String;
   CONNECTED: String;
   WRONG_CHAIN: String;
+  UNKNOWN_CHAIN: String;
 }
 export interface ChainInterface {
   chainId: number;
@@ -17,6 +18,15 @@ export declare function GetMethodsAbiType<T>(
   abi: AbiItem[],
   name: keyof T
 ): AbiItem;
+
+export interface TokenInterface {
+  address: string;
+  deadline: number;
+  signed_message: string;
+}
+export type supportedChains = "localhost" | "mumbai" | "polygon" | "ethereum";
+
+declare function ChangeChain(chainName: supportedChains): void;
 export interface MoonstreamWeb3ProviderInterface {
   web3: Web3;
   onConnectWalletClick: Function;
@@ -27,6 +37,8 @@ export interface MoonstreamWeb3ProviderInterface {
   defaultTxConfig: Object;
   signAccessToken: Function;
   getMethodsABI: typeof GetMethodsAbiType;
+  changeChain: typeof ChangeChain;
+  targetChain: ChainInterface | undefined;
 }
 
 export interface UpdateClaim {

@@ -2,7 +2,6 @@ import React, { useContext } from "react";
 import { Flex, Button, Image, Center, Spinner } from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
-import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
 import { getLayout } from "../../../../packages/moonstream-components/src/layouts/EngineLayout";
 import LootboxCard from "moonstream-components/src/components/lootbox/LootboxCard";
 import useLootbox from "moonstream-components/src/core/hooks/useLootbox";
@@ -22,7 +21,6 @@ const Lootboxes = () => {
   const contractAddress = "0x8B013c13538D37C73C7A32278D4Dba4910c85977";
   const { state } = useLootbox({
     contractAddress: contractAddress,
-    targetChain: targetChain,
     ctx: web3Provider,
   });
 

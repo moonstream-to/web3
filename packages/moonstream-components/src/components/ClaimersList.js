@@ -22,7 +22,6 @@ import CopyButton from "./CopyButton";
 import { BiHappyHeartEyes } from "react-icons/bi";
 import ConfirmationRequest from "./ConfirmationRequest";
 import { useDrop } from "../core/hooks/dropper";
-import { targetChain } from "../core/providers/Web3Provider";
 import Web3Context from "../core/providers/Web3Provider/context";
 import Paginator from "./Paginator";
 
@@ -43,7 +42,6 @@ const _ClaimersList = ({ dropId }) => {
     setClaimantsPageSize,
     claimantsPageSize,
   } = useDrop({
-    targetChain: targetChain,
     ctx: web3ctx,
     claimId: dropId,
   });

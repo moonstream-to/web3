@@ -9,7 +9,6 @@ import {
   EditablePreview,
   EditableInput,
 } from "@chakra-ui/react";
-import { targetChain } from "../../core/providers/Web3Provider";
 import Claim from "./Claim";
 import Web3Context from "../../core/providers/Web3Provider/context";
 import Paginator from "../Paginator";
@@ -28,13 +27,11 @@ const Dropper = ({
 
   const dropper = useDropperContract({
     dropperAddress: contractAddress,
-    targetChain: targetChain,
     ctx: web3ctx,
   });
 
   const { adminClaims, pageOptions, dropperContracts } = useDrops({
     dropperAddress: contractAddress,
-    targetChain: targetChain,
     ctx: web3ctx,
   });
 
@@ -90,7 +87,6 @@ const Dropper = ({
               <EditableInput w="100%" px={2} />
             </Skeleton>
           </Editable>
-          {}
         </Heading>
         <Flex direction={"column"} bgColor="blue.1000" flexWrap={"wrap"}>
           <code key={"PoolController"}>

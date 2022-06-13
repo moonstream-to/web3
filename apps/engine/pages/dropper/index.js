@@ -11,7 +11,6 @@ import PixelsCard from "moonstream-components/src/components/PixelsCard";
 import Web3 from "web3";
 import { useRouter, useToast } from "moonstream-components/src/core/hooks";
 import { useDrops } from "moonstream-components/src/core/hooks/dropper";
-import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import Dropper from "moonstream-components/src/components/Dropper/Dropper";
 
@@ -23,7 +22,6 @@ const DropperPage = () => {
   const web3ctx = useContext(Web3Context);
 
   const { dropperContracts } = useDrops({
-    targetChain: targetChain,
     ctx: web3ctx,
   });
 
