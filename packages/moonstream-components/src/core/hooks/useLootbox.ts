@@ -1,9 +1,6 @@
 import { useQuery } from "react-query";
 
-import {
-  ChainInterface,
-  MoonstreamWeb3ProviderInterface,
-} from "../../../../../types/Moonstream";
+import { MoonstreamWeb3ProviderInterface } from "../../../../../types/Moonstream";
 import { getLootboxState } from "../contracts/lootbox.contract";
 
 const useLootboxToken = ({
@@ -14,14 +11,14 @@ const useLootboxToken = ({
   ctx: MoonstreamWeb3ProviderInterface;
 }) => {
   const state = useQuery(
-    ["LootboxState", contractAddress, ctx.targetChain.chainId],
+    ["LootboxState", contractAddress, ctx.targetChain?.chainId],
     () => getLootboxState(contractAddress, ctx)(),
     {
       onSuccess: () => {},
       enabled:
         ctx.web3?.utils.isAddress(ctx.account) &&
         !!ctx.chainId &&
-        ctx.chainId === ctx.targetChain.chainId,
+        ctx.chainId === ctx.targetChain?.chainId,
     }
   );
 
