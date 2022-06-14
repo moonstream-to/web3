@@ -10,7 +10,6 @@ import {
 } from "@chakra-ui/react";
 import useClaim from "../core/hooks/dropper/useClaim";
 import Web3Context from "../core/providers/Web3Provider/context";
-import { targetChain } from "../core/providers/Web3Provider";
 import { useDropperContract } from "../core/hooks/dropper";
 
 const _ClaimCard = ({ drop, children, ...props }) => {
@@ -18,7 +17,6 @@ const _ClaimCard = ({ drop, children, ...props }) => {
 
   const claimer = useClaim({
     dropperAddress: drop.dropper_contract_address,
-    targetChain: targetChain,
     ctx: web3Provider,
     claimId: drop.dropper_claim_id,
     userAccess: true,
@@ -28,7 +26,6 @@ const _ClaimCard = ({ drop, children, ...props }) => {
   const dropperContract = useDropperContract({
     dropperAddress: drop.dropper_contract_address,
     ctx: web3Provider,
-    targetChain: targetChain,
     claimId: drop.claim_id,
   });
 
@@ -39,7 +36,7 @@ const _ClaimCard = ({ drop, children, ...props }) => {
   )
     if (
       claimer.isLoadingClaim ||
-      dropperContract.dropperWeb3State.data?.isLoading ||
+      dropperContract.contractState.data?.isLoading ||
       dropperContract.claimState.isLoading ||
       claimer.signature.isLoading
     )

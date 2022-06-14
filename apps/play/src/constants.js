@@ -1,4 +1,3 @@
-
 /*
   Pass this is default metatags that will be added to your pages if you dont specify others in page component
   See more in /pages_templates directory for examples

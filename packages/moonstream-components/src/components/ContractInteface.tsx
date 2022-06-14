@@ -71,14 +71,13 @@ const _ContractInterface = ({
               return (
                 <Web3MethodForm
                   w="320px"
-                  key={idx}
+                  key={`Web3MethodForm-${idx}`}
                   contractAddress={contractAddress}
                   m={5}
                   p={5}
                   maxW="420px"
                   bgColor={"blue.300"}
                   boxShadow="md"
-                  zIndex="100"
                   method={element}
                   rendered={true}
                   flexDirection="column"

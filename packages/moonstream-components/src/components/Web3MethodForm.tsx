@@ -107,7 +107,7 @@ const Web3MethodForm = ({
       dispatchArguments({
         value:
           (argumentFields && argumentFields[inputElement.name]?.initialValue) ??
-          undefined,
+          "",
         index,
       });
     });
@@ -144,9 +144,11 @@ const Web3MethodForm = ({
     state.inputs.forEach((inputElement: any, index: number) => {
       returnedObject[index] =
         inputElement.type === "address"
-          ? web3ctx.web3.utils.isAddress(inputElement.meta.value)
+          ? web3ctx.web3.utils.isAddress(
+              web3ctx.web3.utils.toChecksumAddress(inputElement.meta.value)
+            )
             ? web3ctx.web3.utils.toChecksumAddress(inputElement.meta.value)
-            : console.error("not an address")
+            : console.error("not an address", returnedObject[index])
           : inputElement.meta.value;
     });
     tx.mutate({ args: returnedObject });
@@ -273,6 +275,7 @@ const Web3MethodForm = ({
                   textColor={"blue.800"}
                   onKeyPress={handleKeypress}
                   type="search"
+                  defaultValue={inputItem.meta.value}
                   placeholder={
                     inputItem.meta.placeholder ||
                     inputItem.name ||
@@ -374,4 +377,4 @@ const Web3MethodForm = ({
   );
 };
 
-export default chakra(Web3MethodForm);
+export default chakra(React.memo(Web3MethodForm));
