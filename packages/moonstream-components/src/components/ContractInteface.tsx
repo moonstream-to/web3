@@ -71,7 +71,7 @@ const _ContractInterface = ({
               return (
                 <Web3MethodForm
                   w="320px"
-                  key={idx}
+                  key={`Web3MethodForm-${idx}`}
                   contractAddress={contractAddress}
                   m={5}
                   p={5}
