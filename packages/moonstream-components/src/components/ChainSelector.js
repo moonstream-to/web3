@@ -26,7 +26,13 @@ const ChainSelector = () => {
             // w="24px"
             h="24px"
             mr={4}
-            src="https://s3.amazonaws.com/static.simiotics.com/moonstream/assets/ethereum/eth-diamond-rainbow.png"
+            src={
+              web3Provider.targetChain?.name === "ethereum"
+                ? "https://s3.amazonaws.com/static.simiotics.com/moonstream/assets/ethereum/eth-diamond-rainbow.png"
+                : web3Provider.targetChain?.name === "localhost"
+                ? ""
+                : "https://s3.amazonaws.com/static.simiotics.com/moonstream/assets/matic-token-inverted-icon.png"
+            }
           ></Image>
         }
         // color="white"
