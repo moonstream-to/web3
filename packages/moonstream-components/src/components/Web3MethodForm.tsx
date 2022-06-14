@@ -103,15 +103,16 @@ const Web3MethodForm = ({
   const [wasSent, setWasSent] = React.useState(false);
 
   const handleClose = React.useCallback(() => {
-    state.inputs.forEach((inputElement: any, index: any) => {
-      dispatchArguments({
-        value:
-          (argumentFields && argumentFields[inputElement.name]?.initialValue) ??
-          "",
-        index,
-      });
-    });
     if (onCancel) {
+      state.inputs.forEach((inputElement: any, index: any) => {
+        dispatchArguments({
+          value:
+            (argumentFields &&
+              argumentFields[inputElement.name]?.initialValue) ??
+            "",
+          index,
+        });
+      });
       onCancel();
     }
   }, [state, argumentFields, onCancel]);
@@ -150,7 +151,12 @@ const Web3MethodForm = ({
             ? web3ctx.web3.utils.toChecksumAddress(inputElement.meta.value)
             : console.error("not an address", returnedObject[index])
           : inputElement.meta.value;
+      if (inputElement.type.includes("[]")) {
+        returnedObject[index] = JSON.parse(returnedObject[index]);
+      }
     });
+
+    console.log("returnedObject", returnedObject);
     tx.mutate({ args: returnedObject });
     // if (onClose) {
     //   onClose();
@@ -259,9 +265,11 @@ const Web3MethodForm = ({
                       })
                     }
                     placeholder={
-                      inputItem.meta.placeholder ||
-                      inputItem.name ||
-                      inputItem.type
+                      inputItem.type.includes("[]")
+                        ? `[value, value] `
+                        : inputItem.meta.placeholder ||
+                          inputItem.name ||
+                          inputItem.type
                     }
                     size="sm"
                     fontSize={"sm"}
@@ -270,16 +278,18 @@ const Web3MethodForm = ({
                   />
                 </>
               )}
-              {inputItem.type === "address" && (
+              {(inputItem.type === "address" ||
+                inputItem.type === "address[]") && (
                 <Input
                   textColor={"blue.800"}
                   onKeyPress={handleKeypress}
                   type="search"
-                  defaultValue={inputItem.meta.value}
                   placeholder={
-                    inputItem.meta.placeholder ||
-                    inputItem.name ||
-                    inputItem.type
+                    inputItem.type.includes("[]")
+                      ? `[address, address] `
+                      : inputItem.meta.placeholder ||
+                        inputItem.name ||
+                        inputItem.type
                   }
                   key={`argument-address-${inputItem.name}`}
                   value={inputItem.meta.value}
