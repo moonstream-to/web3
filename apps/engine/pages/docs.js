@@ -4,11 +4,12 @@ import { Box } from "@chakra-ui/react";
 import { getLayout } from "moonstream-components/src/layouts/RootLayout";
 import { DEFAULT_METATAGS } from "../src/constants";
 
-const API = process.env.NEXT_PUBLIC_ENGINE_API_URL;
+const API =
+  process.env.NEXT_PUBLIC_ENGINE_API_URL ??
+  process.env.NEXT_PUBLIC_PLAY_API_URL;
 
 const Docs = () => {
   return (
-    // <Box overflowY="hidden" w="100%" maxH="100%" minH="100vh">
     <>
       <Box w="100%" maxH="100vh" overflowY="scroll" zIndex={0} bgColor="white">
         <RedocStandalone
