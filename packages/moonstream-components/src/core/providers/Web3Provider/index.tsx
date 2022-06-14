@@ -203,7 +203,6 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
 
   const setWeb3ProviderAsWindowEthereum = async () => {
     let wasSetupSuccess = false;
-    console.log("setWeb3ProviderAsWindowEthereum entry");
     await window.ethereum
       .request({ method: "eth_requestAccounts" })
       .then(() => {
@@ -213,14 +212,13 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
           setAccount(accounts[0]);
         });
         web3.eth.getChainId().then((result) => changeChainIfSupported(result));
-        console.log("setWeb3ProviderAsWindowEthereum", wasSetupSuccess);
         wasSetupSuccess = true;
       })
       .catch((err: any) => {
         if (err.code === 4001) {
           // EIP-1193 userRejectedRequest error
           // If this happens, the user rejected the connection request.
-          console.log("Please connect to MetaMask.");
+          console.log("Please connect to wallet.");
         } else {
           console.error(err);
         }
@@ -266,7 +264,6 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
     setChainId(Number(_chainId));
   };
   const handleProviderAccountChanged = (_accounts: Array<string>) => {
-    console.log(chainId, targetChain?.chainId, web3.currentProvider);
     if (chainId === targetChain?.chainId && web3.currentProvider) {
       setAccount(web3.utils.toChecksumAddress(_accounts[0]));
     }
@@ -370,7 +367,6 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
   }, [account]);
 
   const defaultTxConfig = { from: account };
-  console.log("rerender", targetChain?.chainId, chainId);
   return (
     <Web3Context.Provider
       value={{
