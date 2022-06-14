@@ -265,9 +265,11 @@ const Web3MethodForm = ({
                       })
                     }
                     placeholder={
-                      inputItem.meta.placeholder ||
-                      inputItem.name ||
-                      inputItem.type
+                      inputItem.type.includes("[]")
+                        ? `[value, value] `
+                        : inputItem.meta.placeholder ||
+                          inputItem.name ||
+                          inputItem.type
                     }
                     size="sm"
                     fontSize={"sm"}
@@ -276,15 +278,18 @@ const Web3MethodForm = ({
                   />
                 </>
               )}
-              {inputItem.type === "address" && (
+              {(inputItem.type === "address" ||
+                inputItem.type === "address[]") && (
                 <Input
                   textColor={"blue.800"}
                   onKeyPress={handleKeypress}
                   type="search"
                   placeholder={
-                    inputItem.meta.placeholder ||
-                    inputItem.name ||
-                    inputItem.type
+                    inputItem.type.includes("[]")
+                      ? `[address, address] `
+                      : inputItem.meta.placeholder ||
+                        inputItem.name ||
+                        inputItem.type
                   }
                   key={`argument-address-${inputItem.name}`}
                   value={inputItem.meta.value}
