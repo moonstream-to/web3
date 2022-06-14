@@ -66,7 +66,7 @@ export const chains: { [key in supportedChains]: ChainInterface } = {
   },
   localhost: {
     chainId: 1337,
-    name: "local",
+    name: "localhost",
     rpcs: ["http://127.0.0.1:8545"],
   },
   mumbai: {
@@ -203,19 +203,31 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
 
   const setWeb3ProviderAsWindowEthereum = async () => {
     let wasSetupSuccess = false;
-    await window.ethereum.request({ method: "eth_requestAccounts" }).then(
-      () => {
+    console.log("setWeb3ProviderAsWindowEthereum entry");
+    await window.ethereum
+      .request({ method: "eth_requestAccounts" })
+      .then(() => {
         web3.setProvider(window.ethereum);
-        web3.eth.getAccounts().then((accounts) => setAccount(accounts[0]));
-        web3.eth.getChainId().then((result) => changeChainIfSupported(result));
 
+        web3.eth.getAccounts().then((accounts) => {
+          setAccount(accounts[0]);
+        });
+        web3.eth.getChainId().then((result) => changeChainIfSupported(result));
+        console.log("setWeb3ProviderAsWindowEthereum", wasSetupSuccess);
         wasSetupSuccess = true;
-      },
-      (err: any) => console.log(err)
-    );
+      })
+      .catch((err: any) => {
+        if (err.code === 4001) {
+          // EIP-1193 userRejectedRequest error
+          // If this happens, the user rejected the connection request.
+          console.log("Please connect to MetaMask.");
+        } else {
+          console.error(err);
+        }
+      });
+
     return wasSetupSuccess;
   };
-
   const onConnectWalletClick = async () => {
     if (window.ethereum) {
       await setWeb3ProviderAsWindowEthereum().then((result) => {
@@ -249,24 +261,42 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
     //
   }, [chainId, targetChain?.chainId, web3.currentProvider, web3.eth]);
 
+  const handleMetamaskChainChanged = (_chainId: string) => {
+    changeChainIfSupported(Number(_chainId));
+    setChainId(Number(_chainId));
+  };
+  const handleProviderAccountChanged = (_accounts: Array<string>) => {
+    console.log(chainId, targetChain?.chainId, web3.currentProvider);
+    if (chainId === targetChain?.chainId && web3.currentProvider) {
+      setAccount(web3.utils.toChecksumAddress(_accounts[0]));
+    }
+  };
   // On mount
   // -> start listen to chainId changed -> update current account state in this state
   // -> listen to connected -> setup state variables
   React.useEffect(() => {
-    window?.ethereum?.on("chainChanged", (_chainId: string) => {
-      changeChainIfSupported(Number(_chainId));
-      setChainId(Number(_chainId));
-    });
-    window?.ethereum?.on("connect", () => {
-      setWeb3ProviderAsWindowEthereum();
-    });
-    window?.ethereum?.on("accountsChanged", (_accounts: Array<string>) => {
-      if (chainId === targetChain?.chainId && web3.currentProvider) {
-        setAccount(web3.utils.toChecksumAddress(_accounts[0]));
-      }
-    });
+    if (chainId && targetChain?.chainId) {
+      window?.ethereum?.on("chainChanged", handleMetamaskChainChanged);
+      window?.ethereum?.on("connect", setWeb3ProviderAsWindowEthereum);
+      window?.ethereum?.on("accountsChanged", handleProviderAccountChanged);
+    }
+
+    return () => {
+      window?.ethereum?.removeListener(
+        "connect",
+        setWeb3ProviderAsWindowEthereum
+      );
+      window?.ethereum?.removeListener(
+        "chainChanged",
+        handleMetamaskChainChanged
+      );
+      window?.ethereum?.removeListener(
+        "accountsChanged",
+        handleProviderAccountChanged
+      );
+    };
     //eslint-disable-next-line
-  }, []);
+  }, [chainId, targetChain?.chainId]);
 
   // When chainId or web3 or targetChain changes -> update button state
   React.useLayoutEffect(() => {
@@ -340,7 +370,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
   }, [account]);
 
   const defaultTxConfig = { from: account };
-
+  console.log("rerender", targetChain?.chainId, chainId);
   return (
     <Web3Context.Provider
       value={{
