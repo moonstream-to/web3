@@ -78,7 +78,6 @@ const _ContractInterface = ({
                   maxW="420px"
                   bgColor={"blue.300"}
                   boxShadow="md"
-                  zIndex="100"
                   method={element}
                   rendered={true}
                   flexDirection="column"
