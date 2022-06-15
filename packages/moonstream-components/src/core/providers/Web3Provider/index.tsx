@@ -4,6 +4,8 @@ import Web3 from "web3";
 import {
   ChainInterface,
   GetMethodsAbiType,
+  supportedChains,
+  TokenInterface,
 } from "../../../../../../types/Moonstream";
 
 declare global {
@@ -13,12 +15,39 @@ declare global {
   }
 }
 
-interface TokenInterface {
-  address: string;
-  deadline: number;
-  signed_message: string;
-}
-
+const _changeChain = async (targetChain: any, setChainId: any, web3: any) => {
+  if (targetChain?.chainId) {
+    try {
+      await window.ethereum
+        .request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: `0x${targetChain?.chainId.toString(16)}` }],
+        })
+        .then(() => web3?.eth.getChainId().then((id: any) => setChainId(id)));
+    } catch (switchError: any) {
+      // This error code indicates that the chain has not been added to MetaMask.
+      if (switchError.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [
+              {
+                chainId: `${targetChain?.chainId}`,
+                chainName: targetChain?.name,
+                rpcUrls: targetChain?.rpcs,
+              },
+            ],
+          });
+        } catch (addError) {
+          // handle "add" error
+        }
+      }
+      // handle other "switch" errors
+    }
+  } else {
+    console.error("cannot change chain when targetChain is undefined");
+  }
+};
 export const getMethodsABI: typeof GetMethodsAbiType = (abi, name) => {
   const index = abi.findIndex(
     (item) => item.name === name && item.type == "function"
@@ -29,10 +58,15 @@ export const getMethodsABI: typeof GetMethodsAbiType = (abi, name) => {
   } else throw "accesing wrong abi element";
 };
 
-export const chains: { [index: string]: ChainInterface } = {
-  local: {
+export const chains: { [key in supportedChains]: ChainInterface } = {
+  ethereum: {
+    chainId: 1,
+    name: "ethereum",
+    rpcs: ["https://mainnet.infura.io/v3/"],
+  },
+  localhost: {
     chainId: 1337,
-    name: "local",
+    name: "localhost",
     rpcs: ["http://127.0.0.1:8545"],
   },
   mumbai: {
@@ -57,6 +91,16 @@ export const chains: { [index: string]: ChainInterface } = {
       "https://matic-mainnet-full-rpc.bwarelabs.com",
     ],
   },
+};
+
+const isKnownChain = (_chainId: number) => {
+  Object.keys(chains)?.forEach((key: string) => {
+    const _key = key as any as supportedChains;
+    if (chains[_key]?.chainId == _chainId) {
+      return true;
+    }
+  });
+  return false;
 };
 
 const signAccessToken = async (account: string) => {
@@ -120,22 +164,42 @@ const signAccessToken = async (account: string) => {
   //   JSON.parse(msgParams).message.deadline
   // );
 };
-
-if (!process.env.NEXT_PUBLIC_ENGINE_TARGET_CHAIN)
-  throw "NEXT_PUBLIC_ENGINE_TARGET_CHAIN not defined";
-export const targetChain =
-  chains[`${process.env.NEXT_PUBLIC_ENGINE_TARGET_CHAIN}`];
-
 const Web3Provider = ({ children }: { children: JSX.Element }) => {
   const [web3] = React.useState<Web3>(new Web3(null));
+
+  const [targetChain, _setChain] = React.useState<ChainInterface | undefined>();
+
   web3.eth.transactionBlockTimeout = 100;
   // TODO: this flag should allow to read revert messages
   // However there seems to be abug in web3js, and setting this flag will upset metamsk badly..
   // issue: https://github.com/ChainSafe/web3.js/issues/4787
   // web3.eth.handleRevert = true;
+
   const [buttonText, setButtonText] = React.useState(WALLET_STATES.ONBOARD);
   const [account, setAccount] = React.useState<string>("");
   const [chainId, setChainId] = React.useState<number>(0);
+
+  const changeChainIfSupported = (_chainId: number) => {
+    let chainFound = false;
+    Object.keys(chains)?.forEach((key: string) => {
+      const _key = key as any as supportedChains;
+      if (chains[_key]?.chainId == _chainId) {
+        chainFound = true;
+        changeChain(chains[_key]?.name as any as supportedChains);
+      }
+    });
+    if (!chainFound) {
+      setButtonText(WALLET_STATES.UNKNOWN_CHAIN);
+      _setChain(undefined);
+    }
+  };
+
+  const changeChain = (chainName: supportedChains) => {
+    _changeChain(chains[chainName], setChainId, web3).then(() => {
+      _setChain(chains[chainName]);
+      setButtonText(WALLET_STATES.CONNECTED);
+    });
+  };
 
   const setWeb3ProviderAsWindowEthereum = async () => {
     let wasSetupSuccess = false;
@@ -143,14 +207,28 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
       .request({ method: "eth_requestAccounts" })
       .then(() => {
         web3.setProvider(window.ethereum);
+
+        web3.eth.getAccounts().then((accounts) => {
+          setAccount(accounts[0]);
+        });
+        web3.eth.getChainId().then((result) => changeChainIfSupported(result));
         wasSetupSuccess = true;
+      })
+      .catch((err: any) => {
+        if (err.code === 4001) {
+          // EIP-1193 userRejectedRequest error
+          // If this happens, the user rejected the connection request.
+          console.log("Please connect to wallet.");
+        } else {
+          console.error(err);
+        }
       });
+
     return wasSetupSuccess;
   };
-
-  const onConnectWalletClick = () => {
+  const onConnectWalletClick = async () => {
     if (window.ethereum) {
-      setWeb3ProviderAsWindowEthereum().then((result) => {
+      await setWeb3ProviderAsWindowEthereum().then((result) => {
         if (result) console.log("wallet setup was successfull");
         else
           console.warn(
@@ -161,74 +239,73 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
     }
   };
 
+  // When web3 has changed chainId -> represent it in state of provider
   React.useLayoutEffect(() => {
     if (web3.currentProvider) {
       web3?.eth.getChainId().then((id) => setChainId(id));
     }
   }, [web3.currentProvider, web3?.eth]);
 
+  //when chainId, or web3 provider, or targetChain changed -> update current account in this state
   React.useLayoutEffect(() => {
-    const changeChain = async () => {
-      try {
-        await window.ethereum
-          .request({
-            method: "wallet_switchEthereumChain",
-            params: [{ chainId: `0x${targetChain.chainId.toString(16)}` }],
-          })
-          .then(() => web3?.eth.getChainId().then((id) => setChainId(id)));
-      } catch (switchError: any) {
-        // This error code indicates that the chain has not been added to MetaMask.
-        if (switchError.code === 4902) {
-          try {
-            await window.ethereum.request({
-              method: "wallet_addEthereumChain",
-              params: [
-                {
-                  chainId: `${targetChain.chainId}`,
-                  chainName: targetChain.name,
-                  rpcUrls: targetChain.rpcs,
-                },
-              ],
-            });
-          } catch (addError) {
-            // handle "add" error
-          }
-        }
-        // handle other "switch" errors
-      }
-    };
-
-    if (web3.currentProvider && chainId) {
-      if (chainId) {
-        if (chainId === targetChain.chainId) {
-          //we are on matic
-        } else {
-          //we are not on matic
-          changeChain();
-        }
-      }
-    }
-  }, [chainId, web3.currentProvider, web3?.eth]);
-
-  React.useLayoutEffect(() => {
-    if (chainId === targetChain.chainId && web3.currentProvider) {
+    if (
+      targetChain?.chainId &&
+      chainId === targetChain?.chainId &&
+      web3.currentProvider
+    ) {
       web3.eth.getAccounts().then((accounts) => setAccount(accounts[0]));
     }
-  }, [chainId, web3.currentProvider, web3?.eth]);
+    // eslint-disable-next-line
+    //
+  }, [chainId, targetChain?.chainId, web3.currentProvider, web3.eth]);
 
-  window?.ethereum?.on("chainChanged", () => window.location.reload());
-  window?.ethereum?.on("accountsChanged", (_accounts: Array<string>) => {
-    if (chainId === targetChain.chainId && web3.currentProvider) {
+  const handleMetamaskChainChanged = (_chainId: string) => {
+    changeChainIfSupported(Number(_chainId));
+    setChainId(Number(_chainId));
+  };
+  const handleProviderAccountChanged = (_accounts: Array<string>) => {
+    if (chainId === targetChain?.chainId && web3.currentProvider) {
       setAccount(web3.utils.toChecksumAddress(_accounts[0]));
     }
-  });
+  };
+  // On mount
+  // -> start listen to chainId changed -> update current account state in this state
+  // -> listen to connected -> setup state variables
+  React.useEffect(() => {
+    if (chainId && targetChain?.chainId) {
+      window?.ethereum?.on("chainChanged", handleMetamaskChainChanged);
+      window?.ethereum?.on("connect", setWeb3ProviderAsWindowEthereum);
+      window?.ethereum?.on("accountsChanged", handleProviderAccountChanged);
+    }
 
+    return () => {
+      window?.ethereum?.removeListener(
+        "connect",
+        setWeb3ProviderAsWindowEthereum
+      );
+      window?.ethereum?.removeListener(
+        "chainChanged",
+        handleMetamaskChainChanged
+      );
+      window?.ethereum?.removeListener(
+        "accountsChanged",
+        handleProviderAccountChanged
+      );
+    };
+    //eslint-disable-next-line
+  }, [chainId, targetChain?.chainId]);
+
+  // When chainId or web3 or targetChain changes -> update button state
   React.useLayoutEffect(() => {
-    if (web3.currentProvider && chainId) {
-      if (chainId === targetChain.chainId) {
-        setButtonText(WALLET_STATES.CONNECTED);
+    if (web3.currentProvider && chainId && targetChain?.chainId) {
+      if (isKnownChain(chainId)) {
+        if (chainId === targetChain?.chainId) {
+          setButtonText(WALLET_STATES.CONNECTED);
+        } else {
+          setButtonText(`Please select ${targetChain?.name}`);
+        }
       } else {
-        setButtonText(WALLET_STATES.WRONG_CHAIN);
+        setButtonText(WALLET_STATES.UNKNOWN_CHAIN);
       }
     } else {
       if (!window.ethereum) {
@@ -237,16 +314,24 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
         setButtonText(WALLET_STATES.CONNECT);
       }
     }
-  }, [web3.currentProvider, chainId]);
+  }, [web3.currentProvider, chainId, targetChain]);
 
+  // onMount check if there is provided address by provider already, if yes - set it in this state and provide to web3
+  // As well as try to look up for chainId in list of supported chains
   React.useEffect(() => {
     if (window?.ethereum?.selectedAddress) {
       setWeb3ProviderAsWindowEthereum().then((result) => {
-        if (result) console.log("wallet setup was successfull");
-        else
+        if (result) {
+          window?.ethereum
+            ?.request({ method: "eth_chainId" })
+            .then((_chainId: any) => {
+              changeChainIfSupported(parseInt(_chainId, 16));
+            });
+        } else
           console.warn(
-            "wallet setup failed, should go in fallback mode immediately"
+            "provider setup failed, should go in fallback mode immediately"
           );
+
         setButtonText(result ? WALLET_STATES.CONNECTED : WALLET_STATES.CONNECT);
       });
       //  ÷
@@ -282,7 +367,6 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
   }, [account]);
 
   const defaultTxConfig = { from: account };
-
   return (
     <Web3Context.Provider
       value={{
@@ -295,6 +379,8 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
         defaultTxConfig,
         signAccessToken,
         getMethodsABI,
+        changeChain,
+        targetChain,
       }}
     >
       {children}

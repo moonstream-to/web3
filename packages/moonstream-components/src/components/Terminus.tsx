@@ -12,7 +12,7 @@ import {
   SlideFade,
   Skeleton,
 } from "@chakra-ui/react";
-import { getMethodsABI, targetChain } from "../core/providers/Web3Provider";
+import { getMethodsABI } from "../core/providers/Web3Provider";
 
 import { useTerminusContract } from "../core/hooks/useTerminusContract";
 import Web3Context from "../core/providers/Web3Provider/context";
@@ -42,7 +42,6 @@ const Terminus = () => {
 
   const terminus = useTerminusContract({
     address: contractAddress,
-    targetChain: targetChain,
     ctx: web3ctx,
   });
 
@@ -87,20 +86,15 @@ const Terminus = () => {
           {uri?.data && (
             <Metadata
               boxShadow={"md"}
-              // flexGrow={1}
               w="50%"
               borderRadius="md"
               borderColor={"blue.1200"}
               borderWidth={"3px"}
               p={4}
-              // mx={4}
-              // my={2}
               metadata={uri?.data}
             />
           )}
-          {/* {terminus.contractState.data.controller === web3ctx.account && ( */}
           <TerminusControllerPanel
-            // flexBasis={"500px"}
             flexGrow={1}
             minW={["280px", "320px", "420px", null]}
             w="50%"

@@ -3,19 +3,25 @@ import { Flex, ScaleFade } from "@chakra-ui/react";
 import Details from "moonstream-components/src/components/Dropper/Details";
 import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
 import { useRouter } from "moonstream-components/src/core/hooks";
-import Drop from "moonstream-components/src/components/Dropper/Drop";
+import Claim from "moonstream-components/src/components/Dropper/Claim";
 
 const Drops = () => {
   const router = useRouter();
-  const { dropId } = router.query;
+  const { claimId, contractAddress, claimIdx } = router.query;
 
-  if (!dropId) return "drop Id must be specifed";
+  if (!claimId) return "drop Id must be specifed";
+  if (!contractAddress) return "contract address plz";
+  if (!claimIdx) return "claimIdx  plz";
   return (
     <ScaleFade in transition={"2s"}>
       <Flex>
-        <Drop dropId={dropId}>
-          <Details dropId={dropId} />
-        </Drop>
+        <Claim
+          claimId={claimId}
+          dropperAddress={contractAddress}
+          claimIdx={claimIdx}
+        >
+          <Details dropId={claimId} />
+        </Claim>
       </Flex>
     </ScaleFade>
   );

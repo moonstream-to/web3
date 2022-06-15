@@ -8,7 +8,6 @@ import {
 } from "../../services/moonstream-engine.service";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import {
-  ChainInterface,
   MoonstreamWeb3ProviderInterface,
   UpdateClaim,
 } from "../../../../../../types/Moonstream";
@@ -18,18 +17,16 @@ import useDrops from "./useDrops";
 import { putHttp } from "../../utils/http";
 
 const useDrop = ({
-  targetChain,
   ctx,
   claimId,
   getAll,
 }: {
-  targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
   claimId?: string;
   initialPageSize?: number;
   getAll?: boolean;
 }) => {
-  const admin = useDrops({ targetChain, ctx });
+  const admin = useDrops({ ctx });
   const toast = useToast();
   const queryClient = useQueryClient();
 

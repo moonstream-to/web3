@@ -5,25 +5,27 @@ import {
   getState,
   getSignerForClaim,
 } from "../../contracts/dropper.contract";
-import {
-  ChainInterface,
-  MoonstreamWeb3ProviderInterface,
-} from "../../../../../../types/Moonstream";
+import { MoonstreamWeb3ProviderInterface } from "../../../../../../types/Moonstream";
 import queryCacheProps from "../hookCommon";
 import useToast from "../useToast";
-
+import useURI from "../useLink";
+import { Dropper } from "../../../../../../types/contracts/Dropper";
+const dropperAbi = require("../../../../../../abi/Dropper.json");
 const useDropperContract = ({
   dropperAddress,
   ctx,
   claimId,
-  targetChain,
 }: {
   dropperAddress?: string;
-  targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
   claimId?: string;
 }) => {
   const toast = useToast();
+
+  const dropperContract = new ctx.web3.eth.Contract(
+    dropperAbi
+  ) as any as Dropper;
+  dropperContract.options.address = dropperAddress ?? "";
 
   const _getClaim = async (
     dropperAddress: string,
@@ -41,20 +43,29 @@ const useDropperContract = ({
   };
 
   const claimState = useQuery(
-    ["dropperContractClaimState", dropperAddress, targetChain.chainId, claimId],
+    [
+      "dropperContract",
+      "claimState",
+      dropperAddress,
+      ctx.targetChain?.chainId,
+      claimId,
+    ],
     () => _getClaim(dropperAddress ?? "", ctx, claimId ?? ""),
     {
       ...queryCacheProps,
       onSuccess: () => {},
-      placeholderData: {
-        canClaim: false,
-        claim: ["", "", "", ""],
-        status: "",
-      },
+      // placeholderData: {
+      //   canClaim: false,
+      //   claim: ["", "", "", ""],
+      //   status: "",
+      //   claimUri: "",
+      //   signer: "",
+      // },
       enabled:
         !!dropperAddress &&
         ctx.web3?.utils.isAddress(ctx.account) &&
         !!ctx.chainId &&
+        ctx.chainId === ctx.targetChain?.chainId &&
         !!claimId,
     }
   );
@@ -69,8 +80,8 @@ const useDropperContract = ({
     },
   });
 
-  const dropperWeb3State = useQuery(
-    ["dropperContractState", dropperAddress, targetChain.chainId],
+  const contractState = useQuery(
+    ["dropperContract", "state", dropperAddress, ctx.targetChain?.chainId],
     () => getState(dropperAddress, ctx)(),
     {
       ...queryCacheProps,
@@ -78,12 +89,13 @@ const useDropperContract = ({
       enabled:
         !!dropperAddress &&
         ctx.web3?.utils.isAddress(ctx.account) &&
-        ctx.chainId === ctx.chainId,
+        !!ctx.chainId &&
+        ctx.chainId === ctx.targetChain?.chainId,
     }
   );
 
   const signerForClaim = useQuery(
-    ["signerForClaim", dropperAddress, targetChain.name, claimId],
+    ["signerForClaim", dropperAddress, ctx.targetChain?.name, claimId],
     () => getSignerForClaim(dropperAddress, ctx)(claimId ?? ""),
     {
       ...queryCacheProps,
@@ -92,11 +104,55 @@ const useDropperContract = ({
         !!ctx.chainId &&
         !!claimId &&
         !!dropperAddress &&
-        !!targetChain.name,
+        !!ctx.chainId &&
+        ctx.targetChain?.chainId === ctx.chainId,
     }
   );
 
-  return { claimState, claimWeb3Drop, dropperWeb3State, signerForClaim };
+  const commonProps = {
+    onSuccess: () => {
+      toast("Successfully updated contract", "success");
+      claimState.refetch();
+    },
+    onError: () => {
+      toast("Something went wrong", "error");
+    },
+  };
+
+  const setClaimURI = useMutation(
+    ({ uri }: { uri: string }) =>
+      dropperContract.methods
+        .setClaimUri(claimId ?? "", uri)
+        .send({ from: ctx.account }),
+    { ...commonProps }
+  );
+
+  const setClaimSigner = useMutation(
+    ({ signer }: { signer: string }) =>
+      dropperContract.methods
+        .setSignerForClaim(claimId ?? "", signer)
+        .send({ from: ctx.account }),
+    { ...commonProps }
+  );
+
+  const transferOwnership = useMutation(
+    ({ to }: { to: string }) =>
+      dropperContract.methods.transferOwnership(to).send({ from: ctx.account }),
+    { ...commonProps }
+  );
+
+  const claimUri = useURI({ link: claimState.data?.claimUri });
+
+  return {
+    claimState,
+    claimWeb3Drop,
+    contractState,
+    signerForClaim,
+    claimUri,
+    setClaimURI,
+    setClaimSigner,
+    transferOwnership,
+  };
 };
 
 export default useDropperContract;

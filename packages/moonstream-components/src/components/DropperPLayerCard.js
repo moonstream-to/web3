@@ -2,7 +2,6 @@ import React, { useContext } from "react";
 import { Flex, Text, Button } from "@chakra-ui/react";
 import useDropperClaim from "../core/hooks/useDropperClaim";
 import Web3Context from "../core/providers/Web3Provider/context";
-import { targetChain } from "../core/providers/Web3Provider";
 import Erc20Card from "./Erc20Card";
 
 const DropCard = ({ drop }) => {
@@ -10,7 +9,6 @@ const DropCard = ({ drop }) => {
 
   const claimer = useDropperClaim({
     dropperAddress: "",
-    targetChain: targetChain,
     ctx: web3Provider,
     claimId: drop.id,
   });

@@ -1,7 +1,6 @@
 import React, { useContext } from "react";
 import { Flex, Spinner, IconButton, Heading } from "@chakra-ui/react";
 import Web3Context from "../core/providers/Web3Provider/context";
-import { targetChain } from "../core/providers/Web3Provider";
 import { CloseIcon } from "@chakra-ui/icons";
 import { BiTrash } from "react-icons/bi";
 import { useDrop } from "../core/hooks/dropper";
@@ -10,7 +9,6 @@ const ClaimantDetails = ({ claimId, address, onClose }) => {
   const web3ctx = useContext(Web3Context);
 
   const { deleteClaimants } = useDrop({
-    targetChain,
     ctx: web3ctx,
     claimId: claimId,
   });

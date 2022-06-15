@@ -1,6 +1,8 @@
 import enableMockupRequests from "./mockupRequests";
 let axios = require("axios");
-
+const API =
+  process.env.NEXT_PUBLIC_ENGINE_API_URL ??
+  process.env.NEXT_PUBLIC_PLAY_API_URL;
 process.env.NODE_ENV !== "production" && enableMockupRequests(axios);
 
 const http = (config) => {
@@ -21,8 +23,6 @@ const http = (config) => {
 export const queryPublic = (uri) => {
   return axios({ method: "GET", url: uri });
 };
-
-const API = process.env.NEXT_PUBLIC_ENGINE_API_URL;
 
 export const putHttp = (endpoint, data) => {
   return http({

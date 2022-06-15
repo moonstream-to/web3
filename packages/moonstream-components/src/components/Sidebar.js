@@ -13,8 +13,6 @@ import {
   IconButton,
   Divider,
   Text,
-  ButtonGroup,
-  Button,
   Badge,
   Skeleton,
 } from "@chakra-ui/react";
@@ -24,6 +22,7 @@ import { HamburgerIcon, ArrowLeftIcon, ArrowRightIcon } from "@chakra-ui/icons";
 import moment from "moment";
 import Web3Context from "../core/providers/Web3Provider/context";
 import MoonstreamContext from "../core/providers/MoonstreamProvider/context";
+import ChainSelector from "./ChainSelector";
 
 const Sidebar = () => {
   const ui = useContext(UIContext);
@@ -77,65 +76,44 @@ const Sidebar = () => {
       <SidebarContent>
         <Divider borderColor="blue.600" />
         <Menu iconShape="square">
+          <ChainSelector />
           {/* Not authenticated part of sidebar menu */}
-          <ButtonGroup variant="solid" spacing={4} w="100%">
-            {web3Provider.buttonText !==
-              web3Provider.WALLET_STATES.CONNECTED && (
-              <Button
-                colorScheme={
-                  web3Provider.buttonText ===
-                  web3Provider.WALLET_STATES.CONNECTED
-                    ? "green"
-                    : "green"
-                }
-                onClick={web3Provider.onConnectWalletClick}
+
+          {web3Provider.buttonText === web3Provider.WALLET_STATES.CONNECTED && (
+            <Flex direction="column" px={2} w="100%">
+              <Badge
+                colorScheme={"pink"}
+                variant={"subtle"}
+                size="sm"
+                borderRadius={"md"}
+                m={2}
+                p={0}
+                whiteSpace="break-spaces"
+              ></Badge>
+              <Badge
+                colorScheme={"blue"}
+                variant={"subtle"}
+                size="sm"
+                borderRadius={"md"}
+                m={2}
+                p={0}
+                whiteSpace="break-spaces"
               >
-                {web3Provider.buttonText}
-                {"  "}
-                <Image
-                  pl={2}
-                  h="24px"
-                  src="https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg"
-                />
-              </Button>
-            )}
-            {web3Provider.buttonText ===
-              web3Provider.WALLET_STATES.CONNECTED && (
-              <Flex direction="column" px={2} w="100%">
-                <Badge
-                  colorScheme={"pink"}
-                  variant={"subtle"}
-                  size="sm"
-                  borderRadius={"md"}
-                  m={2}
-                  p={0}
-                  whiteSpace="break-spaces"
-                ></Badge>
-                <Badge
-                  colorScheme={"blue"}
-                  variant={"subtle"}
-                  size="sm"
-                  borderRadius={"md"}
-                  m={2}
-                  p={0}
-                  whiteSpace="break-spaces"
+                <Skeleton
+                  isLoaded={web3Provider.account}
+                  h="100%"
+                  colorScheme={"red"}
+                  w="100%"
+                  borderRadius={"inherit"}
+                  startColor="red.500"
+                  endColor="blue.500"
+                  p={1}
                 >
-                  <Skeleton
-                    isLoaded={web3Provider.account}
-                    h="100%"
-                    colorScheme={"red"}
-                    w="100%"
-                    borderRadius={"inherit"}
-                    startColor="red.500"
-                    endColor="blue.500"
-                    p={1}
-                  >
-                    {web3Provider.account}
-                  </Skeleton>
-                </Badge>
-              </Flex>
-            )}
-          </ButtonGroup>
+                  {web3Provider.account}
+                </Skeleton>
+              </Badge>
+            </Flex>
+          )}
 
           <Divider
             colorScheme="blue"
