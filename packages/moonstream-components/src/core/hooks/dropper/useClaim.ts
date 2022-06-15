@@ -1,10 +1,7 @@
 import React from "react";
 import { getClaimSignature } from "../../services/moonstream-engine.service";
 import { useMutation, useQuery } from "react-query";
-import {
-  ChainInterface,
-  MoonstreamWeb3ProviderInterface,
-} from "../../../../../../types/Moonstream";
+import { MoonstreamWeb3ProviderInterface } from "../../../../../../types/Moonstream";
 import { useToast } from "..";
 import queryCacheProps from "../hookCommon";
 import useDropperContract from "./useDropper.sol";
@@ -12,7 +9,6 @@ import { queryHttp } from "../../utils/http";
 
 const useClaim = ({
   dropperAddress,
-  targetChain,
   ctx,
   claimId,
   claimantAddress,
@@ -20,16 +16,25 @@ const useClaim = ({
 }: {
   claimantAddress?: string;
   dropperAddress?: string;
-  targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
   claimId: string;
   userAccess?: boolean;
 }) => {
   const toast = useToast();
+
+  const claim = useQuery(
+    [`/drops/claims/${claimId}`],
+    (query: any) => queryHttp(query).then((r: any) => r.data),
+    {
+      ...queryCacheProps,
+      enabled: !!claimId && !userAccess,
+    }
+  );
+
   const { claimWeb3Drop } = useDropperContract({
     dropperAddress,
     ctx,
-    targetChain,
+    claimId: claim.data?.claim_id,
   });
 
   const claimSeq = useMutation(
@@ -48,16 +53,6 @@ const useClaim = ({
         toast("Failed to get claim signature from API >.<", "error");
       },
       onSettled: () => {},
-    }
-  );
-
-  const claim = useQuery(
-    [`/drops/claims/${claimId}`],
-    (query: any) => queryHttp(query).then((r: any) => r.data),
-    {
-      ...queryCacheProps,
-      // cacheTime: 0,
-      enabled: !!claimId && !userAccess,
     }
   );
 

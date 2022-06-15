@@ -1,8 +1,11 @@
 import { http } from "../utils";
-const API = process.env.NEXT_PUBLIC_ENGINE_API_URL;
+const API =
+  process.env.NEXT_PUBLIC_ENGINE_API_URL ??
+  process.env.NEXT_PUBLIC_PLAY_API_URL;
 
 export const getAdminList =
-  (terminusAddress, chainName, poolId, offset, limit) => async () => {
+  (terminusAddress, chainName, poolId, offset, limit, dropperAddress) =>
+  async () => {
     return http({
       method: "GET",
       url: `${API}/drops/terminus/claims`,
@@ -12,6 +15,7 @@ export const getAdminList =
         terminus_pool_id: poolId,
         offset: offset,
         limit: limit,
+        dropperAddress: dropperAddress,
       },
     });
   };

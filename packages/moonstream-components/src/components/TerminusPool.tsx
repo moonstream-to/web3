@@ -17,7 +17,7 @@ import {
 import { MockTerminus } from "../../../../types/contracts/MockTerminus";
 import { useTerminusContract } from "../core/hooks/useTerminusContract";
 import Web3Context from "../core/providers/Web3Provider/context";
-import { getMethodsABI, targetChain } from "../core/providers/Web3Provider";
+import { getMethodsABI } from "../core/providers/Web3Provider";
 import dynamic from "next/dynamic";
 import Web3MethodForm from "./Web3MethodForm";
 import useLink from "../core/hooks/useLink";
@@ -48,7 +48,6 @@ const TerminuPool = ({
       poolId: poolId,
       ctx: web3ctx,
       address: address,
-      targetChain: targetChain,
     });
   const uri = useLink({ link: poolState.data?.uri });
   return (
@@ -57,7 +56,6 @@ const TerminuPool = ({
       direction={"column"}
       bgColor="blue.1000"
       flexWrap={"wrap"}
-      // flexBasis="100px"
       pt={4}
       px={0}
       w="100%"
@@ -211,7 +209,7 @@ const TerminuPool = ({
               {poolState.data?.capacity} <Spacer />{" "}
             </Flex>
           </code>
-          <code key={"uri"}>
+          <code key={`uri-${poolState.data?.uri}`}>
             URI:
             <Skeleton
               colorScheme={"orange"}

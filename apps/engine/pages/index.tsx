@@ -31,7 +31,7 @@ const Homepage = () => {
             <FeatureCard
               w="300px"
               h="460px"
-              link="/drops"
+              link="/dropper"
               text=" Set up a loyalty program and reward your players with tokens, items, badges, and achievements"
               heading="Loyalty and Drops"
               imageUrl={assets["lender"]}

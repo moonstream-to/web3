@@ -23,6 +23,7 @@ export const WALLET_STATES: WalletStatesInterface = {
   CONNECT: "Connect with Metamask",
   CONNECTED: "Connected",
   WRONG_CHAIN: "Please select polygon chain in metamask",
+  UNKNOWN_CHAIN: "Unsupported chain",
 };
 
 const Web3Context = createContext<MoonstreamWeb3ProviderInterface>({
@@ -43,7 +44,10 @@ const Web3Context = createContext<MoonstreamWeb3ProviderInterface>({
       return item;
     } else throw "accesing wrong abi element";
   },
+  changeChain: () => {
+    console.error("not intied");
+  },
+  targetChain: undefined,
 });
 
 export default Web3Context;
-// export const getMethodsABI: typeof GetMethodsAbiType =

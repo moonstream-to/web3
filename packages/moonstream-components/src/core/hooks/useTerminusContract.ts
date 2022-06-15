@@ -4,10 +4,7 @@ import {
   getTerminusFacetState,
 } from "../contracts/terminus.contracts";
 import { getTokenState } from "../contracts/erc20.contracts";
-import {
-  ChainInterface,
-  MoonstreamWeb3ProviderInterface,
-} from "../../../../../types/Moonstream";
+import { MoonstreamWeb3ProviderInterface } from "../../../../../types/Moonstream";
 import { MockTerminus } from "../../../../../types/contracts/MockTerminus";
 import useToast from "./useToast";
 import useURI from "./useLink";
@@ -16,13 +13,11 @@ import { hookCommon } from ".";
 export interface TerminusHookArguments {
   poolId?: string;
   address: string;
-  targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
 }
 export const useTerminusContract = ({
   poolId,
   address,
-  targetChain,
   ctx,
 }: TerminusHookArguments) => {
   const terminusFacet = new ctx.web3.eth.Contract(
@@ -34,7 +29,7 @@ export const useTerminusContract = ({
   const contractState = useQuery(
     [
       ["terminusContract", "state"],
-      { address: address, chainId: targetChain.chainId },
+      { address: address, chainId: ctx.targetChain?.chainId },
     ],
     getTerminusFacetState(ctx, address),
     {
@@ -43,7 +38,8 @@ export const useTerminusContract = ({
       enabled:
         ctx?.web3?.utils.isAddress(ctx.account) &&
         ctx.web3.utils.isAddress(address) &&
-        ctx.chainId === targetChain.chainId,
+        !!ctx.chainId &&
+        ctx.chainId === ctx.targetChain?.chainId,
     }
   );
 
@@ -51,8 +47,7 @@ export const useTerminusContract = ({
     [
       ["terminusContract", "paymentToken"],
       {
-        ...hookCommon,
-        chainId: targetChain.chainId,
+        chainId: ctx.targetChain?.chainId,
         address: contractState.data?.paymentToken,
         terminusAddress: address,
       },
@@ -64,11 +59,13 @@ export const useTerminusContract = ({
         account: ctx.account,
       })(query.queryKey[1]?.address ?? ""),
     {
+      ...hookCommon,
       onSuccess: () => {},
       enabled:
         !!contractState.data?.paymentToken &&
         ctx?.web3?.utils.isAddress(ctx.account) &&
-        ctx.chainId === targetChain.chainId,
+        !!ctx.chainId &&
+        ctx.chainId === ctx.targetChain?.chainId,
     }
   );
 
@@ -124,7 +121,7 @@ export const useTerminusContract = ({
   const poolState = useQuery(
     [
       ["terminusContract", "poolState"],
-      { address: address, chainId: targetChain.chainId, poolId: poolId },
+      { address: address, chainId: ctx.targetChain?.chainId, poolId: poolId },
     ],
     getTerminusFacetPoolState(ctx, address, poolId ?? ""),
     {
@@ -134,7 +131,8 @@ export const useTerminusContract = ({
         !!poolId &&
         ctx?.web3?.utils.isAddress(ctx.account) &&
         ctx.web3.utils.isAddress(address) &&
-        ctx.chainId === targetChain.chainId,
+        !!ctx.chainId &&
+        ctx.chainId === ctx.targetChain?.chainId,
     }
   );
 
