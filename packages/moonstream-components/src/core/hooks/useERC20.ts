@@ -10,7 +10,7 @@ const useERC20 = ({
   ctx: MoonstreamWeb3ProviderInterface;
 }) => {
   const ERC20State = useQuery(
-    ["ERC20State", contractAddress, ctx.targetChain?.chainId],
+    ["ERC20State", ctx?.account, contractAddress, ctx.targetChain?.chainId],
     () => getTokenState({ ctx })(contractAddress),
     {
       onSuccess: () => {},

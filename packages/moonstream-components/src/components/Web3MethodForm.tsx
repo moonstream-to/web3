@@ -11,6 +11,8 @@ import {
   Box,
   Switch,
   FormLabel,
+  ThemingProps,
+  InputGroup,
 } from "@chakra-ui/react";
 import { AbiInput, AbiItem } from "web3-utils";
 import { useMutation } from "react-query";
@@ -18,10 +20,11 @@ import Web3Context from "../core/providers/Web3Provider/context";
 import { useToast } from "../core/hooks";
 import FileUpload from "./FileUpload";
 import Papa from "papaparse";
-
 interface argumentField {
-  placeholder: string;
-  initialValue: string;
+  placeholder?: string;
+  initialValue?: string;
+  label?: string;
+  valueIsEther?: boolean;
   // hide: boolean;
 }
 interface argumentFields {
@@ -33,6 +36,8 @@ interface extendedInputs extends AbiInput {
     value: number | string;
     placeholder: number | string;
     hide: boolean;
+    label: string;
+    valueIsEther?: boolean;
   };
 }
 interface stateInterface extends Omit<AbiItem, "inputs"> {
@@ -47,14 +52,17 @@ const Web3MethodForm = ({
   hide,
   key,
   rendered,
+  title,
   // onClose,
   onCancel,
   onSuccess,
   // mutateSubmit,
   contractAddress,
   BatchInputs,
+  inputsProps,
   ...props
 }: {
+  title?: string;
   key: string;
   method: AbiItem;
   argumentFields?: argumentFields;
@@ -66,6 +74,7 @@ const Web3MethodForm = ({
   onSuccess?: (resp: any) => void;
   // mutateSubmit?: () => any;
   contractAddress: string;
+  inputsProps?: ThemingProps<"Input">;
   props?: any;
 }) => {
   const setArguments = (
@@ -89,6 +98,12 @@ const Web3MethodForm = ({
         value:
           (argumentFields && argumentFields[element.name]?.initialValue) ?? "",
         hide: hide?.includes(element.name) ?? false,
+        label:
+          (argumentFields && argumentFields[element.name]?.label) ??
+          ` ${element.name}  [${element.type}]`,
+        valueIsEther:
+          (argumentFields && argumentFields[element.name]?.valueIsEther) ??
+          false,
       };
     });
     return newState;
@@ -153,6 +168,21 @@ const Web3MethodForm = ({
           : inputElement.meta.value;
       if (inputElement.type.includes("[]")) {
         returnedObject[index] = JSON.parse(returnedObject[index]);
+      }
+      if (
+        inputElement.type.includes("uint") &&
+        inputElement.meta?.valueIsEther
+      ) {
+        if (inputElement.type.includes("[]")) {
+          returnedObject[index] = returnedObject.map((value: string) =>
+            web3ctx.web3.utils.toWei(value, "ether")
+          );
+        } else {
+          returnedObject[index] = web3ctx.web3.utils.toWei(
+            returnedObject[index],
+            "ether"
+          );
+        }
       }
     });
 
@@ -224,7 +254,7 @@ const Web3MethodForm = ({
           method?.name?.length && method?.name?.length > 12 ? "xl" : "3xl"
         }
       >
-        {method.name}
+        {title ?? method.name}
       </Heading>
       {state.inputs.map((inputItem: any, index: any) => {
         if (!inputItem.meta.hide && !BatchInputs?.includes(inputItem.name)) {
@@ -239,8 +269,7 @@ const Web3MethodForm = ({
                 {` [${inputItem.type}]`}
               </Text>*/}
               <FormLabel mb="8px" wordBreak={"break-all"} w="fit-content">
-                {inputItem.name}
-                {` [${inputItem.type}]`}
+                {inputItem["meta"].label}
               </FormLabel>
               {(inputItem.type === "string" ||
                 inputItem.type === "bytes" ||
@@ -251,31 +280,34 @@ const Web3MethodForm = ({
                     {inputItem.name}
                     {` [${inputItem.type}]`}
                   </FormLabel> */}
-                  <Input
-                    // colorScheme={"blue"}
+                  <InputGroup
                     textColor={"blue.800"}
-                    onKeyPress={handleKeypress}
-                    type="search"
                     key={`argument-string-${inputItem.name}${inputItem.type}`}
-                    value={inputItem.meta.value}
-                    onChange={(event) =>
-                      dispatchArguments({
-                        value: event.target.value,
-                        index,
-                      })
-                    }
-                    placeholder={
-                      inputItem.type.includes("[]")
-                        ? `[value, value] `
-                        : inputItem.meta.placeholder ||
-                          inputItem.name ||
-                          inputItem.type
-                    }
-                    size="sm"
+                    size={inputsProps?.size ?? "sm"}
                     fontSize={"sm"}
                     w="100%"
                     variant={"outline"}
-                  />
+                    // colorScheme={"blue"}
+                  >
+                    <Input
+                      type="search"
+                      value={inputItem.meta.value}
+                      onKeyPress={handleKeypress}
+                      placeholder={
+                        inputItem.type.includes("[]")
+                          ? `[value, value] `
+                          : inputItem.meta.placeholder ||
+                            inputItem.name ||
+                            inputItem.type
+                      }
+                      onChange={(event) =>
+                        dispatchArguments({
+                          value: event.target.value,
+                          index,
+                        })
+                      }
+                    />
+                  </InputGroup>
                 </>
               )}
               {(inputItem.type === "address" ||
@@ -299,7 +331,7 @@ const Web3MethodForm = ({
                       index,
                     })
                   }
-                  size="sm"
+                  size={inputsProps?.size ?? "sm"}
                   fontSize={"sm"}
                   w="100%"
                   variant={"outline"}

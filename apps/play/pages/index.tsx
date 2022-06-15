@@ -39,6 +39,7 @@ const Homepage = () => {
               alt="Inventory"
               textColor={"white.100"}
               level="h2"
+              // imgH="220px"
               h="450px"
             />
             <FeatureCard
@@ -50,18 +51,20 @@ const Homepage = () => {
               alt="Lootboxes"
               textColor={"white.100"}
               level="h2"
+              // imgH="220px"
               h="450px"
             />
             <FeatureCard
               w="300px"
-              link="/crafting"
-              text="Create on-chain crafting recipes for your blockchain game"
-              heading="Crafting"
+              link="/games"
+              text="Games supported by Moonstream."
+              heading="Games"
               imageUrl={assets["NFT"]}
-              alt="Crafting"
+              alt="games"
               textColor={"white.100"}
               level="h2"
-              disabled={true}
+              h="450px"
+              // imgH="220px"
             />
           </Flex>
         )}

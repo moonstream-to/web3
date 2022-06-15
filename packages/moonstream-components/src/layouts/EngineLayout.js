@@ -30,11 +30,13 @@ const EngineLayout = (props) => {
         pt={2}
         separator={<ChevronRightIcon color="gray.500" />}
       >
-        <BreadcrumbItem>
-          <BreadcrumbLink textTransform={"capitalize"} href={`/`}>
-            Home
-          </BreadcrumbLink>
-        </BreadcrumbItem>
+        {path.length !== 0 && (
+          <BreadcrumbItem>
+            <BreadcrumbLink textTransform={"capitalize"} href={`/`}>
+              Home
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+        )}
         {path?.map((element, idx) => {
           let linkPath = "/";
           path.forEach((value, index) => {

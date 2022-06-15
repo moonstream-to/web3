@@ -138,28 +138,30 @@ const LandingNavbar = () => {
 
           {web3Provider.buttonText === web3Provider.WALLET_STATES.CONNECTED && (
             <Flex>
-              <Badge
-                colorScheme={"blue"}
-                variant={"subtle"}
-                size="md"
-                fontSize="16px"
-                borderRadius={"md"}
-                mr={2}
-                p={0}
-              >
-                <Skeleton
-                  isLoaded={web3Provider.account}
-                  h="100%"
-                  colorScheme={"red"}
-                  w="100%"
-                  borderRadius={"inherit"}
-                  startColor="red.500"
-                  endColor="blue.500"
-                  p={1}
+              <code>
+                <Badge
+                  colorScheme={"blue"}
+                  variant={"subtle"}
+                  size="md"
+                  fontSize="16px"
+                  borderRadius={"md"}
+                  mr={2}
+                  p={0}
                 >
-                  {web3Provider.account}
-                </Skeleton>
-              </Badge>
+                  <Skeleton
+                    isLoaded={web3Provider.account}
+                    h="100%"
+                    colorScheme={"red"}
+                    w="100%"
+                    borderRadius={"inherit"}
+                    startColor="red.500"
+                    endColor="blue.500"
+                    p={1}
+                  >
+                    {web3Provider.account}
+                  </Skeleton>
+                </Badge>
+              </code>
             </Flex>
           )}
           <ChainSelector />
