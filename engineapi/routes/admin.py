@@ -10,6 +10,7 @@ from brownie import network
 
 
 from fastapi import APIRouter, Body, FastAPI, Request, Depends, Query
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -44,6 +45,7 @@ app = FastAPI(
 app.add_middleware(DropperAuthMiddleware)
 
 app.add_middleware(
+    CORSMiddleware,
     allow_origins=ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
@@ -315,7 +317,7 @@ async def update_drop(
     )
 
 
-@app.get("/drops/{dropper_claim_id}/claimants", response_model=data.DropListResponse)
+@app.get("/drops/{dropper_claim_id}/claimants", response_model=data.ClaimantsResponse)
 async def get_claimants(
     request: Request,
     dropper_claim_id: UUID,
@@ -357,7 +359,7 @@ async def get_claimants(
         logger.info(f"Can't add claimants for claim {dropper_claim_id} with error: {e}")
         raise DropperHTTPException(status_code=500, detail=f"Error adding claimants")
 
-    return data.DropListResponse(drops=list(results))
+    return data.ClaimantsResponse(claimants=list(results))
 
 
 @app.post(

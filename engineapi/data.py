@@ -142,10 +142,6 @@ class DropClaimant(BaseModel):
     address: Optional[str]
 
 
-class DropClaimantsListResponse(BaseModel):
-    pass
-
-
 class DropActivateRequest(BaseModel):
     dropper_claim_id: UUID
 
