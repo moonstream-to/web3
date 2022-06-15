@@ -53,15 +53,7 @@ const CryptoUnicorns = () => {
     ctx: web3ctx,
   });
   return (
-    <Flex
-      className="Games"
-      borderRadius={"xl"}
-      // dropShadow={"160px 160px 100px white"}
-      // bgImage={
-      //   "https://www.cryptounicorns.fun/static/media/bg_grass.764d9d9b5da947f65d69.jpg"
-      // }
-      bgColor={"blue.1000"}
-    >
+    <Flex className="Games" borderRadius={"xl"} bgColor={"blue.1000"}>
       <Flex w="100%" minH="100vh" direction={"column"} px="7%" mt="100px">
         <Flex w="100%" direction={"row"} flexWrap="wrap" mb={12}>
           <Badge
@@ -139,16 +131,8 @@ const CryptoUnicorns = () => {
             textAlign="justify"
           >
             {" "}
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus ut
-            sagittis ligula. Cras lobortis, ligula et mollis sagittis, nibh
-            magna consequat sapien, ut aliquam mi mauris a dolor. Duis a
-            vehicula tellus, non pharetra odio. Cras eget cursus risus, eu
-            aliquam ex. Phasellus augue nunc, euismod eget commodo eu, interdum
-            vel sapien. Morbi tincidunt vestibulum interdum. Praesent lobortis
-            erat efficitur dolor lacinia, a venenatis nunc maximus. Suspendisse
-            rhoncus sem at dignissim dictum. Etiam et fringilla magna, sit amet
-            tristique elit. Donec congue magna placerat mi tincidunt, et ornare
-            arcu interdum.
+            Use this form to stash any amount of UNIM and RBW into Crypto
+            Unicorns.
           </Text>
         </code>
         <Center>
