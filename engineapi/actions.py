@@ -461,7 +461,6 @@ def get_claimant_drops(
         .filter(DropperClaim.active == True)
         .filter(DropperClaimant.address == address)
         .filter(DropperContract.blockchain == blockchain)
-        .order_by(DropperClaimant.created_at.asc())
     )
 
     if current_block_number:
@@ -469,6 +468,8 @@ def get_claimant_drops(
         claimant_query = claimant_query.filter(
             DropperClaim.claim_block_deadline >= current_block_number
         )
+
+    claimant_query.order_by(DropperClaimant.created_at.asc())
 
     if limit:
         claimant_query = claimant_query.limit(limit)
