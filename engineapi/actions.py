@@ -466,7 +466,7 @@ def get_claimant_drops(
     if current_block_number:
         logger.info("Trying to filter block number " + str(current_block_number))
         claimant_query = claimant_query.filter(
-            DropperClaim.claim_block_deadline >= current_block_number
+            DropperClaim.claim_block_deadline > current_block_number
         )
 
     claimant_query.order_by(DropperClaimant.created_at.asc())
