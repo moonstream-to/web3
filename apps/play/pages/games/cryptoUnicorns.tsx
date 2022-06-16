@@ -7,120 +7,330 @@ import {
   Spacer,
   Image,
   Spinner,
+  Box,
   Text,
+  Stack,
+  Input,
+  InputGroup,
+  FormLabel,
+  FormControl,
+  FormErrorMessage,
+  Button,
 } from "@chakra-ui/react";
-import Web3MethodForm from "moonstream-components/src/components/Web3MethodForm";
 const StashABI = require("../../games/cu/StashABI.json");
 import { StashABI as StashABIType } from "../../games/cu/StashABI";
-import { getMethodsABI } from "moonstream-components/src/core/providers/Web3Provider";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { supportedChains } from "../../../../types/Moonstream";
-import { useERC20 } from "moonstream-components/src/core/hooks";
+import { useERC20, useToast } from "moonstream-components/src/core/hooks";
+import { useMutation, useQueryClient, useQuery } from "react-query";
+import { DEFAULT_METATAGS } from "../../src/constants";
 
 const contractsAddr: { [key in supportedChains]: string } = {
   mumbai: "0x762aF8cbE298bbFE568BBB6709f854A01c07333D",
-  polygon: "0x762aF8cbE298bbFE568BBB6709f854A01c07333D",
+  polygon: "0x94f557dDdb245b11d031F57BA7F2C4f28C4A203e",
   ethereum: "non-supported",
   localhost: "non-supported",
 };
-const rbwAddr: { [key in supportedChains]: string } = {
-  mumbai: "0x4Df452487E6c9d0C3Dc5EB4936244F8572b3F0b6",
-  polygon: "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
-  ethereum: "",
-  localhost: "",
-};
-
-const unimAddr: { [key in supportedChains]: string } = {
-  mumbai: "0x47d0f0BD94188e3f8c6fF2C0B1Bf7D6D8BED7534",
-  polygon: "0x64060aB139Feaae7f06Ca4E63189D86aDEb51691",
-  ethereum: "",
-  localhost: "",
-};
 const CryptoUnicorns = () => {
+  const [notEnoughRBW, setNotEnoughRBW] = React.useState(false);
+  const [notEnoughUNIM, setNotEnoughUNIM] = React.useState(false);
+  const [needAllowanceRBW, setNeedAllowanceRBW] = React.useState(false);
+  const [needAllowanceUNIM, setNeedAllowanceUNIM] = React.useState(false);
+  const [rbwToStash, setRBWToStash] = React.useState("");
+  const [unimToStash, setUNIMToStash] = React.useState("");
+
   const web3ctx = useContext(Web3Context);
-  const rbw = useERC20({
-    contractAddress:
-      rbwAddr[
+
+  const getSomthing = async () => {
+    const contract = new web3ctx.web3.eth.Contract(
+      StashABI
+    ) as any as StashABIType;
+
+    contract.options.address =
+      contractsAddr[
+        web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
+      ];
+    const rbwAddress = await contract.methods.getRBWAddress().call();
+    const unimAddress = await contract.methods.getUNIMAddress().call();
+    const gameServer = await contract.methods.getGameServer().call();
+    return { rbwAddress, unimAddress, gameServer };
+  };
+
+  const stashContract = useQuery(
+    [
+      "stashContract",
+      contractsAddr[
         web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
       ],
+    ],
+    getSomthing
+  );
+
+  const rbw = useERC20({
+    contractAddress: stashContract.data?.rbwAddress,
     ctx: web3ctx,
+    spender:
+      contractsAddr[
+        web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
+      ],
   });
   const unim = useERC20({
-    contractAddress:
-      unimAddr[
+    contractAddress: stashContract.data?.unimAddress,
+    spender:
+      contractsAddr[
         web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
       ],
     ctx: web3ctx,
   });
+
+  const web3call = async ({
+    amountUnim,
+    amountRBW,
+  }: {
+    amountUnim: string;
+    amountRBW: string;
+  }) => {
+    const contract = new web3ctx.web3.eth.Contract(
+      StashABI
+    ) as any as StashABIType;
+
+    contract.options.address =
+      contractsAddr[
+        web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
+      ];
+    const response = await contract.methods
+      .stashUNIMAndRBW(
+        web3ctx.web3.utils.toWei(amountUnim),
+        web3ctx.web3.utils.toWei(amountRBW)
+      )
+      .send({
+        from: web3ctx.account,
+        gasPrice:
+          process.env.NODE_ENV !== "production" ? "100000000000" : undefined,
+      });
+
+    return response;
+  };
+
+  const toast = useToast();
+  const tx = useMutation(web3call, {
+    onSuccess: () => {
+      toast("Transaction went to the moon!", "success");
+    },
+    onError: () => {
+      toast("Transaction failed >.<", "error");
+    },
+  });
+
+  React.useLayoutEffect(() => {
+    if (unim.spenderState.data?.allowance && unimToStash.length !== 0) {
+      if (
+        web3ctx.web3.utils
+          .toBN(unim.spenderState.data.allowance)
+          .cmp(
+            web3ctx.web3.utils.toBN(
+              web3ctx.web3.utils.toWei(unimToStash, "ether")
+            )
+          ) == -1
+      ) {
+        setNeedAllowanceUNIM(true);
+      } else {
+        setNeedAllowanceUNIM(false);
+      }
+    } else {
+      setNeedAllowanceUNIM(false);
+    }
+    if (unim.spenderState.data?.balance && unimToStash.length !== 0) {
+      if (
+        web3ctx.web3.utils
+          .toBN(unim.spenderState.data.balance)
+          .cmp(
+            web3ctx.web3.utils.toBN(
+              web3ctx.web3.utils.toWei(unimToStash, "ether")
+            )
+          ) == -1
+      ) {
+        setNotEnoughUNIM(true);
+      } else {
+        setNotEnoughUNIM(false);
+      }
+    } else {
+      setNotEnoughUNIM(false);
+    }
+  }, [unimToStash, unim.spenderState.data, web3ctx.web3.utils]);
+
+  React.useLayoutEffect(() => {
+    if (rbw.spenderState.data?.allowance && rbwToStash.length !== 0) {
+      if (
+        web3ctx.web3.utils
+          .toBN(rbw.spenderState.data.allowance)
+          .cmp(
+            web3ctx.web3.utils.toBN(
+              web3ctx.web3.utils.toWei(rbwToStash, "ether")
+            )
+          ) == -1
+      ) {
+        setNeedAllowanceRBW(true);
+      } else {
+        setNeedAllowanceRBW(false);
+      }
+    } else {
+      setNeedAllowanceRBW(false);
+    }
+    if (rbw.spenderState.data?.balance && rbwToStash.length !== 0) {
+      if (
+        web3ctx.web3.utils
+          .toBN(rbw.spenderState.data.balance)
+          .cmp(
+            web3ctx.web3.utils.toBN(
+              web3ctx.web3.utils.toWei(rbwToStash, "ether")
+            )
+          ) == -1
+      ) {
+        setNotEnoughRBW(true);
+      } else {
+        setNotEnoughRBW(false);
+      }
+    } else {
+      setNotEnoughRBW(false);
+    }
+  }, [rbwToStash, rbw.spenderState.data, web3ctx.web3.utils]);
+
+  const handleSubmit = () => {};
+
+  const handleKeypress = (e: any) => {
+    //it triggers by pressing the enter key
+    if (e.charCode === 13) {
+      handleSubmit();
+    }
+  };
+
+  const queryClient = useQueryClient();
   return (
     <Flex className="Games" borderRadius={"xl"} bgColor={"blue.1000"}>
       <Flex w="100%" minH="100vh" direction={"column"} px="7%" mt="100px">
-        <Flex w="100%" direction={"row"} flexWrap="wrap" mb={12}>
-          <Badge
-            colorScheme={"pink"}
-            variant={"solid"}
-            fontSize={"md"}
-            borderRadius={"md"}
-            mr={2}
-            p={1}
-          >
-            <Flex>
-              <Image
-                ml={2}
-                alt={"bottle"}
-                h="48px"
-                src="https://darkforest.cryptounicorns.fun/static/media/icon_milk.6fc3d44e.png"
-              />
-              <code>
-                <Text mx={2} mt={2} display={"inline-block"} fontSize="xl">
-                  {unim.ERC20State.isLoading ? (
-                    <Spinner m={0} size={"lg"} />
-                  ) : unim.ERC20State.data?.balance ? (
-                    web3ctx.web3.utils.fromWei(
-                      unim.ERC20State.data?.balance,
-                      "ether"
-                    )
-                  ) : (
-                    "0"
-                  )}{" "}
-                  UNIM
-                </Text>
-              </code>
-            </Flex>
-          </Badge>
+        <Flex
+          w="100%"
+          direction={"row"}
+          flexWrap="wrap"
+          mb={12}
+          bgColor="pink.500"
+          borderRadius={"xl"}
+          boxShadow="xl"
+          placeItems={"center"}
+        >
+          <Flex direction={"column"}>
+            <Badge
+              colorScheme={"pink"}
+              variant={"solid"}
+              fontSize={"md"}
+              borderRadius={"md"}
+              mr={2}
+              p={1}
+            >
+              <Flex>
+                <Image
+                  ml={2}
+                  alt={"bottle"}
+                  h="96px"
+                  src="https://darkforest.cryptounicorns.fun/static/media/icon_milk.6fc3d44e.png"
+                />
+                <Flex direction={"column"} wrap="nowrap" w="100%">
+                  <code>
+                    <Text mx={2} mt={2} display={"inline-block"} fontSize="xl">
+                      {unim.spenderState.isLoading ? (
+                        <Spinner m={0} size={"lg"} />
+                      ) : (
+                        <Flex>
+                          {`allowance: `} <Spacer />
+                          {unim.spenderState.data?.allowance
+                            ? web3ctx.web3.utils.fromWei(
+                                unim.spenderState.data?.allowance,
+                                "ether"
+                              )
+                            : "0"}
+                        </Flex>
+                      )}
+                    </Text>
+                  </code>{" "}
+                  <code>
+                    <Text mx={2} mt={2} display={"inline-block"} fontSize="xl">
+                      {unim.spenderState.isLoading ? (
+                        <Spinner m={0} size={"lg"} />
+                      ) : (
+                        <Flex>
+                          {`balance: `} <Spacer />
+                          {unim.spenderState.data?.balance
+                            ? web3ctx.web3.utils.fromWei(
+                                unim.spenderState.data?.balance,
+                                "ether"
+                              )
+                            : "0"}
+                        </Flex>
+                      )}
+                    </Text>
+                  </code>
+                </Flex>
+              </Flex>
+            </Badge>
+          </Flex>
           <Spacer />
-          <Badge
-            colorScheme={"pink"}
-            variant={"solid"}
-            fontSize={"md"}
-            borderRadius={"md"}
-            mr={2}
-            p={1}
-          >
-            <Flex>
-              <Image
-                ml={2}
-                alt={"rbw"}
-                h="48px"
-                src="https://www.cryptounicorns.fun/static/media/icon_RBW.522bf8ec43ae2c866ee6.png"
-              />
-              <code>
-                <Text mx={2} mt={2} display={"inline-block"} fontSize="xl">
-                  {rbw.ERC20State.isLoading ? (
-                    <Spinner m={0} size={"lg"} />
-                  ) : rbw.ERC20State.data?.balance ? (
-                    web3ctx.web3.utils.fromWei(
-                      rbw.ERC20State.data?.balance,
-                      "ether"
-                    )
-                  ) : (
-                    "0"
-                  )}{" "}
-                  RBW
-                </Text>
-              </code>
-            </Flex>
-          </Badge>
+          <Flex direction={"column"}>
+            <Badge
+              colorScheme={"pink"}
+              variant={"solid"}
+              fontSize={"md"}
+              borderRadius={"md"}
+              mr={2}
+              mt={2}
+              p={1}
+            >
+              <Flex>
+                <Image
+                  ml={2}
+                  alt={"rbw"}
+                  h="96px"
+                  src="https://www.cryptounicorns.fun/static/media/icon_RBW.522bf8ec43ae2c866ee6.png"
+                />
+                <Flex direction={"column"} wrap="nowrap" w="100%">
+                  <code>
+                    <Text mx={2} mt={2} display={"inline-block"} fontSize="xl">
+                      {rbw.spenderState.isLoading ? (
+                        <Spinner m={0} size={"lg"} />
+                      ) : (
+                        <Flex>
+                          {`allowance: `} <Spacer />
+                          {rbw.spenderState.data?.allowance
+                            ? web3ctx.web3.utils.fromWei(
+                                rbw.spenderState.data?.allowance,
+                                "ether"
+                              )
+                            : "0"}
+                        </Flex>
+                      )}
+                    </Text>
+                  </code>{" "}
+                  <code>
+                    <Text mx={2} mt={2} display={"inline-block"} fontSize="xl">
+                      {rbw.spenderState.isLoading ? (
+                        <Spinner m={0} size={"lg"} />
+                      ) : (
+                        <Flex>
+                          {`balance: `} <Spacer />
+                          {rbw.spenderState.data?.balance
+                            ? web3ctx.web3.utils.fromWei(
+                                rbw.spenderState.data?.balance,
+                                "ether"
+                              )
+                            : "0"}
+                        </Flex>
+                      )}
+                    </Text>
+                  </code>
+                </Flex>
+              </Flex>
+            </Badge>
+          </Flex>
         </Flex>
         <code>
           <Text
@@ -128,61 +338,188 @@ const CryptoUnicorns = () => {
             textColor={"gray.600"}
             maxW="1337px"
             alignSelf={"center"}
-            textAlign="justify"
+            textAlign="center"
           >
             {" "}
             Use this form to stash any amount of UNIM and RBW into Crypto
             Unicorns.
           </Text>
+          <Text mb={4}>
+            WARNING: Only use an account with which you have already logged into
+            the game. Otherwise, the game server will not respect your stash
+            operation.
+          </Text>
         </code>
         <Center>
           <code>
-            <Web3MethodForm
-              w="100%"
-              bgColor="blue.600"
-              borderRadius={"lg"}
-              dropShadow="2xl"
-              maxW="620px"
-              p={4}
-              title="Stash your RBW and UNIM!"
-              key={`cp-Web3MethodForm-mint`}
-              minW="unset"
-              inputsProps={{ size: "lg" }}
-              onSuccess={() => {
-                // poolState.refetch();
-              }}
-              rendered={true}
-              hide={["data", "poolID"]}
-              argumentFields={{
-                amountUNIM: { label: "Amount UNIM", valueIsEther: true },
-                amountRBW: { label: "Amount RBW", valueIsEther: true },
-                // data: {
-                //   placeholder: "",
-                //   initialValue: web3ctx.web3.utils.utf8ToHex(""),
-                // },
-                // poolID: {
-                //   placeholder: "",
-                //   initialValue: poolId,
-                // },
-              }}
-              method={getMethodsABI<StashABIType["methods"]>(
-                StashABI,
-                "stashUNIMAndRBW"
-              )}
-              contractAddress={
-                web3ctx.targetChain?.name
-                  ? contractsAddr[
-                      web3ctx.targetChain.name as any as supportedChains
-                    ]
-                  : ""
-              }
-            />
+            <Stack p={4} bgColor={"blue.1200"}>
+              <Box w="100%">
+                <FormLabel mb="8px" wordBreak={"break-all"} w="fit-content">
+                  {"RBW to stash"}
+                </FormLabel>
+
+                <InputGroup
+                  textColor={"blue.900"}
+                  size={"lg"}
+                  fontSize={"sm"}
+                  w="100%"
+                  variant={"outline"}
+                >
+                  <Flex direction={"row"} w="100%" minW="580px">
+                    <FormControl isInvalid={notEnoughRBW}>
+                      <Input
+                        w="300px"
+                        variant={"outline"}
+                        type="search"
+                        value={rbwToStash}
+                        onKeyPress={handleKeypress}
+                        onChange={(event) => {
+                          console.log(
+                            event.target.value.match(/^[0-9]+$/) != null
+                          );
+                          if (
+                            event.target.value.match(/^[0-9]+$/) != null ||
+                            event.target.value.length == 0
+                          ) {
+                            setRBWToStash(event.target.value);
+                          }
+                        }}
+                      />
+                      <FormErrorMessage color="red.400" pl="1">
+                        Not enough RBW
+                      </FormErrorMessage>
+                    </FormControl>
+                    <Spacer />
+                    <Button
+                      mx={4}
+                      isDisabled={!needAllowanceRBW}
+                      size="md"
+                      variant="outline"
+                      isLoading={rbw.setSpenderAllowance.isLoading}
+                      w="220px"
+                      colorScheme={"orange"}
+                      onClick={() => {
+                        rbw.setSpenderAllowance.mutate(
+                          web3ctx.web3.utils.toWei(rbwToStash, "ether"),
+                          {
+                            onSettled: () => {
+                              rbw.spenderState.refetch();
+                            },
+                          }
+                        );
+                      }}
+                    >
+                      Set allowance
+                    </Button>
+                  </Flex>
+                </InputGroup>
+                <FormLabel mb="8px" wordBreak={"break-all"} w="fit-content">
+                  {"UNIM to stash"}
+                </FormLabel>
+
+                <InputGroup
+                  textColor={"blue.900"}
+                  size={"lg"}
+                  fontSize={"sm"}
+                  w="100%"
+                  variant={"outline"}
+                >
+                  <Flex direction={"row"} w="100%" minW="580px">
+                    <FormControl isInvalid={notEnoughUNIM}>
+                      <Input
+                        w="300px"
+                        variant={"outline"}
+                        type="search"
+                        value={unimToStash}
+                        onKeyPress={handleKeypress}
+                        onChange={(event) => {
+                          console.log(
+                            event.target.value.match(/^[0-9]+$/) != null
+                          );
+                          if (
+                            event.target.value.match(/^[0-9]+$/) != null ||
+                            event.target.value.length == 0
+                          ) {
+                            setUNIMToStash(event.target.value);
+                          }
+                        }}
+                      />
+                      <FormErrorMessage color="red.400" pl="1">
+                        Not enough UNIM
+                      </FormErrorMessage>
+                    </FormControl>
+                    <Spacer />
+                    <Button
+                      mx={4}
+                      isDisabled={!needAllowanceUNIM}
+                      size="md"
+                      variant="outline"
+                      isLoading={unim.setSpenderAllowance.isLoading}
+                      w="220px"
+                      colorScheme={"orange"}
+                      onClick={() => {
+                        unim.setSpenderAllowance.mutate(
+                          web3ctx.web3.utils.toWei(unimToStash, "ether"),
+                          {
+                            onSettled: () => {
+                              unim.spenderState.refetch();
+                            },
+                          }
+                        );
+                      }}
+                    >
+                      Set allowance
+                    </Button>
+                  </Flex>
+                </InputGroup>
+              </Box>
+              <Button
+                variant={"solid"}
+                isLoading={tx.isLoading}
+                colorScheme="green"
+                onClick={() => {
+                  tx.mutate(
+                    {
+                      amountRBW: rbwToStash.length === 0 ? "0" : rbwToStash,
+                      amountUnim: unimToStash.length === 0 ? "0" : unimToStash,
+                    },
+                    {
+                      onSettled: () => {
+                        // rbw.spenderState.refetch();
+                        queryClient.refetchQueries("ERC20");
+                        setRBWToStash("");
+                        setUNIMToStash("");
+                      },
+                    }
+                  );
+                }}
+                disabled={
+                  needAllowanceRBW ||
+                  needAllowanceUNIM ||
+                  notEnoughRBW ||
+                  notEnoughUNIM ||
+                  (rbwToStash.length == 0 && unimToStash.length == 0)
+                }
+              >
+                Stash now!
+              </Button>
+            </Stack>
           </code>
         </Center>
       </Flex>
     </Flex>
   );
 };
+
+export async function getStaticProps() {
+  const metatags = {
+    title: "Moonstream player portal: crypto unicorns",
+    description: "Stash RBW and UNIM in game now!",
+  };
+  return {
+    props: { metaTags: { DEFAULT_METATAGS, ...metatags } },
+  };
+}
 
 CryptoUnicorns.getLayout = getLayout;
 

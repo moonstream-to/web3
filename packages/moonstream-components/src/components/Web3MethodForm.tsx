@@ -33,8 +33,8 @@ interface argumentFields {
 
 interface extendedInputs extends AbiInput {
   meta?: {
-    value: number | string;
-    placeholder: number | string;
+    value: string;
+    placeholder: string;
     hide: boolean;
     label: string;
     valueIsEther?: boolean;
@@ -56,15 +56,17 @@ const Web3MethodForm = ({
   // onClose,
   onCancel,
   onSuccess,
-  // mutateSubmit,
+  beforeSubmit,
   contractAddress,
   BatchInputs,
+  className,
   inputsProps,
   ...props
 }: {
   title?: string;
   key: string;
   method: AbiItem;
+  className?: string;
   argumentFields?: argumentFields;
   hide?: string[];
   BatchInputs?: string[];
@@ -72,7 +74,7 @@ const Web3MethodForm = ({
   onClose?: () => void;
   onCancel?: () => void;
   onSuccess?: (resp: any) => void;
-  // mutateSubmit?: () => any;
+  beforeSubmit?: (state: stateInterface) => any;
   contractAddress: string;
   inputsProps?: ThemingProps<"Input">;
   props?: any;
@@ -185,7 +187,7 @@ const Web3MethodForm = ({
         }
       }
     });
-
+    beforeSubmit && beforeSubmit(returnedObject);
     console.log("returnedObject", returnedObject);
     tx.mutate({ args: returnedObject });
     // if (onClose) {
@@ -240,6 +242,7 @@ const Web3MethodForm = ({
   if (!rendered) return <></>;
   return (
     <Stack
+      className={className}
       justifyContent="center"
       px={2}
       alignItems="center"
