@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Any, Optional, Dict
 import uuid
+import logging
 
 from brownie import network
 from sqlalchemy.dialects.postgresql import insert
@@ -34,6 +35,8 @@ class DropWithNotSettedBlockDeadline(Exception):
 
 
 BATCH_SIGNATURE_PAGE_SIZE = 500
+
+logger = logging.getLogger(__name__)
 
 
 def create_dropper_contract(
@@ -423,7 +426,12 @@ def get_claimant(db_session: Session, dropper_claim_id, address):
 
 
 def get_claimant_drops(
-    db_session: Session, blockchain: str, address, limit=None, offset=None
+    db_session: Session,
+    blockchain: str,
+    address,
+    current_block_number=None,
+    limit=None,
+    offset=None,
 ):
     """
     Search for a claimant by address
@@ -455,6 +463,12 @@ def get_claimant_drops(
         .filter(DropperContract.blockchain == blockchain)
         .order_by(DropperClaimant.created_at.asc())
     )
+
+    if current_block_number:
+        logger.info("Trying to filter block number " + str(current_block_number))
+        claimant_query = claimant_query.filter(
+            DropperClaim.claim_block_deadline >= current_block_number
+        )
 
     if limit:
         claimant_query = claimant_query.limit(limit)

@@ -126,6 +126,7 @@ async def get_drop_batch_handler(
     address: str,
     limit: int = 10,
     offset: int = 0,
+    current_block_number: Optional[int] = Query(None),
     db_session: Session = Depends(db.yield_db_session),
 ) -> List[data.DropBatchResponseItem]:
     """
@@ -136,7 +137,7 @@ async def get_drop_batch_handler(
 
     try:
         claimant_drops = actions.get_claimant_drops(
-            db_session, blockchain, address, limit, offset
+            db_session, blockchain, address, current_block_number, limit, offset
         )
     except NoResultFound:
         raise DropperHTTPException(
