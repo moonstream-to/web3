@@ -53,9 +53,9 @@ const Games = () => {
               text="Ascension is a blockchain game built by Jam City, an award-winning game company led by former MySpace co-founder and CEO Chris DeWolfe"
               //   heading="Champions Ascension"
               imageUrl={
-                "https://www.champions.io/static/nav-logo-382776a36f1cda2582f4a38aae12ed94.png"
+                "https://s3.amazonaws.com/static.simiotics.com/champions-ascension/champions.png"
               }
-              alt="Crypto Unicorns"
+              alt="Champions Ascention"
               textColor={"white.100"}
               level="h2"
               disabled={true}
