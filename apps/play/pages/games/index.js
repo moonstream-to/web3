@@ -55,7 +55,7 @@ const Games = () => {
               imageUrl={
                 "https://s3.amazonaws.com/static.simiotics.com/champions-ascension/champions.png"
               }
-              alt="Champions Ascention"
+              alt="Champions Ascension"
               textColor={"white.100"}
               level="h2"
               disabled={true}
