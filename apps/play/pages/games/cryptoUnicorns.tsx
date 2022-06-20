@@ -332,7 +332,7 @@ const CryptoUnicorns = () => {
             </Badge>
           </Flex>
         </Flex>
-        <code>
+        <code style={{ alignSelf: "center" }}>
           <Text
             p={8}
             textColor={"gray.600"}

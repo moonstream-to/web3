@@ -22,7 +22,7 @@ const Games = () => {
               text="A digital pet collecting and farming game, built on blockchain"
               //   heading="Crypto Unicorns"
               imageUrl={
-                "https://www.cryptounicorns.fun/static/media/logo.e038e292f7ad79a0e4e5.png"
+                "https://s3.amazonaws.com/static.simiotics.com/crypto-unicorns/cu_logo.png"
               }
               alt="Crypto Unicorns"
               textColor={"white.100"}
@@ -37,7 +37,9 @@ const Games = () => {
               imgH="140px"
               text="Conquest.eth - An unstoppable and open-ended game of strategy and diplomacy running on the Ethereum Virtual Machine."
               //   heading="Conquest.eth"
-              imageUrl={"https://conquest.eth.limo/images/Sprite-0002.png"}
+              imageUrl={
+                "https://s3.amazonaws.com/static.simiotics.com/conquest-eth/conquest_eth.png"
+              }
               alt="Crypto Unicorns"
               textColor={"white.100"}
               level="h2"
