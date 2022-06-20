@@ -323,7 +323,7 @@ def add_claimants(db_session: Session, dropper_claim_id, claimants, added_by):
         index_elements=[DropperClaimant.address, DropperClaimant.dropper_claim_id],
         set_=dict(
             amount=insert_statement.excluded.amount,
-            raw_amount=str(claimant.amount),
+            raw_amount=str(insert_statement.excluded.raw_amount),
             added_by=insert_statement.excluded.added_by,
             updated_at=datetime.now(),
         ),

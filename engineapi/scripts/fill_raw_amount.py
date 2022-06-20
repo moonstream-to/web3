@@ -107,22 +107,25 @@ def run_fill_raw_amount(args: argparse.Namespace):
                                 inner join dropper_claims ON temptest.claim_id :: int = dropper_claims.claim_id
                             where
                                 dropper_claims.id = dropper_claimants.dropper_claim_id
-                        ) :: int = 20 
-                            THEN CONCAT(
+                        ) :: int = 20 THEN CASE
+                            WHEN dropper_claimants.amount is not null
+                            and dropper_claimants.amount > 0 THEN CONCAT(
                                 CAST(dropper_claimants.amount as varchar),
-                                (
-                                    select
-                                        temptest.zeros
-                                    from
-                                        temptest
-                                        inner join dropper_claims ON temptest.claim_id :: int = dropper_claims.claim_id
-                                    where
-                                        dropper_claims.id = dropper_claimants.dropper_claim_id
+                                    (
+                                        select
+                                            temptest.zeros
+                                        from
+                                            temptest
+                                            inner join dropper_claims ON temptest.claim_id :: int = dropper_claims.claim_id
+                                        where
+                                            dropper_claims.id = dropper_claimants.dropper_claim_id
+                                    )
                                 )
-                        )
-                        WHEN true THEN CAST(dropper_claimants.amount as varchar)
-                    END
-                );
+                                WHEN true THEN CAST(dropper_claimants.amount as varchar)
+                            END
+                            WHEN true THEN CAST(dropper_claimants.amount as varchar)
+                        END
+                    );
             """
         )
         db_session.commit()
