@@ -222,6 +222,22 @@ const CryptoUnicorns = () => {
     }
   };
 
+  if (
+    contract.options.address === "0x0000000000000000000000000000000000000000"
+  ) {
+    return (
+      <Flex
+        w="300px"
+        h="220px"
+        placeSelf={"center"}
+        alignSelf="center"
+        fontSize={"20px"}
+      >
+        There is contract on this chain
+      </Flex>
+    );
+  }
+
   return (
     <Flex className="Games" borderRadius={"xl"} bgColor={"blue.1000"}>
       <Flex w="100%" minH="100vh" direction={"column"} px="7%" mt="100px">
