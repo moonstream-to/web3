@@ -45,7 +45,7 @@ const useClaim = ({
         claimWeb3Drop.mutate({
           message: data.signature,
           blockDeadline: data.block_deadline,
-          amount: data.amount,
+          amount: data.amount_string,
           claimId: data.claim_id,
         });
       },

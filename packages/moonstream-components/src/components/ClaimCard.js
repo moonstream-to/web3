@@ -128,7 +128,7 @@ const _ClaimCard = ({ drop, children, ...props }) => {
               message: claimer.signature.data?.signature,
               blockDeadline: claimer.signature.data?.block_deadline,
               claimId: claimer.signature.data?.claim_id,
-              amount: claimer.signature.data?.amount,
+              amount: claimer.signature.data?.amount_string,
             })
           }
         >
