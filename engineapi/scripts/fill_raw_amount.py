@@ -91,6 +91,8 @@ def run_fill_raw_amount(args: argparse.Namespace):
 
             network.disconnect()
 
+        db_session.commit()
+
         # update raw_amount column
         db_session.execute(
             """
