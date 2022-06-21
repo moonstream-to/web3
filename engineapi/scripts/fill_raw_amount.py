@@ -9,6 +9,9 @@ from ..Dropper import Dropper
 from ..MockErc20 import MockErc20
 
 
+blockchain_mapping = {"mumbai": "mumbai", "polygon": "moonstream-engine-polygon"}
+
+
 def run_fill_raw_amount(args: argparse.Namespace):
     # sync raw_amount column with amount column
 
@@ -27,11 +30,11 @@ def run_fill_raw_amount(args: argparse.Namespace):
         results = res.fetchall()
 
         for blockchain, address, claim_id in results:
-            if blockchain not in token_tytes:
-                token_tytes[blockchain] = dict()
-            if address not in token_tytes[blockchain]:
-                token_tytes[blockchain][address] = list()
-            token_tytes[blockchain][address].append(claim_id)
+            if blockchain_mapping[blockchain] not in token_tytes:
+                token_tytes[blockchain_mapping[blockchain]] = dict()
+            if address not in token_tytes[blockchain_mapping[blockchain]]:
+                token_tytes[blockchain_mapping[blockchain]][address] = list()
+            token_tytes[blockchain_mapping[blockchain]][address].append(claim_id)
 
         db_session.execute(
             """
