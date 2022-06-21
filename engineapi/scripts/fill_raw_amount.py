@@ -103,7 +103,7 @@ def run_fill_raw_amount(args: argparse.Namespace):
                     CASE
                         WHEN (
                             select
-                                temptest.token_type
+                                DISTINCT temptest.token_type
                             from
                                 temptest
                                 inner join dropper_claims ON temptest.claim_id :: int = dropper_claims.claim_id
