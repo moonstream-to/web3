@@ -24,6 +24,7 @@ import { supportedChains } from "../../../../types/Moonstream";
 import { useERC20, useToast } from "moonstream-components/src/core/hooks";
 import { useMutation, useQuery } from "react-query";
 import { DEFAULT_METATAGS } from "../../src/constants";
+import { MAX_INT } from "moonstream-components/src/core/providers/Web3Provider";
 
 const contractsAddr: { [key in supportedChains]: string } = {
   mumbai: "0x762aF8cbE298bbFE568BBB6709f854A01c07333D",
@@ -92,17 +93,6 @@ const CryptoUnicorns = () => {
       web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
     ];
 
-  // const web3call = async ({
-  //   amountUnim,
-  //   amountRBW,
-  // }: {
-  //   amountUnim: string;
-  //   amountRBW: string;
-  // }) => {
-  //   const response = await
-
-  //   return response;
-  // };
 
   const toast = useToast();
   const stashUnim = useMutation(
@@ -264,27 +254,10 @@ const CryptoUnicorns = () => {
                 <Image
                   ml={2}
                   alt={"bottle"}
-                  h="96px"
+                  h="48px"
                   src="https://darkforest.cryptounicorns.fun/static/media/icon_milk.6fc3d44e.png"
                 />
                 <Flex direction={"column"} wrap="nowrap" w="100%">
-                  <code>
-                    <Text mx={2} mt={2} display={"inline-block"} fontSize="xl">
-                      {unim.spenderState.isLoading ? (
-                        <Spinner m={0} size={"lg"} />
-                      ) : (
-                        <Flex>
-                          {`allowance: `} <Spacer />
-                          {unim.spenderState.data?.allowance
-                            ? web3ctx.web3.utils.fromWei(
-                                unim.spenderState.data?.allowance,
-                                "ether"
-                              )
-                            : "0"}
-                        </Flex>
-                      )}
-                    </Text>
-                  </code>{" "}
                   <code>
                     <Text mx={2} mt={2} display={"inline-block"} fontSize="xl">
                       {unim.spenderState.isLoading ? (
@@ -314,34 +287,16 @@ const CryptoUnicorns = () => {
               fontSize={"md"}
               borderRadius={"md"}
               mr={2}
-              mt={2}
               p={1}
             >
               <Flex>
                 <Image
                   ml={2}
                   alt={"rbw"}
-                  h="96px"
+                  h="48px"
                   src="https://www.cryptounicorns.fun/static/media/icon_RBW.522bf8ec43ae2c866ee6.png"
                 />
                 <Flex direction={"column"} wrap="nowrap" w="100%">
-                  <code>
-                    <Text mx={2} mt={2} display={"inline-block"} fontSize="xl">
-                      {rbw.spenderState.isLoading ? (
-                        <Spinner m={0} size={"lg"} />
-                      ) : (
-                        <Flex>
-                          {`allowance: `} <Spacer />
-                          {rbw.spenderState.data?.allowance
-                            ? web3ctx.web3.utils.fromWei(
-                                rbw.spenderState.data?.allowance,
-                                "ether"
-                              )
-                            : "0"}
-                        </Flex>
-                      )}
-                    </Text>
-                  </code>{" "}
                   <code>
                     <Text mx={2} mt={2} display={"inline-block"} fontSize="xl">
                       {rbw.spenderState.isLoading ? (
@@ -442,14 +397,11 @@ const CryptoUnicorns = () => {
                       colorScheme={"orange"}
                       onClick={() => {
                         if (needAllowanceUNIM) {
-                          unim.setSpenderAllowance.mutate(
-                            web3ctx.web3.utils.toWei(unimToStash, "ether"),
-                            {
-                              onSettled: () => {
-                                unim.spenderState.refetch();
-                              },
-                            }
-                          );
+                          unim.setSpenderAllowance.mutate(MAX_INT, {
+                            onSettled: () => {
+                              unim.spenderState.refetch();
+                            },
+                          });
                         } else {
                           stashUnim.mutate(unimToStash, {
                             onSettled: () => {
@@ -521,14 +473,11 @@ const CryptoUnicorns = () => {
                       colorScheme={"orange"}
                       onClick={() => {
                         if (needAllowanceRBW) {
-                          rbw.setSpenderAllowance.mutate(
-                            web3ctx.web3.utils.toWei(rbwToStash, "ether"),
-                            {
-                              onSettled: () => {
-                                rbw.spenderState.refetch();
-                              },
-                            }
-                          );
+                          rbw.setSpenderAllowance.mutate(MAX_INT, {
+                            onSettled: () => {
+                              rbw.spenderState.refetch();
+                            },
+                          });
                         } else {
                           stashRBW.mutate(rbwToStash, {
                             onSettled: () => {
