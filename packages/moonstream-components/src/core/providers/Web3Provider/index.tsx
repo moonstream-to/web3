@@ -1,6 +1,7 @@
 import React from "react";
 import Web3Context, { WALLET_STATES } from "./context";
 import Web3 from "web3";
+import { isOutdated, signAccessToken } from "@moonstream/web3auth";
 import {
   ChainInterface,
   GetMethodsAbiType,
@@ -103,69 +104,27 @@ const isKnownChain = (_chainId: number) => {
   return false;
 };
 
-const signAccessToken = async (account: string) => {
-  const msgParams = JSON.stringify({
-    domain: {
-      // Give a user friendly name to the specific contract you are signing for.
-      name: "MoonstreamAuthorization",
-      // Just let's you know the latest version. Definitely make sure the field name is correct.
-      version: "1",
-    },
-
-    // Defining the message signing data content.
-    message: {
-      // "_name_": "MoonstreamAuthorization", // The value to sign
-      address: account,
-      // "_version_": "1",
-      deadline: Math.floor(new Date().getTime() / 1000) + 24 * 60 * 60,
-      // deadline: "1651008410"
-    },
-    // Refers to the keys of the *types* object below.
-    primaryType: "MoonstreamAuthorization",
-    types: {
-      // TODO: Clarify if EIP712Domain refers to the domain the contract is hosted on
-      EIP712Domain: [
-        { name: "name", type: "string" },
-        { name: "version", type: "string" },
-      ],
-      // Refer to PrimaryType
-      MoonstreamAuthorization: [
-        {
-          type: "address",
-          name: "address",
-        },
-        {
-          type: "uint256",
-          name: "deadline",
-        },
-      ],
-    },
-  });
-
-  const result = await window.ethereum.request({
-    method: "eth_signTypedData_v4",
-    params: [account, msgParams],
-    from: account,
-  });
-
-  localStorage.setItem(
-    "APP_ACCESS_TOKEN",
-    Buffer.from(
-      JSON.stringify({
-        address: account,
-        deadline: JSON.parse(msgParams).message.deadline,
-        signed_message: result,
-      }),
-      "utf-8"
-    ).toString("base64")
-  );
-  // localStorage.setItem(
-  //   "APP_ACCESS_TOKEN_DEADLINE",
-  //   JSON.parse(msgParams).message.deadline
-  // );
-};
 const Web3Provider = ({ children }: { children: JSX.Element }) => {
   const [web3] = React.useState<Web3>(new Web3(null));
+
+  const _signAccessToken = async (account: string) => {
+    if (web3.currentProvider) {
+      const deadline = Math.floor(new Date().getTime() / 1000) + 24 * 60 * 60;
+      const token = await signAccessToken(account, window.ethereum, deadline);
+
+      localStorage.setItem(
+        "APP_ACCESS_TOKEN",
+        Buffer.from(
+          JSON.stringify({
+            address: account,
+            deadline: deadline.toString(),
+            signed_message: token,
+          }),
+          "utf-8"
+        ).toString("base64")
+      );
+    }
+  };
 
   const [targetChain, _setChain] = React.useState<ChainInterface | undefined>();
 
@@ -340,13 +299,6 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
   }, []);
 
   React.useEffect(() => {
-    const outDated = (deadline: any) => {
-      if (!deadline) return true;
-      if (Number(deadline) <= Math.floor(new Date().getTime() / 1000))
-        return true;
-      return false;
-    };
-
     const token = localStorage.getItem("APP_ACCESS_TOKEN") ?? "";
     const stringToken = Buffer.from(token, "base64").toString("ascii");
     const objectToken: TokenInterface =
@@ -357,10 +309,10 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
     if (web3?.utils.isAddress(account)) {
       if (
         objectToken?.address !== account ||
-        outDated(objectToken?.deadline) ||
+        isOutdated(objectToken?.deadline) ||
         !objectToken.signed_message
       ) {
-        signAccessToken(account);
+        _signAccessToken(account);
       }
     }
     //eslint-disable-next-line
@@ -377,7 +329,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
         account,
         chainId,
         defaultTxConfig,
-        signAccessToken,
+        signAccessToken: _signAccessToken,
         getMethodsABI,
         changeChain,
         targetChain,
