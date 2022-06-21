@@ -140,6 +140,7 @@ class DropperClaimant(Base):  # type: ignore
     )
     address = Column(VARCHAR(256), nullable=False, index=True)
     amount = Column(BigInteger, nullable=False)
+    raw_amount = Column(String, nullable=True)
     added_by = Column(VARCHAR(256), nullable=False, index=True)
     signature = Column(String, nullable=True, index=True)
 

@@ -51,6 +51,7 @@ const PixelsCard = ({ text, heading, link, textColor, level, ...props }) => {
                 w={`${boxSize}px`}
                 h={`${boxSize}px`}
                 bgColor={`#${pixelseed.slice(1 + i * 4, 1 + i * 4 + 4)}`}
+                key={`${i}`}
               />
             );
           })}

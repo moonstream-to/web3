@@ -57,6 +57,11 @@ export const getClaimants =
         offset: encodeURIComponent(offset),
         limit: encodeURIComponent(limit),
       },
+    }).then((response) => {
+      response.data.drops.map((claimant) => {
+        claimant.amount = claimant.raw_amount || claimant.amount;
+      });
+      return response;
     });
   };
 
