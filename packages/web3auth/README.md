@@ -15,7 +15,7 @@ interface TokenInterface {
 Deadline is stored as number (in seconds).
 
 usage:
-`yarn add @peersky/web3auth`
+`yarn add @moonstream/web3auth`
 
 ```js
 import { signAccessToken, parseToken, isOutdated } from "@peersky/web3auth";
