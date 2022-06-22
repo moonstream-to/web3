@@ -70,8 +70,10 @@ export const getClaim = (address: any, ctx: any) => async (claimId: string) => {
   const status = await dropper.methods
     .getClaimStatus(claimId, ctx.account)
     .call();
+  const claimUri = await dropper.methods.claimUri(claimId).call();
+  const signer = await dropper.methods.getSignerForClaim(claimId).call();
 
-  return { claim, status };
+  return { claim, status, claimUri, signer };
 };
 
 export const getSignerForClaim =

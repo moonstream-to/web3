@@ -1,18 +1,13 @@
 import React from "react";
 import { useQuery } from "react-query";
-import {
-  ChainInterface,
-  MoonstreamWeb3ProviderInterface,
-} from "../../../../../../types/Moonstream";
+import { MoonstreamWeb3ProviderInterface } from "../../../../../../types/Moonstream";
 import queryCacheProps from "../hookCommon";
 import { queryHttp } from "../../utils/http";
 const usePlayerClaims = ({
-  targetChain,
   ctx,
   playerAddress,
   contractAddress,
 }: {
-  targetChain?: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
   initialPageSize: number;
   initialPage: number;
@@ -27,14 +22,17 @@ const usePlayerClaims = ({
       "/drops/claims",
       {
         dropper_contract_address: contractAddress,
-        blockchain: targetChain?.name ?? "",
+        blockchain: ctx.targetChain?.name ?? "",
         claimant_address: playerAddress ?? ctx.account,
       },
     ],
     (query) => queryHttp(query).then((response: any) => response.data.drops),
     {
       ...queryCacheProps,
-      enabled: !!contractAddress && (!!playerAddress || !!ctx.account),
+      enabled:
+        !!contractAddress &&
+        (!!playerAddress || !!ctx.account) &&
+        !!ctx.targetChain?.name,
       onSuccess: () => {},
     }
   );
@@ -43,7 +41,7 @@ const usePlayerClaims = ({
     [
       "/drops/batch",
       {
-        blockchain: targetChain?.name ?? "",
+        blockchain: ctx.targetChain?.name ?? "",
         address: playerAddress ?? ctx.account,
         limit: pageSize,
         offset: page * pageSize,
@@ -56,8 +54,7 @@ const usePlayerClaims = ({
       onSuccess: () => {},
       enabled:
         pageSize !== 0 &&
-        ctx.web3?.utils.isAddress(playerAddress ?? ctx.account) &&
-        ctx.chainId === ctx.chainId,
+        ctx.web3?.utils.isAddress(playerAddress ?? ctx.account),
     }
   );
 

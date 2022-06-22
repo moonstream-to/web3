@@ -1,5 +1,3 @@
-export const APP_API_URL = process.env.NEXT_PUBLIC_ENGINE_API_URL;
-
 /*
   Pass this is default metatags that will be added to your pages if you dont specify others in page component
   See more in /pages_templates directory for examples

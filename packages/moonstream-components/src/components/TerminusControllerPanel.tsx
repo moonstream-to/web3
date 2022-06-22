@@ -13,12 +13,17 @@ import {
   ButtonGroup,
   SlideFade,
   FlexProps,
+  Box,
 } from "@chakra-ui/react";
-import { getMethodsABI, targetChain } from "../core/providers/Web3Provider";
+import { getMethodsABI } from "../core/providers/Web3Provider";
 import { useTerminusContract } from "../core/hooks/useTerminusContract";
 import Web3Context from "../core/providers/Web3Provider/context";
 import { MockTerminus } from "../../../../types/contracts/MockTerminus";
 import Web3MethodForm from "./Web3MethodForm";
+import dynamic from "next/dynamic";
+const ReactJson = dynamic(() => import("react-json-view"), {
+  ssr: false,
+});
 const terminusABI = require("../../../../abi/MockTerminus.json");
 const STATES = {
   withdraw: 1,
@@ -26,14 +31,15 @@ const STATES = {
 };
 const TerminusControllerPanel = ({
   address,
+  isController,
   ...props
 }: {
+  isController: boolean;
   address: string;
 }) => {
   const web3ctx = useContext(Web3Context);
   const terminus = useTerminusContract({
     address: address,
-    targetChain: targetChain,
     ctx: web3ctx,
   });
 
@@ -51,7 +57,6 @@ const TerminusControllerPanel = ({
             fontWeight="600"
             textColor={"blue.50"}
             direction="column"
-            // borderBottomWidth={"2px"}
             px={4}
           >
             <Stack direction={"column"} py={4}>
@@ -68,7 +73,7 @@ const TerminusControllerPanel = ({
                   variant={"outline"}
                   placeholder={terminus.contractState.data?.contractURI}
                   defaultValue={terminus.contractState.data?.contractURI}
-                  isDisabled={terminus.setURI.isLoading}
+                  isDisabled={terminus.setURI.isLoading || !isController}
                   onSubmit={(nextValue) => {
                     terminus.setURI.mutate({ uri: nextValue });
                   }}
@@ -98,7 +103,9 @@ const TerminusControllerPanel = ({
                   variant={"outline"}
                   placeholder={terminus.contractState.data?.poolBasePrice}
                   defaultValue={terminus.contractState.data?.poolBasePrice}
-                  isDisabled={terminus.setPoolBasePrice.isLoading}
+                  isDisabled={
+                    terminus.setPoolBasePrice.isLoading || !isController
+                  }
                   onSubmit={(nextValue) => {
                     terminus.setPoolBasePrice.mutate(nextValue);
                   }}
@@ -128,7 +135,9 @@ const TerminusControllerPanel = ({
                   variant={"outline"}
                   placeholder={terminus.contractState.data?.paymentToken}
                   defaultValue={terminus.contractState.data?.paymentToken}
-                  isDisabled={terminus.setPoolBasePrice.isLoading}
+                  isDisabled={
+                    terminus.setPoolBasePrice.isLoading || !isController
+                  }
                   onSubmit={(nextValue) => {
                     terminus.setPaymentToken.mutate(nextValue);
                   }}
@@ -156,9 +165,13 @@ const TerminusControllerPanel = ({
                   w="100%"
                   minW={["280px", "300px", "360px", "420px", null]}
                   variant={"outline"}
-                  placeholder="You ;) "
+                  placeholder={
+                    isController
+                      ? "You ;) "
+                      : terminus.contractState.data?.controller
+                  }
                   defaultValue=""
-                  isDisabled={terminus.setController.isLoading}
+                  isDisabled={terminus.setController.isLoading || !isController}
                   onSubmit={(nextValue) => {
                     if (web3ctx.web3.utils.isAddress(nextValue)) {
                       terminus.setController.mutate(nextValue);
@@ -186,7 +199,11 @@ const TerminusControllerPanel = ({
                   <Text display={"inline"}>
                     {terminus.contractState.data?.totalPools}
                   </Text>
-                  <ButtonGroup flexWrap={"wrap"} justifyContent="center">
+                  <ButtonGroup
+                    flexWrap={"wrap"}
+                    justifyContent="center"
+                    hidden={!isController}
+                  >
                     <Button
                       isActive={state === STATES.createPool && isOpen}
                       key={`createpool`}
@@ -268,6 +285,25 @@ const TerminusControllerPanel = ({
                   </Flex>
                 </SlideFade>
               )}
+              <Skeleton isLoaded={!terminus.contractJSON.isLoading}>
+                {terminus.contractJSON.data && (
+                  <Box cursor="crosshair" overflowWrap={"break-word"}>
+                    <ReactJson
+                      name="metadata"
+                      collapsed
+                      style={{
+                        cursor: "text",
+                        lineBreak: "anywhere",
+                      }}
+                      src={terminus.contractJSON.data}
+                      theme="harmonic"
+                      displayDataTypes={false}
+                      displayObjectSize={false}
+                      collapseStringsAfterLength={128}
+                    />
+                  </Box>
+                )}
+              </Skeleton>
             </Stack>
           </Flex>
         </Stack>

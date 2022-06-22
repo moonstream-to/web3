@@ -4,32 +4,31 @@ import {
   getClaimants,
   activate,
   deactivate,
-  updateDrop,
   setClaimants,
 } from "../../services/moonstream-engine.service";
-import { useMutation, useQuery } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import {
-  ChainInterface,
   MoonstreamWeb3ProviderInterface,
+  UpdateClaim,
 } from "../../../../../../types/Moonstream";
 import useToast from "../useToast";
 import queryCacheProps from "../hookCommon";
 import useDrops from "./useDrops";
+import { putHttp } from "../../utils/http";
 
 const useDrop = ({
-  targetChain,
   ctx,
   claimId,
   getAll,
 }: {
-  targetChain: ChainInterface;
   ctx: MoonstreamWeb3ProviderInterface;
   claimId?: string;
   initialPageSize?: number;
   getAll?: boolean;
 }) => {
-  const admin = useDrops({ targetChain, ctx });
+  const admin = useDrops({ ctx });
   const toast = useToast();
+  const queryClient = useQueryClient();
 
   const [claimantsPage, setClaimantsPage] = React.useState(0);
   const [claimantsPageSize, setClaimantsPageSize] = React.useState(0);
@@ -47,7 +46,6 @@ const useDrop = ({
     {
       ...queryCacheProps,
       enabled: !!ctx.account && claimantsPageSize != 0,
-      keepPreviousData: true,
       onSuccess: () => {},
     }
   );
@@ -58,6 +56,8 @@ const useDrop = ({
       onSuccess: () => {
         toast("Revoked claim", "success");
         claimants.refetch();
+        queryClient.refetchQueries("/drops/claimants/search");
+        queryClient.refetchQueries(["claimants", "claimId", claimId]);
       },
       onError: () => {
         toast("Revoking claim failed", "error", "Error! >.<");
@@ -123,15 +123,21 @@ const useDrop = ({
     }
   );
 
-  const update = useMutation(updateDrop, {
-    onSuccess: () => {
-      admin.adminClaims.refetch();
-      toast("Updated drop info", "success");
+  const update = useMutation(
+    (data: UpdateClaim) => {
+      if (claimId) return putHttp(`/drops/claims/${claimId}`, { ...data });
+      else throw new Error("Cannot use update without claimid");
     },
-    onError: () => {
-      toast("Updating drop failed >.<", "error");
-    },
-  });
+    {
+      onSuccess: () => {
+        admin.adminClaims.refetch();
+        toast("Updated drop info", "success");
+      },
+      onError: () => {
+        toast("Updating drop failed >.<", "error");
+      },
+    }
+  );
 
   const uploadFile = useMutation(setClaimants, {
     onSuccess: () => {

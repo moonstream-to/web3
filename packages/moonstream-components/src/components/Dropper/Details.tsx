@@ -1,8 +1,7 @@
-import React, { useContext } from "react";
+import React from "react";
 import {
   chakra,
   Flex,
-  Spinner,
   VStack,
   Stack,
   Input,
@@ -13,31 +12,29 @@ import {
   InputGroup,
   ScaleFade,
 } from "@chakra-ui/react";
-import { targetChain } from "../../core/providers/Web3Provider";
-import Web3Context from "../../core/providers/Web3Provider/context";
-import useDrop from "../../core/hooks/dropper/useDrop";
-import Paginator from "../Paginator";
 import ClaimantDetails from "../ClaimantDetails";
 import ClaimersList from "../ClaimersList";
+import Web3 from "web3";
+import { useToast } from "../../core/hooks";
 
 const _Drop = ({ dropId, ...props }: { dropId: string }) => {
-  const web3ctx = useContext(Web3Context);
-
-  const {
-    claimants,
-    deleteClaimants,
-    setClaimantsPage,
-    claimantsPage,
-    setClaimantsPageSize,
-    claimantsPageSize,
-  } = useDrop({
-    targetChain,
-    ctx: web3ctx,
-    claimId: dropId,
-  });
-
   const { onOpen, onClose, isOpen } = useDisclosure();
   const [filter, setFilter] = React.useState("");
+  const toast = useToast();
+  const handleCheckNow = () => {
+    const web3 = new Web3();
+    if (web3.utils.isAddress(filter)) {
+      onOpen();
+    } else {
+      toast("Not a valid address", "error");
+    }
+  };
+  const handleKeypress = (e: any) => {
+    //it triggers by pressing the enter key
+    if (e.charCode === 13) {
+      handleCheckNow();
+    }
+  };
 
   return (
     <Flex
@@ -67,6 +64,7 @@ const _Drop = ({ dropId, ...props }: { dropId: string }) => {
                   {" "}
                   <InputGroup size="sm" variant="outline" w="100%">
                     <Input
+                      onKeyPress={handleKeypress}
                       type="search"
                       maxW="800px"
                       flexBasis="50px"
@@ -82,7 +80,7 @@ const _Drop = ({ dropId, ...props }: { dropId: string }) => {
                   </InputGroup>
                   <Button
                     alignSelf="flex-end"
-                    onClick={onOpen}
+                    onClick={handleCheckNow}
                     colorScheme="orange"
                     variant="solid"
                     px="2rem"
@@ -96,34 +94,16 @@ const _Drop = ({ dropId, ...props }: { dropId: string }) => {
             {isOpen && (
               <ScaleFade in>
                 <ClaimantDetails
-                  onClose={onClose}
+                  onClose={() => {
+                    setFilter("");
+                    onClose();
+                  }}
                   address={filter}
                   claimId={dropId}
-                  onDeleteClaimant={(address: string) => {
-                    deleteClaimants.mutate({ list: [address] });
-                  }}
                 />
               </ScaleFade>
             )}
-
-            <Paginator
-              paginatorKey={"claimants"}
-              setPage={setClaimantsPage}
-              setLimit={setClaimantsPageSize}
-              hasMore={
-                claimants.data?.length == claimantsPageSize ? true : false
-              }
-              page={claimantsPage}
-              pageSize={claimantsPageSize}
-            >
-              {!claimants.isLoading && (
-                <ClaimersList
-                  data={claimants.data}
-                  onDeleteClaimant={deleteClaimants}
-                />
-              )}
-              {claimants.isLoading && <Spinner />}
-            </Paginator>
+            <ClaimersList dropId={dropId} />
           </VStack>
         </Box>
       </Flex>

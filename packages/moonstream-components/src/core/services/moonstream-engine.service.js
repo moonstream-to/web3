@@ -1,8 +1,11 @@
 import { http } from "../utils";
-const API = process.env.NEXT_PUBLIC_ENGINE_API_URL;
+const API =
+  process.env.NEXT_PUBLIC_ENGINE_API_URL ??
+  process.env.NEXT_PUBLIC_PLAY_API_URL;
 
 export const getAdminList =
-  (terminusAddress, chainName, poolId, offset, limit) => async () => {
+  (terminusAddress, chainName, poolId, offset, limit, dropperAddress) =>
+  async () => {
     return http({
       method: "GET",
       url: `${API}/drops/terminus/claims`,
@@ -12,6 +15,7 @@ export const getAdminList =
         terminus_pool_id: poolId,
         offset: offset,
         limit: limit,
+        dropperAddress: dropperAddress,
       },
     });
   };
@@ -53,6 +57,11 @@ export const getClaimants =
         offset: encodeURIComponent(offset),
         limit: encodeURIComponent(limit),
       },
+    }).then((response) => {
+      response.data.drops.map((claimant) => {
+        claimant.amount = claimant.raw_amount || claimant.amount;
+      });
+      return response;
     });
   };
 
@@ -106,22 +115,5 @@ export const activate = ({ dropperClaimId }) => {
   return http({
     method: "PUT",
     url: `${API}/drops/claims/${dropperClaimId}/activate`,
-  });
-};
-
-export const updateDrop = ({
-  dropperClaimId,
-  title,
-  description,
-  deadline,
-}) => {
-  return http({
-    method: "PUT",
-    url: `${API}/drops/claims/${dropperClaimId}`,
-    data: {
-      title: title,
-      description: description,
-      claim_block_deadline: deadline,
-    },
   });
 };
