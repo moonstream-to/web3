@@ -7,6 +7,7 @@ import {
   supportedChains,
   TokenInterface,
 } from "../../../../../../types/Moonstream";
+import router from "next/router";
 
 export const MAX_INT =
   "115792089237316195423570985008687907853269984665640564039457584007913129639935";
@@ -198,10 +199,14 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
   };
 
   const changeChain = (chainName: supportedChains) => {
-    _changeChain(chains[chainName], setChainId, web3).then(() => {
-      _setChain(chains[chainName]);
-      setButtonText(WALLET_STATES.CONNECTED);
-    });
+    if (window?.ethereum) {
+      _changeChain(chains[chainName], setChainId, web3).then(() => {
+        if (chainId) {
+          _setChain(chains[chainName]);
+          setButtonText(WALLET_STATES.CONNECTED);
+        }
+      });
+    }
   };
 
   const setWeb3ProviderAsWindowEthereum = async () => {
@@ -239,6 +244,8 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
           );
         setButtonText(result ? WALLET_STATES.CONNECTED : WALLET_STATES.CONNECT);
       });
+    } else {
+      router.push("https://metamask.io/download/");
     }
   };
 
@@ -263,8 +270,10 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
   }, [chainId, targetChain?.chainId, web3.currentProvider, web3.eth]);
 
   const handleMetamaskChainChanged = (_chainId: string) => {
+    if (chainId) {
+      setChainId(Number(_chainId));
+    }
     changeChainIfSupported(Number(_chainId));
-    setChainId(Number(_chainId));
   };
   const handleProviderAccountChanged = (_accounts: Array<string>) => {
     if (chainId === targetChain?.chainId && web3.currentProvider) {
@@ -300,15 +309,15 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
 
   // When chainId or web3 or targetChain changes -> update button state
   React.useLayoutEffect(() => {
-    if (web3.currentProvider && chainId && targetChain?.chainId) {
+    if (web3.currentProvider && chainId && targetChain?.chainId && account) {
       if (isKnownChain(chainId)) {
         if (chainId === targetChain?.chainId) {
           setButtonText(WALLET_STATES.CONNECTED);
         } else {
-          setButtonText(`Please select ${targetChain?.name}`);
+          setButtonText(WALLET_STATES.UNKNOWN_CHAIN);
         }
       } else {
-        setButtonText(WALLET_STATES.UNKNOWN_CHAIN);
+        setButtonText(WALLET_STATES.CONNECT);
       }
     } else {
       if (!window.ethereum) {
@@ -317,7 +326,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
         setButtonText(WALLET_STATES.CONNECT);
       }
     }
-  }, [web3.currentProvider, chainId, targetChain]);
+  }, [web3.currentProvider, chainId, targetChain, account]);
 
   // onMount check if there is provided address by provider already, if yes - set it in this state and provide to web3
   // As well as try to look up for chainId in list of supported chains
