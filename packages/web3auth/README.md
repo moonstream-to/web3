@@ -18,7 +18,7 @@ usage:
 `yarn add @moonstream/web3auth`
 
 ```js
-import { signAccessToken, parseToken, isOutdated } from "@peersky/web3auth";
+import { signAccessToken, parseToken, isOutdated } from "@moonstream/web3auth";
 ```
 
 Generate access token:
