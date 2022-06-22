@@ -19,7 +19,11 @@ declare global {
   }
 }
 
-const _changeChain = async (targetChain: any, setChainId: any, web3: any) => {
+const _askWalletProviderToChangeChain = async (
+  targetChain: any,
+  setChainId: any,
+  web3: any
+) => {
   if (targetChain?.chainId) {
     try {
       await window.ethereum
@@ -98,13 +102,14 @@ export const chains: { [key in supportedChains]: ChainInterface } = {
 };
 
 const isKnownChain = (_chainId: number) => {
+  let isKnownChain = false;
   Object.keys(chains)?.forEach((key: string) => {
     const _key = key as any as supportedChains;
     if (chains[_key]?.chainId == _chainId) {
-      return true;
+      isKnownChain = true;
     }
   });
-  return false;
+  return isKnownChain;
 };
 
 const signAccessToken = async (account: string) => {
@@ -183,13 +188,14 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
   const [account, setAccount] = React.useState<string>("");
   const [chainId, setChainId] = React.useState<number>(0);
 
-  const changeChainIfSupported = (_chainId: number) => {
+  const changeChainFromWalletProvider = (_chainId: number) => {
     let chainFound = false;
     Object.keys(chains)?.forEach((key: string) => {
       const _key = key as any as supportedChains;
       if (chains[_key]?.chainId == _chainId) {
         chainFound = true;
-        changeChain(chains[_key]?.name as any as supportedChains);
+        _setChain(chains[_key]);
+        setButtonText(WALLET_STATES.CONNECTED);
       }
     });
     if (!chainFound) {
@@ -198,28 +204,31 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
     }
   };
 
-  const changeChain = (chainName: supportedChains) => {
+  const changeChainFromUI = (chainName: supportedChains) => {
     if (window?.ethereum) {
-      _changeChain(chains[chainName], setChainId, web3).then(() => {
-        if (chainId) {
-          _setChain(chains[chainName]);
-          setButtonText(WALLET_STATES.CONNECTED);
+      _askWalletProviderToChangeChain(chains[chainName], setChainId, web3).then(
+        () => {
+          if (chainId) {
+            _setChain(chains[chainName]);
+            setButtonText(WALLET_STATES.CONNECTED);
+          }
         }
-      });
+      );
     }
   };
 
   const setWeb3ProviderAsWindowEthereum = async () => {
+    console.log("setWeb3ProviderAsWindowEthereum");
     let wasSetupSuccess = false;
     await window.ethereum
       .request({ method: "eth_requestAccounts" })
-      .then(() => {
+      .then(async () => {
         web3.setProvider(window.ethereum);
-
         web3.eth.getAccounts().then((accounts) => {
           setAccount(accounts[0]);
         });
-        web3.eth.getChainId().then((result) => changeChainIfSupported(result));
+        const _chainId = await web3.eth.getChainId();
+        changeChainFromWalletProvider(_chainId);
         wasSetupSuccess = true;
       })
       .catch((err: any) => {
@@ -273,7 +282,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
     if (chainId) {
       setChainId(Number(_chainId));
     }
-    changeChainIfSupported(Number(_chainId));
+    changeChainFromWalletProvider(Number(_chainId));
   };
   const handleProviderAccountChanged = (_accounts: Array<string>) => {
     if (chainId === targetChain?.chainId && web3.currentProvider) {
@@ -309,15 +318,12 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
 
   // When chainId or web3 or targetChain changes -> update button state
   React.useLayoutEffect(() => {
+    console.log(chainId, targetChain?.chainId, account, isKnownChain(chainId));
     if (web3.currentProvider && chainId && targetChain?.chainId && account) {
       if (isKnownChain(chainId)) {
-        if (chainId === targetChain?.chainId) {
-          setButtonText(WALLET_STATES.CONNECTED);
-        } else {
-          setButtonText(WALLET_STATES.UNKNOWN_CHAIN);
-        }
+        setButtonText(WALLET_STATES.CONNECTED);
       } else {
-        setButtonText(WALLET_STATES.CONNECT);
+        setButtonText(WALLET_STATES.UNKNOWN_CHAIN);
       }
     } else {
       if (!window.ethereum) {
@@ -337,7 +343,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
           window?.ethereum
             ?.request({ method: "eth_chainId" })
             .then((_chainId: any) => {
-              changeChainIfSupported(parseInt(_chainId, 16));
+              changeChainFromWalletProvider(parseInt(_chainId, 16));
             });
         } else
           console.warn(
@@ -391,7 +397,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
         defaultTxConfig,
         signAccessToken,
         getMethodsABI,
-        changeChain,
+        changeChain: changeChainFromUI,
         targetChain,
       }}
     >
