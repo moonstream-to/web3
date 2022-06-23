@@ -22,7 +22,6 @@ export const WALLET_STATES: WalletStatesInterface = {
   ONBOARD: "Install MetaMask!",
   CONNECT: "Connect with Metamask",
   CONNECTED: "Connected",
-  WRONG_CHAIN: "Please select polygon chain in metamask",
   UNKNOWN_CHAIN: "Unsupported chain",
 };
 

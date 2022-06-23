@@ -122,6 +122,9 @@ const LandingNavbar = () => {
               colorScheme={
                 web3Provider.buttonText === web3Provider.WALLET_STATES.CONNECTED
                   ? "green"
+                  : web3Provider.WALLET_STATES.UNKNOWN_CHAIN ===
+                    web3Provider.buttonText
+                  ? "red"
                   : "green"
               }
               onClick={web3Provider.onConnectWalletClick}
