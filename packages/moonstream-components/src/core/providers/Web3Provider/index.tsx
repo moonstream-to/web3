@@ -102,14 +102,9 @@ export const chains: { [key in supportedChains]: ChainInterface } = {
 };
 
 const isKnownChain = (_chainId: number) => {
-  let isKnownChain = false;
-  Object.keys(chains)?.forEach((key: string) => {
-    const _key = key as any as supportedChains;
-    if (chains[_key]?.chainId == _chainId) {
-      isKnownChain = true;
-    }
+  return Object.keys(chains).some((key) => {
+    return chains[key as any as supportedChains].chainId == _chainId;
   });
-  return isKnownChain;
 };
 
 const signAccessToken = async (account: string) => {
