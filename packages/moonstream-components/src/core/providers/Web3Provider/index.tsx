@@ -49,6 +49,8 @@ const _askWalletProviderToChangeChain = async (
         } catch (addError) {
           // handle "add" error
         }
+      } else {
+        throw switchError;
       }
       // handle other "switch" errors
     }
@@ -205,13 +207,15 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
             _setChain(chains[chainName]);
             setButtonText(WALLET_STATES.CONNECTED);
           }
+        },
+        (err: any) => {
+          console.error("changeChainFromUI:", err.message);
         }
       );
     }
   };
 
   const setWeb3ProviderAsWindowEthereum = async () => {
-    console.log("setWeb3ProviderAsWindowEthereum");
     let wasSetupSuccess = false;
     await window.ethereum
       .request({ method: "eth_requestAccounts" })
@@ -311,7 +315,6 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
 
   // When chainId or web3 or targetChain changes -> update button state
   React.useLayoutEffect(() => {
-    console.log(chainId, targetChain?.chainId, account, isKnownChain(chainId));
     if (web3.currentProvider && chainId && targetChain?.chainId && account) {
       if (isKnownChain(chainId)) {
         setButtonText(WALLET_STATES.CONNECTED);
