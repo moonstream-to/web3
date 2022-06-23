@@ -189,18 +189,16 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
   const [chainId, setChainId] = React.useState<number>(0);
 
   const changeChainFromWalletProvider = (_chainId: number) => {
-    let chainFound = false;
-    Object.keys(chains)?.forEach((key: string) => {
-      const _key = key as any as supportedChains;
-      if (chains[_key]?.chainId == _chainId) {
-        chainFound = true;
-        _setChain(chains[_key]);
-        setButtonText(WALLET_STATES.CONNECTED);
-      }
-    });
-    if (!chainFound) {
-      setButtonText(WALLET_STATES.UNKNOWN_CHAIN);
+    const chainKey = Object.keys(chains).find((_key) => {
+      const key: supportedChains = _key as any as supportedChains;
+      return chains[key].chainId == _chainId;
+    }) as any as supportedChains | undefined;
+    if (chainKey) {
+      _setChain(chains[chainKey]);
+      setButtonText(WALLET_STATES.CONNECTED);
+    } else {
       _setChain(undefined);
+      setButtonText(WALLET_STATES.UNKNOWN_CHAIN);
     }
   };
 

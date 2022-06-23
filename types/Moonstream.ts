@@ -5,7 +5,6 @@ export interface WalletStatesInterface {
   ONBOARD: String;
   CONNECT: String;
   CONNECTED: String;
-  WRONG_CHAIN: String;
   UNKNOWN_CHAIN: String;
 }
 
