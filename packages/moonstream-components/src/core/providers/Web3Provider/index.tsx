@@ -123,7 +123,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
         Buffer.from(
           JSON.stringify({
             address: account,
-            deadline: deadline.toString(),
+            deadline: deadline,
             signed_message: token,
           }),
           "utf-8"
