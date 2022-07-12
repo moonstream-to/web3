@@ -65,9 +65,7 @@ const FeatureCard = ({
             objectFit="contain"
             as={videoUrl ? "video" : undefined}
             src={imageUrl ?? videoUrl}
-            autoplay
             loop
-            playsinline
             alt={alt}
             mb={12}
           />

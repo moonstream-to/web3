@@ -22,6 +22,6 @@
     "**/*.tsx",
     "**/*.d.ts",
     "src/components/Web3MethodForm.tsx"
-  ],
+, "pages/dropper/new/index.tsx"  ],
   "exclude": ["node_modules"]
 }
