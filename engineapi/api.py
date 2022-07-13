@@ -10,6 +10,7 @@ from brownie import network
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pyrsistent import v
 
 from . import data
 from .middleware import DropperHTTPException, DropperAuthMiddleware
@@ -70,7 +71,7 @@ whitelist_paths.update(
     }
 )
 
-# app.add_middleware(DropperAuthMiddleware, whitelist=whitelist_paths)
+app.add_middleware(DropperAuthMiddleware, whitelist=whitelist_paths)
 
 app.add_middleware(
     CORSMiddleware,

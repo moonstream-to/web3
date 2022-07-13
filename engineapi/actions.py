@@ -3,6 +3,7 @@ from typing import List, Any, Optional, Dict
 import uuid
 
 from brownie import network, web3
+from eth_typing import Address
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.functions import percentile_disc
@@ -31,6 +32,9 @@ class AuthorizationError(Exception):
 
 
 class DropWithNotSettedBlockDeadline(Exception):
+    pass
+
+class DublicateClaimantError(Exception):
     pass
 
 
@@ -301,6 +305,11 @@ def add_claimants(db_session: Session, dropper_claim_id, claimants, added_by):
     # On conflict requirements https://stackoverflow.com/questions/42022362/no-unique-or-exclusion-constraint-matching-the-on-conflict
 
     claimant_objects = []
+
+    addresses = [Web3.toChecksumAddress(claimant.address) for claimant in claimants]
+
+    if len(claimants) > len(set(addresses)):
+        raise DublicateClaimantError("Duplicate claimants")
 
     for claimant in claimants:
         claimant_objects.append(

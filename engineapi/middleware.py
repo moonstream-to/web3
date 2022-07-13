@@ -1,6 +1,7 @@
 import base64
 import json
 import logging
+from tracemalloc import start
 from typing import Any, Awaitable, Callable, Dict, Optional
 
 from fastapi import HTTPException, Request, Response
@@ -34,6 +35,11 @@ class DropperAuthMiddleware(BaseHTTPMiddleware):
         # Filter out endpoints with proper method to work without web3 autharization
         path = request.url.path.rstrip("/")
         method = request.method
+        # play
+
+        if path.startswith("/play") and method == "GET":
+            return await call_next(request)
+
         if path in self.whitelist.keys() and self.whitelist[path] == method:
             return await call_next(request)
 

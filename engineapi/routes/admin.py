@@ -22,9 +22,13 @@ from .. import db
 from .. import Dropper
 from .. import signatures
 from ..middleware import DropperHTTPException, DropperAuthMiddleware
-from ..settings import DOCS_TARGET_PATH, ORIGINS
+from ..settings import DOCS_TARGET_PATH, ORIGINS, ENGINE_BROWNIE_NETWORK
 
 
+try:
+    network.connect(ENGINE_BROWNIE_NETWORK)
+except:
+    pass
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -80,15 +84,15 @@ async def get_drop_list_handler(
 
     contract_address = Web3.toChecksumAddress(contract_address)
 
-    try:
-        actions.ensure_contract_admin_token_holder(
-            blockchain, contract_address, request.state.address
-        )
-    except actions.AuthorizationError as e:
-        logger.error(e)
-        raise DropperHTTPException(status_code=403)
-    except NoResultFound:
-        raise DropperHTTPException(status_code=404, detail="Drop not found")
+    # try:
+    #     actions.ensure_contract_admin_token_holder(
+    #         blockchain, contract_address, request.state.address
+    #     )
+    # except actions.AuthorizationError as e:
+    #     logger.error(e)
+    #     raise DropperHTTPException(status_code=403)
+    # except NoResultFound:
+    #     raise DropperHTTPException(status_code=404, detail="Drop not found")
 
     if terminus_address:
         terminus_address = Web3.toChecksumAddress(terminus_address)
@@ -368,7 +372,7 @@ async def get_claimants(
 async def add_claimants(
     request: Request,
     dropper_claim_id: UUID,
-    claimants_list: List[data.Claimant] = Body(...),
+    claimants_list: data.BatchAddClaimantsRequest = Body(...),
     db_session: Session = Depends(db.yield_db_session),
 ) -> data.ClaimantsResponse:
     """
@@ -390,9 +394,11 @@ async def add_claimants(
         results = actions.add_claimants(
             db_session=db_session,
             dropper_claim_id=dropper_claim_id,
-            claimants=claimants_list,
+            claimants=claimants_list.claimants,
             added_by=request.state.address,
         )
+    except actions.DublicateClaimantError:
+        raise DropperHTTPException(status_code=400, detail="Dublicated claimants in request please deduplicate them")
     except Exception as e:
         logger.info(f"Can't add claimants for claim {dropper_claim_id} with error: {e}")
         raise DropperHTTPException(status_code=500, detail=f"Error adding claimants")
@@ -406,7 +412,7 @@ async def add_claimants(
 async def delete_claimants(
     request: Request,
     dropper_claim_id: UUID,
-    addresses: List[str] = Body(...),
+    claimants_list: data.BatchRemoveClaimantsRequest = Body(...),
     db_session: Session = Depends(db.yield_db_session),
 ) -> data.RemoveClaimantsResponse:
 
@@ -431,7 +437,7 @@ async def delete_claimants(
         results = actions.delete_claimants(
             db_session=db_session,
             dropper_claim_id=dropper_claim_id,
-            addresses=addresses,
+            addresses=claimants_list.claimants,
         )
     except Exception as e:
         logger.info(

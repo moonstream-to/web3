@@ -380,16 +380,16 @@ async def get_drop_handler(
         logger.error(f"Can't get drop {dropper_claim_id} end with error: {e}")
         raise DropperHTTPException(status_code=500, detail="Can't get drop")
 
-    if drop.terminus_address is not None and drop.terminus_pool_id is not None:
-        try:
-            actions.ensure_admin_token_holder(
-                db_session, dropper_claim_id, request.state.address
-            )
-        except actions.AuthorizationError as e:
-            logger.error(e)
-            raise DropperHTTPException(status_code=403)
-        except NoResultFound:
-            raise DropperHTTPException(status_code=404, detail="Drop not found")
+    # if drop.terminus_address is not None and drop.terminus_pool_id is not None:
+    #     try:
+    #         actions.ensure_admin_token_holder(
+    #             db_session, dropper_claim_id, request.state.address
+    #         )
+    #     except actions.AuthorizationError as e:
+    #         logger.error(e)
+    #         raise DropperHTTPException(status_code=403)
+    #     except NoResultFound:
+    #         raise DropperHTTPException(status_code=404, detail="Drop not found")
 
     return data.DropperClaimResponse(
         id=drop.id,

@@ -23,7 +23,10 @@ from .. import signatures
 from ..middleware import DropperHTTPException
 from ..settings import ENGINE_BROWNIE_NETWORK
 
-network.connect(ENGINE_BROWNIE_NETWORK)
+try:
+    network.connect(ENGINE_BROWNIE_NETWORK)
+except:
+    pass
 
 
 logger = logging.getLogger(__name__)
@@ -711,6 +714,9 @@ async def add_claimants(
             claimants=add_claimants_request.claimants,
             added_by=request.state.address,
         )
+    
+    except actions.DublicateClaimantError:
+        raise DropperHTTPException(status_code=400, detail="Dublicated claimants in request please deduplicate them")
     except Exception as e:
         logger.info(
             f"Can't add claimants for claim {add_claimants_request.dropper_claim_id} with error: {e}"
