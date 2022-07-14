@@ -14,6 +14,7 @@ import { useRouter } from "../core/hooks";
 const _Paginator = ({
   children,
   setLimit,
+  hideSelect,
   setPage,
   paginatorKey,
   hasMore,
@@ -102,27 +103,29 @@ const _Paginator = ({
           {`<<<`}
         </Button>
         <Spacer />
-        <Select
-          size="sm"
-          maxW="150px"
-          placeholder="Select page size"
-          onChange={(e) => {
-            router.appendQuery(`${paginatorKey}Limit`, e.target.value);
-          }}
-          value={router.query[`${paginatorKey}Limit`] ?? _pageOptions[0]}
-          bgColor="blue.500"
-        >
-          {_pageOptions.map((pageSize) => {
-            return (
-              <option
-                key={`paginator-options-pagesize-${pageSize}`}
-                value={pageSize}
-              >
-                {pageSize}
-              </option>
-            );
-          })}
-        </Select>
+        {!hideSelect && (
+          <Select
+            size="sm"
+            maxW="150px"
+            placeholder="Select page size"
+            onChange={(e) => {
+              router.appendQuery(`${paginatorKey}Limit`, e.target.value);
+            }}
+            value={router.query[`${paginatorKey}Limit`] ?? _pageOptions[0]}
+            bgColor="blue.500"
+          >
+            {_pageOptions.map((pageSize) => {
+              return (
+                <option
+                  key={`paginator-options-pagesize-${pageSize}`}
+                  value={pageSize}
+                >
+                  {pageSize}
+                </option>
+              );
+            })}
+          </Select>
+        )}
         <Button
           isDisabled={!hasMore}
           onClick={() => {
