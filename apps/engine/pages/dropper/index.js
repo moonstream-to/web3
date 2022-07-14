@@ -27,7 +27,7 @@ const DropperPage = () => {
 
   return (
     <Flex direction={"column"} justifyContent="flex-start" minH="100vh">
-      <Editable
+      {/* <Editable
         selectAllOnFocus={true}
         submitOnBlur={false}
         bgColor={"blue.700"}
@@ -51,10 +51,15 @@ const DropperPage = () => {
       >
         <EditablePreview w="100%" px={2} />
         <EditableInput w="100%" px={2} />
-      </Editable>
+      </Editable> */}
       <Flex placeSelf={"center"} direction={"row"} flexWrap="wrap" w="100%">
         {router.query["contractAddress"] && (
-          <Dropper contractAddress={router.query["contractAddress"]} />
+          <Dropper
+            contractAddress={router.query["contractAddress"]}
+            dropperId={dropperContracts.data?.find(
+              (contract) => contract.address == router.query["contractAddress"]
+            )}
+          />
         )}
         {!router.query["contractAddress"] && (
           <Center>
@@ -62,6 +67,9 @@ const DropperPage = () => {
               {dropperContracts.data?.map((contract) => {
                 return (
                   <PixelsCard
+                    onClick={() => {
+                      sessionStorage.setItem("DropperContractID", contract.id);
+                    }}
                     bgColor={"red.900"}
                     w="300px"
                     h="220px"
