@@ -12,6 +12,7 @@ export const MODAL_TYPES = {
   POUR_BOTTLE: 10,
   FILE_UPLOAD: 11,
   CSV_DIFF: 12,
+  NEW_DROP: 13,
 };
 
 export const DRAWER_TYPES = {

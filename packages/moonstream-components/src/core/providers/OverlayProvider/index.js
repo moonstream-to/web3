@@ -22,6 +22,7 @@ import {
 const HubspotForm = React.lazy(() => import("../../../components/HubspotForm"));
 const FileUpload = React.lazy(() => import("../../../components/FileUpload"));
 const CSVDiff = React.lazy(() => import("../../../components/CSVDiff"));
+const NewDrop = React.lazy(() => import("../../../components/NewDrop"));
 
 const OverlayProvider = ({ children }) => {
   const [modal, toggleModal] = useState({
@@ -135,6 +136,7 @@ const OverlayProvider = ({ children }) => {
           >
             {modal.type === MODAL_TYPES.CSV_DIFF && "Review diff"}
             {modal.type === MODAL_TYPES.FILE_UPLOAD && `Upload new csv file`}
+            {modal.type === MODAL_TYPES.NEW_DROP && `Creating Airdrop`}
           </ModalHeader>
           {modal.type !== MODAL_TYPES.FILL_BOTTLE &&
             modal.type !== MODAL_TYPES.POUR_BOTTLE && <Divider />}
@@ -163,6 +165,7 @@ const OverlayProvider = ({ children }) => {
               {modal.type === MODAL_TYPES.CSV_DIFF && (
                 <CSVDiff toggleModal={toggleModal} {...modal.props} />
               )}
+              {modal.type === MODAL_TYPES.NEW_DROP && <NewDrop />}
             </Suspense>
           </ModalBody>
         </ModalContent>

@@ -59,7 +59,7 @@ const EngineLayout = (props) => {
                   fontWeight={idx === path.length - 1 ? "semibold" : "normal"}
                   textTransform={"capitalize"}
                 >
-                  {element}
+                  {element === "dropper" ? "Dropper contracts" : element}
                 </BreadcrumbLink>
               </NextLink>
             </BreadcrumbItem>
