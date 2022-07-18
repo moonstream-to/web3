@@ -39,15 +39,22 @@ const Dropper = ({
     dropperAddress: contractAddress,
     ctx: web3ctx,
   });
+  const { contractState } = useDropperContract({
+    dropperAddress: contractAddress,
+    ctx: web3ctx,
+  });
 
   if (!contractAddress)
     return <Text>{"Please specify terminus address "}</Text>;
   if (
     dropper.contractState.isLoading ||
     !dropper.contractState.data ||
-    dropperContracts.isLoading
+    dropperContracts.isLoading ||
+    contractState.isLoading
   )
     return <Spinner />;
+
+  console.log("contractState", contractState.data);
 
   return (
     <Flex
@@ -182,20 +189,32 @@ const Dropper = ({
       <Paginator
         hideSelect={true}
         paginatorKey={"adminClaims"}
+        direction="row"
+        spacing="4px"
+        totalItems={contractState.data?.numClaims}
+        w="100%"
         setPage={pageOptions.setPage}
         setLimit={pageOptions.setPageSize}
         hasMore={adminClaims?.data?.length == pageOptions.pageSize}
+        mb={20}
       >
         {adminClaims.isLoading && <Spinner />}
         {web3ctx.account &&
           adminClaims?.data?.map((claim: ClaimInterface) => {
             return (
-              <Claim
-                dropperAddress={contractAddress}
-                key={`contract-card-${claim.id}}`}
-                claimId={claim.id}
-                claimIdx={claim.claim_id}
-              />
+              <>
+                <Claim
+                  isActive={claim.active}
+                  deadline={claim.claim_block_deadline.toString()}
+                  dropNumber={claim.claim_id.toString()}
+                  w="315px"
+                  m={"20px"}
+                  dropperAddress={contractAddress}
+                  key={`contract-card-${claim.id}}`}
+                  claimId={claim.id}
+                  claimIdx={claim.claim_id}
+                ></Claim>
+              </>
             );
           })}
       </Paginator>

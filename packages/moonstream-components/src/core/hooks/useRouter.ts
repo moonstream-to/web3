@@ -114,7 +114,12 @@ const useRouter = () => {
     }
   };
 
-  const appendQuery = (key: string, value: string, push: any, shallow: any) => {
+  const appendQuery = (
+    key: string,
+    value: string,
+    push?: any,
+    shallow?: any
+  ) => {
     const newQuery = { ...router.query };
     newQuery[key] = value;
     if (push) {

@@ -109,7 +109,7 @@ contract Dropper is
         address tokenAddress,
         uint256 tokenId,
         uint256 amount
-    ) external onlyOwner returns (uint256) {
+    ) public onlyOwner returns (uint256) {
         require(
             tokenType == ERC20_TYPE ||
                 tokenType == ERC721_TYPE ||
@@ -137,6 +137,17 @@ contract Dropper is
         emit ClaimStatusChanged(NumClaims, true);
 
         return NumClaims;
+    }
+
+    function createClaim(uint256 tokenType,
+        address tokenAddress,
+        uint256 tokenId,
+        uint256 amount,
+        string memory uri) external
+    {
+        uint256 claimNumber = createClaim(tokenType,tokenAddress,tokenId,amount);
+        setClaimUri(claimNumber,uri);
+
     }
 
     function numClaims() external view returns (uint256) {
@@ -336,7 +347,7 @@ contract Dropper is
     }
 
     function setClaimUri(uint256 claimId, string memory uri)
-        external
+        public
         onlyOwner
     {
         ClaimURI[claimId] = uri;

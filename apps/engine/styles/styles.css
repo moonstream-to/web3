@@ -9,9 +9,22 @@
   font-display: swap;
 }
 
+.markdown {
+  height: 112px;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  word-wrap: break-word;
+}
 .markdown * a {
   color: #4579D8;
 
+}
+.markdown > p {
+
+  width: 100%;
+  word-break: break-word;
+  text-overflow: ellipsis;
+  white-space: normal;
 }
 .markdown * a:hover {
   color: #F29C38;

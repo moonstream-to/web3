@@ -16,6 +16,7 @@ import {
   useEditableControls,
   Heading,
   Box,
+  Badge,
 } from "@chakra-ui/react";
 import Papa from "papaparse";
 import FileUpload from "../FileUpload";
@@ -35,14 +36,20 @@ const ReactJson = dynamic(() => import("react-json-view"), {
   ssr: false,
 });
 const _Claim = ({
+  isActive,
   claimId,
   claimIdx,
   children,
+  deadline,
+  dropNumber,
   dropperAddress,
   ...props
 }: {
+  isActive: boolean;
   dropperAddress: string;
   claimIdx: number;
+  deadline?: string;
+  dropNumber?: string;
   claimId: string;
   children?: React.ReactNode;
 }) => {
@@ -186,334 +193,75 @@ const _Claim = ({
     );
   }
 
+  console.log("tt,", claimState.data);
+
   return (
     <Flex
       direction={"column"}
-      bgColor="blue.1000"
+      // bgColor="blue.1000"
       flexWrap={"wrap"}
-      pt={4}
+      // pt={4}
       px={0}
       w="100%"
       {...props}
+      boxShadow={"md"}
+      borderRadius="md"
+      border={"4px solid #373E9B"}
+      boxSizing="content-box"
     >
-      <Heading
-        size="sm"
-        borderBottomWidth={1}
-        w="100%"
-        p={2}
-        borderColor="blue.500"
+      <Metadata
+        // borderColor={"blue.1200"}
+        w="315px"
+        metadata={claimUri.data}
       >
-        <Skeleton colorScheme={"orange"} isLoaded={!claim.isLoading}>
-          Claim Id: {claimIdx}{" "}
-          <Editable
-            submitOnBlur={false}
-            selectAllOnFocus={true}
-            bgColor={"blue.700"}
-            size="lg"
-            fontSize={"lg"}
-            fontWeight="600"
-            textColor="gray.500"
-            w="100%"
-            minW={["280px", "300px", "360px", "420px", null]}
-            variant={"outline"}
-            placeholder={claim.data?.title}
-            defaultValue={claim.data?.title}
-            isDisabled={claim.isLoading}
-            onSubmit={(nextValue) => {
-              onSubmit({ title: nextValue });
-            }}
-          >
-            <EditablePreview w="100%" px={2} />
-            <EditableInput w="100%" px={2} />
-          </Editable>
-        </Skeleton>
-      </Heading>
-      <Flex p={1} direction={"row"} flexWrap="wrap" w="100%">
-        <Metadata
-          boxShadow={"md"}
-          w="15%"
-          borderRadius="md"
-          borderColor={"blue.1200"}
-          borderWidth={"3px"}
-          px={[0, 4]}
-          metadata={claimUri.data}
-        />
-
-        <Stack direction={"column"} py={4} w="70%" flexGrow={1} px={[0, 4]}>
-          <Skeleton colorScheme={"orange"} isLoaded={!claim.isLoading}>
-            <Editable
-              my={2}
-              p={2}
-              submitOnBlur={false}
-              bgColor={"blue.800"}
-              size="lg"
-              fontSize={"lg"}
-              textColor="gray.500"
-              w="100%"
-              minW={["280px", "300px", "360px", "420px", null]}
-              variant={"outline"}
-              placeholder={claim.data?.description}
-              defaultValue={claim.data?.description}
-              isDisabled={claim.isLoading}
-              onSubmit={(nextValue) => {
-                onSubmit({ description: nextValue });
-              }}
-            >
-              <EditablePreview
-                w="100%"
-                h="fit-content"
-                maxH="unset"
-                whiteSpace={"break-spaces"}
-                px={2}
-              />
-              <EditableTextarea w="100%" px={2}></EditableTextarea>
-              <EditableControls />
-            </Editable>
-          </Skeleton>
-          <Flex w="100%" direction={["row", null]} flexWrap="wrap">
-            <Flex
-              direction={"row"}
-              flexGrow={1}
-              flexBasis={"200px"}
-              wordBreak="break-word"
-            >
-              <Stack direction={"column"} py={4} w="100%">
-                <code key={`terminus-address-${claim.data?.terminus_address}`}>
-                  Terminus address:
-                  <Skeleton colorScheme={"orange"} isLoaded={!claim.isLoading}>
-                    <Editable
-                      submitOnBlur={false}
-                      selectAllOnFocus={true}
-                      bgColor={"blue.700"}
-                      size="sm"
-                      fontSize={"sm"}
-                      textColor="gray.500"
-                      w="100%"
-                      minW={["280px", "300px", "360px", "420px", null]}
-                      variant={"outline"}
-                      placeholder={claim.data?.terminus_address}
-                      defaultValue={claim.data?.terminus_address}
-                      isDisabled={claim.isLoading}
-                      onSubmit={(nextValue) => {
-                        onSubmit({ terminus_address: nextValue });
-                      }}
-                    >
-                      <EditablePreview w="100%" px={2} />
-                      <EditableInput w="100%" px={2} />
-                    </Editable>
-                  </Skeleton>
-                </code>
-                <code key={`terminusPoolId-${claim.data?.terminus_pool_id}`}>
-                  Terminus Pool Id:
-                  <Skeleton colorScheme={"orange"} isLoaded={!claim.isLoading}>
-                    <Editable
-                      submitOnBlur={false}
-                      bgColor={"blue.700"}
-                      size="sm"
-                      fontSize={"sm"}
-                      textColor="gray.500"
-                      w="100%"
-                      minW={["280px", "300px", "360px", "420px", null]}
-                      variant={"outline"}
-                      placeholder={claim.data?.terminus_pool_id}
-                      defaultValue={claim.data?.terminus_pool_id}
-                      isDisabled={claim.isLoading}
-                      onSubmit={(nextValue) => {
-                        onSubmit({ terminus_pool_id: nextValue });
-                      }}
-                    >
-                      <EditablePreview w="100%" px={2} />
-                      <EditableInput w="100%" px={2} />
-                    </Editable>
-                  </Skeleton>
-                </code>
-                <code key={`claimDeadline-${claim.data?.claim_block_deadline}`}>
-                  Deadline:
-                  <Skeleton colorScheme={"orange"} isLoaded={!claim.isLoading}>
-                    <Editable
-                      submitOnBlur={false}
-                      bgColor={"blue.700"}
-                      size="sm"
-                      fontSize={"sm"}
-                      textColor="gray.500"
-                      w="100%"
-                      minW={["280px", "300px", "360px", "420px", null]}
-                      variant={"outline"}
-                      placeholder={claim.data?.claim_block_deadline}
-                      defaultValue={claim.data?.claim_block_deadline}
-                      isDisabled={claim.isLoading}
-                      onSubmit={(nextValue) => {
-                        onSubmit({ claim_block_deadline: nextValue });
-                      }}
-                    >
-                      <EditablePreview w="100%" px={2} />
-                      <EditableInput w="100%" px={2} />
-                    </Editable>
-                  </Skeleton>
-                </code>
-                <code key={`claimUri-${claimState.data?.claimUri}`}>
-                  URI:
-                  <Skeleton
-                    colorScheme={"orange"}
-                    isLoaded={!claimState.isLoading && !setClaimURI.isLoading}
-                  >
-                    <Editable
-                      submitOnBlur={false}
-                      bgColor={"blue.700"}
-                      size="sm"
-                      fontSize={"sm"}
-                      textColor="gray.500"
-                      w="100%"
-                      minW={["280px", "300px", "360px", "420px", null]}
-                      variant={"outline"}
-                      placeholder={"claim uri"}
-                      defaultValue={claimState.data?.claimUri}
-                      onSubmit={(nextValue) => {
-                        setClaimURI.mutate(
-                          { uri: nextValue },
-                          {
-                            onSettled: () => {
-                              setClaimURI.reset();
-                            },
-                          }
-                        );
-                      }}
-                    >
-                      <EditablePreview w="100%" px={2} cursor={"text"} />
-                      <EditableInput wordBreak={"keep-all"} w="100%" px={2} />
-                    </Editable>
-                  </Skeleton>
-                </code>
-
-                <code key={`signer-${claimState.data?.signer}`}>
-                  Signer:
-                  <Skeleton
-                    colorScheme={"orange"}
-                    isLoaded={
-                      !claimState.isLoading && !setClaimSigner.isLoading
-                    }
-                  >
-                    <Editable
-                      submitOnBlur={false}
-                      bgColor={"blue.700"}
-                      size="sm"
-                      fontSize={"sm"}
-                      textColor="gray.500"
-                      w="100%"
-                      minW={["280px", "300px", "360px", "420px", null]}
-                      variant={"outline"}
-                      selectAllOnFocus={true}
-                      placeholder={claimState.data?.signer ?? "claim signer"}
-                      defaultValue={claimState.data?.signer}
-                      onSubmit={(nextValue) => {
-                        setClaimSigner.mutate(
-                          { signer: nextValue },
-                          {
-                            onSettled: () => {
-                              setClaimSigner.reset();
-                            },
-                          }
-                        );
-                      }}
-                    >
-                      <EditablePreview w="100%" px={2} cursor={"text"} />
-                      <EditableInput wordBreak={"keep-all"} w="100%" px={2} />
-                    </Editable>
-                  </Skeleton>
-                </code>
-                <Skeleton isLoaded={!claimUri.isLoading}>
-                  {claimUri?.data && (
-                    <Box cursor="crosshair" overflowWrap={"break-word"}>
-                      <ReactJson
-                        name="metadata"
-                        collapsed
-                        style={{
-                          cursor: "text",
-                          lineBreak: "anywhere",
-                        }}
-                        src={claimUri?.data}
-                        theme="harmonic"
-                        displayDataTypes={false}
-                        displayObjectSize={false}
-                        collapseStringsAfterLength={128}
-                      />
-                    </Box>
-                  )}
-                </Skeleton>
-              </Stack>
-            </Flex>
-            <Flex flexGrow={1} h="auto" flexBasis={"220px"} placeSelf="center">
-              <FileUpload
-                onDrop={onDrop}
-                alignSelf="center"
-                minW="220px"
-                isUploading={isUploading}
-              />
-            </Flex>
-          </Flex>
-          <Flex direction={"row"} justifyContent="space-evenly" pt={4}>
-            <Button
-              variant={"outline"}
-              colorScheme="green"
-              isDisabled={!!claim.data?.active}
-              isLoading={activateDrop.isLoading}
-              onClick={() =>
-                activateDrop.mutate(
-                  { dropperClaimId: claimId },
-                  {
-                    onSuccess: () => {
-                      claim.refetch();
-                    },
-                  }
-                )
-              }
-            >
-              Activate
-            </Button>
-            <Button
-              variant={"outline"}
-              colorScheme="red"
-              isDisabled={!claim.data?.active}
-              isLoading={deactivateDrop.isLoading}
-              onClick={() =>
-                deactivateDrop.mutate(
-                  { dropperClaimId: claimId },
-                  {
-                    onSuccess: () => {
-                      claim.refetch();
-                    },
-                  }
-                )
-              }
-            >
-              Deactivate
-            </Button>
-            <Button
-              as={Link}
-              colorScheme={"orange"}
-              variant="outline"
-              onClick={() => {
-                if (query?.dropId) {
-                  router.push({
-                    pathname: "/drops",
-                  });
-                } else {
-                  router.push({
-                    pathname: "dropper/claims/details",
-                    query: {
-                      claimId: claimId,
-                      contractAddress: dropperAddress,
-                      claimIdx: claimIdx,
-                    },
-                  });
-                }
-              }}
-            >
-              {query?.dropId ? `Back to list` : `See whitelist`}
-            </Button>
-          </Flex>
-        </Stack>
-        {children && children}
+        <Box
+          // fontSize={"12px"}
+          fontWeight={"600"}
+          borderRadius="xl"
+          p={2}
+          // bgColor="#454545"
+          textColor={isActive ? "green.900" : "inherit"}
+          w="auto"
+          position={"absolute"}
+          top={2}
+          left={5}
+        >
+          {isActive ? "Active" : "Not active"}
+        </Box>
+        <Box
+          fontSize={"12px"}
+          borderRadius="xl"
+          p={2}
+          bgColor="#454545"
+          w="auto"
+          position={"absolute"}
+          bottom={5}
+          right={5}
+        >
+          {claimState.data?.claim[0] == "20" && "ERC 20"}
+          {claimState.data?.claim[0] == "1" && "Terminus"}
+        </Box>
+        <Box
+          fontSize={"12px"}
+          borderRadius="xl"
+          p={2}
+          bgColor="#454545"
+          w="auto"
+          position={"absolute"}
+          bottom={5}
+          left={5}
+        >
+          Polygon
+        </Box>
+      </Metadata>
+      <Flex mx={4} direction="column">
+        <Box my={8} fontSize="sm" p={2} bgColor={"blue.1400"} borderRadius="md">
+          Deadline: {deadline} <br />
+          Drop number: {dropNumber} <br />
+        </Box>
+        <Button w="100%" colorScheme={"green"}>
+          Manage
+        </Button>
       </Flex>
     </Flex>
   );
@@ -522,3 +270,298 @@ const _Claim = ({
 const DropCard = chakra(_Claim);
 
 export default DropCard;
+
+{
+  /* <Stack direction={"column"} py={4} w="70%" flexGrow={1} px={[0, 4]}>
+  <Skeleton colorScheme={"orange"} isLoaded={!claim.isLoading}>
+    <Editable
+      my={2}
+      p={2}
+      submitOnBlur={false}
+      bgColor={"blue.800"}
+      size="lg"
+      fontSize={"lg"}
+      textColor="gray.500"
+      w="100%"
+      minW={["280px", "300px", "360px", "420px", null]}
+      variant={"outline"}
+      placeholder={claim.data?.description}
+      defaultValue={claim.data?.description}
+      isDisabled={claim.isLoading}
+      onSubmit={(nextValue) => {
+        onSubmit({ description: nextValue });
+      }}
+    >
+      <EditablePreview
+        w="100%"
+        h="fit-content"
+        maxH="unset"
+        whiteSpace={"break-spaces"}
+        px={2}
+      />
+      <EditableTextarea w="100%" px={2}></EditableTextarea>
+      <EditableControls />
+    </Editable>
+  </Skeleton>
+  <Flex w="100%" direction={["row", null]} flexWrap="wrap">
+    <Flex
+      direction={"row"}
+      flexGrow={1}
+      flexBasis={"200px"}
+      wordBreak="break-word"
+    >
+      <Stack direction={"column"} py={4} w="100%">
+        <code
+          key={`terminus-address-${claim.data?.terminus_address}`}
+        >
+          Terminus address:
+          <Skeleton
+            colorScheme={"orange"}
+            isLoaded={!claim.isLoading}
+          >
+            <Editable
+              submitOnBlur={false}
+              selectAllOnFocus={true}
+              bgColor={"blue.700"}
+              size="sm"
+              fontSize={"sm"}
+              textColor="gray.500"
+              w="100%"
+              minW={["280px", "300px", "360px", "420px", null]}
+              variant={"outline"}
+              placeholder={claim.data?.terminus_address}
+              defaultValue={claim.data?.terminus_address}
+              isDisabled={claim.isLoading}
+              onSubmit={(nextValue) => {
+                onSubmit({ terminus_address: nextValue });
+              }}
+            >
+              <EditablePreview w="100%" px={2} />
+              <EditableInput w="100%" px={2} />
+            </Editable>
+          </Skeleton>
+        </code>
+        <code key={`terminusPoolId-${claim.data?.terminus_pool_id}`}>
+          Terminus Pool Id:
+          <Skeleton
+            colorScheme={"orange"}
+            isLoaded={!claim.isLoading}
+          >
+            <Editable
+              submitOnBlur={false}
+              bgColor={"blue.700"}
+              size="sm"
+              fontSize={"sm"}
+              textColor="gray.500"
+              w="100%"
+              minW={["280px", "300px", "360px", "420px", null]}
+              variant={"outline"}
+              placeholder={claim.data?.terminus_pool_id}
+              defaultValue={claim.data?.terminus_pool_id}
+              isDisabled={claim.isLoading}
+              onSubmit={(nextValue) => {
+                onSubmit({ terminus_pool_id: nextValue });
+              }}
+            >
+              <EditablePreview w="100%" px={2} />
+              <EditableInput w="100%" px={2} />
+            </Editable>
+          </Skeleton>
+        </code>
+        <code
+          key={`claimDeadline-${claim.data?.claim_block_deadline}`}
+        >
+          Deadline:
+          <Skeleton
+            colorScheme={"orange"}
+            isLoaded={!claim.isLoading}
+          >
+            <Editable
+              submitOnBlur={false}
+              bgColor={"blue.700"}
+              size="sm"
+              fontSize={"sm"}
+              textColor="gray.500"
+              w="100%"
+              minW={["280px", "300px", "360px", "420px", null]}
+              variant={"outline"}
+              placeholder={claim.data?.claim_block_deadline}
+              defaultValue={claim.data?.claim_block_deadline}
+              isDisabled={claim.isLoading}
+              onSubmit={(nextValue) => {
+                onSubmit({ claim_block_deadline: nextValue });
+              }}
+            >
+              <EditablePreview w="100%" px={2} />
+              <EditableInput w="100%" px={2} />
+            </Editable>
+          </Skeleton>
+        </code>
+        <code key={`claimUri-${claimState.data?.claimUri}`}>
+          URI:
+          <Skeleton
+            colorScheme={"orange"}
+            isLoaded={!claimState.isLoading && !setClaimURI.isLoading}
+          >
+            <Editable
+              submitOnBlur={false}
+              bgColor={"blue.700"}
+              size="sm"
+              fontSize={"sm"}
+              textColor="gray.500"
+              w="100%"
+              minW={["280px", "300px", "360px", "420px", null]}
+              variant={"outline"}
+              placeholder={"claim uri"}
+              defaultValue={claimState.data?.claimUri}
+              onSubmit={(nextValue) => {
+                setClaimURI.mutate(
+                  { uri: nextValue },
+                  {
+                    onSettled: () => {
+                      setClaimURI.reset();
+                    },
+                  }
+                );
+              }}
+            >
+              <EditablePreview w="100%" px={2} cursor={"text"} />
+              <EditableInput wordBreak={"keep-all"} w="100%" px={2} />
+            </Editable>
+          </Skeleton>
+        </code>
+
+        <code key={`signer-${claimState.data?.signer}`}>
+          Signer:
+          <Skeleton
+            colorScheme={"orange"}
+            isLoaded={
+              !claimState.isLoading && !setClaimSigner.isLoading
+            }
+          >
+            <Editable
+              submitOnBlur={false}
+              bgColor={"blue.700"}
+              size="sm"
+              fontSize={"sm"}
+              textColor="gray.500"
+              w="100%"
+              minW={["280px", "300px", "360px", "420px", null]}
+              variant={"outline"}
+              selectAllOnFocus={true}
+              placeholder={claimState.data?.signer ?? "claim signer"}
+              defaultValue={claimState.data?.signer}
+              onSubmit={(nextValue) => {
+                setClaimSigner.mutate(
+                  { signer: nextValue },
+                  {
+                    onSettled: () => {
+                      setClaimSigner.reset();
+                    },
+                  }
+                );
+              }}
+            >
+              <EditablePreview w="100%" px={2} cursor={"text"} />
+              <EditableInput wordBreak={"keep-all"} w="100%" px={2} />
+            </Editable>
+          </Skeleton>
+        </code>
+        <Skeleton isLoaded={!claimUri.isLoading}>
+          {claimUri?.data && (
+            <Box cursor="crosshair" overflowWrap={"break-word"}>
+              <ReactJson
+                name="metadata"
+                collapsed
+                style={{
+                  cursor: "text",
+                  lineBreak: "anywhere",
+                }}
+                src={claimUri?.data}
+                theme="harmonic"
+                displayDataTypes={false}
+                displayObjectSize={false}
+                collapseStringsAfterLength={128}
+              />
+            </Box>
+          )}
+        </Skeleton>
+      </Stack>
+    </Flex>
+    <Flex
+      flexGrow={1}
+      h="auto"
+      flexBasis={"220px"}
+      placeSelf="center"
+    >
+      <FileUpload
+        onDrop={onDrop}
+        alignSelf="center"
+        minW="220px"
+        isUploading={isUploading}
+      />
+    </Flex>
+  </Flex>
+  <Flex direction={"row"} justifyContent="space-evenly" pt={4}>
+    <Button
+      variant={"outline"}
+      colorScheme="green"
+      isDisabled={!!claim.data?.active}
+      isLoading={activateDrop.isLoading}
+      onClick={() =>
+        activateDrop.mutate(
+          { dropperClaimId: claimId },
+          {
+            onSuccess: () => {
+              claim.refetch();
+            },
+          }
+        )
+      }
+    >
+      Activate
+    </Button>
+    <Button
+      variant={"outline"}
+      colorScheme="red"
+      isDisabled={!claim.data?.active}
+      isLoading={deactivateDrop.isLoading}
+      onClick={() =>
+        deactivateDrop.mutate(
+          { dropperClaimId: claimId },
+          {
+            onSuccess: () => {
+              claim.refetch();
+            },
+          }
+        )
+      }
+    >
+      Deactivate
+    </Button>
+    <Button
+      as={Link}
+      colorScheme={"orange"}
+      variant="outline"
+      onClick={() => {
+        if (query?.dropId) {
+          router.push({
+            pathname: "/drops",
+          });
+        } else {
+          router.push({
+            pathname: "dropper/claims/details",
+            query: {
+              claimId: claimId,
+              contractAddress: dropperAddress,
+              claimIdx: claimIdx,
+            },
+          });
+        }
+      }}
+    >
+      {query?.dropId ? `Back to list` : `See whitelist`}
+    </Button>
+  </Flex>
+</Stack> */
+}
