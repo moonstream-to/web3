@@ -2,14 +2,14 @@
 Lootbox API.
 """
 import logging
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Dict
 from uuid import UUID
 
 from web3 import Web3
 from brownie import network
 
-
-from fastapi import APIRouter, Body, Request, Depends, Query
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Body, Request, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -20,8 +20,8 @@ from .. import data
 from .. import db
 from .. import Dropper
 from .. import signatures
-from ..middleware import DropperHTTPException
-from ..settings import ENGINE_BROWNIE_NETWORK
+from ..middleware import DropperHTTPException, DropperAuthMiddleware
+from ..settings import ENGINE_BROWNIE_NETWORK, ORIGINS, ENGINE_BROWNIE_NETWORK, DOCS_TARGET_PATH
 
 try:
     network.connect(ENGINE_BROWNIE_NETWORK)
@@ -31,13 +31,51 @@ except:
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(
-    prefix="/drops",
+
+tags_metadata = [{"name": "admin", "description": "Moonstream Engine old drops API"}]
+
+
+whitelist_paths: Dict[str, str] = {}
+whitelist_paths.update(
+    {
+        "/ping": "GET",
+        "/docs": "GET",
+        "/drops": "GET",
+        "/drops/batch": "GET",
+        "/drops/claims": "GET",
+        "/drops/contracts": "GET",
+        "/drops/terminus": "GET",
+        "/drops/blockchains": "GET",
+        "/drops/terminus/claims": "GET",
+        "/now": "GET",
+        "/status": "GET",
+        "/openapi.json": "GET",
+    }
+)
+
+app = FastAPI(
+    title=f"Moonstream Engine old drops API",
+    description="Moonstream Engine old drops API endpoints.",
+    version="v0.0.1",
+    openapi_tags=tags_metadata,
+    openapi_url="/openapi.json",
+    docs_url=None,
+    redoc_url=f"/{DOCS_TARGET_PATH}",
 )
 
 
-@router.get("", response_model=data.DropResponse)
-@router.get("/", response_model=data.DropResponse)
+app.add_middleware(DropperAuthMiddleware, whitelist=whitelist_paths)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("", response_model=data.DropResponse)
+@app.get("/", response_model=data.DropResponse)
 async def get_drop_handler(
     dropper_claim_id: UUID,
     address: str,
@@ -118,7 +156,7 @@ async def get_drop_handler(
     )
 
 
-@router.get("/batch", response_model=List[data.DropBatchResponseItem])
+@app.get("/batch", response_model=List[data.DropBatchResponseItem])
 async def get_drop_batch_handler(
     blockchain: str,
     address: str,
@@ -220,7 +258,7 @@ async def get_drop_batch_handler(
     return claims
 
 
-@router.get("/blockchains")
+@app.get("/blockchains")
 async def get_drops_blockchains_handler(
     db_session: Session = Depends(db.yield_db_session),
 ) -> List[data.DropperBlockchainResponse]:
@@ -246,7 +284,7 @@ async def get_drops_blockchains_handler(
     return response
 
 
-@router.get("/contracts", response_model=List[data.DropperContractResponse])
+@app.get("/contracts", response_model=List[data.DropperContractResponse])
 async def get_dropper_contracts_handler(
     blockchain: Optional[str] = Query(None),
     db_session: Session = Depends(db.yield_db_session),
@@ -280,7 +318,7 @@ async def get_dropper_contracts_handler(
     return response
 
 
-@router.get("/terminus")
+@app.get("/terminus")
 async def get_drops_terminus_handler(
     blockchain: str = Query(None),
     db_session: Session = Depends(db.yield_db_session),
@@ -312,7 +350,7 @@ async def get_drops_terminus_handler(
     return response
 
 
-@router.get("/claims", response_model=data.DropListResponse)
+@app.get("/claims", response_model=data.DropListResponse)
 async def get_drop_list_handler(
     blockchain: str,
     claimant_address: str,
@@ -360,7 +398,7 @@ async def get_drop_list_handler(
     return data.DropListResponse(drops=[result for result in results])
 
 
-@router.get("/claims/{dropper_claim_id}", response_model=data.DropperClaimResponse)
+@app.get("/claims/{dropper_claim_id}", response_model=data.DropperClaimResponse)
 async def get_drop_handler(
     request: Request,
     dropper_claim_id: str,
@@ -404,7 +442,7 @@ async def get_drop_handler(
     )
 
 
-@router.get("/terminus/claims", response_model=data.DropListResponse)
+@app.get("/terminus/claims", response_model=data.DropListResponse)
 async def get_drop_terminus_list_handler(
     blockchain: str,
     terminus_address: str,
@@ -446,7 +484,7 @@ async def get_drop_terminus_list_handler(
     return data.DropListResponse(drops=[result for result in results])
 
 
-@router.post("/claims", response_model=data.DropCreatedResponse)
+@app.post("/claims", response_model=data.DropCreatedResponse)
 async def create_drop(
     request: Request,
     register_request: data.DropRegisterRequest = Body(...),
@@ -503,7 +541,7 @@ async def create_drop(
     )
 
 
-@router.put(
+@app.put(
     "/claims/{dropper_claim_id}/activate",
     response_model=data.DropUpdatedResponse,
 )
@@ -550,7 +588,7 @@ async def activate_drop(
     )
 
 
-@router.put(
+@app.put(
     "/claims/{dropper_claim_id}/deactivate",
     response_model=data.DropUpdatedResponse,
 )
@@ -597,7 +635,7 @@ async def deactivate_drop(
     )
 
 
-@router.put("/claims/{dropper_claim_id}", response_model=data.DropUpdatedResponse)
+@app.put("/claims/{dropper_claim_id}", response_model=data.DropUpdatedResponse)
 async def update_drop(
     request: Request,
     dropper_claim_id: UUID,
@@ -649,7 +687,7 @@ async def update_drop(
     )
 
 
-@router.get("/claimants", response_model=data.DropListResponse)
+@app.get("/claimants", response_model=data.DropListResponse)
 async def get_claimants(
     request: Request,
     dropper_claim_id: UUID,
@@ -686,7 +724,7 @@ async def get_claimants(
     return data.DropListResponse(drops=list(results))
 
 
-@router.post("/claimants", response_model=data.ClaimantsResponse)
+@app.post("/claimants", response_model=data.ClaimantsResponse)
 async def add_claimants(
     request: Request,
     add_claimants_request: data.DropAddClaimantsRequest = Body(...),
@@ -726,7 +764,7 @@ async def add_claimants(
     return data.ClaimantsResponse(claimants=results)
 
 
-@router.delete("/claimants", response_model=data.RemoveClaimantsResponse)
+@app.delete("/claimants", response_model=data.RemoveClaimantsResponse)
 async def delete_claimants(
     request: Request,
     remove_claimants_request: data.DropRemoveClaimantsRequest = Body(...),
@@ -765,7 +803,7 @@ async def delete_claimants(
     return data.RemoveClaimantsResponse(addresses=results)
 
 
-@router.get("/claimants/search", response_model=data.Claimant)
+@app.get("/claimants/search", response_model=data.Claimant)
 async def get_claimant_in_drop(
     request: Request,
     dropper_claim_id: UUID,
@@ -807,7 +845,7 @@ async def get_claimant_in_drop(
     return data.Claimant(address=claimant.address, amount=claimant.amount)
 
 
-@router.post("/drop/{dropper_claim_id}/refetch")
+@app.post("/drop/{dropper_claim_id}/refetch")
 async def refetch_drop_signatures(
     request: Request,
     dropper_claim_id: UUID,

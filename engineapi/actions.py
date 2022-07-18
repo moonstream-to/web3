@@ -297,6 +297,27 @@ def update_drop(
     return claim
 
 
+def get_free_drop_number_in_range(db_session: Session, dropper_contract_id: uuid.UUID, start: Optional[int], end: int):
+    """
+    Return list of free drops number in range
+    """
+
+    if start is None:
+        start = 0
+
+    drops = (
+        db_session.query(DropperClaim)
+        .filter(DropperClaim.dropper_contract_id == dropper_contract_id)
+        .filter(DropperClaim.claim_id >= start)
+        .filter(DropperClaim.claim_id <= end)
+        .all()
+    )
+    free_numbers = list(range(start, end + 1))
+    for drop in drops:
+        free_numbers.remove(drop.claim_id)
+    return drops
+
+
 def add_claimants(db_session: Session, dropper_claim_id, claimants, added_by):
     """
     Add a claimants to a claim
