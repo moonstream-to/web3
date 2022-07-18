@@ -22,7 +22,7 @@ from .. import db
 from .. import Dropper
 from .. import signatures
 from ..middleware import DropperHTTPException, DropperAuthMiddleware
-from ..settings import DOCS_TARGET_PATH, ORIGINS, ENGINE_BROWNIE_NETWORK
+from ..settings import DOCS_TARGET_PATH_OPENAPI, ORIGINS, ENGINE_BROWNIE_NETWORK
 
 
 try:
@@ -42,7 +42,7 @@ app = FastAPI(
     openapi_tags=tags_metadata,
     openapi_url="/openapi.json",
     docs_url=None,
-    redoc_url=f"/{DOCS_TARGET_PATH}",
+    redoc_url=f"/{DOCS_TARGET_PATH_OPENAPI['admin']}",
 )
 
 

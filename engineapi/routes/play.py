@@ -2,7 +2,6 @@
 Moonstream Engine Play API.
 """
 import logging
-import time
 from typing import List, Optional
 from uuid import UUID
 
@@ -13,7 +12,7 @@ from web3 import Web3
 from brownie import network
 
 
-from fastapi import APIRouter, Body, Request, Depends, Query
+from fastapi import Request, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -22,12 +21,12 @@ from engineapi.models import DropperClaimant
 
 from .. import actions
 from .. import data
-from ..middleware import DropperHTTPException, DropperAuthMiddleware
+from ..middleware import DropperHTTPException
 from .. import db
 from .. import Dropper
 from .. import signatures
 from ..middleware import DropperHTTPException
-from ..settings import ENGINE_BROWNIE_NETWORK, DOCS_TARGET_PATH, ORIGINS
+from ..settings import ENGINE_BROWNIE_NETWORK, DOCS_TARGET_PATH_OPENAPI
 
 try:
     network.connect(ENGINE_BROWNIE_NETWORK)
@@ -48,7 +47,7 @@ app = FastAPI(
     openapi_tags=tags_metadata,
     openapi_url="/openapi.json",
     docs_url=None,
-    redoc_url=f"/{DOCS_TARGET_PATH}",
+    redoc_url=f"/{DOCS_TARGET_PATH_OPENAPI['play']}",
 )
 
 

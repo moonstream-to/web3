@@ -21,7 +21,7 @@ from .. import db
 from .. import Dropper
 from .. import signatures
 from ..middleware import DropperHTTPException, DropperAuthMiddleware
-from ..settings import ENGINE_BROWNIE_NETWORK, ORIGINS, ENGINE_BROWNIE_NETWORK, DOCS_TARGET_PATH
+from ..settings import ENGINE_BROWNIE_NETWORK, ORIGINS, ENGINE_BROWNIE_NETWORK, DOCS_TARGET_PATH_OPENAPI
 
 try:
     network.connect(ENGINE_BROWNIE_NETWORK)
@@ -32,7 +32,7 @@ except:
 logger = logging.getLogger(__name__)
 
 
-tags_metadata = [{"name": "admin", "description": "Moonstream Engine old drops API"}]
+tags_metadata = [{"name": "dropper", "description": "Moonstream Engine old drops API"}]
 
 
 whitelist_paths: Dict[str, str] = {}
@@ -60,7 +60,7 @@ app = FastAPI(
     openapi_tags=tags_metadata,
     openapi_url="/openapi.json",
     docs_url=None,
-    redoc_url=f"/{DOCS_TARGET_PATH}",
+    redoc_url=f"/{DOCS_TARGET_PATH_OPENAPI['dropper']}",
 )
 
 
