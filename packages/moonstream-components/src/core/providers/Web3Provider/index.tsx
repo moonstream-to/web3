@@ -118,17 +118,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
       const deadline = Math.floor(new Date().getTime() / 1000) + 24 * 60 * 60;
       const token = await signAccessToken(account, window.ethereum, deadline);
 
-      localStorage.setItem(
-        "APP_ACCESS_TOKEN",
-        Buffer.from(
-          JSON.stringify({
-            address: account,
-            deadline: deadline,
-            signed_message: token,
-          }),
-          "utf-8"
-        ).toString("base64")
-      );
+      localStorage.setItem("APP_ACCESS_TOKEN", token);
     }
   };
 

@@ -16,6 +16,7 @@ import {
   FormControl,
   FormErrorMessage,
   Button,
+  HStack,
 } from "@chakra-ui/react";
 const StashABI = require("../../games/cu/StashABI.json");
 import { StashABI as StashABIType } from "../../games/cu/StashABI";
@@ -93,6 +94,10 @@ const CryptoUnicorns = () => {
       web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
     ];
 
+  const playAssetPath = "https://s3.amazonaws.com/static.simiotics.com/play";
+  const assets = {
+    unicornMilk: `${playAssetPath}/CU_UNIM_256px.png`,
+  };
 
   const toast = useToast();
   const stashUnim = useMutation(
@@ -250,16 +255,16 @@ const CryptoUnicorns = () => {
               mr={2}
               p={1}
             >
-              <Flex>
+              <HStack>
                 <Image
                   ml={2}
                   alt={"bottle"}
                   h="48px"
-                  src="https://darkforest.cryptounicorns.fun/static/media/icon_milk.6fc3d44e.png"
+                  src={assets["unicornMilk"]}
                 />
                 <Flex direction={"column"} wrap="nowrap" w="100%">
                   <code>
-                    <Text mx={2} mt={2} display={"inline-block"} fontSize="xl">
+                    <Text mx={2} display={"inline-block"} fontSize="xl">
                       {unim.spenderState.isLoading ? (
                         <Spinner m={0} size={"lg"} />
                       ) : (
@@ -276,7 +281,7 @@ const CryptoUnicorns = () => {
                     </Text>
                   </code>
                 </Flex>
-              </Flex>
+              </HStack>
             </Badge>
           </Flex>
           <Spacer />
