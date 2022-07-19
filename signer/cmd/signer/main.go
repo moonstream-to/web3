@@ -9,6 +9,9 @@ import (
 var (
 	// Storing CLI definitions
 	stateCLI StateCLI
+
+	ENGINE_DROPPER_ADDRESS = os.Getenv("ENGINE_DROPPER_ADDRESS")
+	RPC_URI                = os.Getenv("RPC_URI")
 )
 
 // Command Line Interface state
@@ -23,9 +26,11 @@ type StateCLI struct {
 	helpFlag           bool
 
 	// Gen flags
-	inputFlag  string
-	outputFlag string
-	headerFlag bool
+	claimIdFlag       int64
+	blockDeadlineFlag int64
+	inputFlag         string
+	outputFlag        string
+	headerFlag        bool
 }
 
 func (s *StateCLI) usage() {
@@ -61,6 +66,14 @@ func (s *StateCLI) checkRequirements() {
 
 	switch {
 	case s.genCmd.Parsed():
+		if s.claimIdFlag == 0 {
+			fmt.Println("Flag claim-id should be specified")
+			os.Exit(1)
+		}
+		if s.blockDeadlineFlag == 0 {
+			fmt.Println("Flag deadline should be specified")
+			os.Exit(1)
+		}
 		if s.inputFlag == "" {
 			fmt.Println("Flag input should be specified")
 			os.Exit(1)
@@ -112,6 +125,8 @@ func (s *StateCLI) populateCLI() {
 	}
 
 	// Gen subcommand flag pointers
+	s.genCmd.Int64Var(&s.claimIdFlag, "claim-id", 0, "Dropper claim ID")
+	s.genCmd.Int64Var(&s.blockDeadlineFlag, "block-deadline", 0, "Block until claim is active")
 	s.genCmd.StringVar(&s.inputFlag, "input", "", "Addresses input to sign, supported types: .csv")
 	s.genCmd.StringVar(&s.outputFlag, "output", "", "Output for generated messages, default: Stdout")
 	s.genCmd.BoolVar(&s.headerFlag, "header", true, "Specify this flag if input csv file contains header")
@@ -136,19 +151,30 @@ func cli() {
 			os.Exit(1)
 		}
 
-		input, err := ParseInput(stateCLI.inputFlag, stateCLI.headerFlag)
+		err = initDropper()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		inputs, err := ParseInput(stateCLI.inputFlag, stateCLI.headerFlag)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 		signedData := make(map[string]string)
-		for _, addr := range input.Addresses {
-			sig, err := privateContainer.sign(fmt.Sprintf("%s%s", addr, "FFFFFFFFFFFFFFFFFFFFFFFF"))
+		for _, input := range inputs {
+			chm, err := claimMessageHash(stateCLI.claimIdFlag, input.Address, stateCLI.blockDeadlineFlag, input.Amount)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			signedData[addr] = sig
+			sig, err := privateContainer.sign(chm)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			signedData[input.Address] = sig
 		}
 		output := Output{SignedData: signedData}
 		err = ProcessOutput(output, stateCLI.outputFlag)

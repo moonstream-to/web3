@@ -6,12 +6,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
+	"strconv"
 	"strings"
 )
 
 type Input struct {
-	Addresses []string
+	Address string
+	Amount  int64
 }
 
 type Output struct {
@@ -29,7 +32,7 @@ func CheckPathExists(path string) (bool, error) {
 	return true, nil
 }
 
-func ParseInput(providedInput string, header bool) (*Input, error) {
+func ParseInput(providedInput string, header bool) ([]Input, error) {
 	// TODO(kompotkot): Support other filetypes and Stdin
 	inputFilePath := strings.TrimSuffix(providedInput, "/")
 	_, err := CheckPathExists(inputFilePath)
@@ -52,16 +55,16 @@ func ParseInput(providedInput string, header bool) (*Input, error) {
 	if header {
 		startLine = 1
 	}
-	var addresses []string
+	var inputs []Input
 	for _, line := range csv[startLine:] {
-		addresses = append(addresses, line[0])
+		amount, err := strconv.Atoi(line[1])
+		if err != nil {
+			log.Printf("Unable to parse amount %s to int, err: %v", line[1], err)
+		}
+		inputs = append(inputs, Input{Address: line[0], Amount: int64(amount)})
 	}
 
-	input := &Input{
-		Addresses: addresses,
-	}
-
-	return input, nil
+	return inputs, nil
 }
 
 func ProcessOutput(output Output, outputPath string) error {
