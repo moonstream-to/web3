@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from .. import actions
 from .. import data
 from .. import db
-from ..settings import DOCS_TARGET_PATH_OPENAPI
+from ..settings import DOCS_TARGET_PATH_OPENAPI, DOCS_TARGET_PATH
 
 logger = logging.getLogger(__name__)
 

@@ -2,6 +2,7 @@
 Moonstream Engine Play API.
 """
 import logging
+from pydoc import render_doc
 from typing import List, Optional
 from uuid import UUID
 
@@ -26,7 +27,7 @@ from .. import db
 from .. import Dropper
 from .. import signatures
 from ..middleware import DropperHTTPException
-from ..settings import ENGINE_BROWNIE_NETWORK, DOCS_TARGET_PATH_OPENAPI
+from ..settings import ENGINE_BROWNIE_NETWORK, DOCS_TARGET_PATH, DOCS_TARGET_PATH_OPENAPI
 
 try:
     network.connect(ENGINE_BROWNIE_NETWORK)
@@ -47,7 +48,8 @@ app = FastAPI(
     openapi_tags=tags_metadata,
     openapi_url="/openapi.json",
     docs_url=None,
-    redoc_url=f"/{DOCS_TARGET_PATH_OPENAPI['play']}",
+    #redoc_url=f"/{DOCS_TARGET_PATH_OPENAPI['play']}",
+    redoc_url=f"/{DOCS_TARGET_PATH}",
 )
 
 

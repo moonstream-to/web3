@@ -21,7 +21,7 @@ from .. import db
 from .. import Dropper
 from .. import signatures
 from ..middleware import DropperHTTPException, DropperAuthMiddleware
-from ..settings import ENGINE_BROWNIE_NETWORK, ORIGINS, ENGINE_BROWNIE_NETWORK, DOCS_TARGET_PATH_OPENAPI
+from ..settings import ENGINE_BROWNIE_NETWORK, ORIGINS, ENGINE_BROWNIE_NETWORK, DOCS_TARGET_PATH_OPENAPI, DOCS_TARGET_PATH
 
 try:
     network.connect(ENGINE_BROWNIE_NETWORK)
@@ -49,7 +49,7 @@ whitelist_paths.update(
         "/drops/terminus/claims": "GET",
         "/now": "GET",
         "/status": "GET",
-        "/openapi.json": "GET",
+        "/drops/openapi.json": "GET",
     }
 )
 
@@ -60,7 +60,8 @@ app = FastAPI(
     openapi_tags=tags_metadata,
     openapi_url="/openapi.json",
     docs_url=None,
-    redoc_url=f"/{DOCS_TARGET_PATH_OPENAPI['dropper']}",
+    #redoc_url=f"/{DOCS_TARGET_PATH_OPENAPI['dropper']}",
+    redoc_url=f"/{DOCS_TARGET_PATH}",
 )
 
 
@@ -754,7 +755,7 @@ async def add_claimants(
         )
     
     except actions.DublicateClaimantError:
-        raise DropperHTTPException(status_code=400, detail="Dublicated claimants in request please deduplicate them")
+        raise DropperHTTPException(status_code=400, detail="Dublicated claimants in request please deduplicate them.")
     except Exception as e:
         logger.info(
             f"Can't add claimants for claim {add_claimants_request.dropper_claim_id} with error: {e}"

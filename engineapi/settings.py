@@ -24,6 +24,7 @@ SIGNER_PASSWORD = os.environ.get("SIGNER_PASSWORD")
 MOONSTREAM_SIGNING_SERVER_IP = os.environ.get("MOONSTREAM_SIGNING_SERVER_IP", None)
 
 
+DOCS_TARGET_PATH = os.environ.get("DOCS_TARGET_PATH", "docs")
 # OpenAPI
 DOCS_TARGET_PATH_OPENAPI = {
     "dropper": "docs/dropper",

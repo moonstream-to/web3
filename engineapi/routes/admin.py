@@ -2,7 +2,7 @@
 Moonstream Engine Admin API.
 """
 import logging
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Dict
 from uuid import UUID
 
 from web3 import Web3
@@ -22,7 +22,7 @@ from .. import db
 from .. import Dropper
 from .. import signatures
 from ..middleware import DropperHTTPException, DropperAuthMiddleware
-from ..settings import DOCS_TARGET_PATH_OPENAPI, ORIGINS, ENGINE_BROWNIE_NETWORK
+from ..settings import DOCS_TARGET_PATH_OPENAPI, DOCS_TARGET_PATH, ORIGINS, ENGINE_BROWNIE_NETWORK
 
 
 try:
@@ -42,11 +42,19 @@ app = FastAPI(
     openapi_tags=tags_metadata,
     openapi_url="/openapi.json",
     docs_url=None,
-    redoc_url=f"/{DOCS_TARGET_PATH_OPENAPI['admin']}",
+    #redoc_url=f"/{DOCS_TARGET_PATH_OPENAPI['admin']}",
+    redoc_url=f"/{DOCS_TARGET_PATH}",
+)
+
+whitelist_paths: Dict[str, str] = {}
+whitelist_paths.update(
+    {   "/openapi.json": "GET",
+        "/admin/openapi.json": "GET",
+    }
 )
 
 
-app.add_middleware(DropperAuthMiddleware)
+app.add_middleware(DropperAuthMiddleware, whitelist=whitelist_paths)
 
 app.add_middleware(
     CORSMiddleware,
