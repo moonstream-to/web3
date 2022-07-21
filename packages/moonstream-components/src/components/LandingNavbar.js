@@ -134,7 +134,7 @@ const LandingNavbar = () => {
               <Image
                 pl={2}
                 h="24px"
-                src="https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg"
+                src="https://s3.amazonaws.com/static.simiotics.com/metamask/metamask-fox.svg"
               />
             </Button>
           )}
