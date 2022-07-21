@@ -14,11 +14,13 @@ from . import (
     abi,
     Lootbox,
     MockTerminus,
+    CraftingFacet,
     Diamond,
     DiamondCutFacet,
     DiamondLoupeFacet,
     OwnershipFacet,
     ReentrancyExploitable,
+    CraftingFacet,
 )
 
 FACETS: Dict[str, Any] = {
@@ -26,13 +28,13 @@ FACETS: Dict[str, Any] = {
     "DiamondLoupeFacet": DiamondLoupeFacet,
     "OwnershipFacet": OwnershipFacet,
     "ReentrancyExploitable": ReentrancyExploitable,
+    "CraftingFacet": CraftingFacet,
 }
 
 FACET_PRECEDENCE: List[str] = [
     "DiamondCutFacet",
     "OwnershipFacet",
     "DiamondLoupeFacet",
-    "ReentrancyExploitable",
 ]
 
 FACET_ACTIONS: Dict[str, int] = {"add": 0, "replace": 1, "remove": 2}
@@ -126,6 +128,38 @@ def facet_cut(
         [diamond_cut_action], initializer_address, calldata, transaction_config
     )
     return transaction
+
+
+def crafting_gogogo(
+    owner_address: str, transaction_config: Dict[str, Any]
+) -> Dict[str, Any]:
+    result = diamond_gogogo(owner_address, transaction_config)
+
+    try:
+        crafting_facet = CraftingFacet.CraftingFacet(None)
+        crafting_facet.deploy(transaction_config)
+    except Exception as e:
+        print(e)
+        result["error"] = f"Failed to deploy CraftingFacet: {e}"
+        return result
+
+    result["CraftingFacet"] = crafting_facet.address
+
+    try:
+        facet_cut(
+            result["Diamond"],
+            "CraftingFacet",
+            crafting_facet.address,
+            "add",
+            transaction_config,
+        )
+    except Exception as e:
+        print(e)
+        result["error"] = f"Failed to diamondCut cut CraftingFacet: {e}"
+        return result
+
+    result["attached"].append("CraftingFacet")
+    return result
 
 
 def diamond_gogogo(
@@ -289,7 +323,7 @@ def create_lootboxes_from_config(
             if item["rewardType"] == 20:
                 erc20_contract = MockErc20(item["tokenAddress"])
                 erc20_decimals = erc20_contract.decimals()
-                item["tokenAmount"] *= 10**erc20_decimals
+                item["tokenAmount"] *= 10 ** erc20_decimals
             lootbox_items.append(_lootbox_item_from_json_object(item))
 
         lootboxes.append(
@@ -445,6 +479,21 @@ def handle_gogogo(args: argparse.Namespace) -> None:
     json.dump(result, sys.stdout, indent=4)
 
 
+def handle_crafting_gogogo(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+
+    transaction_config = MockTerminus.get_transaction_config(args)
+    result = crafting_gogogo(
+        args.owner_address,
+        transaction_config,
+    )
+
+    if args.outfile is not None:
+        with args.outfile:
+            json.dump(result, args.outfile)
+    json.dump(result, sys.stdout, indent=4)
+
+
 def handle_create_lootboxes_from_config(args: argparse.Namespace) -> None:
     network.connect(args.network)
     transaction_config = MockTerminus.get_transaction_config(args)
@@ -518,6 +567,31 @@ def generate_cli():
     MockTerminus.add_default_arguments(gogogo_parser, transact=True)
 
     gogogo_parser.set_defaults(func=handle_gogogo)
+
+    crafting_gogogo_parser = subcommands.add_parser(
+        "crafting-gogogo",
+        help="Deploys Crafting contract",
+        description="Deploys Crafting contract",
+    )
+
+    crafting_gogogo_parser.add_argument(
+        "-o",
+        "--outfile",
+        type=argparse.FileType("w"),
+        default=None,
+        help="(Optional) file to write deployed addresses to",
+    )
+
+    crafting_gogogo_parser.add_argument(
+        "--owner-address",
+        type=str,
+        required=True,
+        help="Address of the owner of the lootbox contract",
+    )
+
+    MockTerminus.add_default_arguments(crafting_gogogo_parser, transact=True)
+
+    crafting_gogogo_parser.set_defaults(func=handle_crafting_gogogo)
 
     create_lootboxes_from_config_parser = subcommands.add_parser(
         "create-lootboxes-from-config",

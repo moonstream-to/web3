@@ -69,12 +69,12 @@ def contract_from_build(abi_name: str) -> ContractContainer:
     return ContractContainer(PROJECT, build)
 
 
-class Crafting:
+class CraftingFacet:
     def __init__(self, contract_address: Optional[ChecksumAddress]):
-        self.contract_name = "Crafting"
+        self.contract_name = "CraftingFacet"
         self.address = contract_address
         self.contract = None
-        self.abi = get_abi_json("Crafting")
+        self.abi = get_abi_json("CraftingFacet")
         if self.address is not None:
             self.contract: Optional[Contract] = Contract.from_abi(
                 self.contract_name, self.address, self.abi
@@ -109,6 +109,10 @@ class Crafting:
     ) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.getRecipe.call(recipe_id, block_identifier=block_number)
+
+    def num_recipes(self, block_number: Optional[Union[str, int]] = "latest") -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.numRecipes.call(block_identifier=block_number)
 
     def on_erc1155_batch_received(
         self,
@@ -230,7 +234,7 @@ def add_default_arguments(parser: argparse.ArgumentParser, transact: bool) -> No
 def handle_deploy(args: argparse.Namespace) -> None:
     network.connect(args.network)
     transaction_config = get_transaction_config(args)
-    contract = Crafting(None)
+    contract = CraftingFacet(None)
     result = contract.deploy(transaction_config=transaction_config)
     print(result)
     if args.verbose:
@@ -239,14 +243,14 @@ def handle_deploy(args: argparse.Namespace) -> None:
 
 def handle_verify_contract(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = Crafting(args.address)
+    contract = CraftingFacet(args.address)
     result = contract.verify_contract()
     print(result)
 
 
 def handle_add_recipe(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = Crafting(args.address)
+    contract = CraftingFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.add_recipe(
         recipe=args.recipe, transaction_config=transaction_config
@@ -258,7 +262,7 @@ def handle_add_recipe(args: argparse.Namespace) -> None:
 
 def handle_craft(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = Crafting(args.address)
+    contract = CraftingFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.craft(
         recipe_id=args.recipe_id, transaction_config=transaction_config
@@ -270,16 +274,23 @@ def handle_craft(args: argparse.Namespace) -> None:
 
 def handle_get_recipe(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = Crafting(args.address)
+    contract = CraftingFacet(args.address)
     result = contract.get_recipe(
         recipe_id=args.recipe_id, block_number=args.block_number
     )
     print(result)
 
 
+def handle_num_recipes(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = CraftingFacet(args.address)
+    result = contract.num_recipes(block_number=args.block_number)
+    print(result)
+
+
 def handle_on_erc1155_batch_received(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = Crafting(args.address)
+    contract = CraftingFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.on_erc1155_batch_received(
         arg1=args.arg1,
@@ -296,7 +307,7 @@ def handle_on_erc1155_batch_received(args: argparse.Namespace) -> None:
 
 def handle_on_erc1155_received(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = Crafting(args.address)
+    contract = CraftingFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.on_erc1155_received(
         arg1=args.arg1,
@@ -313,7 +324,7 @@ def handle_on_erc1155_received(args: argparse.Namespace) -> None:
 
 def handle_on_erc721_received(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = Crafting(args.address)
+    contract = CraftingFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.on_erc721_received(
         arg1=args.arg1,
@@ -329,7 +340,7 @@ def handle_on_erc721_received(args: argparse.Namespace) -> None:
 
 def handle_supports_interface(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = Crafting(args.address)
+    contract = CraftingFacet(args.address)
     result = contract.supports_interface(
         interface_id=args.interface_id, block_number=args.block_number
     )
@@ -337,7 +348,7 @@ def handle_supports_interface(args: argparse.Namespace) -> None:
 
 
 def generate_cli() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="CLI for Crafting")
+    parser = argparse.ArgumentParser(description="CLI for CraftingFacet")
     parser.set_defaults(func=lambda _: parser.print_help())
     subcommands = parser.add_subparsers()
 
@@ -367,6 +378,10 @@ def generate_cli() -> argparse.ArgumentParser:
         "--recipe-id", required=True, help="Type: uint256", type=int
     )
     get_recipe_parser.set_defaults(func=handle_get_recipe)
+
+    num_recipes_parser = subcommands.add_parser("num-recipes")
+    add_default_arguments(num_recipes_parser, False)
+    num_recipes_parser.set_defaults(func=handle_num_recipes)
 
     on_erc1155_batch_received_parser = subcommands.add_parser(
         "on-erc1155-batch-received"

@@ -37,14 +37,13 @@ library LibCrafting {
 
     uint256 constant ERC20_TOKEN_TYPE = 20;
     uint256 constant ERC1155_TOKEN_TYPE = 1155;
-    uint256 constant ERC721_TOKEN_TYPE = 721;
 
     uint256 constant INPUT_TOKEN_ACTION_TRANSFER = 0;
     uint256 constant INPUT_TOKEN_ACTION_BURN = 1;
     uint256 constant INPUT_TOKEN_ACTION_HOLD = 2;
 
-    uint256 constant OUTPUT_TOKEN_ACTION_MINT = 0;
-    uint256 constant OUTPUT_TOKEN_ACTION_TRANSFER = 1;
+    uint256 constant OUTPUT_TOKEN_ACTION_TRANSFER = 0;
+    uint256 constant OUTPUT_TOKEN_ACTION_MINT = 1;
 
     struct CraftingStorage {
         mapping(uint256 => Recipe) recipes;
