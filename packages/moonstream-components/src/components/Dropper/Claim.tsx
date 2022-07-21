@@ -143,15 +143,6 @@ const _Claim = ({
     });
   };
 
-  const { onClose, isOpen } = useDisclosure();
-
-  React.useEffect(() => {
-    if (isOpen && update.isSuccess) {
-      onClose();
-      update.reset();
-    }
-  }, [isOpen, update, onClose]);
-
   const onSubmit = (data: UpdateClaim) =>
     update.mutate(
       { ...data },
