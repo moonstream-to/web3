@@ -31,6 +31,7 @@ import { useToast } from "../../core/hooks";
 import { UpdateClaim } from "../../../../../types/Moonstream";
 import Metadata from "../Metadata";
 import dynamic from "next/dynamic";
+import { useQueryClient } from "react-query";
 const ReactJson = dynamic(() => import("react-json-view"), {
   ssr: false,
 });
@@ -55,6 +56,7 @@ const _Claim = ({
     claimId: claimId,
     dropperAddress: dropperAddress,
   });
+  const querClient = useQueryClient();
 
   const { claimState, setClaimSigner, setClaimURI, claimUri } =
     useDropperContract({
@@ -135,6 +137,7 @@ const _Claim = ({
           {
             onSettled: () => {
               setIsUploading(false);
+              querClient.refetchQueries(["claimants", "claimId", claimId]);
             },
           }
         );
