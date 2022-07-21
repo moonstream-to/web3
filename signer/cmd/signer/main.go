@@ -26,11 +26,11 @@ type StateCLI struct {
 	helpFlag           bool
 
 	// Gen flags
-	claimIdFlag       int64
-	blockDeadlineFlag int64
-	inputFlag         string
-	outputFlag        string
-	headerFlag        bool
+	claimIdFlag    int64
+	inputFlag      string
+	outputFlag     string
+	outputTypeFlag string
+	headerFlag     bool
 }
 
 func (s *StateCLI) usage() {
@@ -51,7 +51,7 @@ func (s *StateCLI) checkRequirements() {
 	if s.helpFlag {
 		switch {
 		case s.genCmd.Parsed():
-			fmt.Printf("Generate signed messades command\n\n")
+			fmt.Printf("Generate signed messages command\n\n")
 			s.genCmd.PrintDefaults()
 			os.Exit(0)
 		case s.versionCmd.Parsed():
@@ -70,20 +70,21 @@ func (s *StateCLI) checkRequirements() {
 			fmt.Println("Flag claim-id should be specified")
 			os.Exit(1)
 		}
-		if s.blockDeadlineFlag == 0 {
-			fmt.Println("Flag deadline should be specified")
-			os.Exit(1)
-		}
 		if s.inputFlag == "" {
 			fmt.Println("Flag input should be specified")
 			os.Exit(1)
 		}
 	}
 
+	if s.outputTypeFlag != "json" && s.outputTypeFlag != "csv" {
+		fmt.Printf("Unsupported output file type %s", s.outputTypeFlag)
+		os.Exit(1)
+	}
+
 	if s.passFileFlag != "" {
 		passFileExists, err := CheckPathExists(s.passFileFlag)
 		if err != nil || !passFileExists {
-			fmt.Println("File with password at %s not found, err: %v", s.passFileFlag, err)
+			fmt.Printf("File with password at %s not found, err: %v", s.passFileFlag, err)
 			os.Exit(1)
 		}
 	}
@@ -126,9 +127,9 @@ func (s *StateCLI) populateCLI() {
 
 	// Gen subcommand flag pointers
 	s.genCmd.Int64Var(&s.claimIdFlag, "claim-id", 0, "Dropper claim ID")
-	s.genCmd.Int64Var(&s.blockDeadlineFlag, "block-deadline", 0, "Block until claim is active")
 	s.genCmd.StringVar(&s.inputFlag, "input", "", "Addresses input to sign, supported types: .csv")
-	s.genCmd.StringVar(&s.outputFlag, "output", "", "Output for generated messages, default: Stdout")
+	s.genCmd.StringVar(&s.outputFlag, "output", "output", "Output for generated messages, default: ./output.json")
+	s.genCmd.StringVar(&s.outputTypeFlag, "output-type", "json", "Output extension, default: json")
 	s.genCmd.BoolVar(&s.headerFlag, "header", true, "Specify this flag if input csv file contains header")
 }
 
@@ -162,9 +163,9 @@ func cli() {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		signedData := make(map[string]string)
+		var claimants []Claimant
 		for _, input := range inputs {
-			chm, err := claimMessageHash(stateCLI.claimIdFlag, input.Address, stateCLI.blockDeadlineFlag, input.Amount)
+			chm, err := claimMessageHash(stateCLI.claimIdFlag, input.Address, input.ClaimBlockDeadline, input.Amount)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
@@ -174,14 +175,20 @@ func cli() {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			signedData[input.Address] = sig
+			claimants = append(claimants, Claimant{
+				ClaimantAddress:    input.Address,
+				Amount:             input.Amount,
+				Signature:          sig,
+				ClaimBlockDeadline: input.ClaimBlockDeadline,
+				ClaimId:            stateCLI.claimIdFlag,
+			})
 		}
-		output := Output{SignedData: signedData}
-		err = ProcessOutput(output, stateCLI.outputFlag)
+		fullPath, err := ProcessOutput(claimants, stateCLI.outputFlag, stateCLI.outputTypeFlag)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+		fmt.Printf("Output saved at: %s\nSigner address: %s\n", fullPath, privateContainer.publicKey.String())
 
 	case "version":
 		stateCLI.versionCmd.Parse(os.Args[2:])

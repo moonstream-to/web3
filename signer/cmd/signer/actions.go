@@ -13,12 +13,17 @@ import (
 )
 
 type Input struct {
-	Address string
-	Amount  int64
+	Address            string
+	Amount             int64
+	ClaimBlockDeadline int64
 }
 
-type Output struct {
-	SignedData map[string]string `json:"signed_data"`
+type Claimant struct {
+	ClaimantAddress    string `json:"claimant_address"`
+	Amount             int64  `json:"amount"`
+	Signature          string `json:"signature"`
+	ClaimBlockDeadline int64  `json:"claim_block_deadline"`
+	ClaimId            int64  `json:"claim_id"`
 }
 
 func CheckPathExists(path string) (bool, error) {
@@ -59,27 +64,43 @@ func ParseInput(providedInput string, header bool) ([]Input, error) {
 	for _, line := range csv[startLine:] {
 		amount, err := strconv.Atoi(line[1])
 		if err != nil {
-			log.Printf("Unable to parse amount %s to int, err: %v", line[1], err)
+			log.Printf("Unable to parse amount %s to int for addr %s, err: %v", line[1], line[0], err)
+			continue
 		}
-		inputs = append(inputs, Input{Address: line[0], Amount: int64(amount)})
+		claimBlockDeadline, err := strconv.Atoi(line[2])
+		if err != nil {
+			log.Printf("Unable to parse claimBlockDeadline %s to int for addr %s, err: %v", line[2], line[0], err)
+			continue
+		}
+		inputs = append(inputs, Input{Address: line[0], Amount: int64(amount), ClaimBlockDeadline: int64(claimBlockDeadline)})
 	}
 
 	return inputs, nil
 }
 
-func ProcessOutput(output Output, outputPath string) error {
-	outputStr, err := json.Marshal(output)
-	if err != nil {
-		return fmt.Errorf("Unable to marshal output, err: %v", err)
-	}
-	if outputPath == "" {
-		fmt.Printf("%s", outputStr)
-	} else {
-		err := ioutil.WriteFile(outputPath, outputStr, 0600)
+func ProcessOutput(claimants []Claimant, outputPath, outputFileType string) (string, error) {
+	var err error
+	var outputBytes []byte
+	if outputFileType == "json" {
+		outputBytes, err = json.Marshal(claimants)
 		if err != nil {
-			return fmt.Errorf("Unable to write to file, err: %v", err)
+			return "", fmt.Errorf("Unable to marshal output, err: %v", err)
+		}
+	}
+	if outputFileType == "csv" {
+		for _, claimant := range claimants {
+			row := fmt.Sprintf(
+				"%s,%d,%s,%d,%d\n",
+				claimant.ClaimantAddress, claimant.Amount, claimant.Signature, claimant.ClaimBlockDeadline, claimant.ClaimId,
+			)
+			outputBytes = append(outputBytes, row...)
 		}
 	}
 
-	return nil
+	err = ioutil.WriteFile(fmt.Sprintf("%s.%s", outputPath, outputFileType), outputBytes, 0600)
+	if err != nil {
+		return "", fmt.Errorf("Unable to write to file, err: %v", err)
+	}
+
+	return fmt.Sprintf("%s.%s", outputPath, outputFileType), nil
 }
