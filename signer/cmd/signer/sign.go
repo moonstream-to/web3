@@ -57,7 +57,17 @@ func (pc *PrivateContainer) sign(data [32]byte) (string, error) {
 		return "", fmt.Errorf("An error occurred while signing with private key, err: %v", err)
 	}
 
-	sig := hexutil.Encode(signature)
+	rawSig := hexutil.Encode(signature)
+
+	var sig string
+	rawSigLen := len(rawSig)
+	if rawSig[rawSigLen-2:] == "00" {
+		sig = fmt.Sprintf("%s%s", rawSig[:rawSigLen-2], "1b")
+	} else if rawSig[rawSigLen-2:] == "01" {
+		sig = fmt.Sprintf("%s%s", rawSig[:rawSigLen-2], "1c")
+	} else {
+		sig = rawSig
+	}
 
 	return sig, nil
 }
