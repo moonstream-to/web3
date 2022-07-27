@@ -701,7 +701,9 @@ async def add_claimants(
     db_session: Session = Depends(db.yield_db_session),
 ) -> data.ClaimantsResponse:
     """
-    Add addresses to particular claim
+    Add whitelisted claimants to particular claim.
+    If no signature provided for claimant, it will overwrite existing one
+    with NULL at database.
     """
 
     try:

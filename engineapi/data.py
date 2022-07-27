@@ -74,11 +74,25 @@ class DropCreatedResponse(BaseModel):
 
 
 class Claimant(BaseModel):
-    address: str
+    """
+    Represents a claimant with allowed amount to claim and block deadline.
+    """
+
+    address: str = Field(alias="claimant_address")
     amount: int
+    signature: Optional[str] = None
+    claim_block_deadline: Optional[int] = None
+    claim_id: Optional[int] = None
+
+    class Config:
+        allow_population_by_field_name = True
 
 
 class DropAddClaimantsRequest(BaseModel):
+    """
+    Whitelist of claimants for claim.
+    """
+
     dropper_claim_id: UUID
     claimants: List[Claimant] = Field(default_factory=list)
 

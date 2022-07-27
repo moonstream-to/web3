@@ -14,6 +14,7 @@ from web3.types import ChecksumAddress
 from engineapi.Dropper import Dropper
 
 
+from . import data
 from . import Dropper, MockErc20, MockTerminus
 from .models import (
     DropperClaimant,
@@ -295,9 +296,14 @@ def update_drop(
     return claim
 
 
-def add_claimants(db_session: Session, dropper_claim_id, claimants, added_by):
+def add_claimants(
+    db_session: Session,
+    dropper_claim_id: uuid.UUID,
+    claimants: List[data.Claimant],
+    added_by: str,
+) -> List[data.Claimant]:
     """
-    Add a claimants to a claim
+    Add a claimants to a particular claim.
     """
 
     # On conflict requirements https://stackoverflow.com/questions/42022362/no-unique-or-exclusion-constraint-matching-the-on-conflict
@@ -305,17 +311,18 @@ def add_claimants(db_session: Session, dropper_claim_id, claimants, added_by):
     claimant_objects = []
 
     for claimant in claimants:
-        claimant_objects.append(
-            {
-                "dropper_claim_id": dropper_claim_id,
-                "address": Web3.toChecksumAddress(claimant.address),
-                "amount": 0,
-                "raw_amount": str(claimant.amount),
-                "added_by": added_by,
-                "created_at": datetime.now(),
-                "updated_at": datetime.now(),
-            }
-        )
+        claimant_object = {
+            "dropper_claim_id": dropper_claim_id,
+            "address": Web3.toChecksumAddress(claimant.address),
+            "amount": 0,
+            "raw_amount": str(claimant.amount),
+            "added_by": added_by,
+            "created_at": datetime.now(),
+            "updated_at": datetime.now(),
+        }
+        if claimant.signature is not None:
+            claimant_object["signature"] = claimant.signature[2:]
+        claimant_objects.append(claimant_object)
 
     insert_statement = insert(DropperClaimant).values(claimant_objects)
 
@@ -325,6 +332,7 @@ def add_claimants(db_session: Session, dropper_claim_id, claimants, added_by):
             amount=insert_statement.excluded.amount,
             raw_amount=insert_statement.excluded.raw_amount,
             added_by=insert_statement.excluded.added_by,
+            signature=insert_statement.excluded.signature,
             updated_at=datetime.now(),
         ),
     )
