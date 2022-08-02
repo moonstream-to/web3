@@ -5,12 +5,14 @@ export interface WalletStatesInterface {
   ONBOARD: String;
   CONNECT: String;
   CONNECTED: String;
-  WRONG_CHAIN: String;
   UNKNOWN_CHAIN: String;
 }
+
+export type supportedChains = "localhost" | "mumbai" | "polygon" | "ethereum";
+
 export interface ChainInterface {
   chainId: number;
-  name: string;
+  name: supportedChains;
   rpcs: Array<string>;
 }
 
@@ -24,7 +26,6 @@ export interface TokenInterface {
   deadline: number;
   signed_message: string;
 }
-export type supportedChains = "localhost" | "mumbai" | "polygon" | "ethereum";
 
 declare function ChangeChain(chainName: supportedChains): void;
 export interface MoonstreamWeb3ProviderInterface {

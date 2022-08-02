@@ -97,7 +97,7 @@ export interface Dropper extends BaseContract {
     claim(
       claimId: number | string | BN,
       blockDeadline: number | string | BN,
-      amount: number | string | BN,
+      amount: number | string,
       signature: string | number[]
     ): NonPayableTransactionObject<void>;
 

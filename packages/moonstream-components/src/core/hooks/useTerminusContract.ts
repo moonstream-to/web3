@@ -55,8 +55,6 @@ export const useTerminusContract = ({
     (query: any) =>
       getTokenState({
         ctx,
-        spender: address,
-        account: ctx.account,
       })(query.queryKey[1]?.address ?? ""),
     {
       ...hookCommon,

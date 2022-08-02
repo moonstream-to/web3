@@ -1,0 +1,16 @@
+{
+  "name": "@moonstream/web3auth",
+  "version": "0.0.1",
+  "description": "Signing messages for authentication in moonstream",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "author": "bugout-dev",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^17.0.31"
+  }
+}

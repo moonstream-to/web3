@@ -35,7 +35,7 @@ const useToast = () => {
           title: userTitle,
           description: userMessage,
           status: type,
-          // duration: 3000,
+          duration: 1500,
         });
       }
     },

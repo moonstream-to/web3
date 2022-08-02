@@ -117,6 +117,7 @@ class DropResponse(BaseModel):
     claimant: str
     claim_id: int
     amount: int
+    amount_string: str
     block_deadline: int
     signature: str
     title: str
