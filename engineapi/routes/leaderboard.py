@@ -1,41 +1,38 @@
 """
-Lootbox API.
+Leaderboard API.
 """
-from atexit import register
 import logging
-import time
-from typing import List, Dict, Optional
 from uuid import UUID
 
 from web3 import Web3
-from brownie import network
 
 
-from fastapi import APIRouter, Body, FastAPI, Request, Depends, Query
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import  FastAPI, Request, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy.orm.exc import NoResultFound
 
 from .. import actions
 from .. import data
 from .. import db
-from .. import Dropper
-from .. import signatures
-from ..middleware import DropperHTTPException, DropperAuthMiddleware
-from ..settings import (
-    ENGINE_BROWNIE_NETWORK,
-    DOCS_TARGET_PATH,
-    ORIGINS,
-)
+from ..settings import DOCS_TARGET_PATH
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(
-    prefix="/leaderboard",
+
+tags_metadata = [{"name": "leaderboard", "description": "Moonstream Engine leaderboard API"}]
+
+
+app = FastAPI(
+    title=f"Moonstream Engine leaderboard API",
+    description="Moonstream Engine leaderboard API endpoints.",
+    version="v0.0.1",
+    openapi_tags=tags_metadata,
+    openapi_url="/openapi.json",
+    docs_url=None,
+    redoc_url=f"/{DOCS_TARGET_PATH}",
 )
 
 
-@router.get("/count/addresses")
+@app.get("/count/addresses")
 async def count_addresses(
     request: Request,
     leaderboard_id: UUID,
@@ -51,7 +48,7 @@ async def count_addresses(
     return data.CountAddressesResponse(count=count)
 
 
-@router.get("/quartiles")
+@app.get("/quartiles")
 async def quartiles(
     request: Request,
     leaderboard_id: UUID,
@@ -73,7 +70,7 @@ async def quartiles(
     )
 
 
-@router.get("/position")
+@app.get("/position")
 async def position(
     request: Request,
     leaderboard_id: UUID,
@@ -98,7 +95,7 @@ async def position(
     return positions
 
 
-@router.get("/")
+@app.get("/")
 async def leaderboard(
     request: Request,
     leaderboard_id: UUID,

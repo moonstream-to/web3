@@ -24,8 +24,8 @@ SIGNER_PASSWORD = os.environ.get("SIGNER_PASSWORD")
 MOONSTREAM_SIGNING_SERVER_IP = os.environ.get("MOONSTREAM_SIGNING_SERVER_IP", None)
 
 
-# OpenAPI
-DOCS_TARGET_PATH = "docs"
+DOCS_TARGET_PATH = os.environ.get("DOCS_TARGET_PATH", "docs")
+
 
 # AWS signer
 AWS_DEFAULT_REGION = os.environ.get("AWS_DEFAULT_REGION")

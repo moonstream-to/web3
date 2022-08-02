@@ -5,31 +5,27 @@ import logging
 import time
 from typing import Dict
 
-from brownie import network
-
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import data
-from .middleware import DropperHTTPException, DropperAuthMiddleware
 from .settings import (
-    ENGINE_BROWNIE_NETWORK,
-    DOCS_TARGET_PATH,
     ORIGINS,
 )
-from .routes.dropper import router as dropper_router
-from .routes.leaderboard import router as leaderboard_router
+from .routes.dropper import app as dropper_app
+from .routes.leaderboard import app as leaderboard_app 
+from .routes.admin import app as admin_app
+from .routes.play import app as play_app
 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 tags_metadata = [
-    {"name": "drops", "description": "Api wich servies dropper contracts"},
+    {"name": "drops", "description": 'Api wich servies dropper contracts "./leaderboards/docs"'},
     {
         "name": "leaderboard",
-        "description": "Api wich servies leaderboards",
+        "description": "Api wich servies moonstream engine"
     },
 ]
 
@@ -41,34 +37,7 @@ app = FastAPI(
     openapi_tags=tags_metadata,
     openapi_url="/openapi.json",
     docs_url=None,
-    redoc_url=f"/{DOCS_TARGET_PATH}",
 )
-
-
-whitelist_paths: Dict[str, str] = {}
-whitelist_paths.update(
-    {
-        "/ping": "GET",
-        "/docs": "GET",
-        "/drops": "GET",
-        "/drops/batch": "GET",
-        "/drops/claims": "GET",
-        "/drops/contracts": "GET",
-        "/drops/terminus": "GET",
-        "/drops/blockchains": "GET",
-        "/drops/terminus/claims": "GET",
-        "/leaderboard/count/addresses": "GET",
-        "/leaderboard/quartiles": "GET",
-        "/leaderboard/position": "GET",
-        "/leaderboard/status": "GET",
-        "/leaderboard": "GET",
-        "/now": "GET",
-        "/status": "GET",
-        "/openapi.json": "GET",
-    }
-)
-
-app.add_middleware(DropperAuthMiddleware, whitelist=whitelist_paths)
 
 app.add_middleware(
     CORSMiddleware,
@@ -95,5 +64,7 @@ async def now_handler() -> data.NowResponse:
     return data.NowResponse(epoch_time=time.time())
 
 
-app.include_router(leaderboard_router)
-app.include_router(dropper_router)
+app.mount("/leaderboard", leaderboard_app)
+app.mount("/drops", dropper_app)
+app.mount("/admin", admin_app)
+app.mount("/play", play_app)
