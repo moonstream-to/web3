@@ -21,7 +21,7 @@ from .. import db
 from .. import Dropper
 from .. import signatures
 from ..middleware import DropperHTTPException, DropperAuthMiddleware
-from ..settings import ENGINE_BROWNIE_NETWORK, ORIGINS, ENGINE_BROWNIE_NETWORK, DOCS_TARGET_PATH_OPENAPI, DOCS_TARGET_PATH
+from ..settings import ENGINE_BROWNIE_NETWORK, ORIGINS, ENGINE_BROWNIE_NETWORK, DOCS_TARGET_PATH
 
 try:
     network.connect(ENGINE_BROWNIE_NETWORK)
@@ -60,7 +60,6 @@ app = FastAPI(
     openapi_tags=tags_metadata,
     openapi_url="/openapi.json",
     docs_url=None,
-    #redoc_url=f"/{DOCS_TARGET_PATH_OPENAPI['dropper']}",
     redoc_url=f"/{DOCS_TARGET_PATH}",
 )
 

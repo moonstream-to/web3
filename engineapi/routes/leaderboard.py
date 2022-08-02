@@ -1,7 +1,6 @@
 """
-Lootbox API.
+Leaderboard API.
 """
-from atexit import register
 import logging
 from uuid import UUID
 
@@ -14,7 +13,7 @@ from sqlalchemy.orm import Session
 from .. import actions
 from .. import data
 from .. import db
-from ..settings import DOCS_TARGET_PATH_OPENAPI, DOCS_TARGET_PATH
+from ..settings import DOCS_TARGET_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +28,7 @@ app = FastAPI(
     openapi_tags=tags_metadata,
     openapi_url="/openapi.json",
     docs_url=None,
-    redoc_url=f"/{DOCS_TARGET_PATH_OPENAPI['leaderboard']}",
+    redoc_url=f"/{DOCS_TARGET_PATH}",
 )
 
 

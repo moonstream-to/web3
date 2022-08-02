@@ -5,17 +5,11 @@ import logging
 import time
 from typing import Dict
 
-from brownie import network
-
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import data
-from .middleware import DropperHTTPException, DropperAuthMiddleware
 from .settings import (
-    ENGINE_BROWNIE_NETWORK,
-    DOCS_TARGET_PATH,
     ORIGINS,
 )
 from .routes.dropper import app as dropper_app
@@ -70,7 +64,7 @@ async def now_handler() -> data.NowResponse:
     return data.NowResponse(epoch_time=time.time())
 
 
-app.mount("/leaderboards", dropper_app)
+app.mount("/leaderboards", leaderboard_app)
 app.mount("/drops", dropper_app)
 app.mount("/admin", admin_app)
 app.mount("/play", play_app)

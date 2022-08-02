@@ -17,7 +17,7 @@ const Docs = () => {
     <>
       <Box w="100%" maxH="100vh" overflowY="scroll" zIndex={0} bgColor="white">
         <RedocStandalone
-          specUrl={`leaderboard/openapi.json`}
+          specUrl={`${API}/leaderboards/openapi.json`}
           options={{
             theme: {
               colors: {
