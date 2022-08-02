@@ -64,7 +64,7 @@ async def now_handler() -> data.NowResponse:
     return data.NowResponse(epoch_time=time.time())
 
 
-app.mount("/leaderboards", leaderboard_app)
+app.mount("/leaderboard", leaderboard_app)
 app.mount("/drops", dropper_app)
 app.mount("/admin", admin_app)
 app.mount("/play", play_app)
