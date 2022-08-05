@@ -37,7 +37,7 @@ import LootboxCard from "../../../../packages/moonstream-components/src/componen
 import { MockTerminus as TerminusFacet } from "../../../../types/contracts/MockTerminus";
 import { hookCommon } from "moonstream-components/src/core/hooks";
 
-const terminusAbi = require("../../../../../abi/MockTerminus.json");
+const terminusAbi = require("../../../../abi/MockTerminus.json");
 
 const contractsAddr: { [key in supportedChains]: string } = {
   mumbai: "0x19e812EdB24B68A8F3AbF5e4C82d10AfEf1641Db",
@@ -149,6 +149,7 @@ const CryptoUnicorns = () => {
     ["cuTerminus", web3ctx.chainId, terminusAddress, web3ctx.account],
     async ({ queryKey }) => {
       const currentChain = chainByChainId[queryKey[1] as number];
+      const currentUserAddress = queryKey[3];
       if (!currentChain) {
         return;
       }
@@ -156,13 +157,36 @@ const CryptoUnicorns = () => {
         terminusAbi
       ) as any as TerminusFacet;
       terminusFacet.options.address = terminusAddress;
-      let poolIds: { [key in LootboxType]: number } = {};
+
+      let accounts: string[] = [];
+      let poolIds: number[] = [];
+
       lootboxTypes.forEach((lootboxType) => {
-        lootboxInfo[lootboxType].poolIdByChain[web];
+        accounts.push(`${currentUserAddress}`);
+        poolIds.push(
+          lootboxInfo[lootboxType].poolIdByChain[
+            currentChain as supportedChains
+          ]
+        );
       });
+
+      try {
+        const balances = await terminusFacet.methods
+          .balanceOfBatch(accounts, poolIds)
+          .call();
+        let currentBalances = { ...defaultLootboxBalances };
+        balances.forEach((balance, lootboxIndex) => {
+          currentBalances[lootboxTypes[lootboxIndex]] = parseInt(balance, 10);
+        });
+      } catch (e) {
+        console.error(
+          `Crypto Unicorns player portal: Could not retrieve lootbox balances for the given user: ${currentUserAddress}. Lootbox pool IDs: ${poolIds}. Terminus contract address: ${terminusAddress}.`
+        );
+      }
     },
     {
       ...hookCommon,
+      enabled: false,
     }
   );
 
