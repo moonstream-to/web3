@@ -40,8 +40,15 @@ import { hookCommon } from "moonstream-components/src/core/hooks";
 const terminusAbi = require("../../../../abi/MockTerminus.json");
 
 const contractsAddr: { [key in supportedChains]: string } = {
-  mumbai: "0x19e812EdB24B68A8F3AbF5e4C82d10AfEf1641Db",
+  mumbai: "0x762aF8cbE298bbFE568BBB6709f854A01c07333D",
   polygon: "0x94f557dDdb245b11d031F57BA7F2C4f28C4A203e",
+  ethereum: "0x0000000000000000000000000000000000000000",
+  localhost: "0x0000000000000000000000000000000000000000",
+};
+
+const terminusAddresses: { [key in supportedChains]: string } = {
+  mumbai: "0x19e812EdB24B68A8F3AbF5e4C82d10AfEf1641Db",
+  polygon: "0x99A558BDBdE247C2B2716f0D4cFb0E246DFB697D",
   ethereum: "0x0000000000000000000000000000000000000000",
   localhost: "0x0000000000000000000000000000000000000000",
 };
@@ -62,6 +69,15 @@ const lootboxTypes: LootboxType[] = [
   "mystery",
   "RMP",
 ];
+// enum lootboxTypes {
+//   common,
+//   rare,
+//   mythic,
+//   land,
+//   mystery,
+//   RMP,
+// }
+
 const lootboxInfo: { [key in LootboxType]: LootboxInfo } = {
   common: {
     poolIdByChain: {
@@ -141,7 +157,7 @@ const CryptoUnicorns = () => {
     if (!chain) {
       setTerminusAddress("");
     } else {
-      setTerminusAddress(contractsAddr[chain as supportedChains]);
+      setTerminusAddress(terminusAddresses[chain as supportedChains]);
     }
   }, [web3ctx.chainId]);
 
@@ -178,6 +194,7 @@ const CryptoUnicorns = () => {
         balances.forEach((balance, lootboxIndex) => {
           currentBalances[lootboxTypes[lootboxIndex]] = parseInt(balance, 10);
         });
+        setLootboxBalances(currentBalances);
       } catch (e) {
         console.error(
           `Crypto Unicorns player portal: Could not retrieve lootbox balances for the given user: ${currentUserAddress}. Lootbox pool IDs: ${poolIds}. Terminus contract address: ${terminusAddress}.`
@@ -190,7 +207,19 @@ const CryptoUnicorns = () => {
     }
   );
 
+  useEffect(() => {
+    terminusBalances.refetch();
+  }, [terminusBalances, web3ctx]);
+
   const getGameBankConfig = async () => {
+    if (!web3ctx.web3.currentProvider) {
+      return {
+        rbwAddress: "0x0000000000000000000000000000000000000000",
+        unimAddress: "0x0000000000000000000000000000000000000000",
+        gameServer: "0x0000000000000000000000000000000000000000",
+        terminusAddress: "0x0000000000000000000000000000000000000000",
+      };
+    }
     const contract = new web3ctx.web3.eth.Contract(
       StashABI
     ) as any as StashABIType;
@@ -238,15 +267,6 @@ const CryptoUnicorns = () => {
       ],
     ctx: web3ctx,
   });
-
-  // const terminusPools: { [key in LootboxType]: any} = {
-  //   common: useTerminusContract({
-  //     poolId: "",
-  //     address: String(stashContract.data?.terminusAddress),
-  //     ctx: web3ctx,
-  //   }),
-  // };
-
   const contract = new web3ctx.web3.eth.Contract(
     StashABI
   ) as any as StashABIType;
@@ -426,7 +446,7 @@ const CryptoUnicorns = () => {
                 />
                 <Flex direction={"column"} wrap="nowrap" w="100%">
                   <code>
-                    <Text mx={2} display={"inline-block"} fontSize="xl">
+                    <Flex mx={2} display={"inline-block"} fontSize="xl">
                       {unim.spenderState.isLoading ? (
                         <Spinner m={0} size={"lg"} />
                       ) : (
@@ -440,7 +460,7 @@ const CryptoUnicorns = () => {
                             : "0"}
                         </Flex>
                       )}
-                    </Text>
+                    </Flex>
                   </code>
                 </Flex>
               </HStack>
@@ -465,7 +485,7 @@ const CryptoUnicorns = () => {
                 />
                 <Flex direction={"column"} wrap="nowrap" w="100%">
                   <code>
-                    <Text mx={2} mt={2} display={"inline-block"} fontSize="xl">
+                    <Flex mx={2} mt={2} display={"inline-block"} fontSize="xl">
                       {rbw.spenderState.isLoading ? (
                         <Spinner m={0} size={"lg"} />
                       ) : (
@@ -479,7 +499,7 @@ const CryptoUnicorns = () => {
                             : "0"}
                         </Flex>
                       )}
-                    </Text>
+                    </Flex>
                   </code>
                 </Flex>
               </Flex>
@@ -689,42 +709,42 @@ const CryptoUnicorns = () => {
             <LootboxCard
               imageUrl="https://lh3.googleusercontent.com/0H9500IgQKZqKstSo-nruV9RMV9aw7oPtgLARWtbIBU6brTaaK2F0Lk3t7xLygvk80r6OlsBOjnqIhr3EFzEMdwUZlIXTuuEa-O3uQ=w600"
               lootboxType="Common"
-              lootboxBalance={4}
+              lootboxBalance={lootboxBalances["common"]}
             />
           </GridItem>
           <GridItem>
             <LootboxCard
               imageUrl="https://lh3.googleusercontent.com/1RFVPV0nYzXG0FYea6BQacjsJlbutQSib258tWnovbsIiNhUyOo_BO_AfANN6aSppzvS7ZLpgNcppXuhLOHT2wQAxqAx-Da5bVLnsw=w600"
               lootboxType="Rare"
-              lootboxBalance={12}
+              lootboxBalance={lootboxBalances["rare"]}
             />
           </GridItem>
           <GridItem>
             <LootboxCard
               imageUrl="https://lh3.googleusercontent.com/2bv26HfU7CgDJhVocABtxbdMLQ8qH2kuU5mQJWVehuNzX-4GiOBm2iIxsTtdriHYpsmr94R7xfRhgELCmnJKQpcMA4wMoPlM_V4zaQ=w600"
               lootboxType="Mythic"
-              lootboxBalance={21}
+              lootboxBalance={lootboxBalances["mythic"]}
             />
           </GridItem>
           <GridItem>
             <LootboxCard
               imageUrl="https://lh3.googleusercontent.com/2AVqj_GOKf358s0Fkw66MHxEcivOWfvRjAMdmqhHgh3RwyWyJNbnn_amPUJt4KDeO6H7IdWKSV1tli5ijkgHHAemxYGuTof5WZo3wA=w600"
               lootboxType="Land"
-              lootboxBalance={0}
+              lootboxBalance={lootboxBalances["land"]}
             />
           </GridItem>
           <GridItem>
             <LootboxCard
               imageUrl="https://lh3.googleusercontent.com/30YXRt8oPvD0J9KuRiUTLrRxrigwvbs8P5uFIkJt65hmlVAerYAsxZgPHjvA-byTXseTKJQsnpbuD7giChaO4TyoFm7pcqza8NrZ=w600"
               lootboxType="Mystery"
-              lootboxBalance={7}
+              lootboxBalance={lootboxBalances["mystery"]}
             />
           </GridItem>
           <GridItem>
             <LootboxCard
               imageUrl="https://lh3.googleusercontent.com/u_BYIeFDCF4dC4n_Col8e1W_dNTK84uMfR6mhjLhQj7GuObvBeENqSu7L8nzDFJ9JDdpiezHpRP0PJ8ioPxOakvU3iz5lbhJy1abRWM=w600"
               lootboxType="RMP"
-              lootboxBalance={1}
+              lootboxBalance={lootboxBalances["RMP"]}
             />
           </GridItem>
         </Grid>

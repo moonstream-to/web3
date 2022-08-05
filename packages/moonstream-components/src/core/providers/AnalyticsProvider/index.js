@@ -108,10 +108,10 @@ const AnalyticsProvider = ({ children, mixpanelToken }) => {
     }
     const urlForUnmount = router.nextRouter.pathname;
     const closeListener = () => {
-      mixpanel?.track(MIXPANEL_EVENTS.PAGEVIEW_DURATION, {
-        url: urlForUnmount,
-        isBeforeUnload: true,
-      });
+      // mixpanel?.track(MIXPANEL_EVENTS.PAGEVIEW_DURATION, {
+      //   url: urlForUnmount,
+      //   isBeforeUnload: true,
+      // });
     };
     window.addEventListener("beforeunload", closeListener);
     //cleanup function fires on useEffect unmount
