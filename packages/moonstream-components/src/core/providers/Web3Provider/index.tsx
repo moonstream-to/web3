@@ -104,6 +104,13 @@ export const chains: { [key in supportedChains]: ChainInterface } = {
   },
 };
 
+export const chainByChainId= { [key in number]: string } = {
+  1: "ethereum",
+  1337: "localhost",
+  80001: "mumbai",
+  137: "polygon",
+};
+
 const isKnownChain = (_chainId: number) => {
   return Object.keys(chains).some((key) => {
     return chains[key as any as supportedChains].chainId == _chainId;

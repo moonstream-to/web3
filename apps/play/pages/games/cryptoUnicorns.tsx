@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
 import {
   Flex,
@@ -17,23 +17,27 @@ import {
   FormErrorMessage,
   Button,
   HStack,
-  VStack
+  Grid,
+  GridItem,
 } from "@chakra-ui/react";
 const StashABI = require("../../games/cu/StashABI.json");
 import { StashABI as StashABIType } from "../../games/cu/StashABI";
 const GameBankABI = require("../../games/cu/GameBankABI.json");
-import { GameBankABI as GameBankABIType, LootBoxStashed } from "../../games/cu/GameBankABI";
+import { GameBankABI as GameBankABIType } from "../../games/cu/GameBankABI";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
-import useTerminusContract from "moonstream-components/src/core/hooks/useTerminusContract";
 import { supportedChains } from "../../../../types/Moonstream";
 import { useERC20, useToast } from "moonstream-components/src/core/hooks";
 import { useMutation, useQuery } from "react-query";
 import { DEFAULT_METATAGS } from "../../src/constants";
-import { MAX_INT } from "moonstream-components/src/core/providers/Web3Provider";
+import { MAX_INT, chainByChainId } from "moonstream-components/src/core/providers/Web3Provider";
 import LootboxCard from "../../../../packages/moonstream-components/src/components/CryptoUnicorns/LootboxCard";
+import { MockTerminus as TerminusFacet } from "../../../../types/contracts/MockTerminus";
+import { hookCommon } from "moonstream-components/src/core/hooks";
+
+const terminusAbi = require("../../../../../abi/MockTerminus.json");
 
 const contractsAddr: { [key in supportedChains]: string } = {
-  mumbai: "0x762aF8cbE298bbFE568BBB6709f854A01c07333D",
+  mumbai: "0x19e812EdB24B68A8F3AbF5e4C82d10AfEf1641Db",
   polygon: "0x94f557dDdb245b11d031F57BA7F2C4f28C4A203e",
   ethereum: "0x0000000000000000000000000000000000000000",
   localhost: "0x0000000000000000000000000000000000000000",
@@ -41,8 +45,6 @@ const contractsAddr: { [key in supportedChains]: string } = {
 
 type LootboxType = "common" | "rare" | "mythic" | "land" | "mystery" | "RMP";
 interface LootboxInfo { 
-  label: string;
-  imageUri: string;
   poolIdByChain: {
     [key in supportedChains]: number;
   };
@@ -57,17 +59,63 @@ interface LootboxInfo {
 
 const lootboxInfo: { [key in LootboxType]: LootboxInfo} = {
   common: {
-    label: "common lootbox",
-    imageUri: "",
     poolIdByChain: {
-      mumbai: -1,
+      mumbai: 6,
       polygon: 4,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  rare: {
+    poolIdByChain: {
+      mumbai: 7,
+      polygon: -1,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  mythic: {
+    poolIdByChain: {
+      mumbai: 8,
+      polygon: -1,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  mystery: {
+    poolIdByChain: {
+      mumbai: 11,
+      polygon: -1,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  RMP: {
+    poolIdByChain: {
+      mumbai: 12,
+      polygon: -1,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  land: {
+    poolIdByChain: {
+      mumbai: 26,
+      polygon: -1,
       ethereum: -1,
       localhost: -1,
     },
   },
 };
 
+const defaultLootboxBalances = {
+  common: 0,
+  rare: 0,
+  mythic: 0,
+  land: 0,
+  mystery: 0,
+  RMP: 0,
+};
 
 const CryptoUnicorns = () => {
   const [notEnoughRBW, setNotEnoughRBW] = React.useState(false);
@@ -76,14 +124,44 @@ const CryptoUnicorns = () => {
   const [needAllowanceUNIM, setNeedAllowanceUNIM] = React.useState(false);
   const [rbwToStash, setRBWToStash] = React.useState("");
   const [unimToStash, setUNIMToStash] = React.useState("");
+  const [terminusAddress, setTerminusAddress] = React.useState("");
+  const [lootboxBalances, setLootboxBalances] = React.useState({...defaultLootboxBalances});
+
 
   const web3ctx = useContext(Web3Context);
 
-  // const terminus = useTerminusContract({
-  //   poolId: ,
-  //   address: contractAddress,
-  //   ctx: web3ctx,
-  // });
+  useEffect(() => {
+    const chain: string | undefined = chainByChainId[web3ctx.chainId];
+    if(!chain) {
+      setTerminusAddress("");
+    } else {
+      setTerminusAddress(contractsAddr[chain as supportedChains]);
+    }
+  }, [web3ctx.chainId]);
+
+  const terminusBalances = useQuery(
+    [
+      "cuTerminus",
+      {
+        address: terminusAddress,
+        chainId: web3ctx?.chainId,
+        currentUserAddress: web3ctx.account,
+      },
+    ],
+    () => {
+      const terminusFacet = new web3ctx.web3.eth.Contract(
+      terminusAbi
+    ) as any as TerminusFacet;
+      terminusFacet.options.address = terminusAddress;
+      Object.keys(lootboxInfo).forEach((key) => {
+        
+      })
+      return terminusFacet.methods.balanceOf(web3ctx.account, terminusPoolId).call();
+    },
+    {
+      ...hookCommon,
+    }
+  );
 
   const getGameBankConfig = async () => {
     const contract = new web3ctx.web3.eth.Contract(
@@ -96,7 +174,7 @@ const CryptoUnicorns = () => {
 
     contract.options.address =
       contractsAddr[
-      web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
+        web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
       ];
     const rbwAddress = await contract.methods.getRBWAddress().call();
     const unimAddress = await contract.methods.getUNIMAddress().call();
@@ -111,7 +189,7 @@ const CryptoUnicorns = () => {
     [
       "stashContract",
       contractsAddr[
-      web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
+        web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
       ],
     ],
     getGameBankConfig
@@ -122,14 +200,14 @@ const CryptoUnicorns = () => {
     ctx: web3ctx,
     spender:
       contractsAddr[
-      web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
+        web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
       ],
   });
   const unim = useERC20({
     contractAddress: stashContract.data?.unimAddress,
     spender:
       contractsAddr[
-      web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
+        web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
       ],
     ctx: web3ctx,
   });
@@ -265,7 +343,7 @@ const CryptoUnicorns = () => {
     }
   }, [rbwToStash, rbw.spenderState.data, web3ctx.web3.utils]);
 
-  const handleSubmit = () => { };
+  const handleSubmit = () => {};
 
   const handleKeypress = (e: any) => {
     //it triggers by pressing the enter key
@@ -329,9 +407,9 @@ const CryptoUnicorns = () => {
                           {`balance: `} <Spacer />
                           {unim.spenderState.data?.balance
                             ? web3ctx.web3.utils.fromWei(
-                              unim.spenderState.data?.balance,
-                              "ether"
-                            )
+                                unim.spenderState.data?.balance,
+                                "ether"
+                              )
                             : "0"}
                         </Flex>
                       )}
@@ -368,9 +446,9 @@ const CryptoUnicorns = () => {
                           {`balance: `} <Spacer />
                           {rbw.spenderState.data?.balance
                             ? web3ctx.web3.utils.fromWei(
-                              rbw.spenderState.data?.balance,
-                              "ether"
-                            )
+                                rbw.spenderState.data?.balance,
+                                "ether"
+                              )
                             : "0"}
                         </Flex>
                       )}
@@ -427,9 +505,6 @@ const CryptoUnicorns = () => {
                         }
                         onKeyPress={handleKeypress}
                         onChange={(event) => {
-                          console.log(
-                            event.target.value.match(/^[0-9]+$/) != null
-                          );
                           if (
                             event.target.value.match(/^[0-9]+$/) != null ||
                             event.target.value.length == 0
@@ -582,38 +657,50 @@ const CryptoUnicorns = () => {
             Inventory
           </Text>
         </Flex>
-        <Flex mb={12} wrap="wrap" direction="row" justifyContent="left" pb={10}>
-          <LootboxCard
-            imageUrl="https://lh3.googleusercontent.com/0H9500IgQKZqKstSo-nruV9RMV9aw7oPtgLARWtbIBU6brTaaK2F0Lk3t7xLygvk80r6OlsBOjnqIhr3EFzEMdwUZlIXTuuEa-O3uQ=w600"
-            lootboxType="Common"
-            lootboxBalance={4}
-          />
-          <LootboxCard
-            imageUrl="https://lh3.googleusercontent.com/1RFVPV0nYzXG0FYea6BQacjsJlbutQSib258tWnovbsIiNhUyOo_BO_AfANN6aSppzvS7ZLpgNcppXuhLOHT2wQAxqAx-Da5bVLnsw=w600"
-            lootboxType="Rare"
-            lootboxBalance={12}
-          />
-          <LootboxCard
-            imageUrl="https://lh3.googleusercontent.com/2bv26HfU7CgDJhVocABtxbdMLQ8qH2kuU5mQJWVehuNzX-4GiOBm2iIxsTtdriHYpsmr94R7xfRhgELCmnJKQpcMA4wMoPlM_V4zaQ=w600"
-            lootboxType="Mythic"
-            lootboxBalance={21}
-          />
-          <LootboxCard
-            imageUrl="https://lh3.googleusercontent.com/2AVqj_GOKf358s0Fkw66MHxEcivOWfvRjAMdmqhHgh3RwyWyJNbnn_amPUJt4KDeO6H7IdWKSV1tli5ijkgHHAemxYGuTof5WZo3wA=w600"
-            lootboxType="Land"
-            lootboxBalance={0}
-          />
-          <LootboxCard
-            imageUrl="https://lh3.googleusercontent.com/30YXRt8oPvD0J9KuRiUTLrRxrigwvbs8P5uFIkJt65hmlVAerYAsxZgPHjvA-byTXseTKJQsnpbuD7giChaO4TyoFm7pcqza8NrZ=w600"
-            lootboxType="Mystery"
-            lootboxBalance={7}
-          />
-          <LootboxCard
-            imageUrl="https://lh3.googleusercontent.com/u_BYIeFDCF4dC4n_Col8e1W_dNTK84uMfR6mhjLhQj7GuObvBeENqSu7L8nzDFJ9JDdpiezHpRP0PJ8ioPxOakvU3iz5lbhJy1abRWM=w600"
-            lootboxType="RMP"
-            lootboxBalance={1}
-          />
-        </Flex>
+        <Grid templateColumns="repeat(3, 1fr)" gap={6} mb={12} pb={10}>
+          <GridItem>
+            <LootboxCard
+              imageUrl="https://lh3.googleusercontent.com/0H9500IgQKZqKstSo-nruV9RMV9aw7oPtgLARWtbIBU6brTaaK2F0Lk3t7xLygvk80r6OlsBOjnqIhr3EFzEMdwUZlIXTuuEa-O3uQ=w600"
+              lootboxType="Common"
+              lootboxBalance={4}
+            />
+          </GridItem>
+          <GridItem>
+            <LootboxCard
+              imageUrl="https://lh3.googleusercontent.com/1RFVPV0nYzXG0FYea6BQacjsJlbutQSib258tWnovbsIiNhUyOo_BO_AfANN6aSppzvS7ZLpgNcppXuhLOHT2wQAxqAx-Da5bVLnsw=w600"
+              lootboxType="Rare"
+              lootboxBalance={12}
+            />
+          </GridItem>
+          <GridItem>
+            <LootboxCard
+              imageUrl="https://lh3.googleusercontent.com/2bv26HfU7CgDJhVocABtxbdMLQ8qH2kuU5mQJWVehuNzX-4GiOBm2iIxsTtdriHYpsmr94R7xfRhgELCmnJKQpcMA4wMoPlM_V4zaQ=w600"
+              lootboxType="Mythic"
+              lootboxBalance={21}
+            />
+          </GridItem>
+          <GridItem>
+            <LootboxCard
+              imageUrl="https://lh3.googleusercontent.com/2AVqj_GOKf358s0Fkw66MHxEcivOWfvRjAMdmqhHgh3RwyWyJNbnn_amPUJt4KDeO6H7IdWKSV1tli5ijkgHHAemxYGuTof5WZo3wA=w600"
+              lootboxType="Land"
+              lootboxBalance={0}
+            />
+          </GridItem>
+          <GridItem>
+            <LootboxCard
+              imageUrl="https://lh3.googleusercontent.com/30YXRt8oPvD0J9KuRiUTLrRxrigwvbs8P5uFIkJt65hmlVAerYAsxZgPHjvA-byTXseTKJQsnpbuD7giChaO4TyoFm7pcqza8NrZ=w600"
+              lootboxType="Mystery"
+              lootboxBalance={7}
+            />
+          </GridItem>
+          <GridItem>
+            <LootboxCard
+              imageUrl="https://lh3.googleusercontent.com/u_BYIeFDCF4dC4n_Col8e1W_dNTK84uMfR6mhjLhQj7GuObvBeENqSu7L8nzDFJ9JDdpiezHpRP0PJ8ioPxOakvU3iz5lbhJy1abRWM=w600"
+              lootboxType="RMP"
+              lootboxBalance={1}
+            />
+          </GridItem>
+        </Grid>
       </Flex>
     </Flex>
   );

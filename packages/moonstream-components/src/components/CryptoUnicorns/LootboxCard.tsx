@@ -11,7 +11,7 @@ import {
   VStack,
   Heading,
   Container,
-  Box
+  Box,
 } from "@chakra-ui/react";
 
 const _LootboxCard = ({
@@ -24,17 +24,23 @@ const _LootboxCard = ({
   imageUrl: string;
   lootboxBalance: number;
 }) => {
-  const [lootboxCount, setLootboxCount] = useState(0);
-  const [countToStash, setCountToStash] = useState(0);
+  const [lootboxCount, setLootboxCount] = useState("");
+  const [countToStash, setCountToStash] = useState("");
 
   // const stashLootboxes = () => {
 
   // };
 
   return (
-    <Flex {...props} pb={10} px={10}>
-      <VStack maxW="220" border="solid" borderColor="#373E9B" borderRadius="md">
-        <Image src={imageUrl} w={220} h={220} alt="CU Common Lootbox" />
+    <Flex {...props} pb={10}>
+      <VStack maxW="250" border="solid" borderColor="#373E9B" borderRadius="lg">
+        <Image
+          src={imageUrl}
+          w={250}
+          h={250}
+          m={"2px"}
+          alt="CU Common Lootbox"
+        />
         <Box w="100%" px={2} justifyContent="left">
           <Text fontSize="lg">{lootboxType} Lootbox</Text>
           <Flex fontSize="sm" w="100%" pb={6}>
@@ -60,6 +66,12 @@ const _LootboxCard = ({
               mb={2}
               p={2}
               placeholder="Enter amount to stash"
+              value={countToStash}
+              onChange={(event) => {
+                const count = event.target.value;
+                setCountToStash(count);
+                console.log(`Stashing ${count} ${lootboxType} lootboxes.`);
+              }}
             />
             <Button
               w="100%"
@@ -72,46 +84,15 @@ const _LootboxCard = ({
               textColor="white"
               fontSize="lg"
               fontWeight="bold"
-              onClick={() => {}}
+              onClick={() => {
+                console.log(`Stashing ${countToStash} lootboxes.`);
+              }}
             >
               Stash!
             </Button>
           </Box>
         </Box>
       </VStack>
-      {/* <HStack>
-        <Image src={imageUrl} w={100} h={100} alt="CU Common Lootbox" />
-        <Flex>
-          <Text fontSize="xl">
-            I have {lootboxCount} {lootboxType}.
-          </Text>
-          &nbsp;
-          <Text fontSize="xl">
-            I would like to stash
-            <Input
-              textColor={"blue.900"}
-              size={"sm"}
-              fontSize={"md"}
-              variant={"outline"}
-              mx={2}
-              w="40px"
-            />
-            lootboxes into my game.
-          </Text>
-          <br />
-          <Spacer />
-          <Button
-            mx={4}
-            size="md"
-            variant="outline"
-            w="220px"
-            colorScheme={"orange"}
-            onClick={() => {}}
-          >
-            Stash!
-          </Button>
-        </Flex>
-      </HStack> */}
     </Flex>
   );
 };
