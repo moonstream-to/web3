@@ -29,7 +29,10 @@ import { supportedChains } from "../../../../types/Moonstream";
 import { useERC20, useToast } from "moonstream-components/src/core/hooks";
 import { useMutation, useQuery } from "react-query";
 import { DEFAULT_METATAGS } from "../../src/constants";
-import { MAX_INT, chainByChainId } from "moonstream-components/src/core/providers/Web3Provider";
+import {
+  MAX_INT,
+  chainByChainId,
+} from "moonstream-components/src/core/providers/Web3Provider";
 import LootboxCard from "../../../../packages/moonstream-components/src/components/CryptoUnicorns/LootboxCard";
 import { MockTerminus as TerminusFacet } from "../../../../types/contracts/MockTerminus";
 import { hookCommon } from "moonstream-components/src/core/hooks";
@@ -44,20 +47,22 @@ const contractsAddr: { [key in supportedChains]: string } = {
 };
 
 type LootboxType = "common" | "rare" | "mythic" | "land" | "mystery" | "RMP";
-interface LootboxInfo { 
+interface LootboxInfo {
   poolIdByChain: {
     [key in supportedChains]: number;
   };
-};
+}
 
-// const lootboxPoolIdsByBlockchain: { [key in supportedChains]: any } = {
-//   mumbai: "0x762aF8cbE298bbFE568BBB6709f854A01c07333D",
-//   polygon: "0x94f557dDdb245b11d031F57BA7F2C4f28C4A203e",
-//   ethereum: "0x0000000000000000000000000000000000000000",
-//   localhost: "0x0000000000000000000000000000000000000000",
-// };
-
-const lootboxInfo: { [key in LootboxType]: LootboxInfo} = {
+// TODO: Using an Enum here would make this less clumsy. The Enum defines a type *and* a value.
+const lootboxTypes: LootboxType[] = [
+  "common",
+  "rare",
+  "mythic",
+  "land",
+  "mystery",
+  "RMP",
+];
+const lootboxInfo: { [key in LootboxType]: LootboxInfo } = {
   common: {
     poolIdByChain: {
       mumbai: 6,
@@ -125,14 +130,15 @@ const CryptoUnicorns = () => {
   const [rbwToStash, setRBWToStash] = React.useState("");
   const [unimToStash, setUNIMToStash] = React.useState("");
   const [terminusAddress, setTerminusAddress] = React.useState("");
-  const [lootboxBalances, setLootboxBalances] = React.useState({...defaultLootboxBalances});
-
+  const [lootboxBalances, setLootboxBalances] = React.useState({
+    ...defaultLootboxBalances,
+  });
 
   const web3ctx = useContext(Web3Context);
 
   useEffect(() => {
     const chain: string | undefined = chainByChainId[web3ctx.chainId];
-    if(!chain) {
+    if (!chain) {
       setTerminusAddress("");
     } else {
       setTerminusAddress(contractsAddr[chain as supportedChains]);
@@ -140,23 +146,20 @@ const CryptoUnicorns = () => {
   }, [web3ctx.chainId]);
 
   const terminusBalances = useQuery(
-    [
-      "cuTerminus",
-      {
-        address: terminusAddress,
-        chainId: web3ctx?.chainId,
-        currentUserAddress: web3ctx.account,
-      },
-    ],
-    () => {
+    ["cuTerminus", web3ctx.chainId, terminusAddress, web3ctx.account],
+    async ({ queryKey }) => {
+      const currentChain = chainByChainId[queryKey[1] as number];
+      if (!currentChain) {
+        return;
+      }
       const terminusFacet = new web3ctx.web3.eth.Contract(
-      terminusAbi
-    ) as any as TerminusFacet;
+        terminusAbi
+      ) as any as TerminusFacet;
       terminusFacet.options.address = terminusAddress;
-      Object.keys(lootboxInfo).forEach((key) => {
-        
-      })
-      return terminusFacet.methods.balanceOf(web3ctx.account, terminusPoolId).call();
+      let poolIds: { [key in LootboxType]: number } = {};
+      lootboxTypes.forEach((lootboxType) => {
+        lootboxInfo[lootboxType].poolIdByChain[web];
+      });
     },
     {
       ...hookCommon,
@@ -226,7 +229,7 @@ const CryptoUnicorns = () => {
 
   contract.options.address =
     contractsAddr[
-    web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
+      web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
     ];
 
   const playAssetPath = "https://s3.amazonaws.com/static.simiotics.com/play";

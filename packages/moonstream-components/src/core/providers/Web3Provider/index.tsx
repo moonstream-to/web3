@@ -104,7 +104,7 @@ export const chains: { [key in supportedChains]: ChainInterface } = {
   },
 };
 
-export const chainByChainId= { [key in number]: string } = {
+export const chainByChainId: { [key: number]: string } = {
   1: "ethereum",
   1337: "localhost",
   80001: "mumbai",
