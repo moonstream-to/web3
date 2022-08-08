@@ -6,7 +6,6 @@ from typing import Optional, Any, Dict
 from uuid import UUID
 
 from web3 import Web3
-from brownie import network
 
 
 from fastapi import Body, FastAPI, Request, Depends, Query
@@ -22,10 +21,6 @@ from ..middleware import DropperHTTPException, DropperAuthMiddleware
 from ..settings import DOCS_TARGET_PATH, ORIGINS, ENGINE_BROWNIE_NETWORK
 
 
-try:
-    network.connect(ENGINE_BROWNIE_NETWORK)
-except:
-    pass
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 

@@ -28,10 +28,6 @@ from .. import signatures
 from ..middleware import DropperHTTPException
 from ..settings import ENGINE_BROWNIE_NETWORK, DOCS_TARGET_PATH
 
-try:
-    network.connect(ENGINE_BROWNIE_NETWORK)
-except:
-    pass
 
 
 logging.basicConfig(level=logging.INFO)

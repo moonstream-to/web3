@@ -3,11 +3,13 @@ Signing and signature verification functionality and interfaces.
 """
 import abc
 import logging
+import json
 from typing import Any, List, Optional
 
 import boto3
-from brownie import accounts
-from brownie.network import web3
+from web3 import Web3
+
+from eth_account import Account
 from eth_account._utils.signing import sign_message_hash
 import eth_keys
 import requests
@@ -78,16 +80,16 @@ class Signer:
         pass
 
 
-class BrownieAccountSigner(Signer):
+class AccountSigner(Signer):
     """
     Simple implementation of a signer that uses a Brownie account to sign messages.
     """
 
-    def __init__(self, keystore_file: str, password: str) -> None:
-        self.signer = accounts.load(keystore_file, password)
+    def __init__(self, private_key: HexBytes) -> None:
+        self.private_key = private_key
 
     def sign_message(self, message):
-        eth_private_key = eth_keys.keys.PrivateKey(HexBytes(self.signer.private_key))
+        eth_private_key = eth_keys.keys.PrivateKey(self.private_key)
         message_hash_bytes = HexBytes(message)
         _, _, _, signed_message_bytes = sign_message_hash(
             eth_private_key, message_hash_bytes
@@ -100,7 +102,7 @@ class BrownieAccountSigner(Signer):
 
         for message in messages_list:
             eth_private_key = eth_keys.keys.PrivateKey(
-                HexBytes(self.signer.private_key)
+                self.private_key
             )
             message_hash_bytes = HexBytes(message)
             _, _, _, signed_message_bytes = sign_message_hash(
@@ -112,7 +114,7 @@ class BrownieAccountSigner(Signer):
 
 
 def get_signing_account(raw_message: str, signature: str) -> str:
-    return web3.eth.account.recover_message(raw_message, signature=signature)
+    return Web3.eth.account.recover_message(raw_message, signature=signature)
 
 
 class InstanceSigner(Signer):
@@ -217,7 +219,10 @@ class InstanceSigner(Signer):
 
 DROP_SIGNER: Optional[Signer] = None
 if SIGNER_KEYSTORE is not None and SIGNER_PASSWORD is not None:
-    DROP_SIGNER = BrownieAccountSigner(SIGNER_KEYSTORE, SIGNER_PASSWORD)
+    with open(SIGNER_KEYSTORE) as keystore_file:
+        keystore_data = json.load(keystore_file)
+    private_key = Account.decrypt(keystore_data, SIGNER_PASSWORD)
+    DROP_SIGNER = AccountSigner(private_key)
 if DROP_SIGNER is None:
     DROP_SIGNER = InstanceSigner(MOONSTREAM_SIGNING_SERVER_IP)
 

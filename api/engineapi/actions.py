@@ -3,16 +3,14 @@ from typing import List, Any, Optional, Dict
 import uuid
 import logging
 
-from brownie import network, web3
 from eth_typing import Address
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
-from sqlalchemy.sql.functions import percentile_disc
 from sqlalchemy import func, text, or_
 from web3 import Web3
 from web3.types import ChecksumAddress
 
-from engineapi.Dropper import Dropper
+from .Dropper import Dropper
 
 
 from . import Dropper, MockErc20, MockTerminus
@@ -751,13 +749,7 @@ def ensure_contract_admin_token_holder(
     address: ChecksumAddress,
 ) -> bool:
     brownie_network = BLOCKCHAINS_TO_BROWNIE_NETWORKS.get(blockchain)
-    if brownie_network is None:
-        raise ValueError(f"No brownie network for blockchain: {blockchain}")
 
-    try:
-        network.connect(brownie_network)
-    except Exception:
-        pass
     dropper = Dropper.Dropper(dropper_contract_address)
 
     terminus_address, terminus_pool_id = None  # dropper.get_terminus
@@ -780,15 +772,6 @@ def ensure_dropper_contract_owner(
     brownie_network = BLOCKCHAINS_TO_BROWNIE_NETWORKS.get(
         dropper_contract_info.blockchain
     )
-    if brownie_network is None:
-        raise ValueError(
-            f"No brownie network for blockchain: {dropper_contract_info.blockchain}"
-        )
-
-    try:
-        network.connect(brownie_network)
-    except Exception:
-        pass
 
     dropper = Dropper.Dropper(dropper_contract_info.address)
     dropper_owner_address = dropper.owner()

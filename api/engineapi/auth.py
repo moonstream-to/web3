@@ -19,12 +19,17 @@ import argparse
 import base64
 import json
 import time
-from typing import Any, cast, Dict, Optional
+from typing import Any, cast, Dict
 
-from brownie import accounts
-from brownie.network.account import Account
-from eip712.messages import EIP712Message
+from eip712.messages import EIP712Message, _hash_eip191_message
+from eth_account import Account
+from eth_account._utils.signing import sign_message_hash
+import eth_keys
+from hexbytes import HexBytes
 from web3 import Web3
+
+
+
 
 AUTH_PAYLOAD_NAME = "MoonstreamAuthorization"
 AUTH_VERSION = "1"
@@ -49,19 +54,32 @@ class MoonstreamAuthorization(EIP712Message):
     deadline: "uint256"
 
 
-def authorize(deadline: int, signer: Account) -> Dict[str, Any]:
+def sign_message(message_hash_bytes: HexBytes, private_key: HexBytes) -> HexBytes:
+
+    eth_private_key = eth_keys.keys.PrivateKey(private_key)
+    _, _, _, signed_message_bytes = sign_message_hash(
+        eth_private_key, message_hash_bytes
+    )
+    return signed_message_bytes
+
+
+def authorize(deadline: int, address: str, private_key: HexBytes) -> Dict[str, Any]:
     message = MoonstreamAuthorization(
         _name_=AUTH_PAYLOAD_NAME,
         _version_=AUTH_VERSION,
-        address=signer.address,
+        address=address,
         deadline=deadline,
     )
-    signed_message = signer.sign_message(message)
+
+    msg_hash_bytes = HexBytes(_hash_eip191_message(message.signable_message))
+
+
+    signed_message = sign_message(msg_hash_bytes, private_key)
 
     api_payload: Dict[str, Any] = {
-        "address": signer.address,
+        "address": address,
         "deadline": deadline,
-        "signed_message": signed_message.signature.hex(),
+        "signed_message": signed_message.hex(),
     }
 
     return api_payload
@@ -70,7 +88,7 @@ def authorize(deadline: int, signer: Account) -> Dict[str, Any]:
 def verify(authorization_payload: Dict[str, Any]) -> bool:
     time_now = int(time.time())
     web3_client = Web3()
-    address = cast(str, authorization_payload["address"])
+    address = Web3.toChecksumAddress(cast(str, authorization_payload["address"]))
     deadline = cast(int, authorization_payload["deadline"])
     signature = cast(str, authorization_payload["signed_message"])
 
@@ -93,9 +111,14 @@ def verify(authorization_payload: Dict[str, Any]) -> bool:
     return True
 
 
+def decrypt_keystore(keystore_path: str, password: str) -> HexBytes:
+    with open(keystore_path) as keystore_file:
+        keystore_data = json.load(keystore_file)
+    return keystore_data["address"], Account.decrypt(keystore_data, password)
+
 def handle_authorize(args: argparse.Namespace) -> None:
-    account = accounts.load(args.signer, args.password)
-    authorization = authorize(args.deadline, account)
+    address, private_key = decrypt_keystore(args.signer, args.password)
+    authorization = authorize(args.deadline, address, private_key)
     print(json.dumps(authorization))
 
 
@@ -144,3 +167,8 @@ def generate_cli() -> argparse.ArgumentParser:
     verify_parser.set_defaults(func=handle_verify)
 
     return parser
+
+if __name__ == "__main__":
+    parser = generate_cli()
+    args = parser.parse_args()
+    args.func(args)

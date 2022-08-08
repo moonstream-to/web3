@@ -14,6 +14,7 @@ setup(
     install_requires=[
         "alembic",
         "boto3",
+        "eip712",
         "fastapi",
         "psycopg2-binary",
         "pydantic",
