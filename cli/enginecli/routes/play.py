@@ -16,7 +16,7 @@ from fastapi import Request, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
 
-from engineapi.models import DropperClaimant
+from ..models import DropperClaimant
 
 
 from .. import actions

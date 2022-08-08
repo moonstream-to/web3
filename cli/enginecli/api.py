@@ -13,7 +13,7 @@ from .settings import (
     ORIGINS,
 )
 from .routes.dropper import app as dropper_app
-from .routes.leaderboard import app as leaderboard_app 
+from .routes.leaderboard import app as leaderboard_app
 from .routes.admin import app as admin_app
 from .routes.play import app as play_app
 

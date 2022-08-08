@@ -6,7 +6,7 @@ import logging
 from uuid import UUID
 
 from brownie import network
-from engineapi.models import Leaderboard
+from .models import Leaderboard
 
 from . import actions
 from . import db

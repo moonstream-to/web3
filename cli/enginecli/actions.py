@@ -12,7 +12,7 @@ from sqlalchemy import func, text, or_
 from web3 import Web3
 from web3.types import ChecksumAddress
 
-from engineapi.Dropper import Dropper
+from .Dropper import Dropper
 
 
 from . import Dropper, MockErc20, MockTerminus

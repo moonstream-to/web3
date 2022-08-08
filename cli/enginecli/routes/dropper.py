@@ -13,7 +13,7 @@ from fastapi import FastAPI, Body, Request, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
 
-from engineapi.models import DropperClaimant
+from ..models import DropperClaimant
 
 from .. import actions
 from .. import data
@@ -763,7 +763,7 @@ async def add_claimants(
             claimants=add_claimants_request.claimants,
             added_by=request.state.address,
         )
-    
+
     except actions.DublicateClaimantError:
         raise DropperHTTPException(status_code=400, detail="Dublicated claimants in request please deduplicate them.")
     except Exception as e:

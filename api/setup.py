@@ -8,13 +8,12 @@ with open("README.md") as ifp:
     long_description = ifp.read()
 
 setup(
-    name="engine",
+    name="engineapi",
     version=VERSION,
     packages=find_packages(),
     install_requires=[
         "alembic",
         "boto3",
-        "eth-brownie",
         "fastapi",
         "psycopg2-binary",
         "pydantic",
@@ -24,13 +23,10 @@ setup(
         "web3",
     ],
     extras_require={
-        "dev": [
-            "black",
-            "moonworm >= 0.2.2",
-        ],
+        "dev": ["black"],
         "distribute": ["setuptools", "twine", "wheel"],
     },
-    description="Command line interface for moonstream-engine.",
+    description="Command line interface for Moonstream Engine API",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Moonstream",
@@ -44,7 +40,7 @@ setup(
     python_requires=">=3.6",
     entry_points={
         "console_scripts": [
-            "engine=engineapi.cli:main",
+            "engineapi=engineapi.cli:main",
         ]
     },
     include_package_data=True,

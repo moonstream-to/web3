@@ -6,7 +6,7 @@ import sys
 import time
 from typing import Any, Dict, Optional, List, Set
 
-from engineapi.MockErc20 import MockErc20
+from .MockErc20 import MockErc20
 from brownie import network
 
 
