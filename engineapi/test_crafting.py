@@ -669,7 +669,7 @@ class CraftingTestCase(unittest.TestCase):
         self.crafting.craft(recipe_id, {"from": accounts[1]})
         self._check_balances_after_crafting(recipe, block_no_before)
 
-    def test_craft_fails_with_unsefficient_amount_hold_only(self):
+    def test_craft_fails_with_insufficient_amount_hold_only(self):
         input_amount = 10 * 10 ** 18
         output_amount = 10 * 10 ** 18
 
@@ -748,7 +748,7 @@ class CraftingTestCase(unittest.TestCase):
         with self.assertRaises(VirtualMachineError):
             self.crafting.craft(recipe_id, {"from": accounts[1]})
 
-    def test_craft_fails_with_unsefficient_amount_mint_only(self):
+    def test_craft_fails_with_insufficient_amount_mint_only(self):
         input_amount = 10 * 10 ** 18
         output_amount = 10 * 10 ** 18
 
@@ -827,7 +827,7 @@ class CraftingTestCase(unittest.TestCase):
         with self.assertRaises(VirtualMachineError):
             self.crafting.craft(recipe_id, {"from": accounts[1]})
 
-    def test_craft_fails_with_unsefficient_amount_transfer_only(self):
+    def test_craft_fails_with_insufficient_amount_transfer_only(self):
         input_amount = 10 * 10 ** 18
         output_amount = 10 * 10 ** 18
 
