@@ -24,6 +24,8 @@ fi
 
 TEST_COMMAND=${@:-discover}
 
+cd ..
 brownie compile
+cd -
 set -x
 python -m unittest $TEST_COMMAND

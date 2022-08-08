@@ -12,7 +12,7 @@ from brownie.network.contract import ContractContainer
 from eth_typing.evm import ChecksumAddress
 
 
-PROJECT_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+PROJECT_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BUILD_DIRECTORY = os.path.join(PROJECT_DIRECTORY, "build", "contracts")
 
 
