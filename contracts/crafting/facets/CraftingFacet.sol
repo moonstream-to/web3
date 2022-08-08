@@ -44,10 +44,14 @@ contract CraftingFacet is ERC1155Holder, ERC721Holder, DiamondReentrancyGuard {
                     recipe.inputs[i].tokenAction ==
                     LibCrafting.INPUT_TOKEN_ACTION_TRANSFER
                 ) {
-                    erc20InputToken.transferFrom(
+                    bool succeed = erc20InputToken.transferFrom(
                         msg.sender,
                         address(this),
                         recipe.inputs[i].amount
+                    );
+                    require(
+                        succeed,
+                        "CraftingFacet.craft: transfer of erc20InputToken failed"
                     );
                 } else if (
                     recipe.inputs[i].tokenAction ==
@@ -63,7 +67,9 @@ contract CraftingFacet is ERC1155Holder, ERC721Holder, DiamondReentrancyGuard {
                 ) {
                     uint256 balance = erc20InputToken.balanceOf(msg.sender);
                     if (balance < recipe.inputs[i].amount) {
-                        revert("User doesn't hold enough tokens for crafting");
+                        revert(
+                            "CraftingFacet.craft: User doesn't hold enough tokens for crafting"
+                        );
                     }
                 }
             } else if (
@@ -116,9 +122,13 @@ contract CraftingFacet is ERC1155Holder, ERC721Holder, DiamondReentrancyGuard {
                     recipe.outputs[i].tokenAction ==
                     LibCrafting.OUTPUT_TOKEN_ACTION_TRANSFER
                 ) {
-                    erc20OutputToken.transfer(
+                    bool succeed = erc20OutputToken.transfer(
                         msg.sender,
                         recipe.outputs[i].amount
+                    );
+                    require(
+                        succeed,
+                        "CraftingFacet.craft: transfer of erc20OutputToken failed"
                     );
                 } else if (
                     recipe.outputs[i].tokenAction ==
