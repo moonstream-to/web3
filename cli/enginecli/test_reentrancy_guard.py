@@ -4,7 +4,7 @@ from brownie import accounts, network
 from brownie.exceptions import VirtualMachineError
 from brownie.network import web3 as web3_client
 
-from . import Diamond, ReentrancyExploitable, ExploitContract
+from . import ReentrancyExploitable, ExploitContract
 from .core import diamond_gogogo, facet_cut
 
 

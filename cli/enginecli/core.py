@@ -74,7 +74,7 @@ def facet_cut(
     if selectors is None:
         selectors = []
 
-    project_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+    project_dir = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
     abis = abi.project_abis(project_dir)
 
     reserved_selectors: Set[str] = set()
