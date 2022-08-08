@@ -22,7 +22,7 @@ struct CraftingOutputItem {
     address tokenAddress; // address of the token
     uint256 tokenId; // id of the token, any number for erc20
     uint256 amount; // amount of the token
-    uint256 tokenAction; // 0 mint, 1 transfer
+    uint256 tokenAction; // 0 for transfer, 1 for mint
 }
 
 struct Recipe {
@@ -35,15 +35,15 @@ library LibCrafting {
     bytes32 constant CRAFTING_STORAGE_POSITION =
         keccak256("moonstreamdao.eth.storage.crafting");
 
-    uint256 constant ERC20_TOKEN_TYPE = 20;
-    uint256 constant ERC1155_TOKEN_TYPE = 1155;
+    uint256 public constant ERC20_TOKEN_TYPE = 20;
+    uint256 public constant ERC1155_TOKEN_TYPE = 1155;
 
-    uint256 constant INPUT_TOKEN_ACTION_TRANSFER = 0;
-    uint256 constant INPUT_TOKEN_ACTION_BURN = 1;
-    uint256 constant INPUT_TOKEN_ACTION_HOLD = 2;
+    uint256 public constant INPUT_TOKEN_ACTION_TRANSFER = 0;
+    uint256 public constant INPUT_TOKEN_ACTION_BURN = 1;
+    uint256 public constant INPUT_TOKEN_ACTION_HOLD = 2;
 
-    uint256 constant OUTPUT_TOKEN_ACTION_TRANSFER = 0;
-    uint256 constant OUTPUT_TOKEN_ACTION_MINT = 1;
+    uint256 public constant OUTPUT_TOKEN_ACTION_TRANSFER = 0;
+    uint256 public constant OUTPUT_TOKEN_ACTION_MINT = 1;
 
     struct CraftingStorage {
         mapping(uint256 => Recipe) recipes;

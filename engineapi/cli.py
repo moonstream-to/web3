@@ -12,7 +12,7 @@ from . import actions
 from . import db
 from . import signatures
 from . import data
-from . import Lootbox, core, drop, MockErc20, Dropper, auth, MockTerminus
+from . import Lootbox, core, drop, MockErc20, Dropper, auth, MockTerminus, CraftingFacet
 from .settings import BLOCKCHAINS_TO_BROWNIE_NETWORKS
 from .models import DropperClaim, DropperContract
 
@@ -405,6 +405,9 @@ def main() -> None:
 
     terminus_parser = MockTerminus.generate_cli()
     subparsers.add_parser("terminus", parents=[terminus_parser], add_help=False)
+
+    crafting_parser = CraftingFacet.generate_cli()
+    subparsers.add_parser("crafting", parents=[crafting_parser], add_help=False)
 
     # Signing server parser
     parser_signing_server = subparsers.add_parser(

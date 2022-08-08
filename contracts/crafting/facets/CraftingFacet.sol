@@ -37,14 +37,14 @@ contract CraftingFacet is ERC1155Holder, ERC721Holder, DiamondReentrancyGuard {
         Recipe memory recipe = LibCrafting.craftingStorage().recipes[recipeId];
         for (uint256 i = 0; i < recipe.inputs.length; i++) {
             if (recipe.inputs[i].tokenType == LibCrafting.ERC20_TOKEN_TYPE) {
-                ERC20Burnable token = ERC20Burnable(
+                ERC20Burnable erc20InputToken = ERC20Burnable(
                     recipe.inputs[i].tokenAddress
                 );
                 if (
                     recipe.inputs[i].tokenAction ==
                     LibCrafting.INPUT_TOKEN_ACTION_TRANSFER
                 ) {
-                    token.transferFrom(
+                    erc20InputToken.transferFrom(
                         msg.sender,
                         address(this),
                         recipe.inputs[i].amount
@@ -53,12 +53,15 @@ contract CraftingFacet is ERC1155Holder, ERC721Holder, DiamondReentrancyGuard {
                     recipe.inputs[i].tokenAction ==
                     LibCrafting.INPUT_TOKEN_ACTION_BURN
                 ) {
-                    token.burnFrom(msg.sender, recipe.inputs[i].amount);
+                    erc20InputToken.burnFrom(
+                        msg.sender,
+                        recipe.inputs[i].amount
+                    );
                 } else if (
                     recipe.inputs[i].tokenAction ==
                     LibCrafting.INPUT_TOKEN_ACTION_HOLD
                 ) {
-                    uint256 balance = token.balanceOf(msg.sender);
+                    uint256 balance = erc20InputToken.balanceOf(msg.sender);
                     if (balance < recipe.inputs[i].amount) {
                         revert("User doesn't hold enough tokens for crafting");
                     }
@@ -66,14 +69,14 @@ contract CraftingFacet is ERC1155Holder, ERC721Holder, DiamondReentrancyGuard {
             } else if (
                 recipe.inputs[i].tokenType == LibCrafting.ERC1155_TOKEN_TYPE
             ) {
-                ERC1155Burnable token = ERC1155Burnable(
+                ERC1155Burnable erc1155InputToken = ERC1155Burnable(
                     recipe.inputs[i].tokenAddress
                 );
                 if (
                     recipe.inputs[i].tokenAction ==
                     LibCrafting.INPUT_TOKEN_ACTION_TRANSFER
                 ) {
-                    token.safeTransferFrom(
+                    erc1155InputToken.safeTransferFrom(
                         msg.sender,
                         address(this),
                         recipe.inputs[i].tokenId,
@@ -84,7 +87,7 @@ contract CraftingFacet is ERC1155Holder, ERC721Holder, DiamondReentrancyGuard {
                     recipe.inputs[i].tokenAction ==
                     LibCrafting.INPUT_TOKEN_ACTION_BURN
                 ) {
-                    token.burn(
+                    erc1155InputToken.burn(
                         msg.sender,
                         recipe.inputs[i].tokenId,
                         recipe.inputs[i].amount
@@ -93,7 +96,7 @@ contract CraftingFacet is ERC1155Holder, ERC721Holder, DiamondReentrancyGuard {
                     recipe.inputs[i].tokenAction ==
                     LibCrafting.INPUT_TOKEN_ACTION_HOLD
                 ) {
-                    uint256 balance = token.balanceOf(
+                    uint256 balance = erc1155InputToken.balanceOf(
                         msg.sender,
                         recipe.inputs[i].tokenId
                     );
@@ -106,29 +109,34 @@ contract CraftingFacet is ERC1155Holder, ERC721Holder, DiamondReentrancyGuard {
 
         for (uint256 i = 0; i < recipe.outputs.length; i++) {
             if (recipe.outputs[i].tokenType == LibCrafting.ERC20_TOKEN_TYPE) {
-                MockErc20 token = MockErc20(recipe.outputs[i].tokenAddress);
-                if (
-                    recipe.outputs[i].tokenAction ==
-                    LibCrafting.OUTPUT_TOKEN_ACTION_TRANSFER
-                ) {
-                    token.transfer(msg.sender, recipe.outputs[i].amount);
-                } else if (
-                    recipe.outputs[i].tokenAction ==
-                    LibCrafting.OUTPUT_TOKEN_ACTION_MINT
-                ) {
-                    token.mint(msg.sender, recipe.outputs[i].amount);
-                }
-            } else if (
-                recipe.outputs[i].tokenType == LibCrafting.ERC1155_TOKEN_TYPE
-            ) {
-                MockTerminus token = MockTerminus(
+                MockErc20 erc20OutputToken = MockErc20(
                     recipe.outputs[i].tokenAddress
                 );
                 if (
                     recipe.outputs[i].tokenAction ==
                     LibCrafting.OUTPUT_TOKEN_ACTION_TRANSFER
                 ) {
-                    token.safeTransferFrom(
+                    erc20OutputToken.transfer(
+                        msg.sender,
+                        recipe.outputs[i].amount
+                    );
+                } else if (
+                    recipe.outputs[i].tokenAction ==
+                    LibCrafting.OUTPUT_TOKEN_ACTION_MINT
+                ) {
+                    erc20OutputToken.mint(msg.sender, recipe.outputs[i].amount);
+                }
+            } else if (
+                recipe.outputs[i].tokenType == LibCrafting.ERC1155_TOKEN_TYPE
+            ) {
+                MockTerminus erc1155OutputToken = MockTerminus(
+                    recipe.outputs[i].tokenAddress
+                );
+                if (
+                    recipe.outputs[i].tokenAction ==
+                    LibCrafting.OUTPUT_TOKEN_ACTION_TRANSFER
+                ) {
+                    erc1155OutputToken.safeTransferFrom(
                         address(this),
                         msg.sender,
                         recipe.outputs[i].tokenId,
@@ -139,7 +147,7 @@ contract CraftingFacet is ERC1155Holder, ERC721Holder, DiamondReentrancyGuard {
                     recipe.outputs[i].tokenAction ==
                     LibCrafting.OUTPUT_TOKEN_ACTION_MINT
                 ) {
-                    token.mint(
+                    erc1155OutputToken.mint(
                         msg.sender,
                         recipe.outputs[i].tokenId,
                         recipe.outputs[i].amount,

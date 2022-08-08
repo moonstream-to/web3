@@ -126,6 +126,8 @@ class CraftingTestCase(unittest.TestCase):
         ]
         num_recipes_before = self.crafting.num_recipes()
         recipe = Recipe(inputs, outputs, True)
+        print(recipe.to_tuple())
+        # ([(20, '0x602C71e4DAC47a042Ee7f46E0aee17F94A3bA0B6', 0, 10000000000000000000, 0)], [(20, '0xE7eD6747FaC5360f88a2EFC03E00d25789F69291', 0, 10000000000000000000, 0)], True)
         recipe_id = self._create_recipe(recipe)
         num_recipes_after = self.crafting.num_recipes()
 
