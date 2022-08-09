@@ -14,7 +14,7 @@ PREFIX_WARN="${C_YELLOW}[WARN]${C_RESET} [$(date +%d-%m\ %T)]"
 PREFIX_CRIT="${C_RED}[CRIT]${C_RESET} [$(date +%d-%m\ %T)]"
 
 # Main
-APP_DIR="${APP_DIR:-/home/ubuntu/engine}"
+APP_DIR="${APP_DIR:-/home/ubuntu/engine/api}"
 AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
 PYTHON_ENV_DIR="${PYTHON_ENV_DIR:-/home/ubuntu/engine-env}"
 PYTHON="${PYTHON_ENV_DIR}/bin/python"
@@ -46,7 +46,7 @@ echo
 echo -e "${PREFIX_INFO} Retrieving deployment parameters"
 if [ ! -d "$SECRETS_DIR" ]; then
   mkdir "$SECRETS_DIR"
-  echo -e "${PREFIX_WARN} Created new secrets directory" 
+  echo -e "${PREFIX_WARN} Created new secrets directory"
 fi
 AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION}" "${PYTHON}" "${PARAMETERS_SCRIPT}" "${AWS_SSM_PARAMETER_PATH}" -o "${PARAMETERS_ENV_PATH}"
 
@@ -72,25 +72,9 @@ echo "AWS_LOCAL_IPV4=$(ec2metadata --local-ipv4)" >> "${PARAMETERS_ENV_PATH}"
 
 echo
 echo
-echo -e "${PREFIX_INFO} Compile contracts"
-cd "${APP_DIR}"
-sudo -u ubuntu $PYTHON_ENV_DIR/bin/brownie compile
-cd "${SCRIPT_DIR}"
-
-echo
-echo
-echo -e "${PREFIX_INFO} Add brownie networks"
-set +e
-sudo -u ubuntu $PYTHON_ENV_DIR/bin/brownie networks add Polygon moonstream-engine-polygon host=https://polygon-rpc.com chainid=137
-sudo -u ubuntu $PYTHON_ENV_DIR/bin/brownie networks add Polygon mumbai host=https://rpc-mumbai.maticvigil.com chainid=80001
-set -e
-
-echo
-echo
 echo -e "${PREFIX_INFO} Replacing existing Engine signing API server service definition with ${ENGINE_SERVICE_FILE}"
 chmod 644 "${SCRIPT_DIR}/${ENGINE_SERVICE_FILE}"
 cp "${SCRIPT_DIR}/${ENGINE_SERVICE_FILE}" "/etc/systemd/system/${ENGINE_SERVICE_FILE}"
 systemctl daemon-reload
 systemctl restart "${ENGINE_SERVICE_FILE}"
 systemctl status "${ENGINE_SERVICE_FILE}"
-
