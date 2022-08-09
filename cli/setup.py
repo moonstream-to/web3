@@ -13,11 +13,11 @@ setup(
     packages=find_packages(),
     install_requires=[
         "boto3",
-        "moonworm",
+        "eth-brownie",
         "tqdm",
     ],
     extras_require={
-        "dev": ["black"],
+        "dev": ["black", "moonworm"],
         "distribute": ["setuptools", "twine", "wheel"],
     },
     description="Moonstream Engine CLI for blockchain operations",
