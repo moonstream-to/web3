@@ -10,10 +10,7 @@ from sqlalchemy import func, text, or_
 from web3 import Web3
 from web3.types import ChecksumAddress
 
-from .Dropper import Dropper
-
-
-from . import Dropper, MockErc20, MockTerminus
+from .contracts import Dropper_interface, ERC20_interface, Terminus_interface
 from .models import (
     DropperClaimant,
     DropperContract,
@@ -22,7 +19,7 @@ from .models import (
     LeaderboardScores,
 )
 from . import signatures
-from .settings import BLOCKCHAINS_TO_BROWNIE_NETWORKS
+from .settings import BLOCKCHAIN_WEB3_PROVIDERS
 
 
 class AuthorizationError(Exception):
@@ -31,6 +28,7 @@ class AuthorizationError(Exception):
 
 class DropWithNotSettedBlockDeadline(Exception):
     pass
+
 
 class DublicateClaimantError(Exception):
     pass
@@ -297,7 +295,9 @@ def update_drop(
     return claim
 
 
-def get_free_drop_number_in_range(db_session: Session, dropper_contract_id: uuid.UUID, start: Optional[int], end: int):
+def get_free_drop_number_in_range(
+    db_session: Session, dropper_contract_id: uuid.UUID, start: Optional[int], end: int
+):
     """
     Return list of free drops number in range
     """
@@ -366,18 +366,24 @@ def transform_claim_amount(
     db_session: Session, dropper_claim_id: uuid.UUID, db_amount: int
 ) -> int:
     claim = (
-        db_session.query(DropperClaim.claim_id, DropperContract.address)
+        db_session.query(
+            DropperClaim.claim_id, DropperContract.address, DropperContract.blockchain
+        )
         .join(DropperContract, DropperContract.id == DropperClaim.dropper_contract_id)
         .filter(DropperClaim.id == dropper_claim_id)
         .one()
     )
-    dropper_contract = Dropper.Dropper(claim.address)
-    claim_info = dropper_contract.get_claim(claim.claim_id)
+    dropper_contract = Dropper_interface.Contract(
+        BLOCKCHAIN_WEB3_PROVIDERS[claim.blockchain], claim.address
+    )
+    claim_info = dropper_contract.getClaim(claim.claim_id).call()
     if claim_info[0] != 20:
         return db_amount
 
-    erc20_contract = MockErc20.MockErc20(claim_info[1])
-    decimals = int(erc20_contract.decimals())
+    erc20_contract = ERC20_interface.Contract(
+        BLOCKCHAIN_WEB3_PROVIDERS[claim.blockchain], claim_info[1]
+    )
+    decimals = int(erc20_contract.decimals().call())
 
     return db_amount * (10**decimals)
 
@@ -386,18 +392,22 @@ def batch_transform_claim_amounts(
     db_session: Session, dropper_claim_id: uuid.UUID, db_amounts: List[int]
 ) -> List[int]:
     claim = (
-        db_session.query(DropperClaim.claim_id, DropperContract.address)
+        db_session.query(
+            DropperClaim.claim_id, DropperContract.address, DropperContract.blockchain
+        )
         .join(DropperContract, DropperContract.id == DropperClaim.dropper_contract_id)
         .filter(DropperClaim.id == dropper_claim_id)
         .one()
     )
-    dropper_contract = Dropper.Dropper(claim.address)
-    claim_info = dropper_contract.get_claim(claim.claim_id)
+    dropper_contract = Dropper_interface.Contract(
+        BLOCKCHAIN_WEB3_PROVIDERS[claim.blockchain], claim.address
+    )
+    claim_info = dropper_contract.getClaim(claim.claim_id)
     if claim_info[0] != 20:
         return db_amounts
 
-    erc20_contract = MockErc20.MockErc20(claim_info[1])
-    decimals = int(erc20_contract.decimals())
+    erc20_contract = ERC20_interface.Contract(claim.blockchain, claim_info[1])
+    decimals = int(erc20_contract.decimals().call())
 
     return [db_amount * (10**decimals) for db_amount in db_amounts]
 
@@ -459,6 +469,7 @@ def get_claimant(db_session: Session, dropper_claim_id, address):
             (DropperClaim.updated_at < DropperClaimant.updated_at).label(
                 "is_recent_signature"
             ),
+            DropperContract.blockchain.label("blockchain"),
         )
         .join(DropperClaim, DropperClaimant.dropper_claim_id == DropperClaim.id)
         .join(DropperContract, DropperClaim.dropper_contract_id == DropperContract.id)
@@ -726,36 +737,10 @@ def ensure_admin_token_holder(
     blockchain, terminus_address, terminus_pool_id = get_claim_admin_pool(
         db_session=db_session, dropper_claim_id=dropper_claim_id
     )
-    brownie_network = BLOCKCHAINS_TO_BROWNIE_NETWORKS.get(blockchain)
-    if brownie_network is None:
-        raise ValueError(f"No brownie network for blockchain: {blockchain}")
-
-    try:
-        network.connect(brownie_network)
-    except Exception:
-        pass
-    terminus = MockTerminus.MockTerminus(terminus_address)
-    balance = terminus.balance_of(address, terminus_pool_id)
-    if balance == 0:
-        raise AuthorizationError(
-            f"Address has insufficient balance in Terminus pool: address={address}, blockchain={blockchain}, terminus_address={terminus_address}, terminus_pool_id={terminus_pool_id}"
-        )
-    return True
-
-
-def ensure_contract_admin_token_holder(
-    blockchain: str,
-    dropper_contract_address: ChecksumAddress,
-    address: ChecksumAddress,
-) -> bool:
-    brownie_network = BLOCKCHAINS_TO_BROWNIE_NETWORKS.get(blockchain)
-
-    dropper = Dropper.Dropper(dropper_contract_address)
-
-    terminus_address, terminus_pool_id = None  # dropper.get_terminus
-    terminus = MockTerminus.MockTerminus(terminus_address)
-
-    balance = terminus.balance_of(address, terminus_pool_id)
+    terminus = Terminus_interface.Contract(
+        BLOCKCHAIN_WEB3_PROVIDERS[blockchain], terminus_address
+    )
+    balance = terminus.balanceOf(address, terminus_pool_id).call()
     if balance == 0:
         raise AuthorizationError(
             f"Address has insufficient balance in Terminus pool: address={address}, blockchain={blockchain}, terminus_address={terminus_address}, terminus_pool_id={terminus_pool_id}"
@@ -769,12 +754,11 @@ def ensure_dropper_contract_owner(
     dropper_contract_info = get_dropper_contract_by_id(
         db_session=db_session, dropper_contract_id=dropper_contract_id
     )
-    brownie_network = BLOCKCHAINS_TO_BROWNIE_NETWORKS.get(
-        dropper_contract_info.blockchain
+    dropper = Dropper_interface.Contract(
+        BLOCKCHAIN_WEB3_PROVIDERS[dropper_contract_info.blockchain],
+        dropper_contract_info.address,
     )
-
-    dropper = Dropper.Dropper(dropper_contract_info.address)
-    dropper_owner_address = dropper.owner()
+    dropper_owner_address = dropper.owner().call()
     if address != Web3.toChecksumAddress(dropper_owner_address):
         raise AuthorizationError(
             f"Given address is not the owner of the given dropper contract: address={address}, blockchain={dropper_contract_info.blockchain}, dropper_address={dropper_contract_info.address}"
@@ -816,6 +800,7 @@ def refetch_drop_signatures(
             DropperClaim.claim_id,
             DropperClaim.claim_block_deadline,
             DropperContract.address,
+            DropperContract.blockchain,
         )
         .join(DropperContract, DropperClaim.dropper_contract_id == DropperContract.id)
         .filter(DropperClaim.id == dropper_claim_id)
@@ -848,7 +833,9 @@ def refetch_drop_signatures(
     users_amount = {}
     hashes_signature = {}
 
-    dropper_contract = Dropper.Dropper(claim.address)
+    dropper_contract = Dropper_interface.Contract(
+        BLOCKCHAIN_WEB3_PROVIDERS[claim.blockchain], claim.address
+    )
 
     while True:
         signature_requests = []
@@ -865,12 +852,12 @@ def refetch_drop_signatures(
             page, transformed_claim_amounts
         ):
 
-            message_hash_raw = dropper_contract.claim_message_hash(
+            message_hash_raw = dropper_contract.claimMessageHash(
                 claim.claim_id,
                 outdated_signature.address,
                 claim.claim_block_deadline,
                 transformed_claim_amount,
-            )
+            ).call()
             message_hash = str(message_hash_raw)
             signature_requests.append(message_hash)
             users_hashes[outdated_signature.address] = message_hash

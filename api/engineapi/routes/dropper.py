@@ -3,6 +3,7 @@ Lootbox API.
 """
 import logging
 from typing import List, Optional, Any, Dict
+from urllib.error import HTTPError
 from uuid import UUID
 
 from web3 import Web3
@@ -15,12 +16,17 @@ from sqlalchemy.orm.exc import NoResultFound
 from engineapi.models import DropperClaimant
 
 from .. import actions
+from ..contracts import Dropper_interface
 from .. import data
 from .. import db
-from .. import Dropper
 from .. import signatures
 from ..middleware import DropperHTTPException, DropperAuthMiddleware
-from ..settings import ENGINE_BROWNIE_NETWORK, ORIGINS, ENGINE_BROWNIE_NETWORK, DOCS_TARGET_PATH
+from ..settings import (
+    ORIGINS,
+    DOCS_TARGET_PATH,
+    BLOCKCHAIN_WEB3_PROVIDERS,
+    UNSUPPORTED_BLOCKCHAIN_ERROR_MESSAGE,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -68,6 +74,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# TODO(zomglings): Take blockchain as a parameter (perhaps optional) here. Browser-based workflow is that
+# user would already have selected their blockchain when connecting Metamask.
 @app.get("", response_model=data.DropResponse)
 @app.get("/", response_model=data.DropResponse)
 async def get_drop_handler(
@@ -123,13 +132,16 @@ async def get_drop_handler(
 
     signature = claimant.signature
     if signature is None or not claimant.is_recent_signature:
-        dropper_contract = Dropper.Dropper(claimant.dropper_contract_address)
-        message_hash = dropper_contract.claim_message_hash(
+        dropper_contract = Dropper_interface.Contract(
+            BLOCKCHAIN_WEB3_PROVIDERS[claimant.blockchain],
+            claimant.dropper_contract_address,
+        )
+        message_hash = dropper_contract.claimMessageHash(
             claimant.claim_id,
             claimant.address,
             claimant.claim_block_deadline,
             transformed_amount,
-        )
+        ).call()
 
         try:
             signature = signatures.DROP_SIGNER.sign_message(message_hash)
@@ -167,6 +179,10 @@ async def get_drop_batch_handler(
     """
     Get signed transaction for all user drops.
     """
+    if blockchain not in BLOCKCHAIN_WEB3_PROVIDERS:
+        raise DropperHTTPException(
+            status_code=404, detail=UNSUPPORTED_BLOCKCHAIN_ERROR_MESSAGE
+        )
 
     address = Web3.toChecksumAddress(address)
 
@@ -219,14 +235,17 @@ async def get_drop_batch_handler(
 
         signature = claimant_drop.signature
         if signature is None or not claimant_drop.is_recent_signature:
-            dropper_contract = Dropper.Dropper(claimant_drop.dropper_contract_address)
+            dropper_contract = Dropper_interface.Contract(
+                BLOCKCHAIN_WEB3_PROVIDERS[blockchain],
+                claimant_drop.dropper_contract_address,
+            )
 
-            message_hash = dropper_contract.claim_message_hash(
+            message_hash = dropper_contract.claimMessageHash(
                 claimant_drop.claim_id,
                 claimant_drop.address,
                 claimant_drop.claim_block_deadline,
                 transformed_amount,
-            )
+            ).call()
 
             try:
                 signature = signatures.DROP_SIGNER.sign_message(message_hash)
@@ -757,9 +776,12 @@ async def add_claimants(
             claimants=add_claimants_request.claimants,
             added_by=request.state.address,
         )
-    
+
     except actions.DublicateClaimantError:
-        raise DropperHTTPException(status_code=400, detail="Dublicated claimants in request please deduplicate them.")
+        raise DropperHTTPException(
+            status_code=400,
+            detail="Dublicated claimants in request please deduplicate them.",
+        )
     except Exception as e:
         logger.info(
             f"Can't add claimants for claim {add_claimants_request.dropper_claim_id} with error: {e}"

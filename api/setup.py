@@ -44,5 +44,6 @@ setup(
             "engineapi=engineapi.cli:main",
         ]
     },
+    package_data={"engineapi": ["contracts/*.json"]},
     include_package_data=True,
 )

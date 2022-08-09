@@ -1,12 +1,10 @@
 import argparse
-
-from brownie import network, Contract
+import logging
 from typing import Dict, List, Optional, Any
 
 from .. import db
-from ..settings import BLOCKCHAINS_TO_BROWNIE_NETWORKS
-from ..Dropper import Dropper
-from ..MockErc20 import MockErc20
+from ..contracts import Dropper_interface, ERC20_interface
+from ..settings import BLOCKCHAIN_WEB3_PROVIDERS, UNSUPPORTED_BLOCKCHAIN_ERROR_MESSAGE
 
 
 def run_fill_raw_amount(args: argparse.Namespace):
@@ -15,57 +13,64 @@ def run_fill_raw_amount(args: argparse.Namespace):
     # create chache of claim token type
     # newtwork contract and list of claims with their token type
 
-    token_tytes: Dict[str, Dict[str, List[Dict[str, Any]]]] = dict()
+    token_types: Dict[str, Dict[str, List[Dict[str, Any]]]] = dict()
 
     with db.yield_db_session_ctx() as db_session:
 
         res = db_session.execute(
-            """select distinct dropper_contracts.blockchain, dropper_contracts.address, dropper_claims.claim_id from dropper_contracts 
+            """select distinct dropper_contracts.blockchain, dropper_contracts.address, dropper_claims.claim_id from dropper_contracts
                             left join dropper_claims on dropper_contracts.id = dropper_claims.dropper_contract_id
                             where dropper_claims.claim_id is not null"""
         )
         results = res.fetchall()
 
         for blockchain, address, claim_id in results:
-            if blockchain not in token_tytes:
-                token_tytes[blockchain] = dict()
-            if address not in token_tytes[blockchain]:
-                token_tytes[blockchain][address] = list()
-            token_tytes[blockchain][address].append(claim_id)
+            if blockchain not in token_types:
+                token_types[blockchain] = dict()
+            if address not in token_types[blockchain]:
+                token_types[blockchain][address] = list()
+            token_types[blockchain][address].append(claim_id)
 
         db_session.execute(
             """
             create table temptest
             (
-                blockchain varchar, 
-                address varchar, 
+                blockchain varchar,
+                address varchar,
                 claim_id varchar,
                 token_type varchar,
                 zeros varchar
             )
-                
+
             """
         )
 
-        for blockchain in token_tytes:
-            brownie_network = BLOCKCHAINS_TO_BROWNIE_NETWORKS.get(blockchain)
-            network.connect(brownie_network)
-            for address in token_tytes[blockchain]:
-                dropper_contract: Optional[Contract] = Dropper(address)
+        for blockchain in token_types:
+            if blockchain not in BLOCKCHAIN_WEB3_PROVIDERS:
+                logging.warn(
+                    f"Blockchain: {blockchain}. {UNSUPPORTED_BLOCKCHAIN_ERROR_MESSAGE}"
+                )
+                continue
+            for address in token_types[blockchain]:
+                dropper_contract = Dropper_interface.Contract(
+                    BLOCKCHAIN_WEB3_PROVIDERS[blockchain], address
+                )
 
-                for claim_id in token_tytes[blockchain][address]:
-                    claim_info = dropper_contract.get_claim(claim_id)
+                for claim_id in token_types[blockchain][address]:
+                    claim_info = dropper_contract.getClaim(claim_id).call()
                     zeros = None
                     if claim_info[0] == 20:
-                        erc20_contract: Optional[Contract] = MockErc20(claim_info[1])
+                        erc20_contract = ERC20_interface.Contract(
+                            BLOCKCHAIN_WEB3_PROVIDERS[blockchain], claim_info[1]
+                        )
                         zeros = "0" * erc20_contract.decimals()
 
                     db_session.execute(
                         """
                                 insert into temptest
                                 (
-                                    blockchain, 
-                                    address, 
+                                    blockchain,
+                                    address,
                                     claim_id,
                                     token_type,
                                     zeros
@@ -73,8 +78,8 @@ def run_fill_raw_amount(args: argparse.Namespace):
                                 )
                                 values
                                 (
-                                    :blockchain, 
-                                    :address, 
+                                    :blockchain,
+                                    :address,
                                     :claim_id,
                                     :token_type,
                                     :zeros
@@ -88,8 +93,6 @@ def run_fill_raw_amount(args: argparse.Namespace):
                             "zeros": zeros,
                         },
                     )
-
-            network.disconnect()
 
         db_session.commit()
 

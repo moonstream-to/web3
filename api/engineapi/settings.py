@@ -1,5 +1,7 @@
 import os
 from typing import Dict
+from web3 import Web3, HTTPProvider
+from web3.middleware import geth_poa_middleware
 
 
 # Origin
@@ -46,7 +48,29 @@ if MOONSTREAM_AWS_SIGNER_IMAGE_ID is None:
 
 MOONSTREAM_AWS_SIGNER_INSTANCE_PORT = 17181
 
-BLOCKCHAINS_TO_BROWNIE_NETWORKS: Dict[str, str] = {
-    "polygon": "moonstream-engine-polygon",
-    "mumbai": "mumbai",
+# Blockchain configuration
+
+BLOCKCHAIN_PROVIDER_URIS = {
+    "ethereum": os.environ.get("MOONSTREAM_PROVIDER_URI_ETHEREUM"),
+    "mumbai": os.environ.get("MOONSTREAM_PROVIDER_URI_MUMBAI"),
+    "polygon": os.environ.get("MOONSTREAM_PROVIDER_URI_POLYGON"),
+    "xdai": os.environ.get("MOONSTREAM_PROVIDER_URI_XDAI"),
 }
+
+SUPPORTED_BLOCKCHAINS = ", ".join(BLOCKCHAIN_PROVIDER_URIS)
+UNSUPPORTED_BLOCKCHAIN_ERROR_MESSAGE = f"That blockchain is not supported. The supported blockchains are: {SUPPORTED_BLOCKCHAINS}."
+
+BLOCKCHAIN_WEB3_PROVIDERS = {
+    blockchain: Web3(HTTPProvider(jsonrpc_uri))
+    for blockchain, jsonrpc_uri in BLOCKCHAIN_PROVIDER_URIS.items()
+}
+
+# For Proof-of-Authority chains (e.g. Polygon), inject the geth_poa_middleware into the web3 client:
+# https://web3py.readthedocs.io/en/stable/middleware.html#geth-style-proof-of-authority
+# For every chain represented in BLOCKCHAIN_WEB3_PROVIDERS and BLOCKCHAIN_PROVIDER_URIS, if the chain
+# is a proof-of-authority chain, add it to the POA_CHAINS list, as well.
+POA_CHAINS = ["mumbai", "polygon"]
+for chain in POA_CHAINS:
+    BLOCKCHAIN_WEB3_PROVIDERS[chain].middleware_onion.inject(
+        geth_poa_middleware, layer=0
+    )

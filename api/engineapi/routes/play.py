@@ -21,13 +21,11 @@ from engineapi.models import DropperClaimant
 
 from .. import actions
 from .. import data
-from ..middleware import DropperHTTPException
 from .. import db
-from .. import Dropper
 from .. import signatures
+from ..contracts import Dropper_interface
 from ..middleware import DropperHTTPException
-from ..settings import ENGINE_BROWNIE_NETWORK, DOCS_TARGET_PATH
-
+from ..settings import BLOCKCHAIN_WEB3_PROVIDERS, DOCS_TARGET_PATH
 
 
 logging.basicConfig(level=logging.INFO)
@@ -148,14 +146,17 @@ async def get_drop_batch_handler(
         )
         signature = claimant_drop.signature
         if signature is None or not claimant_drop.is_recent_signature:
-            dropper_contract = Dropper.Dropper(claimant_drop.dropper_contract_address)
+            dropper_contract = Dropper_interface.Contract(
+                BLOCKCHAIN_WEB3_PROVIDERS[blockchain],
+                claimant_drop.dropper_contract_address,
+            )
 
-            message_hash = dropper_contract.claim_message_hash(
+            message_hash = dropper_contract.claimMessageHash(
                 claimant_drop.claim_id,
                 claimant_drop.address,
                 claimant_drop.claim_block_deadline,
                 transformed_amount,
-            )
+            ).call()
 
             try:
                 signature = signatures.DROP_SIGNER.sign_message(message_hash)
@@ -242,13 +243,15 @@ async def get_drop_handler(
         )
     signature = claimant.signature
     if signature is None or not claimant.is_recent_signature:
-        dropper_contract = Dropper.Dropper(claimant.dropper_contract_address)
-        message_hash = dropper_contract.claim_message_hash(
+        dropper_contract = Dropper_interface.Contract(
+            claimant.blockchain, claimant.dropper_contract_address
+        )
+        message_hash = dropper_contract.claimMessageHash(
             claimant.claim_id,
             claimant.address,
             claimant.claim_block_deadline,
             transformed_amount,
-        )
+        ).call()
 
         try:
             signature = signatures.DROP_SIGNER.sign_message(message_hash)
@@ -374,17 +377,6 @@ async def get_drop_handler(
     except Exception as e:
         logger.error(f"Can't get drop {dropper_claim_id} end with error: {e}")
         raise DropperHTTPException(status_code=500, detail="Can't get drop")
-
-    # if drop.terminus_address is not None and drop.terminus_pool_id is not None:
-    #     try:
-    #         actions.ensure_admin_token_holder(
-    #             db_session, dropper_claim_id, request.state.address
-    #         )
-    #     except actions.AuthorizationError as e:
-    #         logger.error(e)
-    #         raise DropperHTTPException(status_code=403)
-    #     except NoResultFound:
-    #         raise DropperHTTPException(status_code=404, detail="Drop not found")
 
     return data.DropperClaimResponse(
         id=drop.id,

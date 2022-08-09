@@ -18,7 +18,7 @@ from .. import actions
 from .. import data
 from .. import db
 from ..middleware import DropperHTTPException, DropperAuthMiddleware
-from ..settings import DOCS_TARGET_PATH, ORIGINS, ENGINE_BROWNIE_NETWORK
+from ..settings import DOCS_TARGET_PATH, ORIGINS
 
 
 logging.basicConfig(level=logging.INFO)
@@ -39,7 +39,8 @@ app = FastAPI(
 
 whitelist_paths: Dict[str, str] = {}
 whitelist_paths.update(
-    {   "/openapi.json": "GET",
+    {
+        "/openapi.json": "GET",
         "/admin/openapi.json": "GET",
     }
 )
@@ -397,7 +398,10 @@ async def add_claimants(
             added_by=request.state.address,
         )
     except actions.DublicateClaimantError:
-        raise DropperHTTPException(status_code=400, detail="Dublicated claimants in request please deduplicate them")
+        raise DropperHTTPException(
+            status_code=400,
+            detail="Dublicated claimants in request please deduplicate them",
+        )
     except Exception as e:
         logger.info(f"Can't add claimants for claim {dropper_claim_id} with error: {e}")
         raise DropperHTTPException(status_code=500, detail=f"Error adding claimants")
