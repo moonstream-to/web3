@@ -151,3 +151,7 @@ yarn.lock
 
 #next
 .next/
+
+# Schematic
+.schematic.env
+scm/srv/
