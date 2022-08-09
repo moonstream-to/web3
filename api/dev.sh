@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-# Expects access to Python environment with the requirements 
+# Expects access to Python environment with the requirements
 # for this project installed.
 set -e
 
