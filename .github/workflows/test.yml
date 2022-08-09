@@ -27,7 +27,7 @@ jobs:
         run: pip install -U pip
       - name: Install additional dev dependencies
         run: |
-          pip install -e black moonworm
+          pip install black moonworm
       - name: Install dependencies for CLI
         working-directory: cli/
         run: |
