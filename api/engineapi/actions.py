@@ -856,7 +856,7 @@ def refetch_drop_signatures(
                 claim.claim_id,
                 outdated_signature.address,
                 claim.claim_block_deadline,
-                transformed_claim_amount,
+                int(transformed_claim_amount),
             ).call()
             message_hash = str(message_hash_raw)
             signature_requests.append(message_hash)

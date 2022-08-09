@@ -155,7 +155,7 @@ async def get_drop_batch_handler(
                 claimant_drop.claim_id,
                 claimant_drop.address,
                 claimant_drop.claim_block_deadline,
-                transformed_amount,
+                int(transformed_amount),
             ).call()
 
             try:
