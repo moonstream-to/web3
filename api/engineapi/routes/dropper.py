@@ -6,12 +6,13 @@ from typing import List, Optional, Any, Dict
 from urllib.error import HTTPError
 from uuid import UUID
 
-from web3 import Web3
 
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Body, Request, Depends, Query
+from hexbytes import HexBytes
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
+from web3 import Web3
 
 from engineapi.models import DropperClaimant
 
@@ -136,12 +137,14 @@ async def get_drop_handler(
             BLOCKCHAIN_WEB3_PROVIDERS[claimant.blockchain],
             claimant.dropper_contract_address,
         )
-        message_hash = dropper_contract.claimMessageHash(
+        message_hash_raw = dropper_contract.claimMessageHash(
             claimant.claim_id,
             claimant.address,
             claimant.claim_block_deadline,
             int(transformed_amount),
         ).call()
+
+        message_hash = HexBytes(message_hash_raw).hex()
 
         try:
             signature = signatures.DROP_SIGNER.sign_message(message_hash)
@@ -240,12 +243,14 @@ async def get_drop_batch_handler(
                 claimant_drop.dropper_contract_address,
             )
 
-            message_hash = dropper_contract.claimMessageHash(
+            message_hash_raw = dropper_contract.claimMessageHash(
                 claimant_drop.claim_id,
                 claimant_drop.address,
                 claimant_drop.claim_block_deadline,
                 int(transformed_amount),
             ).call()
+
+            message_hash = HexBytes(message_hash_raw).hex()
 
             try:
                 signature = signatures.DROP_SIGNER.sign_message(message_hash)
