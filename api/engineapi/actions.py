@@ -4,6 +4,7 @@ import uuid
 import logging
 
 from eth_typing import Address
+from hexbytes import HexBytes
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text, or_
@@ -858,7 +859,7 @@ def refetch_drop_signatures(
                 claim.claim_block_deadline,
                 int(transformed_claim_amount),
             ).call()
-            message_hash = str(message_hash_raw)
+            message_hash = HexBytes(message_hash_raw).hex()
             signature_requests.append(message_hash)
             users_hashes[outdated_signature.address] = message_hash
             users_amount[outdated_signature.address] = outdated_signature.amount
