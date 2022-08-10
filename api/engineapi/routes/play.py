@@ -253,7 +253,7 @@ async def get_drop_handler(
             claimant.claim_id,
             claimant.address,
             claimant.claim_block_deadline,
-            transformed_amount,
+            int(transformed_amount),
         ).call()
 
         message_hash = HexBytes(message_hash_raw).hex()
