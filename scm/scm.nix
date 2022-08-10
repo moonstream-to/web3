@@ -15,7 +15,7 @@ let
             (getEnv "MDP_GIT")
             (fetchGit {
                 url = "git@github.com:bugout-dev/engine.git";
-                rev = "6dc9adcdf7119f2a09a44896c73602201bf60d34";
+                rev = "5f6d24a45f3d2b559a1132523de86d4ffd2df783";
             })
         ] ++ scm_repos;
     });
