@@ -23,7 +23,7 @@ const useClaim = ({
   const toast = useToast();
 
   const claim = useQuery(
-    [`/drops/claims/${claimId}`],
+    [`/play/drops/${claimId}`],
     (query: any) => queryHttp(query).then((r: any) => r.data),
     {
       ...queryCacheProps,

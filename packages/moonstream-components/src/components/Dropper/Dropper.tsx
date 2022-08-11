@@ -153,7 +153,7 @@ const Dropper = ({
                 dropperAddress={contractAddress}
                 key={`contract-card-${claim.id}}`}
                 claimId={claim.id}
-                claimIdx={claim.claim_id}
+                claimIdx={claim.drop_number}
               />
             );
           })}

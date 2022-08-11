@@ -3,19 +3,22 @@ const API =
   process.env.NEXT_PUBLIC_ENGINE_API_URL ??
   process.env.NEXT_PUBLIC_PLAY_API_URL;
 
+const PLAY_API = `${API}/play`;
+const ADMIN_API = `${API}/admin`;
+
 export const getAdminList =
   (terminusAddress, chainName, poolId, offset, limit, dropperAddress) =>
   async () => {
     return http({
       method: "GET",
-      url: `${API}/drops/terminus/claims`,
+      url: `${API}/admin/drops`,
       params: {
-        terminus_address: encodeURIComponent(terminusAddress),
         blockchain: chainName,
+        contract_address: dropperAddress,
+        terminus_address: encodeURIComponent(terminusAddress),
         terminus_pool_id: poolId,
-        offset: offset,
         limit: limit,
-        dropperAddress: dropperAddress,
+        offset: offset,
       },
     });
   };
@@ -99,7 +102,7 @@ export const getTime = () => async () => {
 export const getTerminus = (chainName) => async () => {
   return http({
     method: "GET",
-    url: `${API}/drops/terminus`,
+    url: `${PLAY_API}/terminus`,
     params: { blockchain: chainName },
   });
 };
