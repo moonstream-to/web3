@@ -81,14 +81,10 @@ export const setClaimants = ({ dropperClaimId, claimants }) => {
 export const deleteClaimants =
   ({ dropperClaimId }) =>
   ({ list }) => {
-    const data = new FormData();
-    data.append("dropper_claim_id", dropperClaimId);
-    data.append("addresses", list);
-
     return http({
       method: "DELETE",
-      url: `${API}/drops/claimants`,
-      data: { dropper_claim_id: dropperClaimId, addresses: list },
+      url: `${ADMIN_API}/drops/${dropperClaimId}/claimants`,
+      data: { claimants: list },
     });
   };
 
