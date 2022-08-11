@@ -11,7 +11,7 @@ export const getAdminList =
   async () => {
     return http({
       method: "GET",
-      url: `${API}/admin/drops`,
+      url: `${ADMIN_API}/drops`,
       params: {
         blockchain: chainName,
         contract_address: dropperAddress,
@@ -110,13 +110,13 @@ export const getTerminus = (chainName) => async () => {
 export const deactivate = ({ dropperClaimId }) => {
   return http({
     method: "PUT",
-    url: `${API}/drops/claims/${dropperClaimId}/deactivate`,
+    url: `${ADMIN_API}/drops/${dropperClaimId}/deactivate`,
   });
 };
 
 export const activate = ({ dropperClaimId }) => {
   return http({
     method: "PUT",
-    url: `${API}/drops/claims/${dropperClaimId}/activate`,
+    url: `${ADMIN_API}/drops/${dropperClaimId}/activate`,
   });
 };
