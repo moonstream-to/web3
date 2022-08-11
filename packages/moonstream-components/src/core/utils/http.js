@@ -41,5 +41,13 @@ export const queryHttp = (query) => {
   });
 };
 
+export const patchHttp = (endpoint, data) => {
+  return http({
+    method: "PATCH",
+    url: `${API}${endpoint}`,
+    data: data,
+  });
+};
+
 export { axios };
 export default http;

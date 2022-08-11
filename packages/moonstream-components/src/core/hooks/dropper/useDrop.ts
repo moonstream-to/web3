@@ -14,7 +14,7 @@ import {
 import useToast from "../useToast";
 import queryCacheProps from "../hookCommon";
 import useDrops from "./useDrops";
-import { putHttp } from "../../utils/http";
+import { patchHttp } from "../../utils/http";
 
 const useDrop = ({
   ctx,
@@ -125,7 +125,7 @@ const useDrop = ({
 
   const update = useMutation(
     (data: UpdateClaim) => {
-      if (claimId) return putHttp(`/drops/claims/${claimId}`, { ...data });
+      if (claimId) return patchHttp(`/admin/drops/${claimId}`, { ...data });
       else throw new Error("Cannot use update without claimid");
     },
     {
