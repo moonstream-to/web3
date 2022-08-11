@@ -69,11 +69,11 @@ export const getClaimants =
   };
 
 export const setClaimants = ({ dropperClaimId, claimants }) => {
-  const data = { dropper_claim_id: dropperClaimId, claimants: claimants };
+  const data = { claimants: claimants };
 
   return http({
     method: "POST",
-    url: `${API}/drops/claimants`,
+    url: `${ADMIN_API}/drops/${dropperClaimId}/claimants/batch`,
     data: data,
   });
 };
