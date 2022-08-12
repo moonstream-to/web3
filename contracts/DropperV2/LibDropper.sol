@@ -14,11 +14,11 @@ uint256 constant ERC1155_TYPE = 1155;
 uint256 constant TERMINUS_MINTABLE_TYPE = 1;
 uint256 constant ERC721_MINTABLE_TYPE = 2;
 
-library LibDropperV2 {
+library LibDropper {
     bytes32 constant DROPPERV2_STORAGE_POSITION =
-        keccak256("moonstreamdao.eth.storage.DropperV2");
+        keccak256("moonstreamdao.eth.storage.Dropper");
 
-    struct DropperV2Storage {
+    struct DropperStorage {
         address TerminusAdminContractAddress;
         uint256 TerminusAdminPoolID;
         uint256 NumDrops;
@@ -32,10 +32,10 @@ library LibDropperV2 {
         mapping(address => mapping(uint256 => uint256)) AmountClaimed;
     }
 
-    function dropperV2Storage()
+    function dropperStorage()
         internal
         pure
-        returns (DropperV2Storage storage ds)
+        returns (DropperStorage storage ds)
     {
         bytes32 position = DROPPERV2_STORAGE_POSITION;
         assembly {

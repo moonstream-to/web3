@@ -16,17 +16,17 @@ import "@openzeppelin-contracts/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin-contracts/contracts/utils/cryptography/SignatureChecker.sol";
 
-import "./LibDropperV2.sol";
+import "./LibDropper.sol";
 import "../interfaces/IERC721Mint.sol";
 import "../diamond/security/DiamondReentrancyGuard.sol";
 import "../diamond/libraries/LibSignatures.sol";
 
 /**
- * @title Moonstream DropperV2
+ * @title Moonstream Dropper
  * @author Moonstream Engineering (engineering@moonstream.to)
  * @notice This contract manages drops for ERC20, ERC1155, and ERC721 tokens.
  */
-contract DropperV2Facet is
+contract DropperFacet is
     IERC721Receiver,
     ERC1155Holder,
     TerminusPermissions,
@@ -56,8 +56,7 @@ contract DropperV2Facet is
     );
 
     modifier onlyTerminusAdmin() {
-        LibDropperV2.DropperV2Storage storage ds = LibDropperV2
-            .dropperV2Storage();
+        LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
         require(
             _holdsPoolToken(
                 ds.TerminusAdminContractAddress,
@@ -69,6 +68,30 @@ contract DropperV2Facet is
 
         // Execute modified function
         _;
+    }
+
+    function init(
+        address terminusAdminContractAddress,
+        uint256 terminusAdminPoolID
+    ) external {
+        // Set up server side signing parameters for EIP712
+        LibSignatures._setEIP712Parameters("Moonstream Dropper", "0.2.0");
+
+        // Initialize Terminus administration information
+        LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
+
+        ds.TerminusAdminContractAddress = terminusAdminContractAddress;
+        ds.TerminusAdminPoolID = terminusAdminPoolID;
+    }
+
+    function dropperVersion()
+        public
+        view
+        returns (string memory, string memory)
+    {
+        LibSignatures.SignaturesStorage storage ss = LibSignatures
+            .signaturesStorage();
+        return (ss.name, ss.version);
     }
 
     function onERC721Received(
@@ -93,16 +116,15 @@ contract DropperV2Facet is
                 tokenType == ERC1155_TYPE ||
                 tokenType == TERMINUS_MINTABLE_TYPE ||
                 tokenType == ERC721_MINTABLE_TYPE,
-            "DropperV2: createDrop -- Unknown token type"
+            "Dropper: createDrop -- Unknown token type"
         );
 
         require(
             amount != 0,
-            "DropperV2: createDrop -- Amount must be greater than 0"
+            "Dropper: createDrop -- Amount must be greater than 0"
         );
 
-        LibDropperV2.DropperV2Storage storage ds = LibDropperV2
-            .dropperV2Storage();
+        LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
 
         ds.NumDrops++;
 
@@ -123,7 +145,7 @@ contract DropperV2Facet is
     }
 
     function numDrops() external view returns (uint256) {
-        return LibDropperV2.dropperV2Storage().NumDrops;
+        return LibDropper.dropperStorage().NumDrops;
     }
 
     function getDrop(uint256 dropId)
@@ -131,39 +153,37 @@ contract DropperV2Facet is
         view
         returns (DroppableToken memory)
     {
-        return LibDropperV2.dropperV2Storage().DropToken[dropId];
+        return LibDropper.dropperStorage().DropToken[dropId];
     }
 
     function setDropStatus(uint256 dropId, bool status)
         external
         onlyTerminusAdmin
     {
-        LibDropperV2.DropperV2Storage storage ds = LibDropperV2
-            .dropperV2Storage();
+        LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
         ds.IsDropActive[dropId] = status;
         emit DropStatusChanged(dropId, status);
     }
 
     function dropStatus(uint256 dropId) external view returns (bool) {
-        return LibDropperV2.dropperV2Storage().IsDropActive[dropId];
+        return LibDropper.dropperStorage().IsDropActive[dropId];
     }
 
     function setSignerForDrop(uint256 dropId, address signer)
         public
         onlyTerminusAdmin
     {
-        LibDropperV2.DropperV2Storage storage ds = LibDropperV2
-            .dropperV2Storage();
+        LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
         ds.DropSigner[dropId] = signer;
         emit DropSignerChanged(dropId, signer);
     }
 
     function getSignerForDrop(uint256 dropId) external view returns (address) {
-        return LibDropperV2.dropperV2Storage().DropSigner[dropId];
+        return LibDropper.dropperStorage().DropSigner[dropId];
     }
 
     function maxClaimable(uint256 dropId) external view returns (uint256) {
-        return LibDropperV2.dropperV2Storage().MaxClaimable[dropId];
+        return LibDropper.dropperStorage().MaxClaimable[dropId];
     }
 
     function getAmountClaimed(address claimant, uint256 dropId)
@@ -171,7 +191,7 @@ contract DropperV2Facet is
         view
         returns (uint256)
     {
-        return LibDropperV2.dropperV2Storage().AmountClaimed[claimant][dropId];
+        return LibDropper.dropperStorage().AmountClaimed[claimant][dropId];
     }
 
     function claimMessageHash(
@@ -206,16 +226,15 @@ contract DropperV2Facet is
     ) external diamondNonReentrant {
         require(
             block.number <= blockDeadline,
-            "DropperV2: claim -- Block deadline exceeded."
+            "Dropper: claim -- Block deadline exceeded."
         );
 
-        LibDropperV2.DropperV2Storage storage ds = LibDropperV2
-            .dropperV2Storage();
+        LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
 
         require(
             ds.AmountClaimed[msg.sender][dropId] + amount <=
                 ds.MaxClaimable[dropId],
-            "DropperV2: claim -- Claimant would exceed the maximum claimable number of tokens for this drop."
+            "Dropper: claim -- Claimant would exceed the maximum claimable number of tokens for this drop."
         );
 
         bytes32 hash = claimMessageHash(
@@ -231,7 +250,7 @@ contract DropperV2Facet is
                 hash,
                 signature
             ),
-            "DropperV2: claim -- Invalid signer for claim."
+            "Dropper: claim -- Invalid signer for claim."
         );
 
         DroppableToken memory claimToken = ds.DropToken[dropId];
@@ -335,15 +354,14 @@ contract DropperV2Facet is
     }
 
     function dropUri(uint256 dropId) public view returns (string memory) {
-        return LibDropperV2.dropperV2Storage().DropURI[dropId];
+        return LibDropper.dropperStorage().DropURI[dropId];
     }
 
     function setDropUri(uint256 dropId, string memory uri)
         external
         onlyTerminusAdmin
     {
-        LibDropperV2.DropperV2Storage storage ds = LibDropperV2
-            .dropperV2Storage();
+        LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
 
         ds.DropURI[dropId] = uri;
     }
