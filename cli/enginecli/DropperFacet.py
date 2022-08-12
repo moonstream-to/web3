@@ -69,12 +69,12 @@ def contract_from_build(abi_name: str) -> ContractContainer:
     return ContractContainer(PROJECT, build)
 
 
-class DropperV2Facet:
+class DropperFacet:
     def __init__(self, contract_address: Optional[ChecksumAddress]):
-        self.contract_name = "DropperV2Facet"
+        self.contract_name = "DropperFacet"
         self.address = contract_address
         self.contract = None
-        self.abi = get_abi_json("DropperV2Facet")
+        self.abi = get_abi_json("DropperFacet")
         if self.address is not None:
             self.contract: Optional[Contract] = Contract.from_abi(
                 self.contract_name, self.address, self.abi
@@ -160,6 +160,12 @@ class DropperV2Facet:
         self.assert_contract_is_instantiated()
         return self.contract.dropUri.call(drop_id, block_identifier=block_number)
 
+    def dropper_version(
+        self, block_number: Optional[Union[str, int]] = "latest"
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.dropperVersion.call(block_identifier=block_number)
+
     def get_amount_claimed(
         self,
         claimant: ChecksumAddress,
@@ -183,6 +189,17 @@ class DropperV2Facet:
         self.assert_contract_is_instantiated()
         return self.contract.getSignerForDrop.call(
             drop_id, block_identifier=block_number
+        )
+
+    def init(
+        self,
+        terminus_admin_contract_address: ChecksumAddress,
+        terminus_admin_pool_id: int,
+        transaction_config,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.init(
+            terminus_admin_contract_address, terminus_admin_pool_id, transaction_config
         )
 
     def max_claimable(
@@ -365,7 +382,7 @@ def add_default_arguments(parser: argparse.ArgumentParser, transact: bool) -> No
 def handle_deploy(args: argparse.Namespace) -> None:
     network.connect(args.network)
     transaction_config = get_transaction_config(args)
-    contract = DropperV2Facet(None)
+    contract = DropperFacet(None)
     result = contract.deploy(transaction_config=transaction_config)
     print(result)
     if args.verbose:
@@ -374,14 +391,14 @@ def handle_deploy(args: argparse.Namespace) -> None:
 
 def handle_verify_contract(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     result = contract.verify_contract()
     print(result)
 
 
 def handle_claim(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.claim(
         request_id=args.request_id,
@@ -398,7 +415,7 @@ def handle_claim(args: argparse.Namespace) -> None:
 
 def handle_claim_message_hash(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     result = contract.claim_message_hash(
         request_id=args.request_id,
         drop_id=args.drop_id,
@@ -412,7 +429,7 @@ def handle_claim_message_hash(args: argparse.Namespace) -> None:
 
 def handle_create_drop(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.create_drop(
         token_type=args.token_type,
@@ -429,21 +446,28 @@ def handle_create_drop(args: argparse.Namespace) -> None:
 
 def handle_drop_status(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     result = contract.drop_status(drop_id=args.drop_id, block_number=args.block_number)
     print(result)
 
 
 def handle_drop_uri(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     result = contract.drop_uri(drop_id=args.drop_id, block_number=args.block_number)
+    print(result)
+
+
+def handle_dropper_version(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = DropperFacet(args.address)
+    result = contract.dropper_version(block_number=args.block_number)
     print(result)
 
 
 def handle_get_amount_claimed(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     result = contract.get_amount_claimed(
         claimant=args.claimant, drop_id=args.drop_id, block_number=args.block_number
     )
@@ -452,23 +476,37 @@ def handle_get_amount_claimed(args: argparse.Namespace) -> None:
 
 def handle_get_drop(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     result = contract.get_drop(drop_id=args.drop_id, block_number=args.block_number)
     print(result)
 
 
 def handle_get_signer_for_drop(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     result = contract.get_signer_for_drop(
         drop_id=args.drop_id, block_number=args.block_number
     )
     print(result)
 
 
+def handle_init(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = DropperFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.init(
+        terminus_admin_contract_address=args.terminus_admin_contract_address,
+        terminus_admin_pool_id=args.terminus_admin_pool_id,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
 def handle_max_claimable(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     result = contract.max_claimable(
         drop_id=args.drop_id, block_number=args.block_number
     )
@@ -477,14 +515,14 @@ def handle_max_claimable(args: argparse.Namespace) -> None:
 
 def handle_num_drops(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     result = contract.num_drops(block_number=args.block_number)
     print(result)
 
 
 def handle_on_erc1155_batch_received(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.on_erc1155_batch_received(
         arg1=args.arg1,
@@ -501,7 +539,7 @@ def handle_on_erc1155_batch_received(args: argparse.Namespace) -> None:
 
 def handle_on_erc1155_received(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.on_erc1155_received(
         arg1=args.arg1,
@@ -518,7 +556,7 @@ def handle_on_erc1155_received(args: argparse.Namespace) -> None:
 
 def handle_on_erc721_received(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.on_erc721_received(
         operator=args.operator,
@@ -534,7 +572,7 @@ def handle_on_erc721_received(args: argparse.Namespace) -> None:
 
 def handle_set_drop_status(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.set_drop_status(
         drop_id=args.drop_id, status=args.status, transaction_config=transaction_config
@@ -546,7 +584,7 @@ def handle_set_drop_status(args: argparse.Namespace) -> None:
 
 def handle_set_drop_uri(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.set_drop_uri(
         drop_id=args.drop_id, uri=args.uri, transaction_config=transaction_config
@@ -558,7 +596,7 @@ def handle_set_drop_uri(args: argparse.Namespace) -> None:
 
 def handle_set_signer_for_drop(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.set_signer_for_drop(
         drop_id=args.drop_id,
@@ -572,7 +610,7 @@ def handle_set_signer_for_drop(args: argparse.Namespace) -> None:
 
 def handle_supports_interface(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     result = contract.supports_interface(
         interface_id=args.interface_id, block_number=args.block_number
     )
@@ -581,7 +619,7 @@ def handle_supports_interface(args: argparse.Namespace) -> None:
 
 def handle_surrender_pool_control(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.surrender_pool_control(
         pool_id=args.pool_id,
@@ -596,7 +634,7 @@ def handle_surrender_pool_control(args: argparse.Namespace) -> None:
 
 def handle_withdraw_erc1155(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.withdraw_erc1155(
         token_address=args.token_address,
@@ -611,7 +649,7 @@ def handle_withdraw_erc1155(args: argparse.Namespace) -> None:
 
 def handle_withdraw_erc20(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.withdraw_erc20(
         token_address=args.token_address,
@@ -625,7 +663,7 @@ def handle_withdraw_erc20(args: argparse.Namespace) -> None:
 
 def handle_withdraw_erc721(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = DropperV2Facet(args.address)
+    contract = DropperFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.withdraw_erc721(
         token_address=args.token_address,
@@ -638,7 +676,7 @@ def handle_withdraw_erc721(args: argparse.Namespace) -> None:
 
 
 def generate_cli() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="CLI for DropperV2Facet")
+    parser = argparse.ArgumentParser(description="CLI for DropperFacet")
     parser.set_defaults(func=lambda _: parser.print_help())
     subcommands = parser.add_subparsers()
 
@@ -719,6 +757,10 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     drop_uri_parser.set_defaults(func=handle_drop_uri)
 
+    dropper_version_parser = subcommands.add_parser("dropper-version")
+    add_default_arguments(dropper_version_parser, False)
+    dropper_version_parser.set_defaults(func=handle_dropper_version)
+
     get_amount_claimed_parser = subcommands.add_parser("get-amount-claimed")
     add_default_arguments(get_amount_claimed_parser, False)
     get_amount_claimed_parser.add_argument(
@@ -742,6 +784,16 @@ def generate_cli() -> argparse.ArgumentParser:
         "--drop-id", required=True, help="Type: uint256", type=int
     )
     get_signer_for_drop_parser.set_defaults(func=handle_get_signer_for_drop)
+
+    init_parser = subcommands.add_parser("init")
+    add_default_arguments(init_parser, True)
+    init_parser.add_argument(
+        "--terminus-admin-contract-address", required=True, help="Type: address"
+    )
+    init_parser.add_argument(
+        "--terminus-admin-pool-id", required=True, help="Type: uint256", type=int
+    )
+    init_parser.set_defaults(func=handle_init)
 
     max_claimable_parser = subcommands.add_parser("max-claimable")
     add_default_arguments(max_claimable_parser, False)

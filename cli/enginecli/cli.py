@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from . import core, drop, Dropper, Lootbox, MockErc20, MockTerminus
+from . import core, drop, DropperFacet, Lootbox, MockErc20, MockTerminus
 
 
 logging.basicConfig(level=logging.INFO)
@@ -16,14 +16,14 @@ def main() -> None:
     parser.set_defaults(func=lambda _: parser.print_help())
     subparsers = parser.add_subparsers()
 
-    lootbox_parser = Lootbox.generate_cli()
-    subparsers.add_parser("lootbox", parents=[lootbox_parser], add_help=False)
-
-    dropper_parser = Dropper.generate_cli()
-    subparsers.add_parser("dropper", parents=[dropper_parser], add_help=False)
-
     core_parser = core.generate_cli()
     subparsers.add_parser("core", parents=[core_parser], add_help=False)
+
+    dropper_parser = DropperFacet.generate_cli()
+    subparsers.add_parser("dropper", parents=[dropper_parser], add_help=False)
+
+    lootbox_parser = Lootbox.generate_cli()
+    subparsers.add_parser("lootbox", parents=[lootbox_parser], add_help=False)
 
     erc20_parser = MockErc20.generate_cli()
     subparsers.add_parser("mock-erc20", parents=[erc20_parser], add_help=False)

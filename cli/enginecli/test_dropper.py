@@ -1,6 +1,4 @@
-from multiprocessing import pool
 import unittest
-from typing import Dict, Any
 
 from brownie import accounts, network, web3 as web3_client
 from brownie.exceptions import VirtualMachineError
@@ -10,7 +8,7 @@ import eth_keys
 from hexbytes import HexBytes
 from moonworm.watch import _fetch_events_chunk
 
-from . import Dropper, MockTerminus, MockErc20, MockERC721
+from . import core, DropperFacet, MockTerminus, MockErc20, MockERC721
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
@@ -57,6 +55,16 @@ class DropperTestCase(unittest.TestCase):
         )
 
         cls.terminus.create_pool_v1(2**256 - 1, True, True, {"from": accounts[0]})
+        cls.admin_terminus_pool_id = cls.terminus.total_pools()
+        cls.terminus.mint(
+            accounts[0].address,
+            cls.admin_terminus_pool_id,
+            1,
+            b"",
+            {"from": accounts[0]},
+        )
+
+        cls.terminus.create_pool_v1(2**256 - 1, True, True, {"from": accounts[0]})
         cls.terminus_pool_id = cls.terminus.total_pools()
 
         # create dropper own pool
@@ -65,8 +73,12 @@ class DropperTestCase(unittest.TestCase):
         cls.mintable_terminus_pool_id = cls.terminus.total_pools()
 
         # Dropper deployment
-        cls.dropper = Dropper.Dropper(None)
-        cls.dropper.deploy({"from": accounts[0]})
+        cls.deployment_info = core.dropper_gogogo(
+            cls.terminus.address, cls.admin_terminus_pool_id, {"from": accounts[0]}
+        )
+        cls.dropper = DropperFacet.DropperFacet(
+            cls.deployment_info["contracts"]["Diamond"]
+        )
 
         cls.TERMINUS_MINTABLE_TYPE = int(cls.dropper.terminus_mintable_type())
         cls.terminus.set_pool_controller(
