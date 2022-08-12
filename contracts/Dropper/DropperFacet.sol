@@ -55,6 +55,26 @@ contract DropperFacet is
         uint256 amount
     );
 
+    function erc20_type() external pure returns (uint256) {
+        return ERC20_TYPE;
+    }
+
+    function erc721_type() external pure returns (uint256) {
+        return ERC721_TYPE;
+    }
+
+    function erc1155_type() external pure returns (uint256) {
+        return ERC1155_TYPE;
+    }
+
+    function terminus_mintable_type() external pure returns (uint256) {
+        return TERMINUS_MINTABLE_TYPE;
+    }
+
+    function erc721_mintable_type() external pure returns (uint256) {
+        return ERC721_MINTABLE_TYPE;
+    }
+
     modifier onlyTerminusAdmin() {
         LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
         require(

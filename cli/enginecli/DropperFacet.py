@@ -166,6 +166,22 @@ class DropperFacet:
         self.assert_contract_is_instantiated()
         return self.contract.dropperVersion.call(block_identifier=block_number)
 
+    def erc1155_type(self, transaction_config) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.erc1155_type(transaction_config)
+
+    def erc20_type(self, transaction_config) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.erc20_type(transaction_config)
+
+    def erc721_mintable_type(self, transaction_config) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.erc721_mintable_type(transaction_config)
+
+    def erc721_type(self, transaction_config) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.erc721_type(transaction_config)
+
     def get_amount_claimed(
         self,
         claimant: ChecksumAddress,
@@ -286,6 +302,10 @@ class DropperFacet:
         return self.contract.surrenderPoolControl(
             pool_id, terminus_address, new_pool_controller, transaction_config
         )
+
+    def terminus_mintable_type(self, transaction_config) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.terminus_mintable_type(transaction_config)
 
     def withdraw_erc1155(
         self,
@@ -465,6 +485,46 @@ def handle_dropper_version(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_erc1155_type(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = DropperFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.erc1155_type(transaction_config=transaction_config)
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
+def handle_erc20_type(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = DropperFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.erc20_type(transaction_config=transaction_config)
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
+def handle_erc721_mintable_type(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = DropperFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.erc721_mintable_type(transaction_config=transaction_config)
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
+def handle_erc721_type(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = DropperFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.erc721_type(transaction_config=transaction_config)
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
 def handle_get_amount_claimed(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = DropperFacet(args.address)
@@ -632,6 +692,16 @@ def handle_surrender_pool_control(args: argparse.Namespace) -> None:
         print(result.info())
 
 
+def handle_terminus_mintable_type(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = DropperFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.terminus_mintable_type(transaction_config=transaction_config)
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
 def handle_withdraw_erc1155(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = DropperFacet(args.address)
@@ -760,6 +830,22 @@ def generate_cli() -> argparse.ArgumentParser:
     dropper_version_parser = subcommands.add_parser("dropper-version")
     add_default_arguments(dropper_version_parser, False)
     dropper_version_parser.set_defaults(func=handle_dropper_version)
+
+    erc1155_type_parser = subcommands.add_parser("erc1155-type")
+    add_default_arguments(erc1155_type_parser, True)
+    erc1155_type_parser.set_defaults(func=handle_erc1155_type)
+
+    erc20_type_parser = subcommands.add_parser("erc20-type")
+    add_default_arguments(erc20_type_parser, True)
+    erc20_type_parser.set_defaults(func=handle_erc20_type)
+
+    erc721_mintable_type_parser = subcommands.add_parser("erc721-mintable-type")
+    add_default_arguments(erc721_mintable_type_parser, True)
+    erc721_mintable_type_parser.set_defaults(func=handle_erc721_mintable_type)
+
+    erc721_type_parser = subcommands.add_parser("erc721-type")
+    add_default_arguments(erc721_type_parser, True)
+    erc721_type_parser.set_defaults(func=handle_erc721_type)
 
     get_amount_claimed_parser = subcommands.add_parser("get-amount-claimed")
     add_default_arguments(get_amount_claimed_parser, False)
@@ -911,6 +997,10 @@ def generate_cli() -> argparse.ArgumentParser:
         "--new-pool-controller", required=True, help="Type: address"
     )
     surrender_pool_control_parser.set_defaults(func=handle_surrender_pool_control)
+
+    terminus_mintable_type_parser = subcommands.add_parser("terminus-mintable-type")
+    add_default_arguments(terminus_mintable_type_parser, True)
+    terminus_mintable_type_parser.set_defaults(func=handle_terminus_mintable_type)
 
     withdraw_erc1155_parser = subcommands.add_parser("withdraw-erc1155")
     add_default_arguments(withdraw_erc1155_parser, True)
