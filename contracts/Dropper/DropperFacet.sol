@@ -55,23 +55,25 @@ contract DropperFacet is
         uint256 amount
     );
 
-    function erc20_type() external pure returns (uint256) {
+    // TODO(zomglings): Could be pure. Listing as view right now because ABI does not process
+    // correctly through moonworm generate-brownie.
+    function erc20_type() external view returns (uint256) {
         return ERC20_TYPE;
     }
 
-    function erc721_type() external pure returns (uint256) {
+    function erc721_type() external view returns (uint256) {
         return ERC721_TYPE;
     }
 
-    function erc1155_type() external pure returns (uint256) {
+    function erc1155_type() external view returns (uint256) {
         return ERC1155_TYPE;
     }
 
-    function terminus_mintable_type() external pure returns (uint256) {
+    function terminus_mintable_type() external view returns (uint256) {
         return TERMINUS_MINTABLE_TYPE;
     }
 
-    function erc721_mintable_type() external pure returns (uint256) {
+    function erc721_mintable_type() external view returns (uint256) {
         return ERC721_MINTABLE_TYPE;
     }
 
