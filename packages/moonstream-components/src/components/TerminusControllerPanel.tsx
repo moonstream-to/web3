@@ -15,7 +15,7 @@ import {
   FlexProps,
   Box,
 } from "@chakra-ui/react";
-import { getMethodsABI, targetChain } from "../core/providers/Web3Provider";
+import { getMethodsABI } from "../core/providers/Web3Provider";
 import { useTerminusContract } from "../core/hooks/useTerminusContract";
 import Web3Context from "../core/providers/Web3Provider/context";
 import { MockTerminus } from "../../../../types/contracts/MockTerminus";
@@ -40,7 +40,6 @@ const TerminusControllerPanel = ({
   const web3ctx = useContext(Web3Context);
   const terminus = useTerminusContract({
     address: address,
-    targetChain: targetChain,
     ctx: web3ctx,
   });
 

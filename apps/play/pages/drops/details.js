@@ -4,7 +4,6 @@ import { Flex, Spinner } from "@chakra-ui/react";
 import Paginator from "moonstream-components/src/components/Paginator";
 import ClaimCard from "moonstream-components/src/components/ClaimCard";
 import usePlayerClaims from "moonstream-components/src/core/hooks/dropper/useClaims";
-import { targetChain } from "moonstream-components/src/core/providers/Web3Provider";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { useRouter } from "moonstream-components/src/core/hooks";
 import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
@@ -14,7 +13,6 @@ const DropDetails = () => {
   const { dropperAddress } = router.query;
   const { playerClaims, page, pageSize, setPage, setPageSize } =
     usePlayerClaims({
-      targetChain: targetChain,
       ctx: web3Provider,
       contractAddress: dropperAddress,
     });

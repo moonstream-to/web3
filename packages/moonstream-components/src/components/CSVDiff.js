@@ -3,14 +3,12 @@ import React, { useContext, useState } from "react";
 import ReactDiffViewer, { DiffMethod } from "react-diff-viewer";
 import useDrop from "../core/hooks/dropper/useDrop";
 import useDrops from "../core/hooks/dropper/useDrops";
-import { targetChain } from "../core/providers/Web3Provider";
 import Web3Context from "../core/providers/Web3Provider/context";
 import { MODAL_TYPES } from "../core/providers/OverlayProvider/constants";
 
 const CSVDiff = ({ toggleModal, dropId, newValue }) => {
   const web3ctx = useContext(Web3Context);
   const { AllClaimants } = useDrop({
-    targetChain,
     ctx: web3ctx,
     claimId: dropId,
     initialPageSize: 500,
@@ -18,7 +16,6 @@ const CSVDiff = ({ toggleModal, dropId, newValue }) => {
   });
 
   const { uploadFile } = useDrops({
-    targetChain,
     ctx: web3ctx,
     claimId: dropId,
   });

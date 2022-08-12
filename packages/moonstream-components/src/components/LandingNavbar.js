@@ -22,6 +22,7 @@ import RouteButton from "./RouteButton";
 import router from "next/router";
 import Web3Context from "../core/providers/Web3Provider/context";
 import MoonstreamContext from "../core/providers/MoonstreamProvider/context";
+import ChainSelector from "./ChainSelector";
 
 const LandingNavbar = () => {
   const { SITEMAP, WHITE_LOGO_W_TEXT_URL } = useContext(MoonstreamContext);
@@ -114,9 +115,16 @@ const LandingNavbar = () => {
           </ButtonGroup>
           {web3Provider.buttonText !== web3Provider.WALLET_STATES.CONNECTED && (
             <Button
+              isDisabled={
+                web3Provider.WALLET_STATES.UNKNOWN_CHAIN ===
+                web3Provider.buttonText
+              }
               colorScheme={
                 web3Provider.buttonText === web3Provider.WALLET_STATES.CONNECTED
                   ? "green"
+                  : web3Provider.WALLET_STATES.UNKNOWN_CHAIN ===
+                    web3Provider.buttonText
+                  ? "red"
                   : "green"
               }
               onClick={web3Provider.onConnectWalletClick}
@@ -126,35 +134,40 @@ const LandingNavbar = () => {
               <Image
                 pl={2}
                 h="24px"
-                src="https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg"
+                src="https://s3.amazonaws.com/static.simiotics.com/metamask/metamask-fox.svg"
               />
             </Button>
           )}
+
           {web3Provider.buttonText === web3Provider.WALLET_STATES.CONNECTED && (
             <Flex>
-              <Badge
-                colorScheme={"blue"}
-                variant={"subtle"}
-                size="sm"
-                borderRadius={"md"}
-                mr={2}
-                p={0}
-              >
-                <Skeleton
-                  isLoaded={web3Provider.account}
-                  h="100%"
-                  colorScheme={"red"}
-                  w="100%"
-                  borderRadius={"inherit"}
-                  startColor="red.500"
-                  endColor="blue.500"
-                  p={1}
+              <code>
+                <Badge
+                  colorScheme={"blue"}
+                  variant={"subtle"}
+                  size="md"
+                  fontSize="16px"
+                  borderRadius={"md"}
+                  mr={2}
+                  p={0}
                 >
-                  {web3Provider.account}
-                </Skeleton>
-              </Badge>
+                  <Skeleton
+                    isLoaded={web3Provider.account}
+                    h="100%"
+                    colorScheme={"red"}
+                    w="100%"
+                    borderRadius={"inherit"}
+                    startColor="red.500"
+                    endColor="blue.500"
+                    p={1}
+                  >
+                    {web3Provider.account}
+                  </Skeleton>
+                </Badge>
+              </code>
             </Flex>
           )}
+          <ChainSelector />
         </Flex>
       )}
     </>

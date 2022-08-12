@@ -23,15 +23,19 @@ const FeatureCard = ({
   link,
   imageUrl,
   textColor,
+  videoUrl,
+  imgH,
   alt,
   level,
+  imgPading,
+  isExternal,
   ...props
 }) => {
   const Wrapper = (wrapperProps) => {
     if (props.disabled) return wrapperProps.children;
     return (
       <Link href={link} shallow scroll passHref>
-        <ChakraLink>{wrapperProps.children}</ChakraLink>
+        <ChakraLink isExternal={isExternal}>{wrapperProps.children}</ChakraLink>
       </Link>
     );
   };
@@ -50,13 +54,24 @@ const FeatureCard = ({
         _hover={{ transform: "scale(1.05)", transition: "0.42s" }}
         m={2}
         pb={2}
+        pt={imgPading}
+        // justifyContent={"center"}
       >
-        <ChakraImage
-          boxSize={["220px", "220px", "xs", null, "xs"]}
-          objectFit="contain"
-          src={imageUrl}
-          alt={alt}
-        />
+        {imageUrl && (
+          <ChakraImage
+            boxSize={["220px", "220px", "xs", null, "xs"]}
+            maxH={imgH}
+            minH={imgH}
+            objectFit="contain"
+            as={videoUrl ? "video" : undefined}
+            src={imageUrl ?? videoUrl}
+            autoplay
+            loop
+            playsinline
+            alt={alt}
+            mb={12}
+          />
+        )}
         <Heading textAlign="center" as={level ?? "h2"} _hover={{}}>
           {heading}
         </Heading>
