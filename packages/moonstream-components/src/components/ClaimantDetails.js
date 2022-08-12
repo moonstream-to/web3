@@ -14,9 +14,10 @@ const ClaimantDetails = ({ claimId, address, onClose }) => {
   });
 
   const { search } = useSearch({
-    pathname: "/drops/claimants/search",
-    query: { address: address, dropper_claim_id: claimId },
+    pathname: `/admin/drops/${claimId}/claimants/search`,
+    query: { address: address },
   });
+
   if (search.isLoading) return <Spinner size="sm" />;
   return (
     <Flex className="ClaimantDetails" direction={"row"} alignItems="baseline">

@@ -37,7 +37,7 @@ const useDrop = ({
       limit: claimantsPageSize,
       offset: page * claimantsPageSize,
     });
-    return response.data.drops;
+    return response.data.claimants;
   };
   const claimants = useQuery(
     ["claimants", "claimId", claimId, claimantsPage, claimantsPageSize],
@@ -97,7 +97,7 @@ const useDrop = ({
       limit: 500,
       offset: offset,
     });
-    _claimants.push(...response.data.drops);
+    _claimants.push(...response.data.claimants);
 
     while (response.data.drops.length == 500) {
       offset += 500;
@@ -105,7 +105,7 @@ const useDrop = ({
         limit: 500,
         offset: offset,
       });
-      _claimants.push(...response.data.drops);
+      _claimants.push(...response.data.claimants);
     }
 
     return _claimants;

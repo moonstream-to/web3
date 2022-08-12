@@ -54,14 +54,13 @@ export const getClaimants =
   ({ limit, offset }) => {
     return http({
       method: "GET",
-      url: `${API}/drops/claimants`,
+      url: `${ADMIN_API}/drops/${encodeURIComponent(dropperClaimId)}/claimants`,
       params: {
-        dropper_claim_id: encodeURIComponent(dropperClaimId),
         offset: encodeURIComponent(offset),
         limit: encodeURIComponent(limit),
       },
     }).then((response) => {
-      response.data.drops.map((claimant) => {
+      response.data.claimants.map((claimant) => {
         claimant.amount = claimant.raw_amount || claimant.amount;
       });
       return response;
