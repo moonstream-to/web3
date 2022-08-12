@@ -12,6 +12,8 @@ from . import core, DropperFacet, MockTerminus, MockErc20, MockERC721
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
+MAX_UINT = 2**256 - 1
+
 
 def sign_message(message_hash, signer):
     eth_private_key = eth_keys.keys.PrivateKey(HexBytes(signer.private_key))
@@ -89,126 +91,124 @@ class DropperTestCase(unittest.TestCase):
         cls.signer_0 = accounts.add()
         cls.signer_1 = accounts.add()
 
-    def create_claim_and_return_claim_id(self, *args, **kwargs) -> int:
-        tx_receipt = self.dropper.create_claim(*args, **kwargs)
-        claim_created_event_abi = None
+    def create_drop_and_return_drop_id(self, *args, **kwargs) -> int:
+        tx_receipt = self.dropper.create_drop(*args, **kwargs)
+        drop_created_event_abi = None
         for item in self.dropper.abi:
-            if item["type"] == "event" and item["name"] == "ClaimCreated":
-                claim_created_event_abi = item
-        self.assertIsNotNone(claim_created_event_abi)
+            if item["type"] == "event" and item["name"] == "DropCreated":
+                drop_created_event_abi = item
+        self.assertIsNotNone(drop_created_event_abi)
         events = _fetch_events_chunk(
             web3_client,
-            claim_created_event_abi,
+            drop_created_event_abi,
             from_block=tx_receipt.block_number,
             to_block=tx_receipt.block_number,
         )
         self.assertEqual(len(events), 1)
-        return events[0]["args"]["claimId"]
+        return events[0]["args"]["dropId"]
 
 
-class DropperClaimTests(DropperTestCase):
-    def test_claim_creation(self):
-        num_claims_0 = self.dropper.num_claims()
-        claim_id = self.create_claim_and_return_claim_id(
-            20, self.erc20_contract.address, 0, 1, {"from": accounts[0]}
+class DropperDropTests(DropperTestCase):
+    def test_drop_creation(self):
+        num_drops_0 = self.dropper.num_drops()
+        drop_id = self.create_drop_and_return_drop_id(
+            20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
         )
-        num_claims_1 = self.dropper.num_claims()
-        self.assertEqual(num_claims_1, num_claims_0 + 1)
-        self.assertEqual(claim_id, num_claims_1)
+        num_drops_1 = self.dropper.num_drops()
+        self.assertEqual(num_drops_1, num_drops_0 + 1)
+        self.assertEqual(drop_id, num_drops_1)
 
-        claim_info = self.dropper.get_claim(claim_id)
-        self.assertEqual(claim_info, (20, self.erc20_contract.address, 0, 1))
+        drop_info = self.dropper.get_drop(drop_id)
+        self.assertEqual(drop_info, (20, self.erc20_contract.address, 0, 1))
 
-    def test_claim_creation_fails_if_unknown_token_type(self):
+    def test_drop_creation_fails_if_unknown_token_type(self):
         UNKNOWN_TOKEN_TYPE = 43
-        num_claims_0 = self.dropper.num_claims()
+        num_drops_0 = self.dropper.num_drops()
         with self.assertRaises(VirtualMachineError):
-            self.dropper.create_claim(
-                43, self.erc20_contract.address, 0, 1, {"from": accounts[0]}
+            self.dropper.create_drop(
+                43, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
             )
-        num_claims_1 = self.dropper.num_claims()
-        self.assertEqual(num_claims_1, num_claims_0)
+        num_drops_1 = self.dropper.num_drops()
+        self.assertEqual(num_drops_1, num_drops_0)
 
-    def test_claim_creation_fails_from_non_owner(self):
-        num_claims_0 = self.dropper.num_claims()
+    def test_drop_creation_fails_from_non_owner(self):
+        num_drops_0 = self.dropper.num_drops()
         with self.assertRaises(VirtualMachineError):
-            self.dropper.create_claim(
-                20, self.erc20_contract.address, 0, 1, {"from": accounts[1]}
+            self.dropper.create_drop(
+                20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[1]}
             )
-        num_claims_1 = self.dropper.num_claims()
-        self.assertEqual(num_claims_1, num_claims_0)
+        num_drops_1 = self.dropper.num_drops()
+        self.assertEqual(num_drops_1, num_drops_0)
 
-    def test_claim_status_for_new_claim(self):
-        claim_id = self.create_claim_and_return_claim_id(
-            20, self.erc20_contract.address, 0, 1, {"from": accounts[0]}
+    def test_drop_status_for_new_drop(self):
+        drop_id = self.create_drop_and_return_drop_id(
+            20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
         )
-        self.assertTrue(self.dropper.claim_status(claim_id))
+        self.assertTrue(self.dropper.drop_status(drop_id))
 
-    def test_claim_status_can_be_changed_by_owner(self):
-        claim_id = self.create_claim_and_return_claim_id(
-            20, self.erc20_contract.address, 0, 1, {"from": accounts[0]}
+    def test_drop_status_can_be_changed_by_owner(self):
+        drop_id = self.create_drop_and_return_drop_id(
+            20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
         )
-        self.assertTrue(self.dropper.claim_status(claim_id))
+        self.assertTrue(self.dropper.drop_status(drop_id))
 
-        self.dropper.set_claim_status(claim_id, False, {"from": accounts[0]})
-        self.assertFalse(self.dropper.claim_status(claim_id))
+        self.dropper.set_drop_status(drop_id, False, {"from": accounts[0]})
+        self.assertFalse(self.dropper.drop_status(drop_id))
 
-    def test_claim_status_cannot_be_changed_by_non_owner(self):
-        claim_id = self.create_claim_and_return_claim_id(
-            20, self.erc20_contract.address, 0, 1, {"from": accounts[0]}
+    def test_drop_status_cannot_be_changed_by_non_owner(self):
+        drop_id = self.create_drop_and_return_drop_id(
+            20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
         )
-        self.assertTrue(self.dropper.claim_status(claim_id))
+        self.assertTrue(self.dropper.drop_status(drop_id))
 
         with self.assertRaises(VirtualMachineError):
-            self.dropper.set_claim_status(claim_id, False, {"from": accounts[1]})
+            self.dropper.set_drop_status(drop_id, False, {"from": accounts[1]})
 
-        self.assertTrue(self.dropper.claim_status(claim_id))
+        self.assertTrue(self.dropper.drop_status(drop_id))
 
     def test_owner_can_set_signer(self):
-        claim_id = self.create_claim_and_return_claim_id(
-            20, self.erc20_contract.address, 0, 1, {"from": accounts[0]}
+        drop_id = self.create_drop_and_return_drop_id(
+            20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
         )
-        self.assertEqual(self.dropper.get_signer_for_claim(claim_id), ZERO_ADDRESS)
+        self.assertEqual(self.dropper.get_signer_for_drop(drop_id), ZERO_ADDRESS)
 
-        self.dropper.set_signer_for_claim(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+        self.dropper.set_signer_for_drop(
+            drop_id, self.signer_0.address, {"from": accounts[0]}
         )
         self.assertEqual(
-            self.dropper.get_signer_for_claim(claim_id), self.signer_0.address
+            self.dropper.get_signer_for_drop(drop_id), self.signer_0.address
         )
 
     def test_non_owner_cannot_set_signer(self):
-        claim_id = self.create_claim_and_return_claim_id(
-            20, self.erc20_contract.address, 0, 1, {"from": accounts[0]}
+        drop_id = self.create_drop_and_return_drop_id(
+            20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
         )
-        self.assertEqual(self.dropper.get_signer_for_claim(claim_id), ZERO_ADDRESS)
+        self.assertEqual(self.dropper.get_signer_for_drop(drop_id), ZERO_ADDRESS)
 
         with self.assertRaises(VirtualMachineError):
-            self.dropper.set_signer_for_claim(
-                claim_id, self.signer_0.address, {"from": accounts[1]}
+            self.dropper.set_signer_for_drop(
+                drop_id, self.signer_0.address, {"from": accounts[1]}
             )
-        self.assertEqual(self.dropper.get_signer_for_claim(claim_id), ZERO_ADDRESS)
+        self.assertEqual(self.dropper.get_signer_for_drop(drop_id), ZERO_ADDRESS)
 
-    def test_owner_can_set_claim_uri(self):
-        claim_id = self.create_claim_and_return_claim_id(
-            20, self.erc20_contract.address, 0, 1, {"from": accounts[0]}
+    def test_owner_can_set_drop_uri(self):
+        drop_id = self.create_drop_and_return_drop_id(
+            20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
         )
-        self.assertEqual(self.dropper.claim_uri(claim_id), "")
-        self.dropper.set_claim_uri(
-            claim_id, "https://example.com", {"from": accounts[0]}
-        )
-        self.assertEqual(self.dropper.claim_uri(claim_id), "https://example.com")
+        self.assertEqual(self.dropper.drop_uri(drop_id), "")
+        self.dropper.set_drop_uri(drop_id, "https://example.com", {"from": accounts[0]})
+        self.assertEqual(self.dropper.drop_uri(drop_id), "https://example.com")
 
-    def test_non_owner_cannot_set_claim_uri(self):
-        claim_id = self.create_claim_and_return_claim_id(
-            20, self.erc20_contract.address, 0, 1, {"from": accounts[0]}
+    def test_non_owner_cannot_set_drop_uri(self):
+        drop_id = self.create_drop_and_return_drop_id(
+            20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
         )
-        self.assertEqual(self.dropper.claim_uri(claim_id), "")
+        self.assertEqual(self.dropper.drop_uri(drop_id), "")
         with self.assertRaises(VirtualMachineError):
-            self.dropper.set_claim_uri(
-                claim_id, "https://example.com", {"from": accounts[1]}
+            self.dropper.set_drop_uri(
+                drop_id, "https://example.com", {"from": accounts[1]}
             )
-        self.assertEqual(self.dropper.claim_uri(claim_id), "")
+        self.assertEqual(self.dropper.drop_uri(drop_id), "")
 
 
 class DropperWithdrawalTests(DropperTestCase):
@@ -359,7 +359,7 @@ class DropperClaimERC20Tests(DropperTestCase):
     def test_claim_erc20(self):
         reward = 3
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             20, self.erc20_contract.address, 0, reward, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -390,7 +390,7 @@ class DropperClaimERC20Tests(DropperTestCase):
         default_reward = 3
         custom_reward = 89
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             20, self.erc20_contract.address, 0, default_reward, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -424,7 +424,7 @@ class DropperClaimERC20Tests(DropperTestCase):
     def test_claim_erc20_fails_if_block_deadline_exceeded(self):
         reward = 5
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             20, self.erc20_contract.address, 0, reward, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -456,7 +456,7 @@ class DropperClaimERC20Tests(DropperTestCase):
     def test_claim_erc20_fails_if_incorrect_amount(self):
         reward = 5
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             20, self.erc20_contract.address, 0, reward, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -492,7 +492,7 @@ class DropperClaimERC20Tests(DropperTestCase):
     def test_claim_erc20_fails_if_wrong_claimant(self):
         reward = 6
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             20, self.erc20_contract.address, 0, reward, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -527,7 +527,7 @@ class DropperClaimERC20Tests(DropperTestCase):
     def test_claim_erc20_fails_if_wrong_signer(self):
         reward = 7
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             20, self.erc20_contract.address, 0, reward, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -559,7 +559,7 @@ class DropperClaimERC20Tests(DropperTestCase):
     def test_claim_erc20_fails_on_repeated_attempts_with_same_signed_message(self):
         reward = 9
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             20, self.erc20_contract.address, 0, reward, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -602,7 +602,7 @@ class DropperClaimERC20Tests(DropperTestCase):
     ):
         reward = 9
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             20, self.erc20_contract.address, 0, reward, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -656,7 +656,7 @@ class DropperClaimERC20Tests(DropperTestCase):
             self.erc20_contract.balance_of(self.dropper.address),
             {"from": accounts[0]},
         )
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             20, self.erc20_contract.address, 0, reward, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -690,7 +690,7 @@ class DropperClaimERC721Tests(DropperTestCase):
     def test_claim_erc721(self):
         token_id = 103
         self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             721, self.nft_contract.address, token_id, 1, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -716,7 +716,7 @@ class DropperClaimERC721Tests(DropperTestCase):
         token_id = 1003
         custom_amount = 79
         self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             721, self.nft_contract.address, token_id, 1, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -745,7 +745,7 @@ class DropperClaimERC721Tests(DropperTestCase):
     def test_claim_erc721_fails_if_block_deadline_exceeded(self):
         token_id = 105
         self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             721, self.nft_contract.address, token_id, 1, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -772,7 +772,7 @@ class DropperClaimERC721Tests(DropperTestCase):
     def test_claim_erc721_fails_if_incorrect_amount(self):
         token_id = 1005
         self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             721, self.nft_contract.address, token_id, 1, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -799,7 +799,7 @@ class DropperClaimERC721Tests(DropperTestCase):
     def test_claim_erc721_fails_if_wrong_claimant(self):
         token_id = 106
         self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             721, self.nft_contract.address, token_id, 1, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -826,7 +826,7 @@ class DropperClaimERC721Tests(DropperTestCase):
     def test_claim_erc721_fails_if_wrong_signer(self):
         token_id = 107
         self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             721, self.nft_contract.address, token_id, 1, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -853,7 +853,7 @@ class DropperClaimERC721Tests(DropperTestCase):
     def test_claim_erc721_fails_on_repeated_attempts_with_same_signed_message(self):
         token_id = 109
         self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             721, self.nft_contract.address, token_id, 1, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -897,7 +897,7 @@ class DropperClaimERC721Tests(DropperTestCase):
     ):
         token_id = 110
         self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             721, self.nft_contract.address, token_id, 1, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -944,7 +944,7 @@ class DropperClaimERC721Tests(DropperTestCase):
         token_id = 111
         self.nft_contract.mint(accounts[0].address, token_id, {"from": accounts[0]})
         self.assertNotEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             721, self.nft_contract.address, token_id, 1, {"from": accounts[0]}
         )
         self.dropper.set_signer_for_claim(
@@ -978,7 +978,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
             "",
             {"from": accounts[0]},
         )
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             1155,
             self.terminus.address,
             self.terminus_pool_id,
@@ -1022,7 +1022,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
             "",
             {"from": accounts[0]},
         )
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             1155,
             self.terminus.address,
             self.terminus_pool_id,
@@ -1069,7 +1069,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
             "",
             {"from": accounts[0]},
         )
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             1155,
             self.terminus.address,
             self.terminus_pool_id,
@@ -1113,7 +1113,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
             "",
             {"from": accounts[0]},
         )
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             1155,
             self.terminus.address,
             self.terminus_pool_id,
@@ -1157,7 +1157,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
             "",
             {"from": accounts[0]},
         )
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             1155,
             self.terminus.address,
             self.terminus_pool_id,
@@ -1208,7 +1208,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
             "",
             {"from": accounts[0]},
         )
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             1155,
             self.terminus.address,
             self.terminus_pool_id,
@@ -1252,7 +1252,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
             "",
             {"from": accounts[0]},
         )
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             1155,
             self.terminus.address,
             self.terminus_pool_id,
@@ -1309,7 +1309,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
             "",
             {"from": accounts[0]},
         )
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             1155,
             self.terminus.address,
             self.terminus_pool_id,
@@ -1370,7 +1370,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
             self.terminus.balance_of(self.dropper.address, self.terminus_pool_id),
             {"from": accounts[0]},
         )
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             1155,
             self.terminus.address,
             self.terminus_pool_id,
@@ -1409,7 +1409,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
 class DropperClaimERC1155MintableTests(DropperTestCase):
     def test_claim_erc1155(self):
         reward = 3
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             self.TERMINUS_MINTABLE_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
@@ -1453,7 +1453,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
     def test_claim_erc1155_with_custom_amount(self):
         default_reward = 3
         custom_reward = default_reward + 1
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             self.TERMINUS_MINTABLE_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
@@ -1511,7 +1511,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             {"from": accounts[0]},
         )
 
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             self.TERMINUS_MINTABLE_TYPE,
             self.terminus.address,
             terminus_pool_which_is_owned_by_dropper_id,
@@ -1595,7 +1595,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
     def test_claim_erc1155_fails_if_block_deadline_exceeded(self):
         reward = 5
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             self.TERMINUS_MINTABLE_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
@@ -1641,7 +1641,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
     def test_claim_erc1155_fails_if_incorrect_amount(self):
         reward = 5
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             self.TERMINUS_MINTABLE_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
@@ -1688,7 +1688,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
     def test_claim_erc1155_fails_if_wrong_claimant(self):
         reward = 6
 
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             self.TERMINUS_MINTABLE_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
@@ -1739,7 +1739,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
     def test_claim_erc1155_fails_if_wrong_signer(self):
         reward = 7
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             self.TERMINUS_MINTABLE_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
@@ -1783,7 +1783,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
     def test_claim_erc1155_fails_on_repeated_attempts_with_same_signed_message(self):
         reward = 9
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             self.TERMINUS_MINTABLE_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
@@ -1844,7 +1844,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         self,
     ):
         reward = 9
-        claim_id = self.create_claim_and_return_claim_id(
+        claim_id = self.create_drop_and_return_drop_id(
             self.TERMINUS_MINTABLE_TYPE,
             self.terminus.address,
             self.mintable_terminus_pool_id,
