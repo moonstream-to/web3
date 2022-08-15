@@ -39,16 +39,30 @@ import { hookCommon } from "moonstream-components/src/core/hooks";
 
 const terminusAbi = require("../../../../abi/MockTerminus.json");
 
-const contractsAddr: { [key in supportedChains]: string } = {
+const GameBankAddresses: { [key in supportedChains]: string } = {
   mumbai: "0x762aF8cbE298bbFE568BBB6709f854A01c07333D",
   polygon: "0x94f557dDdb245b11d031F57BA7F2C4f28C4A203e",
   ethereum: "0x0000000000000000000000000000000000000000",
   localhost: "0x0000000000000000000000000000000000000000",
 };
 
-const terminusAddresses: { [key in supportedChains]: string } = {
+const TerminusAddresses: { [key in supportedChains]: string } = {
   mumbai: "0x19e812EdB24B68A8F3AbF5e4C82d10AfEf1641Db",
   polygon: "0x99A558BDBdE247C2B2716f0D4cFb0E246DFB697D",
+  ethereum: "0x0000000000000000000000000000000000000000",
+  localhost: "0x0000000000000000000000000000000000000000",
+};
+
+const UNIMAddresses: { [key in supportedChains]: string } = {
+  mumbai: "0x47d0f0BD94188e3f8c6fF2C0B1Bf7D6D8BED7534",
+  polygon: "0x64060aB139Feaae7f06Ca4E63189D86aDEb51691",
+  ethereum: "0x0000000000000000000000000000000000000000",
+  localhost: "0x0000000000000000000000000000000000000000",
+};
+
+const RBWAddresses: { [key in supportedChains]: string } = {
+  mumbai: "0x4Df452487E6c9d0C3Dc5EB4936244F8572b3F0b6",
+  polygon: "0x431CD3C9AC9Fc73644BF68bF5691f4B83F9E104f",
   ethereum: "0x0000000000000000000000000000000000000000",
   localhost: "0x0000000000000000000000000000000000000000",
 };
@@ -69,15 +83,12 @@ const lootboxTypes: LootboxType[] = [
   "mystery",
   "RMP",
 ];
-// enum lootboxTypes {
-//   common,
-//   rare,
-//   mythic,
-//   land,
-//   mystery,
-//   RMP,
-// }
 
+// TODO(kellan): Rename to "terminusInfo". Map other relevant Terminus pools, such as Golden Tickets (pool ID 42 on mainnet),
+// Shadowcorn Act I badges (pool IDs 43, 44, 45 on mainnet), etc.
+// To get the balances, we should use multicall: https://www.npmjs.com/package/ethereum-multicall
+// You will probably also want to rename "lootboxTypes" above to "terminusTypes". Maybe rename the lootbox keys to contain the string "Lootbox" at the end.
+// So "common" -> "commonLootbox".
 const lootboxInfo: { [key in LootboxType]: LootboxInfo } = {
   common: {
     poolIdByChain: {
@@ -146,9 +157,22 @@ const CryptoUnicorns = () => {
   const [rbwToStash, setRBWToStash] = React.useState("");
   const [unimToStash, setUNIMToStash] = React.useState("");
   const [terminusAddress, setTerminusAddress] = React.useState("");
+  const [UNIMAddress, setUNIMAddress] = React.useState("");
+  const [RBWAddress, setRBWAddress] = React.useState("");
+  const [gameBankAddress, setGameBankAddress] = React.useState("");
+  // TODO(kellan): Remove getGameBankConfig and replace with the same pair of:
+  // - useEffect to store addresses when the chain changes
+  // - useQuery (with enabled: false) + additional useEffect to retrieve balances when contract address, chain, and other dependencies (like the user address in spy mode) change
+  const [UNIMBalance, setUNIMBalance] = React.useState("0");
+  const [RBWBalance, setRBWBalance] = React.useState("0");
   const [lootboxBalances, setLootboxBalances] = React.useState({
     ...defaultLootboxBalances,
   });
+  // TODO(kellan): Currently, we use web3ctx.account as the address for which to retrieve inventory. This
+  // assumption was fine when we only had stash functionality on this page because that account would have
+  // to sign transactions.
+  // For spy mode, it would be a good idea to have a separate state variable like "currentAccount" which
+  // users could set through a spy mode form field if they wanted to.
 
   const web3ctx = useContext(Web3Context);
 
@@ -156,8 +180,14 @@ const CryptoUnicorns = () => {
     const chain: string | undefined = chainByChainId[web3ctx.chainId];
     if (!chain) {
       setTerminusAddress("");
+      setUNIMAddress("");
+      setRBWAddress("");
+      setGameBankAddress("");
     } else {
-      setTerminusAddress(terminusAddresses[chain as supportedChains]);
+      setTerminusAddress(TerminusAddresses[chain as supportedChains]);
+      setUNIMAddress(UNIMAddresses[chain as supportedChains]);
+      setRBWAddress(RBWAddresses[chain as supportedChains]);
+      setGameBankAddress(GameBankAddresses[chain as supportedChains]);
     }
   }, [web3ctx.chainId]);
 
@@ -229,7 +259,7 @@ const CryptoUnicorns = () => {
     ) as unknown as GameBankABIType;
 
     contract.options.address =
-      contractsAddr[
+      GameBankAddresses[
         web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
       ];
     const rbwAddress = await contract.methods.getRBWAddress().call();
@@ -244,7 +274,7 @@ const CryptoUnicorns = () => {
   const stashContract = useQuery(
     [
       "stashContract",
-      contractsAddr[
+      GameBankAddresses[
         web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
       ],
     ],
@@ -255,14 +285,14 @@ const CryptoUnicorns = () => {
     contractAddress: stashContract.data?.rbwAddress,
     ctx: web3ctx,
     spender:
-      contractsAddr[
+      GameBankAddresses[
         web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
       ],
   });
   const unim = useERC20({
     contractAddress: stashContract.data?.unimAddress,
     spender:
-      contractsAddr[
+      GameBankAddresses[
         web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
       ],
     ctx: web3ctx,
@@ -272,7 +302,7 @@ const CryptoUnicorns = () => {
   ) as any as StashABIType;
 
   contract.options.address =
-    contractsAddr[
+    GameBankAddresses[
       web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
     ];
 
