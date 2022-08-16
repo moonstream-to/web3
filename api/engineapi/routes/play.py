@@ -142,9 +142,14 @@ async def get_drop_batch_handler(
 
     for claimant_drop in claimant_drops:
 
-        transformed_amount = actions.transform_claim_amount(
-            db_session, claimant_drop.dropper_claim_id, claimant_drop.amount
-        )
+        transformed_amount = claimant_drop.raw_amount
+
+        if transformed_amount is None:
+
+            transformed_amount = actions.transform_claim_amount(
+                db_session, claimant_drop.dropper_claim_id, claimant_drop.amount
+            )
+            
         signature = claimant_drop.signature
         if signature is None or not claimant_drop.is_recent_signature:
             dropper_contract = Dropper_interface.Contract(
@@ -229,10 +234,6 @@ async def get_drop_handler(
         )
         raise DropperHTTPException(status_code=500, detail="Can't get claimant object.")
 
-    transformed_amount = actions.transform_claim_amount(
-        db_session, dropper_claim_id, claimant.amount
-    )
-
     if not claimant.active:
         raise DropperHTTPException(
             status_code=403, detail="Cannot claim rewards for an inactive claim"
@@ -244,6 +245,13 @@ async def get_drop_handler(
             status_code=403,
             detail="Cannot claim rewards for a claim with no block deadline",
         )
+
+    transformed_amount = claimant.raw_amount
+    if transformed_amount is None:
+        transformed_amount = actions.transform_claim_amount(
+            db_session, dropper_claim_id, claimant.amount
+        )
+
     signature = claimant.signature
     if signature is None or not claimant.is_recent_signature:
         dropper_contract = Dropper_interface.Contract(
@@ -272,7 +280,7 @@ async def get_drop_handler(
 
     return data.DropResponse(
         claimant=claimant.address,
-        amount=transformed_amount,
+        amount=str(transformed_amount),
         claim_id=claimant.claim_id,
         block_deadline=claimant.claim_block_deadline,
         signature=signature,
