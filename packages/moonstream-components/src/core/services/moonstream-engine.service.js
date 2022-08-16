@@ -26,8 +26,8 @@ export const getAdminList =
 export const getClaimSignature = ({ claimId, address }) => {
   return http({
     method: "GET",
-    url: `${API}/drops/`,
-    params: { address: address, dropper_claim_id: claimId },
+    url: `${PLAY_API}/claims/${claimId}`,
+    params: { address: address },
   });
 };
 
