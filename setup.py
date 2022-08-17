@@ -22,6 +22,7 @@ setup(
         "tqdm",
         "uvicorn",
         "web3",
+        "tabulate",
     ],
     extras_require={
         "dev": [
