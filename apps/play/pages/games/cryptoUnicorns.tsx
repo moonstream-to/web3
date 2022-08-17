@@ -67,7 +67,13 @@ const RBWAddresses: { [key in supportedChains]: string } = {
   localhost: "0x0000000000000000000000000000000000000000",
 };
 
-type LootboxType = "common" | "rare" | "mythic" | "land" | "mystery" | "RMP";
+type terminusType =
+  | "commonLootbox"
+  | "rareLootbox"
+  | "mythicLootbox"
+  | "landLootbox"
+  | "mysteryLootbox"
+  | "RMPLootbox";
 interface LootboxInfo {
   poolIdByChain: {
     [key in supportedChains]: number;
@@ -75,22 +81,22 @@ interface LootboxInfo {
 }
 
 // TODO: Using an Enum here would make this less clumsy. The Enum defines a type *and* a value.
-const lootboxTypes: LootboxType[] = [
-  "common",
-  "rare",
-  "mythic",
-  "land",
-  "mystery",
-  "RMP",
+const terminusTypes: terminusType[] = [
+  "commonLootbox",
+  "rareLootbox",
+  "mythicLootbox",
+  "landLootbox",
+  "mysteryLootbox",
+  "RMPLootbox",
 ];
 
-// TODO(kellan): Rename to "terminusInfo". Map other relevant Terminus pools, such as Golden Tickets (pool ID 42 on mainnet),
+// DONE(kellan): Rename to "terminusInfo". Map other relevant Terminus pools, such as Golden Tickets (pool ID 42 on mainnet),
 // Shadowcorn Act I badges (pool IDs 43, 44, 45 on mainnet), etc.
 // To get the balances, we should use multicall: https://www.npmjs.com/package/ethereum-multicall
 // You will probably also want to rename "lootboxTypes" above to "terminusTypes". Maybe rename the lootbox keys to contain the string "Lootbox" at the end.
 // So "common" -> "commonLootbox".
-const lootboxInfo: { [key in LootboxType]: LootboxInfo } = {
-  common: {
+const terminusInfo: { [key in terminusType]: LootboxInfo } = {
+  commonLootbox: {
     poolIdByChain: {
       mumbai: 6,
       polygon: 4,
@@ -98,7 +104,7 @@ const lootboxInfo: { [key in LootboxType]: LootboxInfo } = {
       localhost: -1,
     },
   },
-  rare: {
+  rareLootbox: {
     poolIdByChain: {
       mumbai: 7,
       polygon: -1,
@@ -106,7 +112,7 @@ const lootboxInfo: { [key in LootboxType]: LootboxInfo } = {
       localhost: -1,
     },
   },
-  mythic: {
+  mysteryLootbox: {
     poolIdByChain: {
       mumbai: 8,
       polygon: -1,
@@ -114,7 +120,7 @@ const lootboxInfo: { [key in LootboxType]: LootboxInfo } = {
       localhost: -1,
     },
   },
-  mystery: {
+  mythicLootbox: {
     poolIdByChain: {
       mumbai: 11,
       polygon: -1,
@@ -122,7 +128,7 @@ const lootboxInfo: { [key in LootboxType]: LootboxInfo } = {
       localhost: -1,
     },
   },
-  RMP: {
+  RMPLootbox: {
     poolIdByChain: {
       mumbai: 12,
       polygon: -1,
@@ -130,7 +136,7 @@ const lootboxInfo: { [key in LootboxType]: LootboxInfo } = {
       localhost: -1,
     },
   },
-  land: {
+  landLootbox: {
     poolIdByChain: {
       mumbai: 26,
       polygon: -1,
@@ -141,15 +147,18 @@ const lootboxInfo: { [key in LootboxType]: LootboxInfo } = {
 };
 
 const defaultLootboxBalances = {
-  common: 0,
-  rare: 0,
-  mythic: 0,
-  land: 0,
-  mystery: 0,
-  RMP: 0,
+  commonLootbox: 0,
+  rareLootbox: 0,
+  mythicLootbox: 0,
+  landLootbox: 0,
+  mysteryLootbox: 0,
+  RMPLootbox: 0,
 };
 
 const CryptoUnicorns = () => {
+  const [currentAccount, setCurrentAccount] = React.useState(
+    "0x0000000000000000000000000000000000000000"
+  );
   const [notEnoughRBW, setNotEnoughRBW] = React.useState(false);
   const [notEnoughUNIM, setNotEnoughUNIM] = React.useState(false);
   const [needAllowanceRBW, setNeedAllowanceRBW] = React.useState(false);
@@ -168,13 +177,17 @@ const CryptoUnicorns = () => {
   const [lootboxBalances, setLootboxBalances] = React.useState({
     ...defaultLootboxBalances,
   });
-  // TODO(kellan): Currently, we use web3ctx.account as the address for which to retrieve inventory. This
+  // DONE(kellan): Currently, we use web3ctx.account as the address for which to retrieve inventory. This
   // assumption was fine when we only had stash functionality on this page because that account would have
   // to sign transactions.
   // For spy mode, it would be a good idea to have a separate state variable like "currentAccount" which
   // users could set through a spy mode form field if they wanted to.
 
   const web3ctx = useContext(Web3Context);
+
+  useEffect(() => {
+    setCurrentAccount(web3ctx.account);
+  }, [web3ctx.account]);
 
   useEffect(() => {
     const chain: string | undefined = chainByChainId[web3ctx.chainId];
@@ -191,8 +204,49 @@ const CryptoUnicorns = () => {
     }
   }, [web3ctx.chainId]);
 
+  const gameBankConfig = useQuery(
+    [],
+    async () => {
+      if (!web3ctx.web3.currentProvider) {
+        return {
+          rbwAddress: "0x0000000000000000000000000000000000000000",
+          unimAddress: "0x0000000000000000000000000000000000000000",
+          gameServer: "0x0000000000000000000000000000000000000000",
+          terminusAddress: "0x0000000000000000000000000000000000000000",
+        };
+      }
+      const contract = new web3ctx.web3.eth.Contract(
+        StashABI
+      ) as any as StashABIType;
+
+      const gameBankContract = new web3ctx.web3.eth.Contract(
+        GameBankABI
+      ) as unknown as GameBankABIType;
+
+      contract.options.address =
+        GameBankAddresses[
+          web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
+        ];
+      const rbwAddress = await contract.methods.getRBWAddress().call();
+      const unimAddress = await contract.methods.getUNIMAddress().call();
+      const gameServer = await contract.methods.getGameServer().call();
+      const terminusAddress = await gameBankContract.methods
+        .getTerminusTokenAddress()
+        .call();
+      return { rbwAddress, unimAddress, gameServer, terminusAddress };
+    },
+    {
+      ...hookCommon,
+      enabled: false,
+    }
+  );
+
+  useEffect(() => {
+    gameBankConfig.refetch();
+  }, [gameBankConfig, web3ctx]);
+
   const terminusBalances = useQuery(
-    ["cuTerminus", web3ctx.chainId, terminusAddress, web3ctx.account],
+    ["cuTerminus", web3ctx.chainId, terminusAddress, currentAccount],
     async ({ queryKey }) => {
       const currentChain = chainByChainId[queryKey[1] as number];
       const currentUserAddress = queryKey[3];
@@ -207,10 +261,10 @@ const CryptoUnicorns = () => {
       let accounts: string[] = [];
       let poolIds: number[] = [];
 
-      lootboxTypes.forEach((lootboxType) => {
+      terminusTypes.forEach((lootboxType) => {
         accounts.push(`${currentUserAddress}`);
         poolIds.push(
-          lootboxInfo[lootboxType].poolIdByChain[
+          terminusInfo[lootboxType].poolIdByChain[
             currentChain as supportedChains
           ]
         );
@@ -222,7 +276,7 @@ const CryptoUnicorns = () => {
           .call();
         let currentBalances = { ...defaultLootboxBalances };
         balances.forEach((balance, lootboxIndex) => {
-          currentBalances[lootboxTypes[lootboxIndex]] = parseInt(balance, 10);
+          currentBalances[terminusTypes[lootboxIndex]] = parseInt(balance, 10);
         });
         setLootboxBalances(currentBalances);
       } catch (e) {
@@ -241,48 +295,48 @@ const CryptoUnicorns = () => {
     terminusBalances.refetch();
   }, [terminusBalances, web3ctx]);
 
-  const getGameBankConfig = async () => {
-    if (!web3ctx.web3.currentProvider) {
-      return {
-        rbwAddress: "0x0000000000000000000000000000000000000000",
-        unimAddress: "0x0000000000000000000000000000000000000000",
-        gameServer: "0x0000000000000000000000000000000000000000",
-        terminusAddress: "0x0000000000000000000000000000000000000000",
-      };
-    }
-    const contract = new web3ctx.web3.eth.Contract(
-      StashABI
-    ) as any as StashABIType;
+  // const getGameBankConfig = async () => {
+  //   if (!web3ctx.web3.currentProvider) {
+  //     return {
+  //       rbwAddress: "0x0000000000000000000000000000000000000000",
+  //       unimAddress: "0x0000000000000000000000000000000000000000",
+  //       gameServer: "0x0000000000000000000000000000000000000000",
+  //       terminusAddress: "0x0000000000000000000000000000000000000000",
+  //     };
+  //   }
+  //   const contract = new web3ctx.web3.eth.Contract(
+  //     StashABI
+  //   ) as any as StashABIType;
 
-    const gameBankContract = new web3ctx.web3.eth.Contract(
-      GameBankABI
-    ) as unknown as GameBankABIType;
+  //   const gameBankContract = new web3ctx.web3.eth.Contract(
+  //     GameBankABI
+  //   ) as unknown as GameBankABIType;
 
-    contract.options.address =
-      GameBankAddresses[
-        web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
-      ];
-    const rbwAddress = await contract.methods.getRBWAddress().call();
-    const unimAddress = await contract.methods.getUNIMAddress().call();
-    const gameServer = await contract.methods.getGameServer().call();
-    const terminusAddress = await gameBankContract.methods
-      .getTerminusTokenAddress()
-      .call();
-    return { rbwAddress, unimAddress, gameServer, terminusAddress };
-  };
+  //   contract.options.address =
+  //     GameBankAddresses[
+  //       web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
+  //     ];
+  //   const rbwAddress = await contract.methods.getRBWAddress().call();
+  //   const unimAddress = await contract.methods.getUNIMAddress().call();
+  //   const gameServer = await contract.methods.getGameServer().call();
+  //   const terminusAddress = await gameBankContract.methods
+  //     .getTerminusTokenAddress()
+  //     .call();
+  //   return { rbwAddress, unimAddress, gameServer, terminusAddress };
+  // };
 
-  const stashContract = useQuery(
-    [
-      "stashContract",
-      GameBankAddresses[
-        web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
-      ],
-    ],
-    getGameBankConfig
-  );
+  // const stashContract = useQuery(
+  //   [
+  //     "stashContract",
+  //     GameBankAddresses[
+  //       web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
+  //     ],
+  //   ],
+  //   getGameBankConfig
+  // );
 
   const rbw = useERC20({
-    contractAddress: stashContract.data?.rbwAddress,
+    contractAddress: gameBankConfig.data?.rbwAddress,
     ctx: web3ctx,
     spender:
       GameBankAddresses[
@@ -290,7 +344,7 @@ const CryptoUnicorns = () => {
       ],
   });
   const unim = useERC20({
-    contractAddress: stashContract.data?.unimAddress,
+    contractAddress: gameBankConfig.data?.unimAddress,
     spender:
       GameBankAddresses[
         web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
@@ -739,42 +793,42 @@ const CryptoUnicorns = () => {
             <LootboxCard
               imageUrl="https://lh3.googleusercontent.com/0H9500IgQKZqKstSo-nruV9RMV9aw7oPtgLARWtbIBU6brTaaK2F0Lk3t7xLygvk80r6OlsBOjnqIhr3EFzEMdwUZlIXTuuEa-O3uQ=w600"
               lootboxType="Common"
-              lootboxBalance={lootboxBalances["common"]}
+              lootboxBalance={lootboxBalances["commonLootbox"]}
             />
           </GridItem>
           <GridItem>
             <LootboxCard
               imageUrl="https://lh3.googleusercontent.com/1RFVPV0nYzXG0FYea6BQacjsJlbutQSib258tWnovbsIiNhUyOo_BO_AfANN6aSppzvS7ZLpgNcppXuhLOHT2wQAxqAx-Da5bVLnsw=w600"
               lootboxType="Rare"
-              lootboxBalance={lootboxBalances["rare"]}
+              lootboxBalance={lootboxBalances["rareLootbox"]}
             />
           </GridItem>
           <GridItem>
             <LootboxCard
               imageUrl="https://lh3.googleusercontent.com/2bv26HfU7CgDJhVocABtxbdMLQ8qH2kuU5mQJWVehuNzX-4GiOBm2iIxsTtdriHYpsmr94R7xfRhgELCmnJKQpcMA4wMoPlM_V4zaQ=w600"
               lootboxType="Mythic"
-              lootboxBalance={lootboxBalances["mythic"]}
+              lootboxBalance={lootboxBalances["mythicLootbox"]}
             />
           </GridItem>
           <GridItem>
             <LootboxCard
               imageUrl="https://lh3.googleusercontent.com/2AVqj_GOKf358s0Fkw66MHxEcivOWfvRjAMdmqhHgh3RwyWyJNbnn_amPUJt4KDeO6H7IdWKSV1tli5ijkgHHAemxYGuTof5WZo3wA=w600"
               lootboxType="Land"
-              lootboxBalance={lootboxBalances["land"]}
+              lootboxBalance={lootboxBalances["landLootbox"]}
             />
           </GridItem>
           <GridItem>
             <LootboxCard
               imageUrl="https://lh3.googleusercontent.com/30YXRt8oPvD0J9KuRiUTLrRxrigwvbs8P5uFIkJt65hmlVAerYAsxZgPHjvA-byTXseTKJQsnpbuD7giChaO4TyoFm7pcqza8NrZ=w600"
               lootboxType="Mystery"
-              lootboxBalance={lootboxBalances["mystery"]}
+              lootboxBalance={lootboxBalances["mysteryLootbox"]}
             />
           </GridItem>
           <GridItem>
             <LootboxCard
               imageUrl="https://lh3.googleusercontent.com/u_BYIeFDCF4dC4n_Col8e1W_dNTK84uMfR6mhjLhQj7GuObvBeENqSu7L8nzDFJ9JDdpiezHpRP0PJ8ioPxOakvU3iz5lbhJy1abRWM=w600"
               lootboxType="RMP"
-              lootboxBalance={lootboxBalances["RMP"]}
+              lootboxBalance={lootboxBalances["RMPLootbox"]}
             />
           </GridItem>
         </Grid>
