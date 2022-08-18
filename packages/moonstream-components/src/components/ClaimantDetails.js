@@ -23,7 +23,7 @@ const ClaimantDetails = ({ claimId, address, onClose }) => {
     <Flex className="ClaimantDetails" direction={"row"} alignItems="baseline">
       {search.data?.address && (
         <>
-          <Heading size="sm">Amount: {search.data.amount}</Heading>
+          <Heading size="sm">Amount: {search.data.raw_amount}</Heading>
           <IconButton
             size="sm"
             colorScheme="orange"
