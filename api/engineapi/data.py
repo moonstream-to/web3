@@ -76,6 +76,7 @@ class DropCreatedResponse(BaseModel):
 class Claimant(BaseModel):
     address: str
     amount: int
+    raw_amount: Optional[int] = None
 
 class BatchAddClaimantsRequest(BaseModel):
     claimants: List[Claimant] = Field(default_factory=list)
