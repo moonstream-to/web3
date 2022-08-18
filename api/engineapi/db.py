@@ -36,6 +36,7 @@ except:
 engine = create_engine(
     ENGINE_DB_URI,
     pool_size=ENGINE_POOL_SIZE,
+    pool_pre_ping=True,
     connect_args={
         "options": f"-c statement_timeout={ENGINE_DB_STATEMENT_TIMEOUT_MILLIS}"
     },
