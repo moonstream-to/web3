@@ -23,7 +23,7 @@ const useClaim = ({
   const toast = useToast();
 
   const claim = useQuery(
-    [`/drops/claims/${claimId}`],
+    [`/play/drops/${claimId}`],
     (query: any) => queryHttp(query).then((r: any) => r.data),
     {
       ...queryCacheProps,
@@ -45,7 +45,7 @@ const useClaim = ({
         claimWeb3Drop.mutate({
           message: data.signature,
           blockDeadline: data.block_deadline,
-          amount: data.amount_string,
+          amount: data.amount,
           claimId: data.claim_id,
         });
       },
@@ -57,7 +57,7 @@ const useClaim = ({
   );
 
   const signature = useQuery(
-    [`/drops`, { dropper_claim_id: claimId, address: claimantAddress }],
+    [`/play/claims/${claimId}`, { address: claimantAddress }],
     (query: any) => queryHttp(query).then((r: any) => r.data),
     {
       ...queryCacheProps,

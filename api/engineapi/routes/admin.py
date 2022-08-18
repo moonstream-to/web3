@@ -490,7 +490,7 @@ async def get_claimant_in_drop(
         logger.error(f"Can't get claimant: {e}")
         raise DropperHTTPException(status_code=500, detail="Can't get claimant")
 
-    return data.Claimant(address=claimant.address, amount=claimant.amount)
+    return data.Claimant(address=claimant.address, amount=claimant.amount, raw_amount=claimant.raw_amount)
 
 
 @app.post("/drop/{dropper_claim_id}/refetch")

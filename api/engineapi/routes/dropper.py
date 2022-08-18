@@ -125,7 +125,6 @@ async def get_drop_handler(
         )
 
     transformed_amount = claimant.raw_amount
-
     if transformed_amount is None:
         transformed_amount = actions.transform_claim_amount(
             db_session, dropper_claim_id, claimant.amount
@@ -160,8 +159,7 @@ async def get_drop_handler(
 
     return data.DropResponse(
         claimant=claimant.address,
-        amount=int(transformed_amount),
-        amount_string=str(transformed_amount),
+        amount=str(transformed_amount),
         claim_id=claimant.claim_id,
         block_deadline=claimant.claim_block_deadline,
         signature=signature,
