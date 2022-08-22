@@ -57,18 +57,20 @@ def yield_db_session() -> Session:
 
 yield_db_session_ctx = contextmanager(yield_db_session)
 
+# Read only connection
 RO_engine = create_local_engine(
     url=ENGINE_DB_URI_READ_ONLY,
     pool_size=ENGINE_POOL_SIZE,
     statement_timeout=ENGINE_DB_STATEMENT_TIMEOUT_MILLIS,
     pool_recycle=ENGINE_DB_POOL_RECYCLE_SECONDS,
 )
+
 RO_SessionLocal = sessionmaker(bind=RO_engine)
 
 
 def yield_db_read_only_session() -> Session:
     """
-    Yields a database connection (created using environment variables).
+    Yields read only database connection (created using environment variables).
     As per FastAPI docs:
     https://fastapi.tiangolo.com/tutorial/sql-databases/#create-a-dependency
     """
@@ -77,3 +79,6 @@ def yield_db_read_only_session() -> Session:
         yield session
     finally:
         session.close()
+
+
+yield_db_read_only_session_ctx = contextmanager(yield_db_read_only_session)
