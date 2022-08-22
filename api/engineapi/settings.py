@@ -101,3 +101,41 @@ for chain in POA_CHAINS:
     BLOCKCHAIN_WEB3_PROVIDERS[chain].middleware_onion.inject(
         geth_poa_middleware, layer=0
     )
+
+# Database
+ENGINE_DB_URI = os.environ.get("ENGINE_DB_URI")
+if ENGINE_DB_URI is None:
+    raise ValueError("ENGINE_DB_URI environment variable must be set")
+
+ENGINE_DB_URI_READ_ONLY = os.environ.get("ENGINE_DB_URI_READ_ONLY")
+if ENGINE_DB_URI_READ_ONLY is None:
+    raise ValueError("ENGINE_DB_URI_READ_ONLY environment variable must be set")
+
+ENGINE_POOL_SIZE_RAW = os.environ.get("ENGINE_POOL_SIZE", 0)
+try:
+    if ENGINE_POOL_SIZE_RAW is not None:
+        ENGINE_POOL_SIZE = int(ENGINE_POOL_SIZE_RAW)
+except:
+    raise Exception(f"Could not parse ENGINE_POOL_SIZE as int: {ENGINE_POOL_SIZE_RAW}")
+
+ENGINE_DB_STATEMENT_TIMEOUT_MILLIS_RAW = os.environ.get(
+    "ENGINE_DB_STATEMENT_TIMEOUT_MILLIS"
+)
+ENGINE_DB_STATEMENT_TIMEOUT_MILLIS = 30000
+try:
+    if ENGINE_DB_STATEMENT_TIMEOUT_MILLIS_RAW is not None:
+        ENGINE_DB_STATEMENT_TIMEOUT_MILLIS = int(ENGINE_DB_STATEMENT_TIMEOUT_MILLIS_RAW)
+except:
+    raise ValueError(
+        f"ENGINE_DB_STATEMENT_TIMEOUT_MILLIOS must be an integer: {ENGINE_DB_STATEMENT_TIMEOUT_MILLIS_RAW}"
+    )
+
+ENGINE_DB_POOL_RECYCLE_SECONDS_RAW = os.environ.get("ENGINE_DB_POOL_RECYCLE_SECONDS")
+ENGINE_DB_POOL_RECYCLE_SECONDS = 1800
+try:
+    if ENGINE_DB_POOL_RECYCLE_SECONDS_RAW is not None:
+        ENGINE_DB_POOL_RECYCLE_SECONDS = int(ENGINE_DB_POOL_RECYCLE_SECONDS_RAW)
+except:
+    raise ValueError(
+        f"ENGINE_DB_POOL_RECYCLE_SECONDS must be an integer: {ENGINE_DB_POOL_RECYCLE_SECONDS_RAW}"
+    )
