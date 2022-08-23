@@ -22,11 +22,12 @@ setup(
         "tqdm",
         "uvicorn",
         "web3",
+        "tabulate",
     ],
     extras_require={
         "dev": [
             "black",
-            "moonworm >= 0.2.2",
+            "moonworm >= 0.3.0",
         ],
         "distribute": ["setuptools", "twine", "wheel"],
     },
