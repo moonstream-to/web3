@@ -48,6 +48,16 @@ library LibCrafting {
     struct CraftingStorage {
         mapping(uint256 => Recipe) recipes;
         uint256 numRecipes;
+        address authTerminusAddress;
+        uint256 authTerminusPool;
+    }
+
+    function setTerminusAuth(address _terminusAddress, uint256 _terminusPool)
+        internal
+    {
+        CraftingStorage storage cs = craftingStorage();
+        cs.authTerminusAddress = _terminusAddress;
+        cs.authTerminusPool = _terminusPool;
     }
 
     function craftingStorage()

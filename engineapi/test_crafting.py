@@ -96,12 +96,21 @@ class CraftingTestCase(unittest.TestCase):
         )
 
         cls.crafting = CraftingFacet.CraftingFacet(cls.diamond_address)
+        cls.auth_terminus_contract = MockERC1155.MockERC1155(None)
+        cls.auth_terminus_contract.deploy({"from": accounts[0]})
+        cls.auth_terminus_contract.mint(
+            accounts[0].address, 1, 1, b"", {"from": accounts[0]}
+        )
+        cls.crafting.set_terminus_auth(
+            cls.auth_terminus_contract.address, 1, {"from": accounts[0]}
+        )
 
-    def _create_recipe(
-        self,
-        recipe: Recipe,
-    ) -> int:
-        self.crafting.add_recipe(recipe.to_tuple(), {"from": accounts[0]})
+    def _create_recipe(self, recipe: Recipe, from_account) -> int:
+        if from_account is None:
+            # Python doesn't allow me to set account[0]
+            # as default value
+            from_account = accounts[0]
+        self.crafting.add_recipe(recipe.to_tuple(), {"from": from_account})
         recipe_id = self.crafting.num_recipes()
         return recipe_id
 
@@ -111,7 +120,7 @@ class CraftingTestCase(unittest.TestCase):
                 20,
                 self.erc20_contracts[1].address,
                 0,
-                10 * 10 ** 18,
+                10 * 10**18,
                 0,
             ),
         ]
@@ -120,14 +129,13 @@ class CraftingTestCase(unittest.TestCase):
                 20,
                 self.erc20_contracts[2].address,
                 0,
-                10 * 10 ** 18,
+                10 * 10**18,
                 0,
             ),
         ]
         num_recipes_before = self.crafting.num_recipes()
         recipe = Recipe(inputs, outputs, True)
-        print(recipe.to_tuple())
-        # ([(20, '0x602C71e4DAC47a042Ee7f46E0aee17F94A3bA0B6', 0, 10000000000000000000, 0)], [(20, '0xE7eD6747FaC5360f88a2EFC03E00d25789F69291', 0, 10000000000000000000, 0)], True)
+
         recipe_id = self._create_recipe(recipe)
         num_recipes_after = self.crafting.num_recipes()
 
@@ -239,8 +247,8 @@ class CraftingTestCase(unittest.TestCase):
                 self.assertEqual(balance_contract_before, balance_contract_after)
 
     def test_simple_transfer_craft(self):
-        input_amount = 10 * 10 ** 18
-        output_amount = 10 * 10 ** 18
+        input_amount = 10 * 10**18
+        output_amount = 10 * 10**18
         inputs = [
             CraftingInput(
                 20,
@@ -277,8 +285,8 @@ class CraftingTestCase(unittest.TestCase):
         self._check_balances_after_crafting(recipe, block_no_before)
 
     def test_simple_transfer_craft_with_erc1155(self):
-        input_amount = 10 * 10 ** 18
-        output_amount = 10 * 10 ** 18
+        input_amount = 10 * 10**18
+        output_amount = 10 * 10**18
 
         input_erc1155_amount = 1
         output_erc1155_amount = 1
@@ -344,8 +352,8 @@ class CraftingTestCase(unittest.TestCase):
         self._check_balances_after_crafting(recipe, block_no_before)
 
     def test_craft_with_burn_and_mint(self):
-        input_amount = 10 * 10 ** 18
-        output_amount = 10 * 10 ** 18
+        input_amount = 10 * 10**18
+        output_amount = 10 * 10**18
 
         input_erc1155_amount = 1
         output_erc1155_amount = 1
@@ -410,8 +418,8 @@ class CraftingTestCase(unittest.TestCase):
         self._check_balances_after_crafting(recipe, block_no_before)
 
     def test_craft_with_burn_and_mint(self):
-        input_amount = 10 * 10 ** 18
-        output_amount = 10 * 10 ** 18
+        input_amount = 10 * 10**18
+        output_amount = 10 * 10**18
 
         input_erc1155_amount = 1
         output_erc1155_amount = 1
@@ -477,8 +485,8 @@ class CraftingTestCase(unittest.TestCase):
         self._check_balances_after_crafting(recipe, block_no_before)
 
     def test_craft_with_hold_and_mint(self):
-        input_amount = 10 * 10 ** 18
-        output_amount = 10 * 10 ** 18
+        input_amount = 10 * 10**18
+        output_amount = 10 * 10**18
 
         input_erc1155_amount = 1
         output_erc1155_amount = 1
@@ -544,8 +552,8 @@ class CraftingTestCase(unittest.TestCase):
         self._check_balances_after_crafting(recipe, block_no_before)
 
     def test_craft_with_all_type_of_operations(self):
-        input_amount = 10 * 10 ** 18
-        output_amount = 10 * 10 ** 18
+        input_amount = 10 * 10**18
+        output_amount = 10 * 10**18
 
         input_erc1155_amount = 1
         output_erc1155_amount = 1
@@ -670,8 +678,8 @@ class CraftingTestCase(unittest.TestCase):
         self._check_balances_after_crafting(recipe, block_no_before)
 
     def test_craft_fails_with_insufficient_amount_hold_only(self):
-        input_amount = 10 * 10 ** 18
-        output_amount = 10 * 10 ** 18
+        input_amount = 10 * 10**18
+        output_amount = 10 * 10**18
 
         input_erc1155_amount = 1
         output_erc1155_amount = 1
@@ -749,8 +757,8 @@ class CraftingTestCase(unittest.TestCase):
             self.crafting.craft(recipe_id, {"from": accounts[1]})
 
     def test_craft_fails_with_insufficient_amount_mint_only(self):
-        input_amount = 10 * 10 ** 18
-        output_amount = 10 * 10 ** 18
+        input_amount = 10 * 10**18
+        output_amount = 10 * 10**18
 
         input_erc1155_amount = 1
         output_erc1155_amount = 1
@@ -828,8 +836,8 @@ class CraftingTestCase(unittest.TestCase):
             self.crafting.craft(recipe_id, {"from": accounts[1]})
 
     def test_craft_fails_with_insufficient_amount_transfer_only(self):
-        input_amount = 10 * 10 ** 18
-        output_amount = 10 * 10 ** 18
+        input_amount = 10 * 10**18
+        output_amount = 10 * 10**18
 
         input_erc1155_amount = 1
         output_erc1155_amount = 1
@@ -923,30 +931,30 @@ class CraftingTestCase(unittest.TestCase):
         for erc20 in self.erc20_contracts:
             erc20.mint(
                 self.crafting.address,
-                10 ** 18 * 10 ** 18,
+                10**18 * 10**18,
                 {"from": accounts[0]},
             )
             erc20.mint(
                 accounts[1],
-                10 ** 18 * 10 ** 18,
+                10**18 * 10**18,
                 {"from": accounts[0]},
             )
             erc20.approve(
-                self.crafting.address, 10 ** 18 * 10 ** 18, {"from": accounts[1]}
+                self.crafting.address, 10**18 * 10**18, {"from": accounts[1]}
             )
 
         for erc1155 in self.erc1155_contracts:
             erc1155.mint_batch(
                 self.crafting.address,
                 [i for i in range(erc1155_max_id)],
-                [10 ** 18 for i in range(erc1155_max_id)],
+                [10**18 for i in range(erc1155_max_id)],
                 b"",
                 {"from": accounts[0]},
             )
             erc1155.mint_batch(
                 accounts[1],
                 [i for i in range(erc1155_max_id)],
-                [10 ** 18 for i in range(erc1155_max_id)],
+                [10**18 for i in range(erc1155_max_id)],
                 b"",
                 {"from": accounts[0]},
             )
@@ -960,7 +968,7 @@ class CraftingTestCase(unittest.TestCase):
 
             if token_type == 20:
                 token = input_erc20_tokens[i % len(input_erc20_tokens)]
-                amount = i * 10 ** 18
+                amount = i * 10**18
                 inputs.append(
                     CraftingInput(
                         token_type,
@@ -991,7 +999,7 @@ class CraftingTestCase(unittest.TestCase):
 
             if token_type == 20:
                 token = output_erc20_tokens[i % len(output_erc20_tokens)]
-                amount = (100 - i) * 10 ** 18
+                amount = (100 - i) * 10**18
                 outputs.append(
                     CraftingOutput(
                         token_type,
@@ -1022,3 +1030,33 @@ class CraftingTestCase(unittest.TestCase):
         self.crafting.craft(recipe_id, {"from": accounts[1]})
 
         self._check_balances_after_crafting(recipe, block_no_before)
+
+    def test_not_auth_address_cant_create_recipe(self):
+        inputs = [
+            CraftingInput(
+                20,
+                self.erc20_contracts[1].address,
+                0,
+                10 * 10**18,
+                0,
+            ),
+        ]
+        outputs = [
+            CraftingOutput(
+                20,
+                self.erc20_contracts[2].address,
+                0,
+                10 * 10**18,
+                0,
+            ),
+        ]
+
+        recipe = Recipe(inputs, outputs, True)
+        with self.assertRaises(VirtualMachineError):
+            recipe_id = self._create_recipe(recipe, accounts[1])
+
+        # giving unauthorized address authjorization toke:
+        self.auth_terminus_contract.mint(
+            accounts[1].address, 1, 1, b"", {"from": accounts[0]}
+        )
+        self._create_recipe(recipe, accounts[1])

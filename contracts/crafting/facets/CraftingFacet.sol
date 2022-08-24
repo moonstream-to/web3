@@ -12,24 +12,51 @@ import "@openzeppelin-contracts/contracts/token/ERC1155/extensions/ERC1155Burnab
 import "@openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin-contracts/contracts/token/ERC721/utils/ERC721Holder.sol";
+import {TerminusPermissions} from "@moonstream/contracts/terminus/TerminusPermissions.sol";
 import {MockTerminus} from "../../mock/MockTerminus.sol";
 import {MockErc20} from "../../mock/MockErc20.sol";
 import "../libraries/LibCrafting.sol";
 import "../../diamond/libraries/LibDiamond.sol";
 import "../../diamond/security/DiamondReentrancyGuard.sol";
 
-contract CraftingFacet is ERC1155Holder, ERC721Holder, DiamondReentrancyGuard {
-    function addRecipe(Recipe calldata recipe) public {
+contract CraftingFacet is
+    ERC1155Holder,
+    ERC721Holder,
+    DiamondReentrancyGuard,
+    TerminusPermissions
+{
+    modifier onlyAuthorizedAddress() {
+        require(
+            _holdsPoolToken(
+                LibCrafting.craftingStorage().authTerminusAddress,
+                LibCrafting.craftingStorage().authTerminusPool,
+                1
+            ),
+            "CraftingFacet.onlyAuthorizedAddress: The address is not authorized to perform this operation"
+        );
+        _;
+    }
+
+    function setTerminusAuth(address terminusAddress, uint256 tokenId)
+        external
+    {
+        LibDiamond.enforceIsContractOwner();
+        LibCrafting.CraftingStorage storage cs = LibCrafting.craftingStorage();
+        cs.authTerminusAddress = terminusAddress;
+        cs.authTerminusPool = tokenId;
+    }
+
+    function addRecipe(Recipe calldata recipe) external onlyAuthorizedAddress {
         LibCrafting.CraftingStorage storage cs = LibCrafting.craftingStorage();
         cs.numRecipes++;
         cs.recipes[cs.numRecipes] = recipe;
     }
 
-    function getRecipe(uint256 recipeId) public view returns (Recipe memory) {
+    function getRecipe(uint256 recipeId) external view returns (Recipe memory) {
         return LibCrafting.craftingStorage().recipes[recipeId];
     }
 
-    function numRecipes() public view returns (uint256) {
+    function numRecipes() external view returns (uint256) {
         return LibCrafting.craftingStorage().numRecipes;
     }
 
@@ -107,7 +134,9 @@ contract CraftingFacet is ERC1155Holder, ERC721Holder, DiamondReentrancyGuard {
                         recipe.inputs[i].tokenId
                     );
                     if (balance < recipe.inputs[i].amount) {
-                        revert("User doesn't hold enough tokens for crafting");
+                        revert(
+                            "CraftingFacet.craft: User doesn't hold enough tokens for crafting"
+                        );
                     }
                 }
             }
