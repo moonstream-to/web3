@@ -489,8 +489,8 @@ const CryptoUnicorns = () => {
   const web3ctx = useContext(Web3Context);
 
   useEffect(() => {
-    // setCurrentAccount(web3ctx.account);
-    setCurrentAccount("0x804d61bc199Ce8221F767FE252D37160D7698387")
+    setCurrentAccount(web3ctx.account);
+    // setCurrentAccount("0x804d61bc199Ce8221F767FE252D37160D7698387")
   }, [web3ctx.account]);
 
   useEffect(() => {
