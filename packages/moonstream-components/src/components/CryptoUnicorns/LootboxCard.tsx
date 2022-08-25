@@ -15,12 +15,12 @@ import {
 } from "@chakra-ui/react";
 
 const _LootboxCard = ({
-  lootboxType,
+  displayName,
   imageUrl,
   lootboxBalance,
   ...props
 }: {
-  lootboxType: string;
+  displayName: string;
   imageUrl: string;
   lootboxBalance: number;
 }) => {
@@ -42,19 +42,13 @@ const _LootboxCard = ({
           alt="CU Common Lootbox"
         />
         <Box w="100%" px={2} justifyContent="left">
-          <Text fontSize="lg">{lootboxType} Lootbox</Text>
+          <Text fontSize="md">{displayName}</Text>
           <Flex fontSize="sm" w="100%" pb={6}>
-            {lootboxBalance > 0 ? (
-              <>
-                <Text>Quantity</Text>
-                <Spacer />
-                <Text>{lootboxBalance}</Text>
-              </>
-            ) : (
-              <Text>You have no {lootboxType} lootboxes.</Text>
-            )}
+            <Text>Quantity</Text>
+            <Spacer />
+            <Text>{lootboxBalance}</Text>
           </Flex>
-          <Box pb={3}>
+          {/* <Box pb={3}>
             <Input
               bgColor="transparent"
               borderColor="gray.100"
@@ -90,7 +84,7 @@ const _LootboxCard = ({
             >
               Stash!
             </Button>
-          </Box>
+          </Box> */}
         </Box>
       </VStack>
     </Flex>

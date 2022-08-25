@@ -1,4 +1,5 @@
 import React, { useContext, useEffect } from "react";
+// import { useRouter } from "next/router";
 import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
 import {
   Flex,
@@ -24,6 +25,8 @@ const StashABI = require("../../games/cu/StashABI.json");
 import { StashABI as StashABIType } from "../../games/cu/StashABI";
 const GameBankABI = require("../../games/cu/GameBankABI.json");
 import { GameBankABI as GameBankABIType } from "../../games/cu/GameBankABI";
+// const MulticallABI = require("../../games/cu/Multicall2.json");
+// import { Multicall2 } from "../../games/cu/Multicall2";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { supportedChains } from "../../../../types/Moonstream";
 import { useERC20, useToast } from "moonstream-components/src/core/hooks";
@@ -67,13 +70,62 @@ const RBWAddresses: { [key in supportedChains]: string } = {
   localhost: "0x0000000000000000000000000000000000000000",
 };
 
+const MulticallAddresses: { [key in supportedChains]: string } = {
+  mumbai: "0xe9939e7Ea7D7fb619Ac57f648Da7B1D425832631",
+  polygon: "0xc8E51042792d7405184DfCa245F2d27B94D013b6",
+  ethereum: "0x0000000000000000000000000000000000000000",
+  localhost: "0x0000000000000000000000000000000000000000",
+};
+
+//keystonePoolIdByLandType
+// Land type: 1, 62       // mythic
+// Land type: 2, 59       // light
+// Land type: 3, 66       // wonder
+// Land type: 4, 61       // mystery
+// Land type: 5, 58       // heart
+// Land type: 6, 55       // cloud
+// Land type: 7, 57       // flower
+// Land type: 8, 54       // candy
+// Land type: 9, 56       // crystal
+// Land type: 10, 60      // moon
+// Land type: 11, 64      // rainbow
+// Land type: 12, 63      // omnom
+// Land type: 13, 65      // star
+
 type terminusType =
   | "commonLootbox"
   | "rareLootbox"
   | "mythicLootbox"
   | "landLootbox"
   | "mysteryLootbox"
-  | "RMPLootbox";
+  | "RMPLootbox"
+  | "goldenTicket"
+  | "mythicKeystone"
+  | "lightKeystone"
+  | "wonderKeystone"
+  | "mysteryKeystone"
+  | "heartKeystone"
+  | "cloudKeystone"
+  | "flowerKeystone"
+  | "candyKeystone"
+  | "crystalKeystone"
+  | "moonKeystone"
+  | "rainbowKeystone"
+  | "omnomKeystone"
+  | "starKeystone"
+  | "commonShadowcornEgg"
+  | "rareShadowcornEgg"
+  | "mythicShadowcornEgg"
+  | "shadowcornTierOne"
+  | "shadowcornTierTwo"
+  | "shadowcornTierThree"
+  | "nurseryTierOne"
+  | "nurseryTierTwo"
+  | "nurseryTierThree"
+  | "iSurvivedLaunch"
+  | "founders"
+  | "communityCouncil";
+
 interface LootboxInfo {
   poolIdByChain: {
     [key in supportedChains]: number;
@@ -88,13 +140,34 @@ const terminusTypes: terminusType[] = [
   "landLootbox",
   "mysteryLootbox",
   "RMPLootbox",
+  "goldenTicket",
+  "mythicKeystone",
+  "lightKeystone",
+  "wonderKeystone",
+  "mysteryKeystone",
+  "heartKeystone",
+  "cloudKeystone",
+  "flowerKeystone",
+  "candyKeystone",
+  "crystalKeystone",
+  "moonKeystone",
+  "rainbowKeystone",
+  "omnomKeystone",
+  "starKeystone",
+  "commonShadowcornEgg",
+  "rareShadowcornEgg",
+  "mythicShadowcornEgg",
+  "shadowcornTierOne",
+  "shadowcornTierTwo",
+  "shadowcornTierThree",
+  "nurseryTierOne",
+  "nurseryTierTwo",
+  "nurseryTierThree",
+  "iSurvivedLaunch",
+  "founders",
+  "communityCouncil",
 ];
 
-// DONE(kellan): Rename to "terminusInfo". Map other relevant Terminus pools, such as Golden Tickets (pool ID 42 on mainnet),
-// Shadowcorn Act I badges (pool IDs 43, 44, 45 on mainnet), etc.
-// To get the balances, we should use multicall: https://www.npmjs.com/package/ethereum-multicall
-// You will probably also want to rename "lootboxTypes" above to "terminusTypes". Maybe rename the lootbox keys to contain the string "Lootbox" at the end.
-// So "common" -> "commonLootbox".
 const terminusInfo: { [key in terminusType]: LootboxInfo } = {
   commonLootbox: {
     poolIdByChain: {
@@ -107,7 +180,7 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
   rareLootbox: {
     poolIdByChain: {
       mumbai: 7,
-      polygon: -1,
+      polygon: 7,
       ethereum: -1,
       localhost: -1,
     },
@@ -115,7 +188,7 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
   mysteryLootbox: {
     poolIdByChain: {
       mumbai: 8,
-      polygon: -1,
+      polygon: 8,
       ethereum: -1,
       localhost: -1,
     },
@@ -123,7 +196,7 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
   mythicLootbox: {
     poolIdByChain: {
       mumbai: 11,
-      polygon: -1,
+      polygon: 11,
       ethereum: -1,
       localhost: -1,
     },
@@ -131,7 +204,7 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
   RMPLootbox: {
     poolIdByChain: {
       mumbai: 12,
-      polygon: -1,
+      polygon: 12,
       ethereum: -1,
       localhost: -1,
     },
@@ -139,20 +212,254 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
   landLootbox: {
     poolIdByChain: {
       mumbai: 26,
-      polygon: -1,
+      polygon: 26,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  goldenTicket: {
+    poolIdByChain: {
+      mumbai: 42,
+      polygon: 42,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  mythicKeystone: {
+    poolIdByChain: {
+      mumbai: 62,
+      polygon: 62,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  lightKeystone: {
+    poolIdByChain: {
+      mumbai: 59,
+      polygon: 59,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  wonderKeystone: {
+    poolIdByChain: {
+      mumbai: 66,
+      polygon: 66,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  mysteryKeystone: {
+    poolIdByChain: {
+      mumbai: 61,
+      polygon: 61,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  heartKeystone: {
+    poolIdByChain: {
+      mumbai: 58,
+      polygon: 58,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  cloudKeystone: {
+    poolIdByChain: {
+      mumbai: 55,
+      polygon: 55,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  flowerKeystone: {
+    poolIdByChain: {
+      mumbai: 57,
+      polygon: 57,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  candyKeystone: {
+    poolIdByChain: {
+      mumbai: 54,
+      polygon: 54,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  crystalKeystone: {
+    poolIdByChain: {
+      mumbai: 56,
+      polygon: 56,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  moonKeystone: {
+    poolIdByChain: {
+      mumbai: 60,
+      polygon: 60,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  rainbowKeystone: {
+    poolIdByChain: {
+      mumbai: 64,
+      polygon: 64,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  omnomKeystone: {
+    poolIdByChain: {
+      mumbai: 63,
+      polygon: 63,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  starKeystone: {
+    poolIdByChain: {
+      mumbai: 65,
+      polygon: 65,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  commonShadowcornEgg: {
+    poolIdByChain: {
+      mumbai: 1,
+      polygon: 1,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  rareShadowcornEgg: {
+    poolIdByChain: {
+      mumbai: 2,
+      polygon: 2,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  mythicShadowcornEgg: {
+    poolIdByChain: {
+      mumbai: 3,
+      polygon: 3,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  shadowcornTierOne: {
+    poolIdByChain: {
+      mumbai: 43,
+      polygon: 43,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  shadowcornTierTwo: {
+    poolIdByChain: {
+      mumbai: 44,
+      polygon: 44,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  shadowcornTierThree: {
+    poolIdByChain: {
+      mumbai: 45,
+      polygon: 45,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  nurseryTierOne: {
+    poolIdByChain: {
+      mumbai: 47,
+      polygon: 47,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  nurseryTierTwo: {
+    poolIdByChain: {
+      mumbai: 48,
+      polygon: 48,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  nurseryTierThree: {
+    poolIdByChain: {
+      mumbai: 49,
+      polygon: 49,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  iSurvivedLaunch: {
+    poolIdByChain: {
+      mumbai: 50,
+      polygon: 50,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  founders: {
+    poolIdByChain: {
+      mumbai: 41,
+      polygon: 41,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  communityCouncil: {
+    poolIdByChain: {
+      mumbai: 53,
+      polygon: 53,
       ethereum: -1,
       localhost: -1,
     },
   },
 };
 
-const defaultLootboxBalances = {
+const defaultLootboxBalances: { [key in terminusType]: number } = {
   commonLootbox: 0,
   rareLootbox: 0,
   mythicLootbox: 0,
   landLootbox: 0,
   mysteryLootbox: 0,
   RMPLootbox: 0,
+  goldenTicket: 0,
+  mythicKeystone: 0,
+  lightKeystone: 0,
+  wonderKeystone: 0,
+  mysteryKeystone: 0,
+  heartKeystone: 0,
+  cloudKeystone: 0,
+  flowerKeystone: 0,
+  candyKeystone: 0,
+  crystalKeystone: 0,
+  moonKeystone: 0,
+  rainbowKeystone: 0,
+  omnomKeystone: 0,
+  starKeystone: 0,
+  commonShadowcornEgg: 0,
+  rareShadowcornEgg: 0,
+  mythicShadowcornEgg: 0,
+  shadowcornTierOne: 0,
+  shadowcornTierTwo: 0,
+  shadowcornTierThree: 0,
+  nurseryTierOne: 0,
+  nurseryTierTwo: 0,
+  nurseryTierThree: 0,
+  iSurvivedLaunch: 0,
+  founders: 0,
+  communityCouncil: 0,
 };
 
 const CryptoUnicorns = () => {
@@ -166,38 +473,37 @@ const CryptoUnicorns = () => {
   const [rbwToStash, setRBWToStash] = React.useState("");
   const [unimToStash, setUNIMToStash] = React.useState("");
   const [terminusAddress, setTerminusAddress] = React.useState("");
+  const [multicallAddress, setMulticallAddress] = React.useState("");
   const [UNIMAddress, setUNIMAddress] = React.useState("");
   const [RBWAddress, setRBWAddress] = React.useState("");
   const [gameBankAddress, setGameBankAddress] = React.useState("");
-  // TODO(kellan): Remove getGameBankConfig and replace with the same pair of:
-  // - useEffect to store addresses when the chain changes
-  // - useQuery (with enabled: false) + additional useEffect to retrieve balances when contract address, chain, and other dependencies (like the user address in spy mode) change
+
   const [UNIMBalance, setUNIMBalance] = React.useState("0");
   const [RBWBalance, setRBWBalance] = React.useState("0");
   const [lootboxBalances, setLootboxBalances] = React.useState({
     ...defaultLootboxBalances,
   });
-  // DONE(kellan): Currently, we use web3ctx.account as the address for which to retrieve inventory. This
-  // assumption was fine when we only had stash functionality on this page because that account would have
-  // to sign transactions.
-  // For spy mode, it would be a good idea to have a separate state variable like "currentAccount" which
-  // users could set through a spy mode form field if they wanted to.
+  const [displayType, setDisplayType] = React.useState(0);
 
+  // const router = useRouter();
   const web3ctx = useContext(Web3Context);
 
   useEffect(() => {
-    setCurrentAccount(web3ctx.account);
+    // setCurrentAccount(web3ctx.account);
+    setCurrentAccount("0x804d61bc199Ce8221F767FE252D37160D7698387")
   }, [web3ctx.account]);
 
   useEffect(() => {
     const chain: string | undefined = chainByChainId[web3ctx.chainId];
     if (!chain) {
       setTerminusAddress("");
+      setMulticallAddress("");
       setUNIMAddress("");
       setRBWAddress("");
       setGameBankAddress("");
     } else {
       setTerminusAddress(TerminusAddresses[chain as supportedChains]);
+      setMulticallAddress(MulticallAddresses[chain as supportedChains]);
       setUNIMAddress(UNIMAddresses[chain as supportedChains]);
       setRBWAddress(RBWAddresses[chain as supportedChains]);
       setGameBankAddress(GameBankAddresses[chain as supportedChains]);
@@ -250,6 +556,8 @@ const CryptoUnicorns = () => {
     async ({ queryKey }) => {
       const currentChain = chainByChainId[queryKey[1] as number];
       const currentUserAddress = queryKey[3];
+      // console.log(currentChain);
+      // console.log(currentUserAddress);
       if (!currentChain) {
         return;
       }
@@ -271,6 +579,17 @@ const CryptoUnicorns = () => {
       });
 
       try {
+        // const multicall = new web3ctx.web3.eth.Contract(
+        //   MulticallABI
+        // ) as any as Multicall2;
+
+        // multicall.options.address = multicallAddress;
+        // const testRespone = await multicall.methods.tryAggregate(
+        //   false,
+        //   [[terminusFacet.options.address, terminusFacet.methods.balanceOf(String(currentUserAddress), 55).encodeABI()]]
+        // );
+
+        // console.log(testRespone);
         const balances = await terminusFacet.methods
           .balanceOfBatch(accounts, poolIds)
           .call();
@@ -294,46 +613,6 @@ const CryptoUnicorns = () => {
   useEffect(() => {
     terminusBalances.refetch();
   }, [terminusBalances, web3ctx]);
-
-  // const getGameBankConfig = async () => {
-  //   if (!web3ctx.web3.currentProvider) {
-  //     return {
-  //       rbwAddress: "0x0000000000000000000000000000000000000000",
-  //       unimAddress: "0x0000000000000000000000000000000000000000",
-  //       gameServer: "0x0000000000000000000000000000000000000000",
-  //       terminusAddress: "0x0000000000000000000000000000000000000000",
-  //     };
-  //   }
-  //   const contract = new web3ctx.web3.eth.Contract(
-  //     StashABI
-  //   ) as any as StashABIType;
-
-  //   const gameBankContract = new web3ctx.web3.eth.Contract(
-  //     GameBankABI
-  //   ) as unknown as GameBankABIType;
-
-  //   contract.options.address =
-  //     GameBankAddresses[
-  //       web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
-  //     ];
-  //   const rbwAddress = await contract.methods.getRBWAddress().call();
-  //   const unimAddress = await contract.methods.getUNIMAddress().call();
-  //   const gameServer = await contract.methods.getGameServer().call();
-  //   const terminusAddress = await gameBankContract.methods
-  //     .getTerminusTokenAddress()
-  //     .call();
-  //   return { rbwAddress, unimAddress, gameServer, terminusAddress };
-  // };
-
-  // const stashContract = useQuery(
-  //   [
-  //     "stashContract",
-  //     GameBankAddresses[
-  //       web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
-  //     ],
-  //   ],
-  //   getGameBankConfig
-  // );
 
   const rbw = useERC20({
     contractAddress: gameBankConfig.data?.rbwAddress,
@@ -474,6 +753,210 @@ const CryptoUnicorns = () => {
     }
   }, [rbwToStash, rbw.spenderState.data, web3ctx.web3.utils]);
 
+  const lootboxes = [
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/0H9500IgQKZqKstSo-nruV9RMV9aw7oPtgLARWtbIBU6brTaaK2F0Lk3t7xLygvk80r6OlsBOjnqIhr3EFzEMdwUZlIXTuuEa-O3uQ=w600",
+      displayName: "Common Lootbox",
+      balanceKey: "commonLootbox",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/1RFVPV0nYzXG0FYea6BQacjsJlbutQSib258tWnovbsIiNhUyOo_BO_AfANN6aSppzvS7ZLpgNcppXuhLOHT2wQAxqAx-Da5bVLnsw=w600",
+      displayName: "Rare Lootbox",
+      balanceKey: "rareLootbox",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/2bv26HfU7CgDJhVocABtxbdMLQ8qH2kuU5mQJWVehuNzX-4GiOBm2iIxsTtdriHYpsmr94R7xfRhgELCmnJKQpcMA4wMoPlM_V4zaQ=w600",
+      displayName: "Mythic Lootbox",
+      balanceKey: "mythicLootbox",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/2AVqj_GOKf358s0Fkw66MHxEcivOWfvRjAMdmqhHgh3RwyWyJNbnn_amPUJt4KDeO6H7IdWKSV1tli5ijkgHHAemxYGuTof5WZo3wA=w600",
+      displayName: "Land Lootbox",
+      balanceKey: "landLootbox",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/30YXRt8oPvD0J9KuRiUTLrRxrigwvbs8P5uFIkJt65hmlVAerYAsxZgPHjvA-byTXseTKJQsnpbuD7giChaO4TyoFm7pcqza8NrZ=w600",
+      displayName: "Mystery Lootbox",
+      balanceKey: "mysteryLootbox",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/u_BYIeFDCF4dC4n_Col8e1W_dNTK84uMfR6mhjLhQj7GuObvBeENqSu7L8nzDFJ9JDdpiezHpRP0PJ8ioPxOakvU3iz5lbhJy1abRWM=w600",
+      displayName: "RMP Lootbox",
+      balanceKey: "RMPLootbox",
+    },
+  ];
+
+  const keystones = [
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/cMpMnm8YhUGyOuB-CoBaUV3zwk7d0lXzqjNyNM-Z0z8tmWo1sl_3tUm5LP4sSfgiJ6zF78mLOWthkt17aoXEA9WNe-Mtp_vwQ_w8Gg=w375",
+      displayName: "Mythic Keystone",
+      balanceKey: "mythicKeystone",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/HZOYH5v__1eq3Nb8kRXGkGSPKtefHkjL5cknEdM7UJU7ArAYMboBmVgLNNuAxu3U_IhWulnSP1zmNvqkSQ4Om3mGLhGr_JWY2OvJ9Q=w375",
+      displayName: "Light Keystone",
+      balanceKey: "lightKeystone",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/lzbxrtoYIxAMt61f-uZC0gGu7Vzrq0M0M4YUWUeBYVoD6C2A6YJ5Ecu-9dMPasRiMn65Ol7pHUH83tdFwU3hF61NHyBZryBbRBpp9Lc=w375",
+      displayName: "Wonder Keystone",
+      balanceKey: "wonderKeystone",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/oHKgbOZxlu0DV8wGleezJQbls2sa1UJndTpTf4MQofyWL04Z-GP_KCnai9uXH_kXwWYNkkw0bqw_YsJZgfJ0tqk4b63rHnXaHLCbtg=w375",
+      displayName: "Mystery Keystone",
+      balanceKey: "mysteryKeystone",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/iIoGLFIbt7UOS5Nyzd0eBN2JzhAhUBH706HL7DGlRHlkTqQ-jpH40OTSZQVuQuPplz7yU3iRLXzOXHZ9nvYQ7ePCW5hpoyWcq9uUZ5g=w375",
+      displayName: "Heart Keystone",
+      balanceKey: "heartKeystone",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/GEIIy7aZsqJJq1dXOmbsZ7Q9Xvn0VmoYsSPiHhD6DNwcgbt-3zgdM3p6-0c2VsSxBRT0BsjpWRn4MgIruTP9GG8JC-8NYs9sJ0G58g=w600",
+      displayName: "Cloud Keystone",
+      balanceKey: "cloudKeystone",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/RvTiHpdv_vdyoXEF2rqoAuvA0sGLtfPWd2H9P86bFQ_rC6JkX3iV6MGUfwSRwyVSITyBjgljexUIymGD6fPe2K3clYQu2P70DfqB=w375",
+      displayName: "Flower Keystone",
+      balanceKey: "flowerKeystone",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/UhObo6BU2ytFvmJXex2oxsVyHkpQ1UaV4Us9VGnj3sbZ5rAnjO2e6n_QhYe5kHcDnFVAuj18LNFsavIqJTcEdvDqOXL-rJB2Mj-TCwc=w375",
+      displayName: "Candy Keystone",
+      balanceKey: "candyKeystone",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/Q44aOBZzBUqrcTa6M1Raa9LeuJXOGIKWbgB9MF-6rxSkjOWqqlZSKzwfg8htmpoxs_no_lzYhmGyzvErRKwjq-es3THEh3Gc1Creky4=w375",
+      displayName: "Crystal Keystone",
+      balanceKey: "crystalKeystone",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/9jtNiahHNKloIcn5aRBFv4Q1qPtHauUkKwkMsVvFMq0XIEru1C8xbwdRPbuxSNTmtKcMi0fSLYEacxAqW53p6gq-VCGJPjwYz_6v=w375",
+      displayName: "Moon Keystone",
+      balanceKey: "moonKeystone",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/17Eb4guXQa2i0EmAT16GveeVOGTL2LkG_13-ijW2_6BQFDUx831JCbhhOvG4qqLNQ4r45V9oQvh0hCZb5lAeh1V6f8XD3K-5z1HpzA=w600",
+      displayName: "Rainbow Keystone",
+      balanceKey: "rainbowKeystone",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/uHpjLswSIBh9XjD9hCv0Q3awIj1UeBgkxUk9qrsbXgYI8Etqtyb1R64vERF1Z72PdexC_3wcYcdZkwIldOY-Blp-DhJw7CQn5kkBRg=w375",
+      displayName: "Omnom Keystone",
+      balanceKey: "omnomKeystone",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/yk3SiRkQVWUH9qYH_opVbgyHJMYcyCYAkEk6ua4VUWIIJqsjp3_hlDVGJdE4W4yUFkOMtfQPAnAzO2bbX1--v0H-d6qSA--USWivDw=w600",
+      displayName: "Star Keystone",
+      balanceKey: "starKeystone",
+    },
+  ];
+
+  const badges = [
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/pfMV2nrG3KedIn6r5YP1ftLSLGYUP8ErlqX02Xgk3ixT6Ulz9Z6H2iDW2Yv3LK5N2d9IgXryYIlFboGx-ZhiahFivLPg4WrbBMa--So=w600",
+      displayName: "Shadowcorn Act 1 - Tier 1",
+      balanceKey: "shadowcornTierOne",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/GvSQBvbOHd5lQsTTujmTCdyxOQLCGpVPrJDehIn4HeedDEGdlH6LUZFSKd3qdIwMP1vOXizG7nsPp9yn_FZWHCCzor2o-6j-5OkiuQ=w375",
+      displayName: "Shadowcorn Act 1 - Tier 2",
+      balanceKey: "shadowcornTierTwo",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/Pch-UckkLH_E-VaU09FnLfRUuZW_c-16UJSCHM3p2NolvUAluXOgNjBV6PUSsIwFah92DFdxeeJr3gsRuzBlVCqoQ3ujwelG8bIGLyM=w600",
+      displayName: "Shadowcorn Act 1 - Tier 3",
+      balanceKey: "shadowcornTierThree",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/Xm2M-ZtW7Jp9C9kt07s3C-a6mORmKCMgnIAoz7t1Xtw2uFZ6H26wWFKd6tPR0Y_DZmoOYxTcsukXcjA3YBQiulVZBFPRM0IijDc7=w375",
+      displayName: "Nursery Under Construction - Tier 1 Badge",
+      balanceKey: "nurseryTierOne",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/nk1mbOkCnZVY42cSd6hAJWJYiW5yVEkMbIw0ByWe6XBnblzXbkWHDKg0U13RRgInxoykN0ix4T6BEc2WrPdtB2E2l0gsXzwFJuNcRR0=w375",
+      displayName: "Nursery Under Construction - Tier 2 Badge",
+      balanceKey: "nurseryTierTwo",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/KWxFz8b_RlbVtaev3n6sipKulDuJYbfLWNOw8wV5X_Y3I5zZNmBlRoLsF9dl-ccIWwU2r74b_qZ23mNlxN6B_43uPApYwhaSKmTb=w375",
+      displayName: "Nursery Under Construction - Tier 3 Badge",
+      balanceKey: "nurseryTierThree",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/-Cjwhfs4-vE9jHIrv5AVgG0SMorO9MIc6Z5fx-tKQyqRVv8QwK77C-el1KWYh3kQj99QtUjKskpR8Jhot7WVTqWEkBYplQF9u0iqxg=w600",
+      displayName: "'I Survived Launch!' Badge",
+      balanceKey: "iSurvivedLaunch",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/WrcfIghbGrProNTcyDWVxWR5zxsll4RkKC59L92oDQbCCQAFI53p3FAv8mIWfeI_EfysP3AbH5AfpsC8cVwraKgGTZpFjO71Ixua=w600",
+      displayName: "Founders Badge",
+      balanceKey: "founders",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/quOMOAl721b5HX22B9pKedNlHDEOnLSt1NxmRu_Ci1rP11o2HV4pfV8d5CjgWmuxpnoMsA4uSrJDJu3Ou84kEniGWtpII37MLoyE=w600",
+      displayName: "Community Council Badge",
+      balanceKey: "communityCouncil",
+    },
+  ];
+
+  const miscItems = [
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/39jijzFGBIgkcJU4R6VQGR9b4dC4kQ0keiiBDzgqc10EVg7ajJvXdui0CN4BRHKG33r9NxB_yw9G2VWCg61OS7ESjtKQviY7qT-1Cg=w375",
+      displayName: "Golden Ticket",
+      balanceKey: "goldenTicket",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/nbELHPCpbpdYS1SfcACqWXnr6_7xaRrdvkYfOeDyzECfW9tBHSUCgR-BC1bYbBj7SsL8AQHhb0QUWl99lXAhco9pj12w_rGKDRZJHA=w375",
+      displayName: "Common Shadowcorn Egg",
+      balanceKey: "commonShadowcornEgg",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/qjThimKLJZy6cpRa4gZ61jDK06L7G25Ln-BYDYoucz7QZ9xXNjNtjVxAolnD8p878RLcsHrUPwMHoCLAsNr8kq4grAiecw3lr9Il=w600",
+      displayName: "Rare Shadowcorn Egg",
+      balanceKey: "rareShadowcornEgg",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/GRPpWNUybBn_7CiE2knI2OdBwQUvwQe_jq-MUE-KFBksglI01MqbOpwKoj2m_rS7gD3ywEN3yE21H8e5-av-jX-5gXtzxSufWIdSMw=w375",
+      displayName: "Mythic Shadowcorn Egg",
+      balanceKey: "mythicShadowcornEgg",
+    },
+  ];
+
   const handleSubmit = () => {};
 
   const handleKeypress = (e: any) => {
@@ -481,6 +964,26 @@ const CryptoUnicorns = () => {
     if (e.charCode === 13) {
       handleSubmit();
     }
+  };
+
+  const displayCardList = (list: any) => {
+    const html = (
+      <>
+        {list.map((item: any, idx: any) => {
+          return (
+            <LootboxCard
+              key={idx}
+              imageUrl={item["imageUrl"]}
+              displayName={item["displayName"]}
+              lootboxBalance={
+                lootboxBalances[item["balanceKey"] as terminusType]
+              }
+            />
+          );
+        })}
+      </>
+    );
+    return html;
   };
 
   if (
@@ -761,7 +1264,6 @@ const CryptoUnicorns = () => {
                   </Flex>
                 </InputGroup>
               </Box>
-              {/* </Box> */}
             </Stack>
           </code>
         </Center>
@@ -788,49 +1290,69 @@ const CryptoUnicorns = () => {
             Inventory
           </Text>
         </Flex>
-        <Grid templateColumns="repeat(3, 1fr)" gap={6} mb={12} pb={10}>
-          <GridItem>
-            <LootboxCard
-              imageUrl="https://lh3.googleusercontent.com/0H9500IgQKZqKstSo-nruV9RMV9aw7oPtgLARWtbIBU6brTaaK2F0Lk3t7xLygvk80r6OlsBOjnqIhr3EFzEMdwUZlIXTuuEa-O3uQ=w600"
-              lootboxType="Common"
-              lootboxBalance={lootboxBalances["commonLootbox"]}
-            />
-          </GridItem>
-          <GridItem>
-            <LootboxCard
-              imageUrl="https://lh3.googleusercontent.com/1RFVPV0nYzXG0FYea6BQacjsJlbutQSib258tWnovbsIiNhUyOo_BO_AfANN6aSppzvS7ZLpgNcppXuhLOHT2wQAxqAx-Da5bVLnsw=w600"
-              lootboxType="Rare"
-              lootboxBalance={lootboxBalances["rareLootbox"]}
-            />
-          </GridItem>
-          <GridItem>
-            <LootboxCard
-              imageUrl="https://lh3.googleusercontent.com/2bv26HfU7CgDJhVocABtxbdMLQ8qH2kuU5mQJWVehuNzX-4GiOBm2iIxsTtdriHYpsmr94R7xfRhgELCmnJKQpcMA4wMoPlM_V4zaQ=w600"
-              lootboxType="Mythic"
-              lootboxBalance={lootboxBalances["mythicLootbox"]}
-            />
-          </GridItem>
-          <GridItem>
-            <LootboxCard
-              imageUrl="https://lh3.googleusercontent.com/2AVqj_GOKf358s0Fkw66MHxEcivOWfvRjAMdmqhHgh3RwyWyJNbnn_amPUJt4KDeO6H7IdWKSV1tli5ijkgHHAemxYGuTof5WZo3wA=w600"
-              lootboxType="Land"
-              lootboxBalance={lootboxBalances["landLootbox"]}
-            />
-          </GridItem>
-          <GridItem>
-            <LootboxCard
-              imageUrl="https://lh3.googleusercontent.com/30YXRt8oPvD0J9KuRiUTLrRxrigwvbs8P5uFIkJt65hmlVAerYAsxZgPHjvA-byTXseTKJQsnpbuD7giChaO4TyoFm7pcqza8NrZ=w600"
-              lootboxType="Mystery"
-              lootboxBalance={lootboxBalances["mysteryLootbox"]}
-            />
-          </GridItem>
-          <GridItem>
-            <LootboxCard
-              imageUrl="https://lh3.googleusercontent.com/u_BYIeFDCF4dC4n_Col8e1W_dNTK84uMfR6mhjLhQj7GuObvBeENqSu7L8nzDFJ9JDdpiezHpRP0PJ8ioPxOakvU3iz5lbhJy1abRWM=w600"
-              lootboxType="RMP"
-              lootboxBalance={lootboxBalances["RMPLootbox"]}
-            />
-          </GridItem>
+        <Flex pb={10} flexDirection="row">
+          <Button
+            size='sm'
+            height='24px'
+            width='120px'
+            border='1px'
+            borderColor='#B6B6B6'
+            bgColor="transparent"
+            borderRadius="20px"
+            onClick={() => {
+              setDisplayType(0);
+            }}
+          >
+            Lootboxes
+          </Button>
+          <Button
+            size='sm'
+            height='24px'
+            width='120px'
+            border='1px'
+            borderColor='#B6B6B6'
+            bgColor="transparent"
+            borderRadius="20px"
+            onClick={() => {
+              setDisplayType(1);
+            }}
+          >
+            Keystones
+          </Button>
+          <Button
+            size='sm'
+            height='24px'
+            width='120px'
+            border='1px'
+            borderColor='#B6B6B6'
+            bgColor="transparent"
+            borderRadius="20px"
+            onClick={() => {
+              setDisplayType(2);
+            }}
+          >
+            Badges
+          </Button>
+          <Button
+            size='sm'
+            height='24px'
+            width='120px'
+            border='1px'
+            borderColor='#B6B6B6'
+            bgColor="transparent"
+            borderRadius="20px"
+            onClick={() => {
+              setDisplayType(3);
+            }}
+          >
+            Miscellaneous
+          </Button>
+        </Flex>
+        <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} pb={10}>
+          {displayType == 0 && displayCardList(lootboxes)}
+          {displayType == 1 && displayCardList(keystones)}
+          {displayType == 2 && displayCardList(badges)}
+          {displayType == 3 && displayCardList(miscItems)}
         </Grid>
       </Flex>
     </Flex>
