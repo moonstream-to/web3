@@ -580,6 +580,8 @@ const CryptoUnicorns = () => {
         }
       });
 
+      let currentBalances = { ...defaultLootboxBalances };
+
       try {
         // const multicall = new web3ctx.web3.eth.Contract(
         //   MulticallABI
@@ -595,16 +597,16 @@ const CryptoUnicorns = () => {
         const balances = await terminusFacet.methods
           .balanceOfBatch(accounts, poolIds)
           .call();
-        let currentBalances = { ...defaultLootboxBalances };
         balances.forEach((balance, lootboxIndex) => {
           currentBalances[terminusTypes[lootboxIndex]] = parseInt(balance, 10);
         });
-        setLootboxBalances(currentBalances);
       } catch (e) {
         console.error(
           `Crypto Unicorns player portal: Could not retrieve lootbox balances for the given user: ${currentUserAddress}. Lootbox pool IDs: ${poolIds}. Terminus contract address: ${terminusAddress}.`
         );
       }
+
+      setLootboxBalances(currentBalances);
     },
     {
       ...hookCommon,
