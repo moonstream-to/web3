@@ -25,6 +25,9 @@ const StashABI = require("../../games/cu/StashABI.json");
 import { StashABI as StashABIType } from "../../games/cu/StashABI";
 const GameBankABI = require("../../games/cu/GameBankABI.json");
 import { GameBankABI as GameBankABIType } from "../../games/cu/GameBankABI";
+const ERC721MetadataABI = require("../../../../abi/MockERC721.json");
+import { MockERC721 } from "../../../../types/contracts/MockERC721";
+
 // const MulticallABI = require("../../games/cu/Multicall2.json");
 // import { Multicall2 } from "../../games/cu/Multicall2";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
@@ -77,6 +80,20 @@ const MulticallAddresses: { [key in supportedChains]: string } = {
   localhost: "0x0000000000000000000000000000000000000000",
 };
 
+const UnicornsAddresses : { [key in supportedChains]: string} = {
+  mumbai: "0x39858b1A4e48CfFB1019F0A15ff54899213B3f8b",
+  polygon: "0xdC0479CC5BbA033B3e7De9F178607150B3AbCe1f",
+  ethereum: "0x0000000000000000000000000000000000000000",
+  localhost: "0x0000000000000000000000000000000000000000",
+};
+
+const LandsAddresses: { [key in supportedChains]: string} = {
+  mumbai: "0x230E4e85d4549343A460F5dE0a7035130F62d74C",
+  polygon: "0xA2a13cE1824F3916fC84C65e559391fc6674e6e8",
+  ethereum: "0x0000000000000000000000000000000000000000",
+  localhost: "0x0000000000000000000000000000000000000000",
+};
+
 //keystonePoolIdByLandType
 // Land type: 1, 62       // mythic
 // Land type: 2, 59       // light
@@ -124,7 +141,10 @@ type terminusType =
   | "nurseryTierThree"
   | "iSurvivedLaunch"
   | "founders"
-  | "communityCouncil";
+  | "communityCouncil"
+  | "summerOfLoveTier1"
+  | "summerOfLoveTier2"
+  | "summerOfLoveTier3";
 
 interface LootboxInfo {
   poolIdByChain: {
@@ -166,6 +186,9 @@ const terminusTypes: terminusType[] = [
   "iSurvivedLaunch",
   "founders",
   "communityCouncil",
+  "summerOfLoveTier1",
+  "summerOfLoveTier2",
+  "summerOfLoveTier3",
 ];
 
 const terminusInfo: { [key in terminusType]: LootboxInfo } = {
@@ -425,6 +448,30 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
       localhost: -1,
     },
   },
+  summerOfLoveTier1: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 67,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  summerOfLoveTier2: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 68,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  summerOfLoveTier3: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 69,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
 };
 
 const defaultLootboxBalances: { [key in terminusType]: number } = {
@@ -460,6 +507,9 @@ const defaultLootboxBalances: { [key in terminusType]: number } = {
   iSurvivedLaunch: 0,
   founders: 0,
   communityCouncil: 0,
+  summerOfLoveTier1: 0,
+  summerOfLoveTier2: 0,
+  summerOfLoveTier3: 0,
 };
 
 const CryptoUnicorns = () => {
@@ -477,12 +527,18 @@ const CryptoUnicorns = () => {
   const [UNIMAddress, setUNIMAddress] = React.useState("");
   const [RBWAddress, setRBWAddress] = React.useState("");
   const [gameBankAddress, setGameBankAddress] = React.useState("");
+  const [unicornsAddress, setUnicornsAddress] = React.useState("");
+  const [landsAddress, setLandsAddress] = React.useState("");
 
   const [UNIMBalance, setUNIMBalance] = React.useState("0");
   const [RBWBalance, setRBWBalance] = React.useState("0");
   const [lootboxBalances, setLootboxBalances] = React.useState({
     ...defaultLootboxBalances,
   });
+
+  const [unicorns, setUnicorns] = React.useState([]);
+  const [lands, setLands] = React.useState([]);
+
   const [displayType, setDisplayType] = React.useState(0);
 
   // const router = useRouter();
@@ -501,14 +557,35 @@ const CryptoUnicorns = () => {
       setUNIMAddress("");
       setRBWAddress("");
       setGameBankAddress("");
+      setUnicornsAddress("");
     } else {
       setTerminusAddress(TerminusAddresses[chain as supportedChains]);
       setMulticallAddress(MulticallAddresses[chain as supportedChains]);
       setUNIMAddress(UNIMAddresses[chain as supportedChains]);
       setRBWAddress(RBWAddresses[chain as supportedChains]);
       setGameBankAddress(GameBankAddresses[chain as supportedChains]);
+      setUnicornsAddress(UnicornsAddresses[chain as supportedChains]);
     }
   }, [web3ctx.chainId]);
+
+
+  const fetchUnicorns = useQuery(
+    [],
+    async () => {
+      const contract = new web3ctx.web3.eth.Contract(
+        ERC721MetadataABI
+      ) as unknown as MockERC721;
+      
+    },
+    {
+      ...hookCommon,
+      enabled: false,
+    }
+  )
+
+  useEffect(() => {
+    gameBankConfig.refetch();
+  }, [fetchUnicorns, web3ctx]);
 
   const gameBankConfig = useQuery(
     [],
@@ -539,6 +616,8 @@ const CryptoUnicorns = () => {
       const terminusAddress = await gameBankContract.methods
         .getTerminusTokenAddress()
         .call();
+      setRBWAddress(rbwAddress);
+      setUNIMAddress(unimAddress);
       return { rbwAddress, unimAddress, gameServer, terminusAddress };
     },
     {
@@ -583,17 +662,7 @@ const CryptoUnicorns = () => {
       let currentBalances = { ...defaultLootboxBalances };
 
       try {
-        // const multicall = new web3ctx.web3.eth.Contract(
-        //   MulticallABI
-        // ) as any as Multicall2;
 
-        // multicall.options.address = multicallAddress;
-        // const testRespone = await multicall.methods.tryAggregate(
-        //   false,
-        //   [[terminusFacet.options.address, terminusFacet.methods.balanceOf(String(currentUserAddress), 55).encodeABI()]]
-        // );
-
-        // console.log(testRespone);
         const balances = await terminusFacet.methods
           .balanceOfBatch(accounts, poolIds)
           .call();
@@ -619,7 +688,7 @@ const CryptoUnicorns = () => {
   }, [terminusBalances, web3ctx]);
 
   const rbw = useERC20({
-    contractAddress: gameBankConfig.data?.rbwAddress,
+    contractAddress: RBWAddress,
     ctx: web3ctx,
     spender:
       GameBankAddresses[
@@ -627,7 +696,7 @@ const CryptoUnicorns = () => {
       ],
   });
   const unim = useERC20({
-    contractAddress: gameBankConfig.data?.unimAddress,
+    contractAddress: UNIMAddress,
     spender:
       GameBankAddresses[
         web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
@@ -899,19 +968,19 @@ const CryptoUnicorns = () => {
     {
       imageUrl:
         "https://lh3.googleusercontent.com/Xm2M-ZtW7Jp9C9kt07s3C-a6mORmKCMgnIAoz7t1Xtw2uFZ6H26wWFKd6tPR0Y_DZmoOYxTcsukXcjA3YBQiulVZBFPRM0IijDc7=w375",
-      displayName: "Nursery Under Construction - Tier 1 Badge",
+      displayName: "Nursery Under Construction - Tier 1",
       balanceKey: "nurseryTierOne",
     },
     {
       imageUrl:
         "https://lh3.googleusercontent.com/nk1mbOkCnZVY42cSd6hAJWJYiW5yVEkMbIw0ByWe6XBnblzXbkWHDKg0U13RRgInxoykN0ix4T6BEc2WrPdtB2E2l0gsXzwFJuNcRR0=w375",
-      displayName: "Nursery Under Construction - Tier 2 Badge",
+      displayName: "Nursery Under Construction - Tier 2",
       balanceKey: "nurseryTierTwo",
     },
     {
       imageUrl:
         "https://lh3.googleusercontent.com/KWxFz8b_RlbVtaev3n6sipKulDuJYbfLWNOw8wV5X_Y3I5zZNmBlRoLsF9dl-ccIWwU2r74b_qZ23mNlxN6B_43uPApYwhaSKmTb=w375",
-      displayName: "Nursery Under Construction - Tier 3 Badge",
+      displayName: "Nursery Under Construction - Tier 3",
       balanceKey: "nurseryTierThree",
     },
     {
@@ -929,8 +998,26 @@ const CryptoUnicorns = () => {
     {
       imageUrl:
         "https://lh3.googleusercontent.com/quOMOAl721b5HX22B9pKedNlHDEOnLSt1NxmRu_Ci1rP11o2HV4pfV8d5CjgWmuxpnoMsA4uSrJDJu3Ou84kEniGWtpII37MLoyE=w600",
-      displayName: "Community Council Badge",
+      displayName: "Community Council",
       balanceKey: "communityCouncil",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/0fOpwZbJiOxwvnUOrNS6ciJMyFntzKQEO1kkIP4dffRCfeK5YL43lhkVsWw0oWuqHmj5sIEh7G1gasr1mqojKHXk7nBiyy5Xkoc2cw=w375",
+      displayName: "Summer of Love - Tier 1",
+      balanceKey: "summerOfLoveTier1",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/PLpBtNs66mUiOwJZ4KApyVEEGl_Txjy5Ouh4tCo9oqOi_1lq9UOfIkgqO2cRl6uSmaYEtMNee_tP8Ul4PXl_lIKEIlobZmPcXkKG=w600",
+      displayName: "Summer of Love - Tier 2",
+      balanceKey: "summerOfLoveTier2",
+    },
+    {
+      imageUrl:
+        "https://lh3.googleusercontent.com/2rTZEJzrLDY38MVgmSShmYeia1I4EqD2-EyHcyzHwkkT-EwMntAjxA44w93N3CL4lzXlckWLM4m6TfpwlIISsPdBWyJRuJSrT5Pwgg=w600",
+      displayName: "Summer of Love - Tier 3",
+      balanceKey: "summerOfLoveTier3",
     },
   ];
 
@@ -1274,7 +1361,6 @@ const CryptoUnicorns = () => {
         <Flex
           w="100%"
           direction={"row"}
-          flexWrap="wrap"
           mt={10}
           mb={12}
           bgColor="pink.500"
@@ -1282,17 +1368,114 @@ const CryptoUnicorns = () => {
           boxShadow="xl"
           placeItems={"center"}
         >
-          <Text
-            mx={2}
-            mt={2}
-            py={2}
-            pl={4}
-            display={"inline-block"}
-            fontSize="3xl"
-            fontWeight="semibold"
+          <Badge
+            colorScheme={"pink"}
+            variant={"solid"}
+            fontSize={"md"}
+            borderRadius={"md"}
+            mr={2}
+            p={1}
           >
-            Inventory
-          </Text>
+            <HStack>
+              <Image
+                ml={2}
+                alt={"bottle"}
+                h="24px"
+                src={assets["unicornMilk"]}
+              />
+              <Flex direction={"column"} wrap="nowrap">
+                <code>
+                  <Flex mx={2} display={"inline-block"} fontSize="md">
+                    {unim.spenderState.isLoading ? (
+                      <Spinner m={0} size={"lg"} />
+                    ) : (
+                      <Flex>
+                        {`balance: `} <Spacer />
+                        {unim.spenderState.data?.balance
+                          ? web3ctx.web3.utils.fromWei(
+                              unim.spenderState.data?.balance,
+                              "ether"
+                            )
+                          : "0"}
+                      </Flex>
+                    )}
+                  </Flex>
+                </code>
+              </Flex>
+            </HStack>
+          </Badge>
+          <Badge
+            colorScheme={"pink"}
+            variant={"solid"}
+            fontSize={"md"}
+            borderRadius={"md"}
+            mr={2}
+            p={1}
+          >
+            <Center my={2}>
+              <Image
+                ml={2}
+                alt={"rbw"}
+                h="24px"
+                src="https://www.cryptounicorns.fun/static/media/icon_RBW.522bf8ec43ae2c866ee6.png"
+              />
+              <Flex direction={"column"} wrap="nowrap">
+                <code>
+                  <Flex mx={2} mt={0} display={"inline-block"} fontSize="md">
+                    {rbw.spenderState.isLoading ? (
+                      <Spinner m={0} size={"lg"} />
+                    ) : (
+                      <Flex>
+                        {`RBW: `} <Spacer />
+                        {rbw.spenderState.data?.balance
+                          ? web3ctx.web3.utils.fromWei(
+                              rbw.spenderState.data?.balance,
+                              "ether"
+                            )
+                          : "0"}
+                      </Flex>
+                    )}
+                  </Flex>
+                </code>
+              </Flex>
+            </Center>
+          </Badge>
+          <Spacer/>
+          <Center>
+            <Button
+              mx={4}
+              // isDisabled={
+              //   (!needAllowanceUNIM || unimToStash === "") &&
+              //   (notEnoughUNIM || unimToStash == "")
+              // }
+              size="sm"
+              isLoading={
+                unim.setSpenderAllowance.isLoading ||
+                stashUnim.isLoading
+              }
+              w="120px"
+              bgColor="white"
+              textColor="pink.500"
+              onClick={() => {
+                if (needAllowanceUNIM) {
+                  unim.setSpenderAllowance.mutate(MAX_INT, {
+                    onSettled: () => {
+                      unim.spenderState.refetch();
+                    },
+                  });
+                } else {
+                  stashUnim.mutate(unimToStash, {
+                    onSettled: () => {
+                      unim.spenderState.refetch();
+                      setUNIMToStash("");
+                    },
+                  });
+                }
+              }}
+            >
+              {needAllowanceUNIM ? "Set allowance" : "Stash!"}
+            </Button>
+          </Center>
         </Flex>
         <Flex pb={10} flexDirection="row">
           <Button
@@ -1351,7 +1534,7 @@ const CryptoUnicorns = () => {
           >
             Miscellaneous
           </Button>
-          {/* <Button
+          <Button
             size='sm'
             height='24px'
             width='200px'
@@ -1366,7 +1549,7 @@ const CryptoUnicorns = () => {
             }}
           >
             Toggle Test Address
-          </Button> */}
+          </Button>
         </Flex>
         <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} pb={10}>
           {displayType == 0 && displayCardList(lootboxes)}
