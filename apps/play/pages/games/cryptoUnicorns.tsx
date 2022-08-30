@@ -80,14 +80,14 @@ const MulticallAddresses: { [key in supportedChains]: string } = {
   localhost: "0x0000000000000000000000000000000000000000",
 };
 
-const UnicornsAddresses : { [key in supportedChains]: string} = {
+const UnicornsAddresses: { [key in supportedChains]: string } = {
   mumbai: "0x39858b1A4e48CfFB1019F0A15ff54899213B3f8b",
   polygon: "0xdC0479CC5BbA033B3e7De9F178607150B3AbCe1f",
   ethereum: "0x0000000000000000000000000000000000000000",
   localhost: "0x0000000000000000000000000000000000000000",
 };
 
-const LandsAddresses: { [key in supportedChains]: string} = {
+const LandsAddresses: { [key in supportedChains]: string } = {
   mumbai: "0x230E4e85d4549343A460F5dE0a7035130F62d74C",
   polygon: "0xA2a13cE1824F3916fC84C65e559391fc6674e6e8",
   ethereum: "0x0000000000000000000000000000000000000000",
@@ -512,6 +512,21 @@ const defaultLootboxBalances: { [key in terminusType]: number } = {
   summerOfLoveTier3: 0,
 };
 
+interface NFTMetadata {
+  image: string;
+}
+
+// TODO(kellan): Add "locked" key. Reading this data will require us to extend the ERC721Metadata ABI to include:
+// 1. getUnicornMetadata for the Unicorns contract
+// 2. getLandMetadata for the Lands contract
+// 3. We need to check if Shadowcorns support game lock in their metadata
+interface NFTInfo {
+  tokenID: string;
+  tokenURI: string;
+  imageURI: string;
+  metadata: NFTMetadata;
+}
+
 const CryptoUnicorns = () => {
   const [currentAccount, setCurrentAccount] = React.useState(
     "0x0000000000000000000000000000000000000000"
@@ -536,8 +551,8 @@ const CryptoUnicorns = () => {
     ...defaultLootboxBalances,
   });
 
-  const [unicorns, setUnicorns] = React.useState([]);
-  const [lands, setLands] = React.useState([]);
+  const [unicorns, setUnicorns] = React.useState<NFTInfo[]>([]);
+  const [lands, setLands] = React.useState<NFTInfo[]>([]);
 
   const [displayType, setDisplayType] = React.useState(0);
 
@@ -567,25 +582,6 @@ const CryptoUnicorns = () => {
       setUnicornsAddress(UnicornsAddresses[chain as supportedChains]);
     }
   }, [web3ctx.chainId]);
-
-
-  const fetchUnicorns = useQuery(
-    [],
-    async () => {
-      const contract = new web3ctx.web3.eth.Contract(
-        ERC721MetadataABI
-      ) as unknown as MockERC721;
-      
-    },
-    {
-      ...hookCommon,
-      enabled: false,
-    }
-  )
-
-  useEffect(() => {
-    gameBankConfig.refetch();
-  }, [fetchUnicorns, web3ctx]);
 
   const gameBankConfig = useQuery(
     [],
@@ -622,21 +618,14 @@ const CryptoUnicorns = () => {
     },
     {
       ...hookCommon,
-      enabled: false,
     }
   );
-
-  useEffect(() => {
-    gameBankConfig.refetch();
-  }, [gameBankConfig, web3ctx]);
 
   const terminusBalances = useQuery(
     ["cuTerminus", web3ctx.chainId, terminusAddress, currentAccount],
     async ({ queryKey }) => {
       const currentChain = chainByChainId[queryKey[1] as number];
       const currentUserAddress = queryKey[3];
-      // console.log(currentChain);
-      // console.log(currentUserAddress);
       if (!currentChain) {
         return;
       }
@@ -662,7 +651,6 @@ const CryptoUnicorns = () => {
       let currentBalances = { ...defaultLootboxBalances };
 
       try {
-
         const balances = await terminusFacet.methods
           .balanceOfBatch(accounts, poolIds)
           .call();
@@ -679,13 +667,87 @@ const CryptoUnicorns = () => {
     },
     {
       ...hookCommon,
-      enabled: false,
     }
   );
 
-  useEffect(() => {
-    terminusBalances.refetch();
-  }, [terminusBalances, web3ctx]);
+  const fetchUnicorns = useQuery(
+    ["cuUnicorns", web3ctx.chainId, unicornsAddress, currentAccount],
+    async ({ queryKey }) => {
+      const currentChain = chainByChainId[queryKey[1] as number];
+      const currentUserAddress = String(queryKey[3]);
+
+      if (!currentChain) {
+        return;
+      }
+      const unicornsContract = new web3ctx.web3.eth.Contract(
+        ERC721MetadataABI
+      ) as unknown as MockERC721;
+      unicornsContract.options.address = String(queryKey[2]);
+      const prefix = `Retrieving unicorn inventory for: chain=${currentChain}, user=${currentUserAddress}, contract=${unicornsContract.options.address} --`;
+
+      let unicornsInventory: NFTInfo[] = [];
+
+      try {
+        const numUnicornsRaw: string = await unicornsContract.methods
+          .balanceOf(currentUserAddress)
+          .call();
+
+        let numUnicorns: number = 0;
+        try {
+          numUnicorns = parseInt(numUnicornsRaw, 10);
+        } catch (e) {
+          console.error(
+            `Error: Could not parse number of owned unicorns as an integer: ${numUnicornsRaw}`
+          );
+        }
+
+        console.log(`${prefix} numUnicorns=${numUnicorns}`);
+
+        let tokenIDPromises = [];
+        for (let i = 0; i < numUnicorns; i++) {
+          tokenIDPromises.push(
+            unicornsContract.methods
+              .tokenOfOwnerByIndex(currentUserAddress, i)
+              .call()
+          );
+        }
+        const tokenIDs = await Promise.all(tokenIDPromises);
+
+        const tokenURIPromises = tokenIDs.map((tokenID) =>
+          unicornsContract.methods.tokenURI(tokenID).call()
+        );
+        const tokenURIs = await Promise.all(tokenURIPromises);
+
+        const tokenMetadataPromises = tokenURIs.map((tokenURI) =>
+          fetch(tokenURI).then((response) => response.json())
+        );
+        const tokenMetadata = await Promise.all(tokenMetadataPromises);
+
+        const imageURIs = tokenMetadata.map((metadata) => metadata.image);
+
+        tokenIDs.forEach((tokenID, index) => {
+          unicornsInventory.push({
+            tokenID,
+            tokenURI: tokenURIs[index],
+            imageURI: imageURIs[index],
+            metadata: tokenMetadata[index],
+          });
+        });
+
+        console.log(`${prefix} Inventory: ${JSON.stringify(unicornsInventory, null, 4)}`)
+      } catch(e) {
+        console.error(
+          "Error: There was an issue retrieving information about user's unicorns:"
+        );
+        console.error(e);
+      }
+
+      setUnicorns(unicornsInventory);
+    },
+    {
+      ...hookCommon,
+    }
+  );
 
   const rbw = useERC20({
     contractAddress: RBWAddress,
@@ -1440,7 +1502,7 @@ const CryptoUnicorns = () => {
               </Flex>
             </Center>
           </Badge>
-          <Spacer/>
+          <Spacer />
           <Center>
             <Button
               mx={4}
@@ -1450,8 +1512,7 @@ const CryptoUnicorns = () => {
               // }
               size="sm"
               isLoading={
-                unim.setSpenderAllowance.isLoading ||
-                stashUnim.isLoading
+                unim.setSpenderAllowance.isLoading || stashUnim.isLoading
               }
               w="120px"
               bgColor="white"
@@ -1479,11 +1540,11 @@ const CryptoUnicorns = () => {
         </Flex>
         <Flex pb={10} flexDirection="row">
           <Button
-            size='sm'
-            height='24px'
-            width='120px'
-            border='1px'
-            borderColor='#B6B6B6'
+            size="sm"
+            height="24px"
+            width="120px"
+            border="1px"
+            borderColor="#B6B6B6"
             bgColor="transparent"
             borderRadius="20px"
             onClick={() => {
@@ -1493,11 +1554,11 @@ const CryptoUnicorns = () => {
             Lootboxes
           </Button>
           <Button
-            size='sm'
-            height='24px'
-            width='120px'
-            border='1px'
-            borderColor='#B6B6B6'
+            size="sm"
+            height="24px"
+            width="120px"
+            border="1px"
+            borderColor="#B6B6B6"
             bgColor="transparent"
             borderRadius="20px"
             onClick={() => {
@@ -1507,11 +1568,11 @@ const CryptoUnicorns = () => {
             Keystones
           </Button>
           <Button
-            size='sm'
-            height='24px'
-            width='120px'
-            border='1px'
-            borderColor='#B6B6B6'
+            size="sm"
+            height="24px"
+            width="120px"
+            border="1px"
+            borderColor="#B6B6B6"
             bgColor="transparent"
             borderRadius="20px"
             onClick={() => {
@@ -1521,11 +1582,11 @@ const CryptoUnicorns = () => {
             Badges
           </Button>
           <Button
-            size='sm'
-            height='24px'
-            width='120px'
-            border='1px'
-            borderColor='#B6B6B6'
+            size="sm"
+            height="24px"
+            width="120px"
+            border="1px"
+            borderColor="#B6B6B6"
             bgColor="transparent"
             borderRadius="20px"
             onClick={() => {
@@ -1535,11 +1596,11 @@ const CryptoUnicorns = () => {
             Miscellaneous
           </Button>
           <Button
-            size='sm'
-            height='24px'
-            width='200px'
-            border='1px'
-            borderColor='#B6B6B6'
+            size="sm"
+            height="24px"
+            width="200px"
+            border="1px"
+            borderColor="#B6B6B6"
             bgColor="transparent"
             borderRadius="20px"
             justifySelf="flex-end"
