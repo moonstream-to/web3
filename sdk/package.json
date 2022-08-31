@@ -1,5 +1,5 @@
 {
-  "name": "enginesdk",
+  "name": "@moonsteam/engine",
   "version": "0.0.1",
   "description": "SDK for moonstream engine",
   "main": "index.js",
