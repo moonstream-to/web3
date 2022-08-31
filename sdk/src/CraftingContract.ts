@@ -18,15 +18,6 @@ import {
     CraftingOutput,
 } from "./types/CraftingItems"
 
-function enumFromNumberValue<T>(
-    enm: { [s: number]: T },
-    value: number
-): T | undefined {
-    return (Object.values(enm) as unknown as number[]).includes(value)
-        ? (value as unknown as T)
-        : undefined
-}
-
 export class CraftingContract {
     public contract: CraftingFacet
     public signer?: ethers.Signer = undefined
@@ -50,10 +41,6 @@ export class CraftingContract {
                 let action =
                     el.tokenAction.toNumber() as unknown as CraftingInputActions
                 if (el.tokenType.toString() === "20") {
-                    // let action = CraftingInputActions[
-                    //     el.tokenAction.toNumber()
-                    // ] as keyof typeof CraftingInputActions;
-
                     return {
                         action: action,
                         item: {
