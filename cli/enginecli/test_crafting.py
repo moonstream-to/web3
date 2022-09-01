@@ -105,7 +105,7 @@ class CraftingTestCase(unittest.TestCase):
             cls.auth_terminus_contract.address, 1, {"from": accounts[0]}
         )
 
-    def _create_recipe(self, recipe: Recipe, from_account) -> int:
+    def _create_recipe(self, recipe: Recipe, from_account=None) -> int:
         if from_account is None:
             # Python doesn't allow me to set account[0]
             # as default value
