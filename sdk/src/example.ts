@@ -5,9 +5,8 @@ import {
     CraftingItem,
     CraftingInputActions,
     CraftingOutputActions,
-} from "./types/CraftingTypes"
-
-import { CraftingContract } from "./CraftingContract"
+    CraftingContract,
+} from "./index"
 
 async function main() {
     let rpcUrl = process.env.RPC_URL
