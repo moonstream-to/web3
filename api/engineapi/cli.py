@@ -11,7 +11,8 @@ from . import actions
 from . import db
 from . import signatures
 from . import data
-from . import  auth
+from . import auth
+
 # from .settings import BLOCKCHAINS_TO_BROWNIE_NETWORKS
 from .models import DropperClaim, DropperContract
 
