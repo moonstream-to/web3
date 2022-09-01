@@ -71,12 +71,12 @@ const RBWAddresses: { [key in supportedChains]: string } = {
   localhost: "0x0000000000000000000000000000000000000000",
 };
 
-const MulticallAddresses: { [key in supportedChains]: string } = {
-  mumbai: "0xe9939e7Ea7D7fb619Ac57f648Da7B1D425832631",
-  polygon: "0xc8E51042792d7405184DfCa245F2d27B94D013b6",
-  ethereum: "0x0000000000000000000000000000000000000000",
-  localhost: "0x0000000000000000000000000000000000000000",
-};
+// const MulticallAddresses: { [key in supportedChains]: string } = {
+//   mumbai: "0xe9939e7Ea7D7fb619Ac57f648Da7B1D425832631",
+//   polygon: "0xc8E51042792d7405184DfCa245F2d27B94D013b6",
+//   ethereum: "0x0000000000000000000000000000000000000000",
+//   localhost: "0x0000000000000000000000000000000000000000",
+// };
 
 const UnicornsAddresses: { [key in supportedChains]: string } = {
   mumbai: "0x39858b1A4e48CfFB1019F0A15ff54899213B3f8b",
@@ -562,6 +562,7 @@ const CryptoUnicorns = () => {
     }
   }, [web3ctx.account, spyMode]);
 
+  // Set contract addresses
   useEffect(() => {
     const chain: string | undefined = chainByChainId[web3ctx.chainId];
     if (!chain) {
@@ -579,7 +580,7 @@ const CryptoUnicorns = () => {
     }
   }, [web3ctx.chainId]);
 
-  const gameBankConfig = useQuery(
+  useQuery(
     [],
     async () => {
       if (!web3ctx.web3.currentProvider) {
@@ -617,7 +618,8 @@ const CryptoUnicorns = () => {
     }
   );
 
-  const terminusBalances = useQuery(
+  // Fetch terminus balances.
+  useQuery(
     ["cuTerminus", web3ctx.chainId, terminusAddress, currentAccount],
     async ({ queryKey }) => {
       const currentChain = chainByChainId[queryKey[1] as number];
@@ -671,7 +673,8 @@ const CryptoUnicorns = () => {
     }
   );
 
-  const fetchUnicorns = useQuery(
+  // Fetch unicorns.
+  useQuery(
     ["cuUnicorns", web3ctx.chainId, unicornsAddress, currentAccount],
     async ({ queryKey }) => {
       const currentChain = chainByChainId[queryKey[1] as number];
@@ -688,7 +691,6 @@ const CryptoUnicorns = () => {
         ERC721MetadataABI
       ) as unknown as MockERC721;
       unicornsContract.options.address = String(queryKey[2]);
-      const prefix = `Retrieving unicorn inventory for: chain=${currentChain}, user=${currentUserAddress}, contract=${unicornsContract.options.address} --`;
 
       let unicornsInventory: NFTInfo[] = [];
 
@@ -750,7 +752,8 @@ const CryptoUnicorns = () => {
     }
   );
 
-  const fetchLands = useQuery(
+  // Fetch lands.
+  useQuery(
     ["cuLands", web3ctx.chainId, landsAddress, currentAccount],
     async ({ queryKey }) => {
       const currentChain = chainByChainId[queryKey[1] as number];
@@ -767,7 +770,6 @@ const CryptoUnicorns = () => {
         ERC721MetadataABI
       ) as unknown as MockERC721;
       landsContract.options.address = String(queryKey[2]);
-      const prefix = `Retrieving lands inventory for: chain=${currentChain}, user=${currentUserAddress}, contract=${landsContract.options.address} --`;
 
       let landsInventory: NFTInfo[] = [];
 
@@ -1333,7 +1335,12 @@ const CryptoUnicorns = () => {
                   />
                   <Flex direction={"column"} wrap="nowrap" w="100%">
                     <code>
-                      <Flex mx={2} mt={2} display={"inline-block"} fontSize="xl">
+                      <Flex
+                        mx={2}
+                        mt={2}
+                        display={"inline-block"}
+                        fontSize="xl"
+                      >
                         {rbw.spenderState.isLoading ? (
                           <Spinner m={0} size={"lg"} />
                         ) : (
@@ -1367,9 +1374,9 @@ const CryptoUnicorns = () => {
               Unicorns.
             </Text>
             <Text mb={4}>
-              WARNING: Only use an account with which you have already logged into
-              the game. Otherwise, the game server will not respect your stash
-              operation.
+              WARNING: Only use an account with which you have already logged
+              into the game. Otherwise, the game server will not respect your
+              stash operation.
             </Text>
           </code>
           <Center>
@@ -1499,7 +1506,8 @@ const CryptoUnicorns = () => {
                         size="md"
                         variant="outline"
                         isLoading={
-                          rbw.setSpenderAllowance.isLoading || stashRBW.isLoading
+                          rbw.setSpenderAllowance.isLoading ||
+                          stashRBW.isLoading
                         }
                         w="220px"
                         colorScheme={"orange"}
