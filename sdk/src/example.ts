@@ -5,7 +5,7 @@ import {
     CraftingItem,
     CraftingInputActions,
     CraftingOutputActions,
-} from "./types/CraftingItems"
+} from "./types/CraftingTypes"
 
 import { CraftingContract } from "./CraftingContract"
 
