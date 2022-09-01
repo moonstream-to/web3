@@ -706,8 +706,6 @@ const CryptoUnicorns = () => {
           );
         }
 
-        console.log(`${prefix} numUnicorns=${numUnicorns}`);
-
         let tokenIDPromises = [];
         for (let i = 0; i < numUnicorns; i++) {
           tokenIDPromises.push(
@@ -738,10 +736,6 @@ const CryptoUnicorns = () => {
             metadata: tokenMetadata[index],
           });
         });
-
-        // console.log(
-        //   `${prefix} Inventory: ${JSON.stringify(unicornsInventory, null, 4)}`
-        // );
       } catch (e) {
         console.error(
           "Error: There was an issue retrieving information about user's unicorns:"
@@ -791,8 +785,6 @@ const CryptoUnicorns = () => {
           );
         }
 
-        console.log(`${prefix} numLands=${numLands}`);
-
         let tokenIDPromises = [];
         for (let i = 0; i < numLands; i++) {
           tokenIDPromises.push(
@@ -823,10 +815,6 @@ const CryptoUnicorns = () => {
             metadata: tokenMetadata[index],
           });
         });
-
-        // console.log(
-        //   `${prefix} Inventory: ${JSON.stringify(landsInventory, null, 4)}`
-        // );
       } catch (e) {
         console.error(
           "Error: There was an issue retrieving information about user's lands:"

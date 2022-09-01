@@ -12,7 +12,6 @@
     "generate_classes_cu": "typechain --target=web3-v1 --out-dir games/cu 'games/cu/*.json'"
   },
   "dependencies": {
-    "ethereum-multicall": "^2.14.1",
     "moonstream-components": "1.0.0"
   },
   "devDependencies": {
