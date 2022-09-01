@@ -22,7 +22,7 @@ import {
   Grid,
   GridItem,
 } from "@chakra-ui/react";
-import { CUIAutoComplete } from "chakra-ui-autocomplete";
+import { CloseIcon } from "@chakra-ui/icons";
 const StashABI = require("../../games/cu/StashABI.json");
 import { StashABI as StashABIType } from "../../games/cu/StashABI";
 const GameBankABI = require("../../games/cu/GameBankABI.json");
@@ -556,7 +556,7 @@ const CryptoUnicorns = () => {
   const [unicorns, setUnicorns] = React.useState<NFTInfo[]>([]);
   const [lands, setLands] = React.useState<NFTInfo[]>([]);
 
-  const inputField = React.useRef<HTMLInputElement>();
+  const inputField = React.useRef<HTMLInputElement | null>(null);
 
   const [spyMode, setSpyMode] = React.useState(false);
   const [displayType, setDisplayType] = React.useState(0);
@@ -1567,113 +1567,19 @@ const CryptoUnicorns = () => {
           fontSize={"lg"}
         >
           {spyMode ? "Spy Mode" : "Inventory"}
-          {/* <Badge
-            colorScheme={"pink"}
-            variant={"solid"}
-            fontSize={"md"}
-            borderRadius={"md"}
-            mr={2}
-            p={1}
-          >
-            <HStack>
-              <Image
-                ml={2}
-                alt={"bottle"}
-                h="24px"
-                src={assets["unicornMilk"]}
-              />
-              <Flex direction={"column"} wrap="nowrap">
-                <code>
-                  <Flex mx={2} display={"inline-block"} fontSize="md">
-                    {unim.spenderState.isLoading ? (
-                      <Spinner m={0} size={"lg"} />
-                    ) : (
-                      <Flex>
-                        {`balance: `} <Spacer />
-                        {unim.spenderState.data?.balance
-                          ? web3ctx.web3.utils.fromWei(
-                              unim.spenderState.data?.balance,
-                              "ether"
-                            )
-                          : "0"}
-                      </Flex>
-                    )}
-                  </Flex>
-                </code>
-              </Flex>
-            </HStack>
-          </Badge>
-          <Badge
-            colorScheme={"pink"}
-            variant={"solid"}
-            fontSize={"md"}
-            borderRadius={"md"}
-            mr={2}
-            p={1}
-          >
-            <Center my={2}>
-              <Image
-                ml={2}
-                alt={"rbw"}
-                h="24px"
-                src="https://www.cryptounicorns.fun/static/media/icon_RBW.522bf8ec43ae2c866ee6.png"
-              />
-              <Flex direction={"column"} wrap="nowrap">
-                <code>
-                  <Flex mx={2} mt={0} display={"inline-block"} fontSize="md">
-                    {rbw.spenderState.isLoading ? (
-                      <Spinner m={0} size={"lg"} />
-                    ) : (
-                      <Flex>
-                        {`RBW: `} <Spacer />
-                        {rbw.spenderState.data?.balance
-                          ? web3ctx.web3.utils.fromWei(
-                              rbw.spenderState.data?.balance,
-                              "ether"
-                            )
-                          : "0"}
-                      </Flex>
-                    )}
-                  </Flex>
-                </code>
-              </Flex>
-            </Center>
-          </Badge>
           <Spacer />
-          <Center>
-            <Button
-              mx={4}
-              // isDisabled={
-              //   (!needAllowanceUNIM || unimToStash === "") &&
-              //   (notEnoughUNIM || unimToStash == "")
-              // }
-              size="sm"
-              isLoading={
-                unim.setSpenderAllowance.isLoading || stashUnim.isLoading
-              }
-              w="120px"
-              bgColor="white"
-              textColor="pink.500"
+          {spyMode && (
+            <Center
+              display="inline-flex"
+              pr={6}
               onClick={() => {
-                if (needAllowanceUNIM) {
-                  unim.setSpenderAllowance.mutate(MAX_INT, {
-                    onSettled: () => {
-                      unim.spenderState.refetch();
-                    },
-                  });
-                } else {
-                  stashUnim.mutate(unimToStash, {
-                    onSettled: () => {
-                      unim.spenderState.refetch();
-                      setUNIMToStash("");
-                    },
-                  });
-                }
+                setSpyMode(false);
               }}
             >
-              {needAllowanceUNIM ? "Set allowance" : "Stash!"}
-            </Button>
-          </Center> */}
+              <Text pr={2}>exit</Text>
+              <CloseIcon h="10px" />
+            </Center>
+          )}
         </Flex>
         {spyMode && (
           <Flex w="100%" pb={10}>
