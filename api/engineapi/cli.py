@@ -11,7 +11,8 @@ from . import actions
 from . import db
 from . import signatures
 from . import data
-from . import  auth
+from . import auth
+
 # from .settings import BLOCKCHAINS_TO_BROWNIE_NETWORKS
 from .models import DropperClaim, DropperContract
 
@@ -387,30 +388,6 @@ def main() -> None:
     parser.set_defaults(func=lambda _: parser.print_help())
     subparsers = parser.add_subparsers()
 
-<<<<<<< HEAD:engineapi/cli.py
-    lootbox_parser = Lootbox.generate_cli()
-    subparsers.add_parser("lootbox", parents=[lootbox_parser], add_help=False)
-
-    dropper_parser = Dropper.generate_cli()
-    subparsers.add_parser("dropper", parents=[dropper_parser], add_help=False)
-
-    core_parser = core.generate_cli()
-    subparsers.add_parser("core", parents=[core_parser], add_help=False)
-
-    erc20_parser = MockErc20.generate_cli()
-    subparsers.add_parser("mock-erc20", parents=[erc20_parser], add_help=False)
-
-    drop_parser = drop.generate_cli()
-    subparsers.add_parser("drop", parents=[drop_parser], add_help=False)
-
-    terminus_parser = MockTerminus.generate_cli()
-    subparsers.add_parser("terminus", parents=[terminus_parser], add_help=False)
-
-    crafting_parser = CraftingFacet.generate_cli()
-    subparsers.add_parser("crafting", parents=[crafting_parser], add_help=False)
-
-=======
->>>>>>> main:api/engineapi/cli.py
     # Signing server parser
     parser_signing_server = subparsers.add_parser(
         "signing", description="Signing server commands"
