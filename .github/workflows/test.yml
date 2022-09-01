@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "contracts/**"
-      - "engineapi/**"
+      - "cli/**"
     branches:
       - main
 
@@ -25,9 +25,13 @@ jobs:
         env:
           BROWNIE_LIB: 1
         run: pip install -U pip
-      - name: Install dev dependencies
+      - name: Install additional dev dependencies
+        run: |
+          pip install black moonworm
+      - name: Install dependencies for CLI
+        working-directory: cli/
         run: |
           pip install -e .
-          pip install -U black moonworm
       - name: Run tests
+        working-directory: cli/
         run: bash test.sh

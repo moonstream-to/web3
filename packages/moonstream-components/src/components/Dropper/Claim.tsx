@@ -120,6 +120,9 @@ const _Claim = ({
   };
 
   const onDrop = (file: any) => {
+    if (!file.length) {
+      return;
+    }
     parserLineNumber = 0;
     setIsUploading(true);
     Papa.parse(file[0], {

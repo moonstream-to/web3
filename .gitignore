@@ -152,3 +152,9 @@ package-lock.json
 
 #next
 .next/
+
+# Schematic
+.schematic.env
+scm/srv/
+scm/pwfile
+
