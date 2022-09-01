@@ -536,15 +536,11 @@ const CryptoUnicorns = () => {
   const [rbwToStash, setRBWToStash] = React.useState("");
   const [unimToStash, setUNIMToStash] = React.useState("");
   const [terminusAddress, setTerminusAddress] = React.useState("");
-  const [multicallAddress, setMulticallAddress] = React.useState("");
   const [UNIMAddress, setUNIMAddress] = React.useState("");
   const [RBWAddress, setRBWAddress] = React.useState("");
-  const [gameBankAddress, setGameBankAddress] = React.useState("");
   const [unicornsAddress, setUnicornsAddress] = React.useState("");
   const [landsAddress, setLandsAddress] = React.useState("");
 
-  const [UNIMBalance, setUNIMBalance] = React.useState("0");
-  const [RBWBalance, setRBWBalance] = React.useState("0");
   const [lootboxBalances, setLootboxBalances] = React.useState({
     ...defaultLootboxBalances,
   });
@@ -570,18 +566,14 @@ const CryptoUnicorns = () => {
     const chain: string | undefined = chainByChainId[web3ctx.chainId];
     if (!chain) {
       setTerminusAddress("");
-      setMulticallAddress("");
       setUNIMAddress("");
       setRBWAddress("");
-      setGameBankAddress("");
       setUnicornsAddress("");
       setLandsAddress("");
     } else {
       setTerminusAddress(TerminusAddresses[chain as supportedChains]);
-      setMulticallAddress(MulticallAddresses[chain as supportedChains]);
       setUNIMAddress(UNIMAddresses[chain as supportedChains]);
       setRBWAddress(RBWAddresses[chain as supportedChains]);
-      setGameBankAddress(GameBankAddresses[chain as supportedChains]);
       setUnicornsAddress(UnicornsAddresses[chain as supportedChains]);
       setLandsAddress(LandsAddresses[chain as supportedChains]);
     }
