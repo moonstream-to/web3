@@ -9,18 +9,6 @@ import {
 
 import { CraftingContract } from "./CraftingContract"
 
-// function printValues(obj: any) {
-//     console.log("{")
-//     for (var key in obj) {
-//         if (typeof obj[key] === "object") {
-//             printValues(obj[key])
-//         } else {
-//             console.log(`${key}:${obj[key]}`)
-//         }
-//     }
-//     console.log("}")
-// }
-
 async function main() {
     let rpcUrl = process.env.RPC_URL
     if (!rpcUrl) {
@@ -34,7 +22,7 @@ async function main() {
     )
 
     let recipesCount = await craftingContract.numRecipes()
-    console.log(`There is ${recipesCount} recipes on this contract`)
+    console.log(`There are ${recipesCount} recipes on this contract`)
     for (let i = 1; i <= recipesCount.toNumber(); ++i) {
         console.log(JSON.stringify(await craftingContract.getRecipe(i)))
         console.log()
@@ -45,7 +33,7 @@ async function main() {
         throw new Error("PRIVATE_KEY env var is not set")
     }
     const signer = new ethers.Wallet(privateKey, provider)
-    //new ethers.Wallet.fromEncryptedJsonSync()
+
     craftingContract.connect(signer)
 
     let emptyBottle: CraftingItem = {
