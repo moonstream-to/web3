@@ -4,6 +4,8 @@
 # You can set up the local copy of `dao` for development using:
 # pip install -e .[dev]
 
+GAS_PROFILE=${GAS_PROFILE:-y}
+
 set -e
 
 usage() {
@@ -28,4 +30,4 @@ cd ..
 brownie compile
 cd -
 set -x
-GAS_PROFILE="y" python -m unittest $TEST_COMMAND 
+GAS_PROFILE="$GAS_PROFILE" python -m unittest $TEST_COMMAND 

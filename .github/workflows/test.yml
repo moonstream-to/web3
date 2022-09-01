@@ -34,4 +34,4 @@ jobs:
           pip install -e .
       - name: Run tests
         working-directory: cli/
-        run: bash test.sh
+        run: GAS_PROFILE=n bash test.sh
