@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from . import core, drop, Dropper, Lootbox, MockErc20, MockTerminus, setup_drop
+from . import core, drop, Dropper, Lootbox, MockErc20, MockTerminus, setup_drop, CraftingFacet
 
 
 logging.basicConfig(level=logging.INFO)
@@ -33,6 +33,9 @@ def main() -> None:
 
     terminus_parser = MockTerminus.generate_cli()
     subparsers.add_parser("terminus", parents=[terminus_parser], add_help=False)
+
+    crafting_parser = CraftingFacet.generate_cli()
+    subparsers.add_parser("crafting", parents=[crafting_parser], add_help=False)
 
     setup_drop_parser = setup_drop.generate_cli()
     subparsers.add_parser("setup-drop", parents=[setup_drop_parser], add_help=False)
