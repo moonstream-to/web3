@@ -1,0 +1,1990 @@
+[
+    {
+        "inputs": [
+            {
+                "internalType": "bytes4",
+                "name": "_functionSelector",
+                "type": "bytes4"
+            }
+        ],
+        "name": "facetAddress",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "facetAddress_",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "facetAddresses",
+        "outputs": [
+            {
+                "internalType": "address[]",
+                "name": "facetAddresses_",
+                "type": "address[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_facet",
+                "type": "address"
+            }
+        ],
+        "name": "facetFunctionSelectors",
+        "outputs": [
+            {
+                "internalType": "bytes4[]",
+                "name": "facetFunctionSelectors_",
+                "type": "bytes4[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "facets",
+        "outputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "address",
+                        "name": "facetAddress",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "bytes4[]",
+                        "name": "functionSelectors",
+                        "type": "bytes4[]"
+                    }
+                ],
+                "internalType": "struct IDiamondLoupe.Facet[]",
+                "name": "facets_",
+                "type": "tuple[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes4",
+                "name": "_interfaceId",
+                "type": "bytes4"
+            }
+        ],
+        "name": "supportsInterface",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "address",
+                        "name": "facetAddress",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "enum IDiamondCut.FacetCutAction",
+                        "name": "action",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "bytes4[]",
+                        "name": "functionSelectors",
+                        "type": "bytes4[]"
+                    }
+                ],
+                "indexed": false,
+                "internalType": "struct IDiamondCut.FacetCut[]",
+                "name": "_diamondCut",
+                "type": "tuple[]"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "_init",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "bytes",
+                "name": "_calldata",
+                "type": "bytes"
+            }
+        ],
+        "name": "DiamondCut",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "previousOwner",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "OwnershipTransferred",
+        "type": "event"
+    },
+    {
+        "inputs": [],
+        "name": "owner",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "owner_",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "transferOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "poolId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "roundTripId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "bundleId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "blockDeadline",
+                "type": "uint256"
+            }
+        ],
+        "name": "UnlockKeystoneFromGameGenerateMessageHash",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "poolId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "roundTripId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "bundleId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "blockDeadline",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bytes",
+                "name": "signature",
+                "type": "bytes"
+            }
+        ],
+        "name": "UnlockKeystoneFromGameWithSignature",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "playerWallet",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "poolId",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "roundTripId",
+                "type": "uint256"
+            }
+        ],
+        "name": "KeystoneUnlocked",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "player",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "roundTripId",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "poolId",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "LootBoxStashed",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "player",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "poolId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "roundTripId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "bundleId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "blockDeadline",
+                "type": "uint256"
+            }
+        ],
+        "name": "stashLootBoxGenerateMessageHash",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "poolId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "roundTripId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "bundleId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "blockDeadline",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bytes",
+                "name": "signature",
+                "type": "bytes"
+            }
+        ],
+        "name": "stashLootBoxWithSignature",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "player",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "Stashed",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "player",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "address[]",
+                "name": "tokenAddresses",
+                "type": "address[]"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256[]",
+                "name": "tokenAmounts",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "StashedMultiple",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "player",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "requestId",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "Unstashed",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "player",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "requestId",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "address[]",
+                "name": "tokenAddresses",
+                "type": "address[]"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256[]",
+                "name": "tokenAmounts",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "UnstashedMultiple",
+        "type": "event"
+    },
+    {
+        "inputs": [],
+        "name": "getGameServer",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getRBWAddress",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getUNIMAddress",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "stashRBW",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "stashUNIM",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "amountUNIM",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amountRBW",
+                "type": "uint256"
+            }
+        ],
+        "name": "stashUNIMAndRBW",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "player",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "requestId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "blockDeadline",
+                "type": "uint256"
+            }
+        ],
+        "name": "unstashRBWGenerateMessageHash",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "requestId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "blockDeadline",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bytes",
+                "name": "signature",
+                "type": "bytes"
+            }
+        ],
+        "name": "unstashRBWWithSignature",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "player",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amountUNIM",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amountRBW",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "requestId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "blockDeadline",
+                "type": "uint256"
+            }
+        ],
+        "name": "unstashUNIMAndRBWGenerateMessageHash",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "amountUNIM",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amountRBW",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "requestId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "blockDeadline",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bytes",
+                "name": "signature",
+                "type": "bytes"
+            }
+        ],
+        "name": "unstashUNIMAndRBWWithSignature",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "player",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "requestId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "blockDeadline",
+                "type": "uint256"
+            }
+        ],
+        "name": "unstashUNIMGenerateMessageHash",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "requestId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "blockDeadline",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bytes",
+                "name": "signature",
+                "type": "bytes"
+            }
+        ],
+        "name": "unstashUNIMWithSignature",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_UNIMAddress",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_RBWAddress",
+                "type": "address"
+            }
+        ],
+        "name": "init",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "initializerRBWAddress",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "initializerUNIMAddress",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getTerminusTokenAddress",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "terminusTokenAddress",
+                "type": "address"
+            }
+        ],
+        "name": "setTerminusTokenAddress",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "burnUNIM",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address payable",
+                "name": "receiver",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "withdrawRBW",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address payable",
+                "name": "receiver",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "withdrawUNIM",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "operator",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "bool",
+                "name": "approved",
+                "type": "bool"
+            }
+        ],
+        "name": "ApprovalForAll",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "operator",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "from",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256[]",
+                "name": "ids",
+                "type": "uint256[]"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256[]",
+                "name": "values",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "TransferBatch",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "operator",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "from",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "name": "TransferSingle",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "string",
+                "name": "value",
+                "type": "string"
+            },
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            }
+        ],
+        "name": "URI",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            }
+        ],
+        "name": "balanceOf",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address[]",
+                "name": "accounts",
+                "type": "address[]"
+            },
+            {
+                "internalType": "uint256[]",
+                "name": "ids",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "balanceOfBatch",
+        "outputs": [
+            {
+                "internalType": "uint256[]",
+                "name": "",
+                "type": "uint256[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "operator",
+                "type": "address"
+            }
+        ],
+        "name": "isApprovedForAll",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "from",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256[]",
+                "name": "ids",
+                "type": "uint256[]"
+            },
+            {
+                "internalType": "uint256[]",
+                "name": "amounts",
+                "type": "uint256[]"
+            },
+            {
+                "internalType": "bytes",
+                "name": "data",
+                "type": "bytes"
+            }
+        ],
+        "name": "safeBatchTransferFrom",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "from",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bytes",
+                "name": "data",
+                "type": "bytes"
+            }
+        ],
+        "name": "safeTransferFrom",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "operator",
+                "type": "address"
+            },
+            {
+                "internalType": "bool",
+                "name": "approved",
+                "type": "bool"
+            }
+        ],
+        "name": "setApprovalForAll",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes4",
+                "name": "interfaceId",
+                "type": "bytes4"
+            }
+        ],
+        "name": "supportsInterface",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "name": "uri",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "name": "burn",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256[]",
+                "name": "ids",
+                "type": "uint256[]"
+            },
+            {
+                "internalType": "uint256[]",
+                "name": "values",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "burnBatch",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "spender",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "name": "Approval",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "from",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "name": "Transfer",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "spender",
+                "type": "address"
+            }
+        ],
+        "name": "allowance",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "spender",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "approve",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            }
+        ],
+        "name": "balanceOf",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "burn",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "burnFrom",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "decimals",
+        "outputs": [
+            {
+                "internalType": "uint8",
+                "name": "",
+                "type": "uint8"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "spender",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "subtractedValue",
+                "type": "uint256"
+            }
+        ],
+        "name": "decreaseAllowance",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "spender",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "addedValue",
+                "type": "uint256"
+            }
+        ],
+        "name": "increaseAllowance",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "name",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "symbol",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "totalSupply",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "recipient",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "transfer",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "sender",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "recipient",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "transferFrom",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            }
+        ],
+        "name": "uri",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "operator",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "from",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256[]",
+                "name": "ids",
+                "type": "uint256[]"
+            },
+            {
+                "internalType": "uint256[]",
+                "name": "values",
+                "type": "uint256[]"
+            },
+            {
+                "internalType": "bytes",
+                "name": "data",
+                "type": "bytes"
+            }
+        ],
+        "name": "onERC1155BatchReceived",
+        "outputs": [
+            {
+                "internalType": "bytes4",
+                "name": "",
+                "type": "bytes4"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "operator",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "from",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "value",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bytes",
+                "name": "data",
+                "type": "bytes"
+            }
+        ],
+        "name": "onERC1155Received",
+        "outputs": [
+            {
+                "internalType": "bytes4",
+                "name": "",
+                "type": "bytes4"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "owner",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "transferOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "poolID",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address",
+                "name": "operator",
+                "type": "address"
+            }
+        ],
+        "name": "approveForPool",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "poolID",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address",
+                "name": "operator",
+                "type": "address"
+            }
+        ],
+        "name": "isApprovedForPool",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "poolID",
+                "type": "uint256"
+            }
+        ],
+        "name": "uri",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "previousController",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "newController",
+                "type": "address"
+            }
+        ],
+        "name": "ControlTransferred",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "poolID",
+                "type": "uint256"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "previousController",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "newController",
+                "type": "address"
+            }
+        ],
+        "name": "PoolControlTransferred",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "operator",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "from",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "address[]",
+                "name": "toAddresses",
+                "type": "address[]"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256[]",
+                "name": "amounts",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "PoolMintBatch",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "from",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "poolID",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "burn",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "paymentToken",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "poolBasePrice",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "newPaymentToken",
+                "type": "address"
+            }
+        ],
+        "name": "setPaymentToken",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "terminusController",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "poolID",
+                "type": "uint256"
+            }
+        ],
+        "name": "terminusPoolCapacity",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "poolID",
+                "type": "uint256"
+            }
+        ],
+        "name": "terminusPoolController",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "poolID",
+                "type": "uint256"
+            }
+        ],
+        "name": "terminusPoolSupply",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "totalPools",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]
