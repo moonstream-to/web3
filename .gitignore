@@ -148,6 +148,7 @@ alembic.test.ini
 #Node
 node_modules/
 yarn.lock
+package-lock.json
 
 #next
 .next/

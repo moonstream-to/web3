@@ -18,11 +18,13 @@ const _LootboxCard = ({
   displayName,
   imageUrl,
   lootboxBalance,
+  showQuantity = true,
   ...props
 }: {
   displayName: string;
   imageUrl: string;
   lootboxBalance: number;
+  showQuantity?: boolean;
 }) => {
   const [lootboxCount, setLootboxCount] = useState("");
   const [countToStash, setCountToStash] = useState("");
@@ -41,13 +43,15 @@ const _LootboxCard = ({
           m={"2px"}
           alt="CU Common Lootbox"
         />
-        <Box w="100%" px={2} justifyContent="left">
+        <Box w="100%" px={2} justifyContent="left" pb={3}>
           <Text fontSize="md">{displayName}</Text>
-          <Flex fontSize="sm" w="100%" pb={6}>
-            <Text>Quantity</Text>
-            <Spacer />
-            <Text>{lootboxBalance}</Text>
-          </Flex>
+          {showQuantity && (
+            <Flex fontSize="sm" w="100%">
+              <Text>Quantity</Text>
+              <Spacer />
+              <Text>{lootboxBalance}</Text>
+            </Flex>
+          )}
           {/* <Box pb={3}>
             <Input
               bgColor="transparent"
