@@ -145,6 +145,6 @@ const _Paginator = ({
   );
 };
 
-const Paginator = chakra(_Paginator);
+const Paginator = chakra(React.memo(_Paginator));
 
 export default Paginator;

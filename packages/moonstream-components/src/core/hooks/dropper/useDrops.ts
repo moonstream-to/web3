@@ -82,7 +82,8 @@ const useDrops = ({
               ctx.targetChain?.name,
               permission[1],
               claimsPage * claimsPageSize,
-              claimsPageSize
+              claimsPageSize,
+              dropperAddress
             )();
             return response.data.drops;
           })
@@ -90,6 +91,7 @@ const useDrops = ({
       : [];
     const claims: any = [];
     claimsByPermission.forEach((_item) => claims.push(..._item));
+
     return claims;
   };
 
@@ -122,7 +124,7 @@ const useDrops = ({
   };
 
   const dropperContracts = useQuery(
-    ["/drops/contracts", { blockchain: ctx.targetChain?.name }],
+    ["/play/drops/contracts", { blockchain: ctx.targetChain?.name }],
     (query: any) => queryHttp(query).then((result: any) => result.data),
     {
       ...queryCacheProps,

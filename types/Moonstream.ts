@@ -5,7 +5,6 @@ export interface WalletStatesInterface {
   ONBOARD: String;
   CONNECT: String;
   CONNECTED: String;
-  WRONG_CHAIN: String;
   UNKNOWN_CHAIN: String;
 }
 
@@ -57,7 +56,7 @@ export interface UpdateClaim {
 export interface ClaimInterface {
   active: boolean;
   claim_block_deadline: number;
-  claim_id: number;
+  drop_number: number;
   description: string;
   dropper_contract_address: string;
   id: string;

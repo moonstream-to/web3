@@ -122,6 +122,9 @@ const LandingNavbar = () => {
               colorScheme={
                 web3Provider.buttonText === web3Provider.WALLET_STATES.CONNECTED
                   ? "green"
+                  : web3Provider.WALLET_STATES.UNKNOWN_CHAIN ===
+                    web3Provider.buttonText
+                  ? "red"
                   : "green"
               }
               onClick={web3Provider.onConnectWalletClick}
@@ -131,7 +134,7 @@ const LandingNavbar = () => {
               <Image
                 pl={2}
                 h="24px"
-                src="https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg"
+                src="https://s3.amazonaws.com/static.simiotics.com/metamask/metamask-fox.svg"
               />
             </Button>
           )}
