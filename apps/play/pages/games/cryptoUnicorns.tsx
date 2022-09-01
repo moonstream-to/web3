@@ -1577,7 +1577,9 @@ const CryptoUnicorns = () => {
                   h="1.75rem"
                   size="sm"
                   onClick={() => {
-                    inputField.current.value = "";
+                    if (inputField?.current != null) {
+                      inputField.current.value = "";
+                    }
                   }}
                 >
                   X
