@@ -16,7 +16,7 @@ import {
     CraftingItem,
     CraftingInput,
     CraftingOutput,
-} from "./types/CraftingItems"
+} from "./types/CraftingTypes"
 
 export class CraftingContract {
     public contract: CraftingFacet
