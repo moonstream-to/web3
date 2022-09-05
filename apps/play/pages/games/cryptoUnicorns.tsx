@@ -620,10 +620,10 @@ const CryptoUnicorns = () => {
 
   // Fetch terminus balances.
   useQuery(
-    ["cuTerminus", web3ctx.chainId, terminusAddress, currentAccount],
+    ["cuTerminus", terminusAddress, currentAccount],
     async ({ queryKey }) => {
-      const currentChain = chainByChainId[queryKey[1] as number];
-      const currentUserAddress = queryKey[3];
+      const currentChain = chainByChainId[web3ctx.chainId as number];
+      const currentUserAddress = queryKey[2];
 
       if (!currentChain) {
         return;
@@ -675,10 +675,10 @@ const CryptoUnicorns = () => {
 
   // Fetch unicorns.
   useQuery(
-    ["cuUnicorns", web3ctx.chainId, unicornsAddress, currentAccount],
+    ["cuUnicorns", unicornsAddress, currentAccount],
     async ({ queryKey }) => {
-      const currentChain = chainByChainId[queryKey[1] as number];
-      const currentUserAddress = String(queryKey[3]);
+      const currentChain = chainByChainId[web3ctx.chainId as number];
+      const currentUserAddress = String(queryKey[2]);
 
       if (!currentChain) {
         return;
@@ -690,7 +690,7 @@ const CryptoUnicorns = () => {
       const unicornsContract = new web3ctx.web3.eth.Contract(
         ERC721MetadataABI
       ) as unknown as MockERC721;
-      unicornsContract.options.address = String(queryKey[2]);
+      unicornsContract.options.address = String(queryKey[1]);
 
       let unicornsInventory: NFTInfo[] = [];
 
@@ -754,10 +754,10 @@ const CryptoUnicorns = () => {
 
   // Fetch lands.
   useQuery(
-    ["cuLands", web3ctx.chainId, landsAddress, currentAccount],
+    ["cuLands", landsAddress, currentAccount],
     async ({ queryKey }) => {
-      const currentChain = chainByChainId[queryKey[1] as number];
-      const currentUserAddress = String(queryKey[3]);
+      const currentChain = chainByChainId[web3ctx.chainId as number];
+      const currentUserAddress = String(queryKey[2]);
 
       if (!currentChain) {
         return;
@@ -769,7 +769,7 @@ const CryptoUnicorns = () => {
       const landsContract = new web3ctx.web3.eth.Contract(
         ERC721MetadataABI
       ) as unknown as MockERC721;
-      landsContract.options.address = String(queryKey[2]);
+      landsContract.options.address = String(queryKey[1]);
 
       let landsInventory: NFTInfo[] = [];
 
@@ -1685,15 +1685,21 @@ const CryptoUnicorns = () => {
           <Button
             size="sm"
             height="24px"
-            width="120px"
-            border="1px"
-            borderColor="#B6B6B6"
-            bgColor="transparent"
-            borderRadius="20px"
+            width="150px"
+            textColor="#D43F8C"
+            borderColor="#FFFFFF"
+            bgColor="white"
+            borderRadius="md"
             onClick={() => {
               setSpyMode(!spyMode);
             }}
           >
+            <Image
+              src="https://s3.amazonaws.com/static.simiotics.com/play/cu/spy-icon.png"
+              alt="Spy Mode"
+              h="16px"
+              pr="2"
+            ></Image>
             Spy Mode
           </Button>
         </Flex>
