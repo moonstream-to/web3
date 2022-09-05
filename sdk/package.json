@@ -1,5 +1,5 @@
 {
-  "name": "@moonsteam/engine",
+  "name": "@moonstream/engine",
   "version": "0.0.1",
   "description": "SDK for moonstream engine",
   "main": "index.ts",
@@ -15,5 +15,16 @@
   },
   "dependencies": {
     "ethers": "^5.7.0"
-  }
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bugout-dev/engine.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bugout-dev/engine/issues"
+  },
+  "homepage": "https://github.com/bugout-dev/engine#readme"
 }
