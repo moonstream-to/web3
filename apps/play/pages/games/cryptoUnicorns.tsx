@@ -1226,7 +1226,7 @@ const CryptoUnicorns = () => {
   };
 
   const displayERC721List = (list: any, showQuantity: boolean = true) => {
-    const html = (
+    return (
       <>
         {list.map((item: any, idx: any) => {
           return (
@@ -1241,7 +1241,18 @@ const CryptoUnicorns = () => {
         })}
       </>
     );
-    return html;
+  };
+
+  const getUnimBalance = () => {
+    return unim.spenderState.data?.balance
+      ? web3ctx.web3.utils.fromWei(unim.spenderState.data?.balance, "ether")
+      : "0";
+  };
+
+  const getRBWBalance = () => {
+    return rbw.spenderState.data?.balance
+      ? web3ctx.web3.utils.fromWei(rbw.spenderState.data?.balance, "ether")
+      : "0";
   };
 
   if (
@@ -1302,12 +1313,7 @@ const CryptoUnicorns = () => {
                         ) : (
                           <Flex>
                             {`balance: `} <Spacer />
-                            {unim.spenderState.data?.balance
-                              ? web3ctx.web3.utils.fromWei(
-                                  unim.spenderState.data?.balance,
-                                  "ether"
-                                )
-                              : "0"}
+                            {getUnimBalance()}
                           </Flex>
                         )}
                       </Flex>
@@ -1346,12 +1352,7 @@ const CryptoUnicorns = () => {
                         ) : (
                           <Flex>
                             {`balance: `} <Spacer />
-                            {rbw.spenderState.data?.balance
-                              ? web3ctx.web3.utils.fromWei(
-                                  rbw.spenderState.data?.balance,
-                                  "ether"
-                                )
-                              : "0"}
+                            {getRBWBalance()}
                           </Flex>
                         )}
                       </Flex>
