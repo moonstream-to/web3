@@ -101,9 +101,7 @@ class AccountSigner(Signer):
         signed_messages_list = {}
 
         for message in messages_list:
-            eth_private_key = eth_keys.keys.PrivateKey(
-                self.private_key
-            )
+            eth_private_key = eth_keys.keys.PrivateKey(self.private_key)
             message_hash_bytes = HexBytes(message)
             _, _, _, signed_message_bytes = sign_message_hash(
                 eth_private_key, message_hash_bytes

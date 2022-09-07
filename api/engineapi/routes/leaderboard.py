@@ -5,30 +5,40 @@ import logging
 from uuid import UUID
 
 from web3 import Web3
-
-
-from fastapi import  FastAPI, Request, Depends
+from fastapi import FastAPI, Request, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .. import actions
 from .. import data
 from .. import db
 from ..settings import DOCS_TARGET_PATH
+from ..version import VERSION
 
 logger = logging.getLogger(__name__)
 
 
-tags_metadata = [{"name": "leaderboard", "description": "Moonstream Engine leaderboard API"}]
+tags_metadata = [
+    {"name": "leaderboard", "description": "Moonstream Engine leaderboard API"}
+]
 
 
 app = FastAPI(
     title=f"Moonstream Engine leaderboard API",
     description="Moonstream Engine leaderboard API endpoints.",
-    version="v0.0.1",
+    version=VERSION,
     openapi_tags=tags_metadata,
     openapi_url="/openapi.json",
     docs_url=None,
     redoc_url=f"/{DOCS_TARGET_PATH}",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins="*",
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

@@ -39,7 +39,7 @@ echo -e "${PREFIX_INFO} Upgrading Python pip and setuptools"
 echo
 echo
 echo -e "${PREFIX_INFO} Installing Python dependencies"
-"${PIP}" install -e "${APP_DIR}/"
+"${PIP}" install --exists-action i -r "${APP_DIR}/requirements.txt"
 
 echo
 echo

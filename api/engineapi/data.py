@@ -78,11 +78,14 @@ class Claimant(BaseModel):
     amount: int
     raw_amount: Optional[str] = None
 
+
 class BatchAddClaimantsRequest(BaseModel):
     claimants: List[Claimant] = Field(default_factory=list)
 
+
 class BatchRemoveClaimantsRequest(BaseModel):
     claimants: List[str] = Field(default_factory=list)
+
 
 class DropAddClaimantsRequest(BaseModel):
     dropper_claim_id: UUID

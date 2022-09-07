@@ -1,7 +1,6 @@
 import base64
 import json
 import logging
-from tracemalloc import start
 from typing import Any, Awaitable, Callable, Dict, Optional
 
 from fastapi import HTTPException, Request, Response
@@ -9,12 +8,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from web3 import Web3
 
 from .auth import (
-    AUTH_PAYLOAD_NAME,
-    DEFAULT_INTERVAL,
-    MoonstreamAuthorization,
     MoonstreamAuthorizationExpired,
     MoonstreamAuthorizationVerificationError,
-    authorize,
     verify,
 )
 
@@ -22,7 +17,7 @@ from .auth import (
 logger = logging.getLogger(__name__)
 
 
-class DropperAuthMiddleware(BaseHTTPMiddleware):
+class EngineAuthMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, whitelist: Optional[Dict[str, str]] = None):
         self.whitelist: Dict[str, str] = {}
         if whitelist is not None:
@@ -81,7 +76,7 @@ class DropperAuthMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-class DropperHTTPException(HTTPException):
+class EngineHTTPException(HTTPException):
     """
     Extended HTTPException to handle 500 Internal server errors
     and send crash reports.
