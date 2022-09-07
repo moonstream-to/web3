@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class EngineAuthMiddleware(BaseHTTPMiddleware):
     """
-    Checks the authorization header on the request. It it represents 
+    Checks the authorization header on the request. It it represents
     a correctly signer message, adds address and deadline attributes to the request.state.
     Otherwise raises a 403 error.
     """
