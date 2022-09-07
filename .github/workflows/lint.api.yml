@@ -20,7 +20,9 @@ jobs:
         run: pip install --upgrade pip setuptools
       - name: Install requirements
         run: pip install --exists-action i -r requirements.txt
+        working-directory: ./api
       - name: Install dev dependencies
         run: pip install black
       - name: Black syntax check
+        working-directory: ./api
         run: black --check engineapi/
