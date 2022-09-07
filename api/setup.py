@@ -25,7 +25,7 @@ setup(
         "tabulate",
     ],
     extras_require={
-        "dev": ["alembic", "brownie", "black", "mypy"],
+        "dev": ["alembic", "brownie", "black", "mypy", "isort"],
         "distribute": ["setuptools", "twine", "wheel"],
     },
     description="Command line interface for Moonstream Engine API",

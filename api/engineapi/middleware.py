@@ -18,6 +18,12 @@ logger = logging.getLogger(__name__)
 
 
 class EngineAuthMiddleware(BaseHTTPMiddleware):
+    """
+    Checks the authorization header on the request. It it represents 
+    a correctly signer message, adds address and deadline attributes to the request.state.
+    Otherwise raises a 403 error.
+    """
+
     def __init__(self, app, whitelist: Optional[Dict[str, str]] = None):
         self.whitelist: Dict[str, str] = {}
         if whitelist is not None:
@@ -27,7 +33,7 @@ class EngineAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ):
-        # Filter out endpoints with proper method to work without web3 autharization
+        # Filter out whitelisted endpoints without web3 authorization
         path = request.url.path.rstrip("/")
         method = request.method
 
@@ -61,8 +67,8 @@ class EngineAuthMiddleware(BaseHTTPMiddleware):
             address = json_payload.get("address")
             if address is not None:
                 address = Web3.toChecksumAddress(address)
-            request.state.address = address
-            request.state.verified = verified
+            else:
+                raise Exception("Address in payload is None")
         except MoonstreamAuthorizationVerificationError as e:
             logger.info("Moonstream authorization verification error: %s", e)
             return Response(status_code=403, content="Invalid authorization header")
@@ -70,8 +76,11 @@ class EngineAuthMiddleware(BaseHTTPMiddleware):
             logger.info("Moonstream authorization expired: %s", e)
             return Response(status_code=403, content="Authorization expired")
         except Exception as e:
-            logger.info("Unexpected exception: %s", e)
-            raise
+            logger.error("Unexpected exception: %s", e)
+            return Response(status_code=500, content="Internal server error")
+
+        request.state.address = address
+        request.state.verified = verified
 
         return await call_next(request)
 

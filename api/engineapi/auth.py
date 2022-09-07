@@ -37,11 +37,15 @@ DEFAULT_INTERVAL = 60 * 60 * 24
 
 
 class MoonstreamAuthorizationVerificationError(Exception):
-    pass
+    """
+    Raised when invalid signer is provided.
+    """
 
 
 class MoonstreamAuthorizationExpired(Exception):
-    pass
+    """
+    Raised when signature is expired by time.
+    """
 
 
 class MoonstreamAuthorization(EIP712Message):
@@ -83,6 +87,9 @@ def authorize(deadline: int, address: str, private_key: HexBytes) -> Dict[str, A
 
 
 def verify(authorization_payload: Dict[str, Any]) -> bool:
+    """
+    Verifies provided signature signer by correct address.
+    """
     time_now = int(time.time())
     web3_client = Web3()
     address = Web3.toChecksumAddress(cast(str, authorization_payload["address"]))
