@@ -29,8 +29,6 @@ from hexbytes import HexBytes
 from web3 import Web3
 
 
-
-
 AUTH_PAYLOAD_NAME = "MoonstreamAuthorization"
 AUTH_VERSION = "1"
 
@@ -39,11 +37,15 @@ DEFAULT_INTERVAL = 60 * 60 * 24
 
 
 class MoonstreamAuthorizationVerificationError(Exception):
-    pass
+    """
+    Raised when invalid signer is provided.
+    """
 
 
 class MoonstreamAuthorizationExpired(Exception):
-    pass
+    """
+    Raised when signature is expired by time.
+    """
 
 
 class MoonstreamAuthorization(EIP712Message):
@@ -73,7 +75,6 @@ def authorize(deadline: int, address: str, private_key: HexBytes) -> Dict[str, A
 
     msg_hash_bytes = HexBytes(_hash_eip191_message(message.signable_message))
 
-
     signed_message = sign_message(msg_hash_bytes, private_key)
 
     api_payload: Dict[str, Any] = {
@@ -86,6 +87,9 @@ def authorize(deadline: int, address: str, private_key: HexBytes) -> Dict[str, A
 
 
 def verify(authorization_payload: Dict[str, Any]) -> bool:
+    """
+    Verifies provided signature signer by correct address.
+    """
     time_now = int(time.time())
     web3_client = Web3()
     address = Web3.toChecksumAddress(cast(str, authorization_payload["address"]))
@@ -115,6 +119,7 @@ def decrypt_keystore(keystore_path: str, password: str) -> HexBytes:
     with open(keystore_path) as keystore_file:
         keystore_data = json.load(keystore_file)
     return keystore_data["address"], Account.decrypt(keystore_data, password)
+
 
 def handle_authorize(args: argparse.Namespace) -> None:
     address, private_key = decrypt_keystore(args.signer, args.password)
@@ -167,6 +172,7 @@ def generate_cli() -> argparse.ArgumentParser:
     verify_parser.set_defaults(func=handle_verify)
 
     return parser
+
 
 if __name__ == "__main__":
     parser = generate_cli()

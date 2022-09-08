@@ -15,24 +15,18 @@ from .routes.dropper import app as dropper_app
 from .routes.leaderboard import app as leaderboard_app
 from .routes.admin import app as admin_app
 from .routes.play import app as play_app
-
+from .version import VERSION
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-tags_metadata = [
-    {"name": "drops", "description": 'Api wich servies dropper contracts "./leaderboards/docs"'},
-    {
-        "name": "leaderboard",
-        "description": "Api wich servies moonstream engine"
-    },
-]
+tags_metadata = [{"name": "time", "description": "Server timestamp endpoints."}]
 
 
 app = FastAPI(
     title=f"Engine HTTP API",
     description="Engine API endpoints.",
-    version="v0.0.2",
+    version=VERSION,
     openapi_tags=tags_metadata,
     openapi_url="/openapi.json",
     docs_url=None,

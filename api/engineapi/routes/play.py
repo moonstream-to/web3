@@ -5,28 +5,23 @@ import logging
 from typing import List, Optional
 from uuid import UUID
 
-
+from fastapi import Request, Depends, Query
+from sqlalchemy.orm import Session
+from sqlalchemy.orm.exc import NoResultFound
 from hexbytes import HexBytes
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from web3 import Web3
-from brownie import network
 
-
-from fastapi import Request, Depends, Query
-from sqlalchemy.orm import Session
-from sqlalchemy.orm.exc import NoResultFound
-
-from engineapi.models import DropperClaimant
-
-
+from ..models import DropperClaimant
 from .. import actions
 from .. import data
 from .. import db
 from .. import signatures
 from ..contracts import Dropper_interface
-from ..middleware import DropperHTTPException
+from ..middleware import EngineHTTPException
 from ..settings import BLOCKCHAIN_WEB3_PROVIDERS, DOCS_TARGET_PATH
+from ..version import VERSION
 
 
 logging.basicConfig(level=logging.INFO)
@@ -38,7 +33,7 @@ tags_metadata = [{"name": "Play", "description": "Moonstream Engine Play API"}]
 app = FastAPI(
     title=f"Moonstream Engine Play API",
     description="Moonstream Engine Play API endpoints.",
-    version="v0.0.1",
+    version=VERSION,
     openapi_tags=tags_metadata,
     openapi_url="/openapi.json",
     docs_url=None,
@@ -55,14 +50,6 @@ app.add_middleware(
 )
 
 
-@app.get("/ping", response_model=data.PingResponse)
-async def ping_handler() -> data.PingResponse:
-    """
-    Check server status.
-    """
-    return data.PingResponse(status="ok")
-
-
 @app.get("/blockchains")
 async def get_drops_blockchains_handler(
     db_session: Session = Depends(db.yield_db_session),
@@ -74,10 +61,10 @@ async def get_drops_blockchains_handler(
     try:
         results = actions.list_drops_blockchains(db_session=db_session)
     except NoResultFound:
-        raise DropperHTTPException(status_code=404, detail="No drops found.")
+        raise EngineHTTPException(status_code=404, detail="No drops found.")
     except Exception as e:
         logger.error(f"Can't get list of drops end with error: {e}")
-        raise DropperHTTPException(status_code=500, detail="Can't get drops")
+        raise EngineHTTPException(status_code=500, detail="Can't get drops")
 
     response = [
         data.DropperBlockchainResponse(
@@ -108,12 +95,12 @@ async def get_drop_batch_handler(
             db_session, blockchain, address, limit, offset
         )
     except NoResultFound:
-        raise DropperHTTPException(
+        raise EngineHTTPException(
             status_code=403, detail="You are not authorized to claim that reward"
         )
     except Exception as e:
         logger.error(e)
-        raise DropperHTTPException(status_code=500, detail="Can't get claimant")
+        raise EngineHTTPException(status_code=500, detail="Can't get claimant")
 
     # get claimants
     try:
@@ -128,9 +115,7 @@ async def get_drop_batch_handler(
         )
     except Exception as err:
         logger.error(f"Can't get claimant objects for address: {address}")
-        raise DropperHTTPException(
-            status_code=500, detail="Can't get claimant objects."
-        )
+        raise EngineHTTPException(status_code=500, detail="Can't get claimant objects.")
 
     claimants_dict = {item.id: item for item in claimants}
 
@@ -149,7 +134,7 @@ async def get_drop_batch_handler(
             transformed_amount = actions.transform_claim_amount(
                 db_session, claimant_drop.dropper_claim_id, claimant_drop.amount
             )
-            
+
         signature = claimant_drop.signature
         if signature is None or not claimant_drop.is_recent_signature:
             dropper_contract = Dropper_interface.Contract(
@@ -171,12 +156,12 @@ async def get_drop_batch_handler(
                 claimants_dict[claimant_drop.dropper_claimant_id].signature = signature
                 commit_required = True
             except signatures.AWSDescribeInstancesFail:
-                raise DropperHTTPException(status_code=500)
+                raise EngineHTTPException(status_code=500)
             except signatures.SignWithInstanceFail:
-                raise DropperHTTPException(status_code=500)
+                raise EngineHTTPException(status_code=500)
             except Exception as err:
                 logger.error(f"Unexpected error in signing message process: {err}")
-                raise DropperHTTPException(status_code=500)
+                raise EngineHTTPException(status_code=500)
 
         claims.append(
             data.DropBatchResponseItem(
@@ -216,11 +201,11 @@ async def get_drop_handler(
     try:
         claimant = actions.get_claimant(db_session, dropper_claim_id, address)
     except NoResultFound:
-        raise DropperHTTPException(
+        raise EngineHTTPException(
             status_code=403, detail="You are not authorized to claim that reward"
         )
     except Exception as e:
-        raise DropperHTTPException(status_code=500, detail="Can't get claimant")
+        raise EngineHTTPException(status_code=500, detail="Can't get claimant")
 
     try:
         claimant_db_object = (
@@ -232,16 +217,16 @@ async def get_drop_handler(
         logger.error(
             f"Can't get claimant object for drop: {dropper_claim_id} and address: {address}"
         )
-        raise DropperHTTPException(status_code=500, detail="Can't get claimant object.")
+        raise EngineHTTPException(status_code=500, detail="Can't get claimant object.")
 
     if not claimant.active:
-        raise DropperHTTPException(
+        raise EngineHTTPException(
             status_code=403, detail="Cannot claim rewards for an inactive claim"
         )
 
     # If block deadline has already been exceeded - the contract (or frontend) will handle it.
     if claimant.claim_block_deadline is None:
-        raise DropperHTTPException(
+        raise EngineHTTPException(
             status_code=403,
             detail="Cannot claim rewards for a claim with no block deadline",
         )
@@ -271,12 +256,12 @@ async def get_drop_handler(
             claimant_db_object.signature = signature
             db_session.commit()
         except signatures.AWSDescribeInstancesFail:
-            raise DropperHTTPException(status_code=500)
+            raise EngineHTTPException(status_code=500)
         except signatures.SignWithInstanceFail:
-            raise DropperHTTPException(status_code=500)
+            raise EngineHTTPException(status_code=500)
         except Exception as err:
             logger.error(f"Unexpected error in signing message process: {err}")
-            raise DropperHTTPException(status_code=500)
+            raise EngineHTTPException(status_code=500)
 
     return data.DropResponse(
         claimant=claimant.address,
@@ -327,12 +312,12 @@ async def get_drop_list_handler(
             offset=offset,
         )
     except NoResultFound:
-        raise DropperHTTPException(status_code=404, detail="No drops found.")
+        raise EngineHTTPException(status_code=404, detail="No drops found.")
     except Exception as e:
         logger.error(
             f"Can't get claims for user {claimant_address} end with error: {e}"
         )
-        raise DropperHTTPException(status_code=500, detail="Can't get claims")
+        raise EngineHTTPException(status_code=500, detail="Can't get claims")
 
     return data.DropListResponse(drops=[result for result in results])
 
@@ -351,10 +336,10 @@ async def get_dropper_contracts_handler(
             db_session=db_session, blockchain=blockchain
         )
     except NoResultFound:
-        raise DropperHTTPException(status_code=404, detail="No drops found.")
+        raise EngineHTTPException(status_code=404, detail="No drops found.")
     except Exception as e:
         logger.error(f"Can't get list of dropper contracts end with error: {e}")
-        raise DropperHTTPException(status_code=500, detail="Can't get contracts")
+        raise EngineHTTPException(status_code=500, detail="Can't get contracts")
 
     response = [
         data.DropperContractResponse(
@@ -386,10 +371,10 @@ async def get_drop_handler(
             db_session=db_session, dropper_claim_id=dropper_claim_id
         )
     except NoResultFound:
-        raise DropperHTTPException(status_code=404, detail="No drops found.")
+        raise EngineHTTPException(status_code=404, detail="No drops found.")
     except Exception as e:
         logger.error(f"Can't get drop {dropper_claim_id} end with error: {e}")
-        raise DropperHTTPException(status_code=500, detail="Can't get drop")
+        raise EngineHTTPException(status_code=500, detail="Can't get drop")
 
     return data.DropperClaimResponse(
         id=drop.id,
@@ -420,7 +405,7 @@ async def get_drops_terminus_handler(
         )
     except Exception as e:
         logger.error(f"Can't get list of terminus contracts end with error: {e}")
-        raise DropperHTTPException(
+        raise EngineHTTPException(
             status_code=500, detail="Can't get terminus contracts"
         )
 

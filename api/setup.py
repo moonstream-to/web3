@@ -12,20 +12,20 @@ setup(
     version=VERSION,
     packages=find_packages(),
     install_requires=[
-        "alembic",
         "boto3",
         "eip712",
+        "eth-typing>=2.3.0",
         "fastapi",
         "psycopg2-binary",
         "pydantic",
         "sqlalchemy",
         "tqdm",
         "uvicorn",
-        "web3",
+        "web3>=5.30.0",
         "tabulate",
     ],
     extras_require={
-        "dev": ["black"],
+        "dev": ["alembic", "brownie", "black", "mypy", "isort"],
         "distribute": ["setuptools", "twine", "wheel"],
     },
     description="Command line interface for Moonstream Engine API",
@@ -39,7 +39,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Topic :: Software Development :: Libraries",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     entry_points={
         "console_scripts": [
             "engineapi=engineapi.cli:main",
