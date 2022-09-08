@@ -10,11 +10,14 @@ const useERC20 = ({
   contractAddress,
   spender,
   ctx,
+  account,
 }: {
   contractAddress?: string;
   spender: string;
   ctx: MoonstreamWeb3ProviderInterface;
+  account?: string;
 }) => {
+  const currentAccount = account || ctx.account;
   const erc20contract = new ctx.web3.eth.Contract(erc20abi) as any as MockErc20;
   erc20contract.options.address = contractAddress ?? "";
   const toast = useToast();
@@ -22,7 +25,11 @@ const useERC20 = ({
     [
       "ERC20",
       "TokenState",
-      { contractAddress: contractAddress, chainId: ctx.targetChain?.chainId },
+      {
+        contractAddress: contractAddress,
+        chainId: ctx.targetChain?.chainId,
+        currentAccount,
+      },
     ],
     () => getTokenState({ ctx })(contractAddress ?? ""),
     {
@@ -30,7 +37,7 @@ const useERC20 = ({
       enabled:
         !!contractAddress &&
         ctx.web3?.utils.isAddress(contractAddress) &&
-        ctx.web3?.utils.isAddress(ctx.account) &&
+        ctx.web3?.utils.isAddress(currentAccount) &&
         !!ctx.chainId &&
         ctx.chainId === ctx.targetChain?.chainId,
     }
@@ -43,18 +50,23 @@ const useERC20 = ({
       {
         contractAddress: contractAddress,
         chainId: ctx.targetChain?.chainId,
-        account: ctx.account,
+        account: currentAccount,
         spender: spender,
       },
     ],
     () =>
-      getSpenderState({ ctx, spender, contractAddress: contractAddress ?? "" }),
+      getSpenderState({
+        ctx,
+        spender,
+        contractAddress: contractAddress ?? "",
+        account: currentAccount,
+      }),
     {
       onSuccess: () => {},
       enabled:
         !!contractAddress &&
         ctx.web3?.utils.isAddress(contractAddress) &&
-        ctx.web3?.utils.isAddress(ctx.account) &&
+        ctx.web3?.utils.isAddress(currentAccount) &&
         !!ctx.chainId &&
         ctx.chainId === ctx.targetChain?.chainId &&
         ctx.web3?.utils.isAddress(spender),
@@ -74,7 +86,7 @@ const useERC20 = ({
     (amount: string) =>
       erc20contract.methods
         .approve(spender, amount)
-        .send({ from: ctx.account }),
+        .send({ from: currentAccount }),
     { ...commonProps }
   );
 

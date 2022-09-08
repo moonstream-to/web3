@@ -92,6 +92,13 @@ const LandsAddresses: { [key in supportedChains]: string } = {
   localhost: "0x0000000000000000000000000000000000000000",
 };
 
+const ShadowcornsAddresses: { [key in supportedChains]: string } = {
+  mumbai: "0x8819CFdb4Fd6Ba0464Ef2283F5F621443B7eC2F4",
+  polygon: "0xa7D50EE3D7485288107664cf758E877a0D351725",
+  ethereum: "0x0000000000000000000000000000000000000000",
+  localhost: "0x0000000000000000000000000000000000000000",
+};
+
 //keystonePoolIdByLandType
 // Land type: 1, 62       // mythic
 // Land type: 2, 59       // light
@@ -540,15 +547,17 @@ const CryptoUnicorns = () => {
   const [RBWAddress, setRBWAddress] = React.useState("");
   const [unicornsAddress, setUnicornsAddress] = React.useState("");
   const [landsAddress, setLandsAddress] = React.useState("");
+  const [shadowcornsAddress, setShadowcornsAddress] = React.useState("");
 
-  const [lootboxBalances, setLootboxBalances] = React.useState({
-    ...defaultLootboxBalances,
-  });
+  // const [lootboxBalances, setLootboxBalances] = React.useState({
+  //   ...defaultLootboxBalances,
+  // });
 
-  const [unicorns, setUnicorns] = React.useState<NFTInfo[]>([]);
-  const [lands, setLands] = React.useState<NFTInfo[]>([]);
+  // const [unicorns, setUnicorns] = React.useState<NFTInfo[]>([]);
+  // const [lands, setLands] = React.useState<NFTInfo[]>([]);
+  // const [shadowcorns, setShadowcorns] = React.useState<NFTInfo[]>([]);
 
-  const inputField = React.useRef<HTMLInputElement | null>(null);
+  const spyAddressInput = React.useRef<HTMLInputElement | null>(null);
 
   const [spyMode, setSpyMode] = React.useState(false);
   const [displayType, setDisplayType] = React.useState(0);
@@ -571,12 +580,14 @@ const CryptoUnicorns = () => {
       setRBWAddress("");
       setUnicornsAddress("");
       setLandsAddress("");
+      setShadowcornsAddress("");
     } else {
       setTerminusAddress(TerminusAddresses[chain as supportedChains]);
       setUNIMAddress(UNIMAddresses[chain as supportedChains]);
       setRBWAddress(RBWAddresses[chain as supportedChains]);
       setUnicornsAddress(UnicornsAddresses[chain as supportedChains]);
       setLandsAddress(LandsAddresses[chain as supportedChains]);
+      setShadowcornsAddress(ShadowcornsAddresses[chain as supportedChains]);
     }
   }, [web3ctx.chainId]);
 
@@ -619,7 +630,7 @@ const CryptoUnicorns = () => {
   );
 
   // Fetch terminus balances.
-  useQuery(
+  const lootboxBalances = useQuery(
     ["cuTerminus", terminusAddress, currentAccount],
     async ({ queryKey }) => {
       const currentChain = chainByChainId[web3ctx.chainId as number];
@@ -665,8 +676,7 @@ const CryptoUnicorns = () => {
           `Crypto Unicorns player portal: Could not retrieve lootbox balances for the given user: ${currentUserAddress}. Lootbox pool IDs: ${poolIds}. Terminus contract address: ${terminusAddress}.`
         );
       }
-
-      setLootboxBalances(currentBalances);
+      return currentBalances;
     },
     {
       ...hookCommon,
@@ -674,7 +684,7 @@ const CryptoUnicorns = () => {
   );
 
   // Fetch unicorns.
-  useQuery(
+  const unicorns = useQuery(
     ["cuUnicorns", unicornsAddress, currentAccount],
     async ({ queryKey }) => {
       const currentChain = chainByChainId[web3ctx.chainId as number];
@@ -745,7 +755,7 @@ const CryptoUnicorns = () => {
         console.error(e);
       }
 
-      setUnicorns(unicornsInventory);
+      return unicornsInventory;
     },
     {
       ...hookCommon,
@@ -753,7 +763,7 @@ const CryptoUnicorns = () => {
   );
 
   // Fetch lands.
-  useQuery(
+  const lands = useQuery(
     ["cuLands", landsAddress, currentAccount],
     async ({ queryKey }) => {
       const currentChain = chainByChainId[web3ctx.chainId as number];
@@ -824,7 +834,86 @@ const CryptoUnicorns = () => {
         console.error(e);
       }
 
-      setLands(landsInventory);
+      return landsInventory;
+    },
+    {
+      ...hookCommon,
+    }
+  );
+
+  // Fetch shadowcorns.
+  const shadowcorns = useQuery(
+    ["cuShadowcorns", shadowcornsAddress, currentAccount],
+    async ({ queryKey }) => {
+      const currentChain = chainByChainId[web3ctx.chainId as number];
+      const currentUserAddress = String(queryKey[2]);
+
+      if (!currentChain) {
+        return;
+      }
+      if (currentUserAddress == "0x0000000000000000000000000000000000000000") {
+        return;
+      }
+
+      const shadowcornsContract = new web3ctx.web3.eth.Contract(
+        ERC721MetadataABI
+      ) as unknown as MockERC721;
+      shadowcornsContract.options.address = String(queryKey[1]);
+
+      let shadowcornsInventory: NFTInfo[] = [];
+
+      try {
+        const numShadowcornsRaw: string = await shadowcornsContract.methods
+          .balanceOf(currentUserAddress)
+          .call();
+
+        let numShadowcorns: number = 0;
+        try {
+          numShadowcorns = parseInt(numShadowcornsRaw, 10);
+        } catch (e) {
+          console.error(
+            `Error: Could not parse number of owned shadowcorns as an integer: ${numShadowcornsRaw}`
+          );
+        }
+
+        let tokenIDPromises = [];
+        for (let i = 0; i < numShadowcorns; i++) {
+          tokenIDPromises.push(
+            shadowcornsContract.methods
+              .tokenOfOwnerByIndex(currentUserAddress, i)
+              .call()
+          );
+        }
+        const tokenIDs = await Promise.all(tokenIDPromises);
+
+        const tokenURIPromises = tokenIDs.map((tokenID) =>
+          shadowcornsContract.methods.tokenURI(tokenID).call()
+        );
+        const tokenURIs = await Promise.all(tokenURIPromises);
+
+        const tokenMetadataPromises = tokenURIs.map((tokenURI) =>
+          fetch(tokenURI).then((response) => response.json())
+        );
+        const tokenMetadata = await Promise.all(tokenMetadataPromises);
+
+        const imageURIs = tokenMetadata.map((metadata) => metadata.image);
+
+        tokenIDs.forEach((tokenID, index) => {
+          shadowcornsInventory.push({
+            tokenID,
+            tokenURI: tokenURIs[index],
+            imageURI: imageURIs[index],
+            metadata: tokenMetadata[index],
+          });
+        });
+      } catch (e) {
+        console.error(
+          "Error: There was an issue retrieving information about user's lands:"
+        );
+        console.error(e);
+      }
+
+      return shadowcornsInventory;
     },
     {
       ...hookCommon,
@@ -838,6 +927,7 @@ const CryptoUnicorns = () => {
       GameBankAddresses[
         web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
       ],
+    account: currentAccount,
   });
   const unim = useERC20({
     contractAddress: UNIMAddress,
@@ -846,6 +936,7 @@ const CryptoUnicorns = () => {
         web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
       ],
     ctx: web3ctx,
+    account: currentAccount,
   });
   const contract = new web3ctx.web3.eth.Contract(
     StashABI
@@ -858,7 +949,8 @@ const CryptoUnicorns = () => {
 
   const playAssetPath = "https://s3.amazonaws.com/static.simiotics.com/play";
   const assets = {
-    unicornMilk: `${playAssetPath}/CU_UNIM_256px.png`,
+    unimLogo: `${playAssetPath}/cu/unim-logo.png`,
+    rbwLogo: `${playAssetPath}/cu/rbw-logo.png`,
   };
 
   const toast = useToast();
@@ -931,7 +1023,7 @@ const CryptoUnicorns = () => {
     } else {
       setNotEnoughUNIM(false);
     }
-  }, [unimToStash, unim.spenderState.data, web3ctx.web3.utils]);
+  }, [unimToStash, unim.spenderState.data, web3ctx.web3.utils, currentAccount]);
 
   React.useLayoutEffect(() => {
     if (rbw.spenderState.data?.allowance && rbwToStash.length !== 0) {
@@ -968,7 +1060,7 @@ const CryptoUnicorns = () => {
     } else {
       setNotEnoughRBW(false);
     }
-  }, [rbwToStash, rbw.spenderState.data, web3ctx.web3.utils]);
+  }, [rbwToStash, rbw.spenderState.data, web3ctx.web3.utils, currentAccount]);
 
   const lootboxes = [
     {
@@ -1201,57 +1293,99 @@ const CryptoUnicorns = () => {
     }
   };
 
-  const displayCardList = (list: any, showQuantity: boolean = true) => {
+  const displayCardList = (
+    list: any,
+    displayId: number,
+    showQuantity: boolean = true
+  ) => {
     const html = (
-      <>
-        {list.map((item: any, idx: any) => {
-          const quantity = lootboxBalances[item["balanceKey"] as terminusType];
-          if (quantity == 0 && !showQuantity) {
-            return;
-          } else {
-            return (
-              <LootboxCard
-                key={idx}
-                imageUrl={item["imageUrl"]}
-                displayName={item["displayName"]}
-                lootboxBalance={quantity}
-                showQuantity={showQuantity}
-              />
-            );
-          }
-        })}
-      </>
+      <Box display={displayType == displayId ? undefined : "none"}>
+        <HStack alignSelf="start" pb={4}>
+          <Image ml={2} alt={"bottle"} h="24px" src={assets["unimLogo"]} />
+          <Text pr={4}>UNIM: {getUnimBalance()}</Text>
+          <Image ml={2} alt={"bottle"} h="24px" src={assets["rbwLogo"]} />
+          <Text>RBW: {getRBWBalance()}</Text>
+        </HStack>
+        <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} pb={10}>
+          {list.map((item: any, idx: any) => {
+            if (!lootboxBalances?.data) {
+              return;
+            }
+            const quantity =
+              lootboxBalances.data[item["balanceKey"] as terminusType];
+            if (quantity == 0 && !showQuantity) {
+              return;
+            } else {
+              return (
+                <LootboxCard
+                  key={idx}
+                  imageUrl={item["imageUrl"]}
+                  displayName={item["displayName"]}
+                  lootboxBalance={quantity}
+                  showQuantity={showQuantity}
+                />
+              );
+            }
+          })}
+        </Grid>
+      </Box>
     );
     return html;
   };
 
-  const displayERC721List = (list: any, showQuantity: boolean = true) => {
+  const displayERC721List = (
+    list: any,
+    displayId: number,
+    showQuantity: boolean = true,
+    isVideo = false
+  ) => {
     return (
-      <>
-        {list.map((item: any, idx: any) => {
-          return (
-            <LootboxCard
-              key={idx}
-              imageUrl={item["metadata"]["image"]}
-              displayName={item["metadata"]["name"]}
-              lootboxBalance={1}
-              showQuantity={showQuantity}
-            />
-          );
-        })}
-      </>
+      <Box display={displayType == displayId ? undefined : "none"}>
+        <HStack pb={4}>
+          <Image ml={2} alt={"bottle"} h="24px" src={assets["unimLogo"]} />
+          <Text pr={4}>UNIM: {getUnimBalance()}</Text>
+          <Image ml={2} alt={"bottle"} h="24px" src={assets["rbwLogo"]} />
+          <Text>RBW: {getRBWBalance()}</Text>
+          <Spacer />
+          <Text>{list.length} Items</Text>
+        </HStack>
+        <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} pb={10}>
+          {list.map((item: any, idx: any) => {
+            return (
+              <LootboxCard
+                key={idx}
+                imageUrl={item["metadata"]["image"]}
+                displayName={item["metadata"]["name"]}
+                lootboxBalance={1}
+                showQuantity={showQuantity}
+                isVideo={isVideo}
+              />
+            );
+          })}
+        </Grid>
+      </Box>
     );
   };
 
   const getUnimBalance = () => {
     return unim.spenderState.data?.balance
-      ? web3ctx.web3.utils.fromWei(unim.spenderState.data?.balance, "ether")
+      ? Math.floor(
+          web3ctx.web3.utils.fromWei(
+            unim.spenderState.data?.balance,
+            "ether"
+          ) as unknown as number
+        )
       : "0";
   };
 
   const getRBWBalance = () => {
     return rbw.spenderState.data?.balance
-      ? web3ctx.web3.utils.fromWei(rbw.spenderState.data?.balance, "ether")
+      ? Math.floor(
+          web3ctx.web3.utils.fromWei(
+            rbw.spenderState.data?.balance,
+            "ether"
+          ) as unknown as number
+        )
       : "0";
   };
 
@@ -1303,7 +1437,7 @@ const CryptoUnicorns = () => {
                     ml={2}
                     alt={"bottle"}
                     h="48px"
-                    src={assets["unicornMilk"]}
+                    src={assets["unimLogo"]}
                   />
                   <Flex direction={"column"} wrap="nowrap" w="100%">
                     <code>
@@ -1333,12 +1467,7 @@ const CryptoUnicorns = () => {
                 p={1}
               >
                 <Flex>
-                  <Image
-                    ml={2}
-                    alt={"rbw"}
-                    h="48px"
-                    src="https://www.cryptounicorns.fun/static/media/icon_RBW.522bf8ec43ae2c866ee6.png"
-                  />
+                  <Image ml={2} alt={"rbw"} h="48px" src={assets["rbwLogo"]} />
                   <Flex direction={"column"} wrap="nowrap" w="100%">
                     <code>
                       <Flex
@@ -1482,9 +1611,6 @@ const CryptoUnicorns = () => {
                           value={rbwToStash}
                           onKeyPress={handleKeypress}
                           onChange={(event) => {
-                            console.log(
-                              event.target.value.match(/^[0-9]+$/) != null
-                            );
                             if (
                               event.target.value.match(/^[0-9]+$/) != null ||
                               event.target.value.length == 0
@@ -1559,6 +1685,10 @@ const CryptoUnicorns = () => {
               pr={6}
               onClick={() => {
                 setSpyMode(false);
+                setDisplayType(0);
+                if (spyAddressInput?.current != null) {
+                  spyAddressInput.current.value = "";
+                }
               }}
             >
               <Text pr={2}>exit</Text>
@@ -1567,10 +1697,12 @@ const CryptoUnicorns = () => {
           )}
         </Flex>
         {spyMode && (
-          <Flex w="100%" pb={10}>
-            <InputGroup size="md" textColor={"blue.900"}>
+          <Flex w="100%" pb={4}>
+            <InputGroup size="md" textColor={"white"}>
               <Input
-                ref={inputField}
+                ref={spyAddressInput}
+                colorScheme="transparent"
+                bgColor="transparent"
                 variant="outline"
                 onChange={(e) => {
                   const nextValue = e.target.value;
@@ -1579,15 +1711,15 @@ const CryptoUnicorns = () => {
                   }
                 }}
                 placeholder="Type an address"
-                _placeholder={{ color: "black" }}
+                _placeholder={{ color: "white" }}
               />
               <InputRightElement width="3rem">
                 <Button
                   h="1.75rem"
                   size="sm"
                   onClick={() => {
-                    if (inputField?.current != null) {
-                      inputField.current.value = "";
+                    if (spyAddressInput?.current != null) {
+                      spyAddressInput.current.value = "";
                     }
                   }}
                 >
@@ -1597,121 +1729,137 @@ const CryptoUnicorns = () => {
             </InputGroup>
           </Flex>
         )}
-        <Flex pb={10} flexDirection="row">
+        <Flex pb={4} flexDirection="row">
           <Button
             size="sm"
             height="24px"
-            width="120px"
             border="1px"
-            borderColor="#B6B6B6"
+            textColor={displayType == 0 ? "white" : "#B6B6B6"}
+            borderColor={displayType == 0 ? "white" : "#B6B6B6"}
             bgColor="transparent"
             borderRadius="20px"
             onClick={() => {
               setDisplayType(0);
             }}
           >
-            Unicorns
+            <Text px={3}>Unicorns</Text>
           </Button>
           <Button
             size="sm"
             height="24px"
-            width="120px"
             border="1px"
-            borderColor="#B6B6B6"
+            textColor={displayType == 6 ? "white" : "#B6B6B6"}
+            borderColor={displayType == 6 ? "white" : "#B6B6B6"}
+            bgColor="transparent"
+            borderRadius="20px"
+            onClick={() => {
+              setDisplayType(6);
+            }}
+          >
+            <Text px={3}>Shadowcorns</Text>
+          </Button>
+          <Button
+            size="sm"
+            height="24px"
+            border="1px"
+            textColor={displayType == 1 ? "white" : "#B6B6B6"}
+            borderColor={displayType == 1 ? "white" : "#B6B6B6"}
             bgColor="transparent"
             borderRadius="20px"
             onClick={() => {
               setDisplayType(1);
             }}
           >
-            Lands
+            <Text px={3}>Lands</Text>
           </Button>
           <Button
             size="sm"
             height="24px"
-            width="120px"
             border="1px"
-            borderColor="#B6B6B6"
+            textColor={displayType == 2 ? "white" : "#B6B6B6"}
+            borderColor={displayType == 2 ? "white" : "#B6B6B6"}
             bgColor="transparent"
             borderRadius="20px"
             onClick={() => {
               setDisplayType(2);
             }}
           >
-            Lootboxes
+            <Text px={3}>Lootboxes</Text>
           </Button>
           <Button
             size="sm"
             height="24px"
-            width="120px"
             border="1px"
-            borderColor="#B6B6B6"
+            textColor={displayType == 3 ? "white" : "#B6B6B6"}
+            borderColor={displayType == 3 ? "white" : "#B6B6B6"}
             bgColor="transparent"
             borderRadius="20px"
             onClick={() => {
               setDisplayType(3);
             }}
           >
-            Keystones
+            <Text px={3}>Keystones</Text>
           </Button>
           <Button
             size="sm"
             height="24px"
-            width="120px"
             border="1px"
-            borderColor="#B6B6B6"
+            textColor={displayType == 4 ? "white" : "#B6B6B6"}
+            borderColor={displayType == 4 ? "white" : "#B6B6B6"}
             bgColor="transparent"
             borderRadius="20px"
             onClick={() => {
               setDisplayType(4);
             }}
           >
-            Badges
+            <Text px={3}>Badges</Text>
           </Button>
           <Button
             size="sm"
             height="24px"
-            width="120px"
             border="1px"
-            borderColor="#B6B6B6"
+            textColor={displayType == 5 ? "white" : "#B6B6B6"}
+            borderColor={displayType == 5 ? "white" : "#B6B6B6"}
             bgColor="transparent"
             borderRadius="20px"
             onClick={() => {
               setDisplayType(5);
             }}
           >
-            Miscellaneous
+            <Text px={3}>Miscellaneous</Text>
           </Button>
           <Spacer />
-          <Button
-            size="sm"
-            height="24px"
-            width="150px"
-            textColor="#D43F8C"
-            borderColor="#FFFFFF"
-            bgColor="white"
-            borderRadius="md"
-            onClick={() => {
-              setSpyMode(!spyMode);
-            }}
-          >
-            <Image
-              src="https://s3.amazonaws.com/static.simiotics.com/play/cu/spy-icon.png"
-              alt="Spy Mode"
-              h="16px"
-              pr="2"
-            ></Image>
-            Spy Mode
-          </Button>
+          {!spyMode && (
+            <Button
+              size="sm"
+              height="24px"
+              width="150px"
+              textColor="#D43F8C"
+              borderColor="#FFFFFF"
+              bgColor="white"
+              borderRadius="md"
+              onClick={() => {
+                setSpyMode(true);
+              }}
+            >
+              <Image
+                src="https://s3.amazonaws.com/static.simiotics.com/play/cu/spy-icon.png"
+                alt="Spy Mode"
+                h="16px"
+                pr="2"
+              ></Image>
+              Spy Mode
+            </Button>
+          )}
         </Flex>
-        <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} pb={10}>
-          {displayType == 0 && displayERC721List(unicorns, false)}
-          {displayType == 1 && displayERC721List(lands, false)}
-          {displayType == 2 && displayCardList(lootboxes)}
-          {displayType == 3 && displayCardList(keystones)}
-          {displayType == 4 && displayCardList(badges, false)}
-          {displayType == 5 && displayCardList(miscItems)}
-        </Grid>
+        {unicorns?.data && displayERC721List(unicorns.data, 0, false)}
+        {lands?.data && displayERC721List(lands.data, 1, false)}
+        {lootboxBalances?.data && displayCardList(lootboxes, 2)}
+        {lootboxBalances?.data && displayCardList(keystones, 3)}
+        {lootboxBalances?.data && displayCardList(badges, 4, false)}
+        {lootboxBalances?.data && displayCardList(miscItems, 5)}
+        {shadowcorns?.data &&
+          displayERC721List(shadowcorns.data, 6, false, true)}
       </Flex>
     </Flex>
   );
