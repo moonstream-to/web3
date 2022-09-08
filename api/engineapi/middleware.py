@@ -1,7 +1,6 @@
 import base64
 import json
 import logging
-from tracemalloc import start
 from typing import Any, Awaitable, Callable, Dict, Optional
 
 from fastapi import HTTPException, Request, Response
@@ -9,12 +8,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from web3 import Web3
 
 from .auth import (
-    AUTH_PAYLOAD_NAME,
-    DEFAULT_INTERVAL,
-    MoonstreamAuthorization,
     MoonstreamAuthorizationExpired,
     MoonstreamAuthorizationVerificationError,
-    authorize,
     verify,
 )
 
@@ -22,7 +17,13 @@ from .auth import (
 logger = logging.getLogger(__name__)
 
 
-class DropperAuthMiddleware(BaseHTTPMiddleware):
+class EngineAuthMiddleware(BaseHTTPMiddleware):
+    """
+    Checks the authorization header on the request. It it represents
+    a correctly signer message, adds address and deadline attributes to the request.state.
+    Otherwise raises a 403 error.
+    """
+
     def __init__(self, app, whitelist: Optional[Dict[str, str]] = None):
         self.whitelist: Dict[str, str] = {}
         if whitelist is not None:
@@ -32,7 +33,7 @@ class DropperAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ):
-        # Filter out endpoints with proper method to work without web3 autharization
+        # Filter out whitelisted endpoints without web3 authorization
         path = request.url.path.rstrip("/")
         method = request.method
 
@@ -66,8 +67,8 @@ class DropperAuthMiddleware(BaseHTTPMiddleware):
             address = json_payload.get("address")
             if address is not None:
                 address = Web3.toChecksumAddress(address)
-            request.state.address = address
-            request.state.verified = verified
+            else:
+                raise Exception("Address in payload is None")
         except MoonstreamAuthorizationVerificationError as e:
             logger.info("Moonstream authorization verification error: %s", e)
             return Response(status_code=403, content="Invalid authorization header")
@@ -75,13 +76,16 @@ class DropperAuthMiddleware(BaseHTTPMiddleware):
             logger.info("Moonstream authorization expired: %s", e)
             return Response(status_code=403, content="Authorization expired")
         except Exception as e:
-            logger.info("Unexpected exception: %s", e)
-            raise
+            logger.error("Unexpected exception: %s", e)
+            return Response(status_code=500, content="Internal server error")
+
+        request.state.address = address
+        request.state.verified = verified
 
         return await call_next(request)
 
 
-class DropperHTTPException(HTTPException):
+class EngineHTTPException(HTTPException):
     """
     Extended HTTPException to handle 500 Internal server errors
     and send crash reports.
