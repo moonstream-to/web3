@@ -53,12 +53,14 @@ class GOFPTestCase(unittest.TestCase):
         self.assertEqual(terminus_info[1], self.admin_pool_id)
 
 
-class TestGOFPSessions(GOFPTestCase):
+class TestAdminFlow(GOFPTestCase):
     def test_create_session_then_get_session_active(self):
         num_sessions_0 = self.gofp.num_sessions()
 
         actual_payment_amount = 42
-        actual_uri = "https://example.com/test_create_session.json"
+        actual_uri = (
+            "https://example.com/test_create_session_then_get_session_active.json"
+        )
         actual_stages = (5, 5, 3, 3, 2)
         actual_is_active = True
 
@@ -93,6 +95,51 @@ class TestGOFPSessions(GOFPTestCase):
         self.assertEqual(payment_address, self.payment_token.address)
         self.assertEqual(payment_amount, actual_payment_amount)
         self.assertTrue(actual_is_active)
+        self.assertEqual(uri, actual_uri)
+        self.assertEqual(stages, actual_stages)
+        self.assertEqual(correct_path, tuple([0 for _ in actual_stages]))
+
+    def test_create_session_then_get_session_inactive(self):
+        num_sessions_0 = self.gofp.num_sessions()
+
+        actual_payment_amount = 43
+        actual_uri = (
+            "https://example.com/test_create_session_then_get_session_inactive.json"
+        )
+        actual_stages = (5, 5, 3)
+        actual_is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            actual_payment_amount,
+            actual_uri,
+            actual_stages,
+            actual_is_active,
+            self.owner_tx_config,
+        )
+
+        num_sessions_1 = self.gofp.num_sessions()
+        self.assertEqual(num_sessions_1, num_sessions_0 + 1)
+
+        session_id = num_sessions_1
+
+        session = self.gofp.get_session(session_id)
+
+        (
+            nft_address,
+            payment_address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            correct_path,
+        ) = session
+
+        self.assertEqual(nft_address, self.nft.address)
+        self.assertEqual(payment_address, self.payment_token.address)
+        self.assertEqual(payment_amount, actual_payment_amount)
+        self.assertFalse(actual_is_active)
         self.assertEqual(uri, actual_uri)
         self.assertEqual(stages, actual_stages)
         self.assertEqual(correct_path, tuple([0 for _ in actual_stages]))
