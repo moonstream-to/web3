@@ -1,7 +1,8 @@
 import unittest
 
-from brownie import accounts, network
+from brownie import accounts, network, web3 as web3_client
 from brownie.exceptions import VirtualMachineError
+from moonworm.watch import _fetch_events_chunk
 
 from . import GOFPFacet, MockTerminus, MockErc20, MockERC721
 from .core import gofp_gogogo
@@ -193,6 +194,46 @@ class TestAdminFlow(GOFPTestCase):
 
         num_sessions_1 = self.gofp.num_sessions()
         self.assertEqual(num_sessions_1, num_sessions_0)
+
+    def test_create_session_fires_event(self):
+        session_created_event_abi = None
+        for item in self.gofp.abi:
+            if item["type"] == "event" and item["name"] == "SessionCreated":
+                session_created_event_abi = item
+
+        self.assertIsNotNone(session_created_event_abi)
+
+        expected_payment_amount = 60
+        expected_uri = "https://example.com/test_create_session_fires_event.json"
+        expected_stages = (5,)
+        expected_is_active = True
+
+        tx_receipt = self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            expected_payment_amount,
+            expected_uri,
+            expected_stages,
+            expected_is_active,
+            {"from": self.game_master},
+        )
+
+        events = _fetch_events_chunk(
+            web3_client,
+            session_created_event_abi,
+            from_block=tx_receipt.block_number,
+            to_block=tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(events), 1)
+
+        self.assertEqual(events[0]["args"]["sessionID"], self.gofp.num_sessions())
+        self.assertEqual(events[0]["args"]["playerTokenAddress"], self.nft.address)
+        self.assertEqual(
+            events[0]["args"]["paymentTokenAddress"], self.payment_token.address
+        )
+        self.assertEqual(events[0]["args"]["paymentAmount"], expected_payment_amount)
+        self.assertEqual(events[0]["args"]["uri"], expected_uri)
 
 
 if __name__ == "__main__":
