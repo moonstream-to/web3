@@ -3,7 +3,7 @@ import unittest
 from brownie import accounts, network
 
 from . import GOFPFacet
-from .core import diamond_gogogo, Diamond, facet_cut
+from .core import gofp_gogogo, ZERO_ADDRESS
 
 
 class GOFPTestCase(unittest.TestCase):
@@ -17,25 +17,15 @@ class GOFPTestCase(unittest.TestCase):
         cls.owner = accounts[0]
         cls.owner_tx_config = {"from": cls.owner}
 
-        cls.deployed_contracts = diamond_gogogo(
-            accounts[0].address, cls.owner_tx_config
-        )
-        cls.diamond_address = cls.deployed_contracts["Diamond"]
+        cls.deployed_contracts = gofp_gogogo(ZERO_ADDRESS, 0, cls.owner_tx_config)
+        cls.gofp = GOFPFacet.GOFPFacet(cls.deployed_contracts["contracts"]["Diamond"])
 
-        gofp_facet = GOFPFacet.GOFPFacet(None)
-        gofp_facet.deploy(cls.owner_tx_config)
 
-        cls.deployed_contracts["GOFPFacet"] = gofp_facet.address
-
-        facet_cut(
-            cls.diamond_address,
-            "GOFPFacet",
-            gofp_facet.address,
-            "add",
-            cls.owner_tx_config,
-        )
-
-        cls.gofp = GOFPFacet.GOFPFacet(cls.diamond_address)
+class TestGOFPDeployment(GOFPTestCase):
+    def test_gofp_deployment(self):
+        terminus_info = self.gofp.admin_terminus_info()
+        self.assertEqual(terminus_info[0], ZERO_ADDRESS)
+        self.assertEqual(terminus_info[1], 0)
 
 
 if __name__ == "__main__":
