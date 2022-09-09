@@ -57,20 +57,20 @@ class TestAdminFlow(GOFPTestCase):
     def test_create_session_then_get_session_active(self):
         num_sessions_0 = self.gofp.num_sessions()
 
-        actual_payment_amount = 42
-        actual_uri = (
+        expected_payment_amount = 42
+        expected_uri = (
             "https://example.com/test_create_session_then_get_session_active.json"
         )
-        actual_stages = (5, 5, 3, 3, 2)
-        actual_is_active = True
+        expected_stages = (5, 5, 3, 3, 2)
+        expected_is_active = True
 
         self.gofp.create_session(
             self.nft.address,
             self.payment_token.address,
-            actual_payment_amount,
-            actual_uri,
-            actual_stages,
-            actual_is_active,
+            expected_payment_amount,
+            expected_uri,
+            expected_stages,
+            expected_is_active,
             self.owner_tx_config,
         )
 
@@ -93,29 +93,29 @@ class TestAdminFlow(GOFPTestCase):
 
         self.assertEqual(nft_address, self.nft.address)
         self.assertEqual(payment_address, self.payment_token.address)
-        self.assertEqual(payment_amount, actual_payment_amount)
-        self.assertTrue(actual_is_active)
-        self.assertEqual(uri, actual_uri)
-        self.assertEqual(stages, actual_stages)
-        self.assertEqual(correct_path, tuple([0 for _ in actual_stages]))
+        self.assertEqual(payment_amount, expected_payment_amount)
+        self.assertTrue(is_active)
+        self.assertEqual(uri, expected_uri)
+        self.assertEqual(stages, expected_stages)
+        self.assertEqual(correct_path, tuple([0 for _ in expected_stages]))
 
     def test_create_session_then_get_session_inactive(self):
         num_sessions_0 = self.gofp.num_sessions()
 
-        actual_payment_amount = 43
-        actual_uri = (
+        expected_payment_amount = 43
+        expected_uri = (
             "https://example.com/test_create_session_then_get_session_inactive.json"
         )
-        actual_stages = (5, 5, 3)
-        actual_is_active = False
+        expected_stages = (5, 5, 3)
+        expected_is_active = False
 
         self.gofp.create_session(
             self.nft.address,
             self.payment_token.address,
-            actual_payment_amount,
-            actual_uri,
-            actual_stages,
-            actual_is_active,
+            expected_payment_amount,
+            expected_uri,
+            expected_stages,
+            expected_is_active,
             self.owner_tx_config,
         )
 
@@ -138,11 +138,11 @@ class TestAdminFlow(GOFPTestCase):
 
         self.assertEqual(nft_address, self.nft.address)
         self.assertEqual(payment_address, self.payment_token.address)
-        self.assertEqual(payment_amount, actual_payment_amount)
-        self.assertFalse(actual_is_active)
-        self.assertEqual(uri, actual_uri)
-        self.assertEqual(stages, actual_stages)
-        self.assertEqual(correct_path, tuple([0 for _ in actual_stages]))
+        self.assertEqual(payment_amount, expected_payment_amount)
+        self.assertFalse(is_active)
+        self.assertEqual(uri, expected_uri)
+        self.assertEqual(stages, expected_stages)
+        self.assertEqual(correct_path, tuple([0 for _ in expected_stages]))
 
 
 if __name__ == "__main__":
