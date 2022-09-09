@@ -11,8 +11,9 @@ from . import actions
 from . import db
 from . import signatures
 from . import data
-from . import  auth
-from .settings import BLOCKCHAINS_TO_BROWNIE_NETWORKS
+from . import auth
+
+# from .settings import BLOCKCHAINS_TO_BROWNIE_NETWORKS
 from .models import DropperClaim, DropperContract
 
 
@@ -358,25 +359,25 @@ def create_leaderboard_handler(args: argparse.Namespace) -> None:
         print(Leaderboard)
 
 
-def claimant_signature_refetch_handler(args: argparse.Namespace) -> None:
+# def claimant_signature_refetch_handler(args: argparse.Namespace) -> None:
 
-    with db.yield_db_session_ctx() as db_session:
+#     with db.yield_db_session_ctx() as db_session:
 
-        blockchain = (
-            db_session.query(DropperContract.blockchain)
-            .join(DropperClaim, DropperClaim.dropper_contract_id == DropperContract.id)
-            .filter(DropperClaim.id == UUID(args.dropper_claim_id))
-        ).one()
+#         blockchain = (
+#             db_session.query(DropperContract.blockchain)
+#             .join(DropperClaim, DropperClaim.dropper_contract_id == DropperContract.id)
+#             .filter(DropperClaim.id == UUID(args.dropper_claim_id))
+#         ).one()
 
-        network.connect(BLOCKCHAINS_TO_BROWNIE_NETWORKS[blockchain.blockchain])
+#         network.connect(BLOCKCHAINS_TO_BROWNIE_NETWORKS[blockchain.blockchain])
 
-        claimant_signature = actions.refetch_drop_signatures(
-            db_session=db_session,
-            dropper_claim_id=args.dropper_claim_id,
-            added_by="cli",
-        )
+#         claimant_signature = actions.refetch_drop_signatures(
+#             db_session=db_session,
+#             dropper_claim_id=args.dropper_claim_id,
+#             added_by="cli",
+#         )
 
-        print(f"Amount of updated claimants: {len(claimant_signature)}")
+#         print(f"Amount of updated claimants: {len(claimant_signature)}")
 
 
 def main() -> None:
@@ -768,16 +769,16 @@ def main() -> None:
     )
     parser_dropper_list_claimants.set_defaults(func=list_claimants_handler)
 
-    parser_dropper_claimant_signature_refetch = subparsers_dropper.add_parser(
-        "signature-refetch", description="Refetch signature for claimant"
-    )
-    parser_dropper_claimant_signature_refetch.add_argument(
-        "--dropper-claim-id", type=str, required=True
-    )
+    # parser_dropper_claimant_signature_refetch = subparsers_dropper.add_parser(
+    #     "signature-refetch", description="Refetch signature for claimant"
+    # )
+    # parser_dropper_claimant_signature_refetch.add_argument(
+    #     "--dropper-claim-id", type=str, required=True
+    # )
 
-    parser_dropper_claimant_signature_refetch.set_defaults(
-        func=claimant_signature_refetch_handler
-    )
+    # parser_dropper_claimant_signature_refetch.set_defaults(
+    #     func=claimant_signature_refetch_handler
+    # )
 
     args = parser.parse_args()
     args.func(args)

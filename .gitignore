@@ -148,6 +148,13 @@ alembic.test.ini
 #Node
 node_modules/
 yarn.lock
+package-lock.json
 
 #next
 .next/
+
+# Schematic
+.schematic.env
+scm/srv/
+scm/pwfile
+

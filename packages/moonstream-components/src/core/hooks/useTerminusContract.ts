@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "react-query";
 import {
   getTerminusFacetPoolState,
   getTerminusFacetState,
+  balanceOfAddress
 } from "../contracts/terminus.contracts";
 import { getTokenState } from "../contracts/erc20.contracts";
 import { MoonstreamWeb3ProviderInterface } from "../../../../../types/Moonstream";
@@ -134,6 +135,22 @@ export const useTerminusContract = ({
     }
   );
 
+  const balanceOf = useQuery(
+    [
+      ["terminusContract", "balanceOf"],
+      {
+        address: address,
+        chainId: ctx.targetChain?.chainId,
+        poolId: poolId,
+        currentUserAddress: ctx.account,
+      },
+    ],
+    balanceOfAddress(ctx.account, address, Number(poolId), ctx),
+    {
+      ...hookCommon,
+    }
+  );
+
   const setPoolURI = useMutation(
     ({ uri, poolId }: { uri: string; poolId: string }) =>
       terminusFacet.methods.setURI(poolId, uri).send({ from: ctx.account }),
@@ -208,6 +225,7 @@ export const useTerminusContract = ({
     setController,
     newPool,
     poolState,
+    balanceOf,
     setPoolURI,
     poolURI,
     setPoolController,

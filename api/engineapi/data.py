@@ -76,12 +76,16 @@ class DropCreatedResponse(BaseModel):
 class Claimant(BaseModel):
     address: str
     amount: int
+    raw_amount: Optional[str] = None
+
 
 class BatchAddClaimantsRequest(BaseModel):
     claimants: List[Claimant] = Field(default_factory=list)
 
+
 class BatchRemoveClaimantsRequest(BaseModel):
     claimants: List[str] = Field(default_factory=list)
+
 
 class DropAddClaimantsRequest(BaseModel):
     dropper_claim_id: UUID
@@ -116,8 +120,7 @@ class DropperClaimResponse(BaseModel):
 class DropResponse(BaseModel):
     claimant: str
     claim_id: int
-    amount: int
-    amount_string: str
+    amount: str
     block_deadline: int
     signature: str
     title: str

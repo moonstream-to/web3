@@ -14,12 +14,14 @@ from . import (
     abi,
     Lootbox,
     MockTerminus,
+    CraftingFacet,
     Diamond,
     DiamondCutFacet,
     DiamondLoupeFacet,
     DropperFacet,
     OwnershipFacet,
     ReentrancyExploitable,
+    CraftingFacet,
 )
 
 FACETS: Dict[str, Any] = {
@@ -28,6 +30,7 @@ FACETS: Dict[str, Any] = {
     "DropperFacet": DropperFacet,
     "OwnershipFacet": OwnershipFacet,
     "ReentrancyExploitable": ReentrancyExploitable,
+    "CraftingFacet": CraftingFacet,
 }
 
 FACET_INIT_CALLDATA: Dict[str, str] = {
@@ -46,7 +49,6 @@ FACET_PRECEDENCE: List[str] = [
     "DiamondCutFacet",
     "OwnershipFacet",
     "DiamondLoupeFacet",
-    "ReentrancyExploitable",
 ]
 
 
@@ -188,6 +190,38 @@ def facet_cut(
         [diamond_cut_action], initializer_address, calldata, transaction_config
     )
     return transaction
+
+
+def crafting_gogogo(
+    owner_address: str, transaction_config: Dict[str, Any]
+) -> Dict[str, Any]:
+    result = diamond_gogogo(owner_address, transaction_config)
+
+    try:
+        crafting_facet = CraftingFacet.CraftingFacet(None)
+        crafting_facet.deploy(transaction_config)
+    except Exception as e:
+        print(e)
+        result["error"] = f"Failed to deploy CraftingFacet: {e}"
+        return result
+
+    result["CraftingFacet"] = crafting_facet.address
+
+    try:
+        facet_cut(
+            result["Diamond"],
+            "CraftingFacet",
+            crafting_facet.address,
+            "add",
+            transaction_config,
+        )
+    except Exception as e:
+        print(e)
+        result["error"] = f"Failed to diamondCut cut CraftingFacet: {e}"
+        return result
+
+    result["attached"].append("CraftingFacet")
+    return result
 
 
 def diamond_gogogo(
@@ -565,7 +599,21 @@ def handle_dropper_gogogo(args: argparse.Namespace) -> None:
     if args.outfile is not None:
         with args.outfile:
             json.dump(result, args.outfile)
+    json.dump(result, sys.stdout, indent=4)
 
+
+def handle_crafting_gogogo(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+
+    transaction_config = MockTerminus.get_transaction_config(args)
+    result = crafting_gogogo(
+        args.owner_address,
+        transaction_config,
+    )
+
+    if args.outfile is not None:
+        with args.outfile:
+            json.dump(result, args.outfile)
     json.dump(result, sys.stdout, indent=4)
 
 
@@ -719,6 +767,31 @@ def generate_cli():
     MockTerminus.add_default_arguments(lootbox_gogogo_parser, transact=True)
 
     lootbox_gogogo_parser.set_defaults(func=handle_lootbox_gogogo)
+
+    crafting_gogogo_parser = subcommands.add_parser(
+        "crafting-gogogo",
+        help="Deploys Crafting contract",
+        description="Deploys Crafting contract",
+    )
+
+    crafting_gogogo_parser.add_argument(
+        "-o",
+        "--outfile",
+        type=argparse.FileType("w"),
+        default=None,
+        help="(Optional) file to write deployed addresses to",
+    )
+
+    crafting_gogogo_parser.add_argument(
+        "--owner-address",
+        type=str,
+        required=True,
+        help="Address of the owner of the lootbox contract",
+    )
+
+    MockTerminus.add_default_arguments(crafting_gogogo_parser, transact=True)
+
+    crafting_gogogo_parser.set_defaults(func=handle_crafting_gogogo)
 
     create_lootboxes_from_config_parser = subcommands.add_parser(
         "create-lootboxes-from-config",

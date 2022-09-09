@@ -28,4 +28,4 @@ cd ..
 brownie compile
 cd -
 set -x
-python -m unittest $TEST_COMMAND
+GAS_PROFILE="y" python -m unittest $TEST_COMMAND 
