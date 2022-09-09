@@ -79,6 +79,7 @@ contract GOFPFacet {
         isActive = gs.SessionIsActive[sessionID];
         uri = gs.SessionURI[sessionID];
         stages = gs.SessionStages[sessionID];
+        correctPath = new uint256[](stages.length);
         for (uint256 i = 0; i < stages.length; i++) {
             correctPath[i] = gs.SessionPath[sessionID][i];
         }

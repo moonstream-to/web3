@@ -2,8 +2,8 @@ import unittest
 
 from brownie import accounts, network
 
-from . import GOFPFacet, MockTerminus, MockErc20
-from .core import gofp_gogogo, ZERO_ADDRESS
+from . import GOFPFacet, MockTerminus, MockErc20, MockERC721
+from .core import gofp_gogogo
 
 
 class GOFPTestCase(unittest.TestCase):
@@ -16,6 +16,9 @@ class GOFPTestCase(unittest.TestCase):
 
         cls.owner = accounts[0]
         cls.owner_tx_config = {"from": cls.owner}
+
+        cls.nft = MockERC721.MockERC721(None)
+        cls.nft.deploy(cls.owner_tx_config)
 
         cls.terminus = MockTerminus.MockTerminus(None)
         cls.terminus.deploy(cls.owner_tx_config)
@@ -44,12 +47,50 @@ class GOFPTestCase(unittest.TestCase):
         )
         cls.gofp = GOFPFacet.GOFPFacet(cls.deployed_contracts["contracts"]["Diamond"])
 
-
-class TestGOFPDeployment(GOFPTestCase):
-    def test_gofp_deployment(self):
+    def test_admin_terminus_info(self):
         terminus_info = self.gofp.admin_terminus_info()
         self.assertEqual(terminus_info[0], self.terminus.address)
         self.assertEqual(terminus_info[1], self.admin_pool_id)
+
+
+class TestGOFPSessions(GOFPTestCase):
+    def test_create_session(self):
+        num_sessions_0 = self.gofp.num_sessions()
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            42,
+            "https://example.com/test_create_session.json",
+            [5, 5, 3, 3, 2],
+            True,
+            self.owner_tx_config,
+        )
+
+        num_sessions_1 = self.gofp.num_sessions()
+        self.assertEqual(num_sessions_1, num_sessions_0 + 1)
+
+        session_id = num_sessions_1
+
+        session = self.gofp.get_session(session_id)
+
+        (
+            nft_address,
+            payment_address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            correct_path,
+        ) = session
+
+        self.assertEqual(nft_address, self.nft.address)
+        self.assertEqual(payment_address, self.payment_token.address)
+        self.assertEqual(payment_amount, 42)
+        self.assertTrue(is_active)
+        self.assertEqual(uri, "https://example.com/test_create_session.json")
+        self.assertEqual(stages, (5, 5, 3, 3, 2))
+        self.assertEqual(correct_path, (0, 0, 0, 0, 0))
 
 
 if __name__ == "__main__":
