@@ -2,7 +2,7 @@ import unittest
 
 from brownie import accounts, network
 
-from . import GardenOfForkingPaths
+from . import GOFPFacet
 from .core import diamond_gogogo, Diamond, facet_cut
 
 
@@ -23,7 +23,7 @@ class GOFPTestCase(unittest.TestCase):
 
         cls.diamond = Diamond.Diamond(cls.deployed_contracts["Diamond"])
 
-        gofp_facet = GardenOfForkingPaths.GardenOfForkingPaths(None)
+        gofp_facet = GOFPFacet.GOFPFacet(None)
         gofp_facet.deploy(cls.owner_tx_config)
 
         cls.deployed_contracts["GOFPFacet"] = gofp_facet.address
