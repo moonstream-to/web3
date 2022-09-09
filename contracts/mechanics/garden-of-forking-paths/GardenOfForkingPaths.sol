@@ -7,6 +7,9 @@
 
 pragma solidity ^0.8.0;
 
+import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import "@openzeppelin-contracts/contracts/token/ERC721/utils/ERC721Holder.sol";
+import {TerminusPermissions} from "@moonstream/contracts/terminus/TerminusPermissions.sol";
 import "../../diamond/libraries/LibDiamond.sol";
 
 library LibGOFP {
@@ -35,7 +38,7 @@ library LibGOFP {
     }
 }
 
-contract GOFPFacet {
+contract GOFPFacet is ERC1155Holder, ERC721Holder, TerminusPermissions {
     event SessionCreated(
         uint256 indexed sessionID,
         address indexed playerTokenAddress,
@@ -43,6 +46,15 @@ contract GOFPFacet {
         uint256 paymentAmount,
         string uri
     );
+
+    modifier onlyGameMaster() {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        require(
+            _holdsPoolToken(gs.AdminTerminusAddress, gs.AdminTerminusPoolID, 1),
+            "GOFPFacet.onlyGameMaster: The address is not an authorized game master"
+        );
+        _;
+    }
 
     // When session is activated, this fires:
     // SessionActivated(<id>, true)
@@ -101,7 +113,7 @@ contract GOFPFacet {
         string memory uri,
         uint256[] memory stages,
         bool active
-    ) external {
+    ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         gs.NumSessions++;
         require(

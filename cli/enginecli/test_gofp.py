@@ -1,6 +1,7 @@
 import unittest
 
 from brownie import accounts, network
+from brownie.exceptions import VirtualMachineError
 
 from . import GOFPFacet, MockTerminus, MockErc20, MockERC721
 from .core import gofp_gogogo
@@ -16,6 +17,10 @@ class GOFPTestCase(unittest.TestCase):
 
         cls.owner = accounts[0]
         cls.owner_tx_config = {"from": cls.owner}
+
+        cls.game_master = accounts[1]
+        cls.player = accounts[2]
+        cls.random_person = accounts[3]
 
         cls.nft = MockERC721.MockERC721(None)
         cls.nft.deploy(cls.owner_tx_config)
@@ -39,7 +44,7 @@ class GOFPTestCase(unittest.TestCase):
         cls.admin_pool_id = cls.terminus.total_pools()
 
         cls.terminus.mint(
-            cls.owner.address, cls.admin_pool_id, 1, "", cls.owner_tx_config
+            cls.game_master.address, cls.admin_pool_id, 1, "", cls.owner_tx_config
         )
 
         cls.deployed_contracts = gofp_gogogo(
@@ -71,7 +76,7 @@ class TestAdminFlow(GOFPTestCase):
             expected_uri,
             expected_stages,
             expected_is_active,
-            self.owner_tx_config,
+            {"from": self.game_master},
         )
 
         num_sessions_1 = self.gofp.num_sessions()
@@ -116,7 +121,7 @@ class TestAdminFlow(GOFPTestCase):
             expected_uri,
             expected_stages,
             expected_is_active,
-            self.owner_tx_config,
+            {"from": self.game_master},
         )
 
         num_sessions_1 = self.gofp.num_sessions()
@@ -143,6 +148,50 @@ class TestAdminFlow(GOFPTestCase):
         self.assertEqual(uri, expected_uri)
         self.assertEqual(stages, expected_stages)
         self.assertEqual(correct_path, tuple([0 for _ in expected_stages]))
+
+    def test_cannot_create_session_as_player(self):
+        num_sessions_0 = self.gofp.num_sessions()
+
+        failed_payment_amount = 44
+        failed_uri = "https://example.com/test_cannot_create_session_as_player.json"
+        failed_stages = (5, 5)
+        failed_is_active = True
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.create_session(
+                self.nft.address,
+                self.payment_token.address,
+                failed_payment_amount,
+                failed_uri,
+                failed_stages,
+                failed_is_active,
+                {"from": self.player},
+            )
+
+        num_sessions_1 = self.gofp.num_sessions()
+        self.assertEqual(num_sessions_1, num_sessions_0)
+
+    def test_cannot_create_session_as_contract_owner_who_is_not_game_master(self):
+        num_sessions_0 = self.gofp.num_sessions()
+
+        failed_payment_amount = 44
+        failed_uri = "https://example.com/test_cannot_create_session_as_contract_owner_who_is_not_game_master.json"
+        failed_stages = (5, 5)
+        failed_is_active = True
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.create_session(
+                self.nft.address,
+                self.payment_token.address,
+                failed_payment_amount,
+                failed_uri,
+                failed_stages,
+                failed_is_active,
+                {"from": self.owner},
+            )
+
+        num_sessions_1 = self.gofp.num_sessions()
+        self.assertEqual(num_sessions_1, num_sessions_0)
 
 
 if __name__ == "__main__":
