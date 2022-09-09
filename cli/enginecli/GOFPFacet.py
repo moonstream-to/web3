@@ -69,12 +69,12 @@ def contract_from_build(abi_name: str) -> ContractContainer:
     return ContractContainer(PROJECT, build)
 
 
-class GardenOfForkingPaths:
+class GOFPFacet:
     def __init__(self, contract_address: Optional[ChecksumAddress]):
-        self.contract_name = "GardenOfForkingPaths"
+        self.contract_name = "GOFPFacet"
         self.address = contract_address
         self.contract = None
-        self.abi = get_abi_json("GardenOfForkingPaths")
+        self.abi = get_abi_json("GOFPFacet")
         if self.address is not None:
             self.contract: Optional[Contract] = Contract.from_abi(
                 self.contract_name, self.address, self.abi
@@ -198,7 +198,7 @@ def add_default_arguments(parser: argparse.ArgumentParser, transact: bool) -> No
 def handle_deploy(args: argparse.Namespace) -> None:
     network.connect(args.network)
     transaction_config = get_transaction_config(args)
-    contract = GardenOfForkingPaths(None)
+    contract = GOFPFacet(None)
     result = contract.deploy(transaction_config=transaction_config)
     print(result)
     if args.verbose:
@@ -207,14 +207,14 @@ def handle_deploy(args: argparse.Namespace) -> None:
 
 def handle_verify_contract(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = GardenOfForkingPaths(args.address)
+    contract = GOFPFacet(args.address)
     result = contract.verify_contract()
     print(result)
 
 
 def handle_create_session(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = GardenOfForkingPaths(args.address)
+    contract = GOFPFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.create_session(
         player_token_address=args.player_token_address,
@@ -232,7 +232,7 @@ def handle_create_session(args: argparse.Namespace) -> None:
 
 def handle_get_session(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = GardenOfForkingPaths(args.address)
+    contract = GOFPFacet(args.address)
     result = contract.get_session(
         session_id=args.session_id, block_number=args.block_number
     )
@@ -241,13 +241,13 @@ def handle_get_session(args: argparse.Namespace) -> None:
 
 def handle_num_sessions(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = GardenOfForkingPaths(args.address)
+    contract = GOFPFacet(args.address)
     result = contract.num_sessions(block_number=args.block_number)
     print(result)
 
 
 def generate_cli() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="CLI for GardenOfForkingPaths")
+    parser = argparse.ArgumentParser(description="CLI for GOFPFacet")
     parser.set_defaults(func=lambda _: parser.print_help())
     subcommands = parser.add_subparsers()
 

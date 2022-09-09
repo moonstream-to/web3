@@ -31,7 +31,7 @@ library LibGOFP {
     }
 }
 
-contract GardenOfForkingPaths {
+contract GOFPFacet {
     event SessionCreated(
         uint256 indexed sessionID,
         address indexed playerTokenAddress,
