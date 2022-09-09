@@ -1,5 +1,5 @@
 import argparse
-from ast import arg
+from enum import Enum
 import json
 import os
 import sys
@@ -21,6 +21,7 @@ from . import (
     OwnershipFacet,
     ReentrancyExploitable,
     CraftingFacet,
+    GOFPFacet,
 )
 
 FACETS: Dict[str, Any] = {
@@ -29,13 +30,44 @@ FACETS: Dict[str, Any] = {
     "OwnershipFacet": OwnershipFacet,
     "ReentrancyExploitable": ReentrancyExploitable,
     "CraftingFacet": CraftingFacet,
+    "GOFPFacet": GOFPFacet,
 }
+
+FACET_INIT_CALLDATA: Dict[str, str] = {
+    "GOFPFacet": lambda address, *args: GOFPFacet.GOFPFacet(
+        address
+    ).contract.init.encode_input(*args)
+}
+
+DIAMOND_FACET_PRECEDENCE: List[str] = [
+    "DiamondCutFacet",
+    "OwnershipFacet",
+    "DiamondLoupeFacet",
+]
 
 FACET_PRECEDENCE: List[str] = [
     "DiamondCutFacet",
     "OwnershipFacet",
     "DiamondLoupeFacet",
 ]
+
+
+class EngineFeatures(Enum):
+    GOFP = "GardenOfForkingPaths"
+
+
+def feature_from_facet_name(facet_name: str) -> Optional[EngineFeatures]:
+    try:
+        return EngineFeatures(facet_name)
+    except ValueError:
+        return None
+
+
+FEATURE_FACETS: Dict[EngineFeatures, List[str]] = {EngineFeatures.GOFP: ["GOFPFacet"]}
+
+FEATURE_IGNORES: Dict[EngineFeatures, List[str]] = {
+    EngineFeatures.GOFP: {"methods": ["init"], "selectors": []}
+}
 
 FACET_ACTIONS: Dict[str, int] = {"add": 0, "replace": 1, "remove": 2}
 
@@ -53,6 +85,8 @@ def facet_cut(
     ignore_selectors: Optional[List[str]] = None,
     methods: Optional[List[str]] = None,
     selectors: Optional[List[str]] = None,
+    feature: Optional[EngineFeatures] = None,
+    initializer_args: Optional[List[Any]] = None,
 ) -> Any:
     """
     Cuts the given facet onto the given Diamond contract.
@@ -67,6 +101,10 @@ def facet_cut(
         action in FACET_ACTIONS
     ), f"Invalid cut action: {action}. Choices: {','.join(FACET_ACTIONS)}."
 
+    facet_precedence = FACET_PRECEDENCE
+    if feature is not None:
+        facet_precedence = DIAMOND_FACET_PRECEDENCE + FEATURE_FACETS[feature]
+
     if ignore_methods is None:
         ignore_methods = []
     if ignore_selectors is None:
@@ -76,15 +114,31 @@ def facet_cut(
     if selectors is None:
         selectors = []
 
-    project_dir = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    project_dir = os.path.abspath(
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    )
     abis = abi.project_abis(project_dir)
 
     reserved_selectors: Set[str] = set()
-    for facet in FACET_PRECEDENCE:
+    for facet in facet_precedence:
+        facet_abi = abis.get(facet, [])
         if facet == facet_name:
+            # Add feature ignores to reserved_selectors then break out of facet iteration
+            facet_feature = feature_from_facet_name(facet_name)
+            if facet_feature is not None:
+                feature_ignores = FEATURE_IGNORES[facet_feature]
+                for item in facet_abi:
+                    if (
+                        item["type"] == "function"
+                        and item["name"] in feature_ignores["methods"]
+                    ):
+                        reserved_selectors.add(abi.encode_function_signature(item))
+
+                for selector in feature_ignores["selectors"]:
+                    reserved_selectors.add(selector)
+
             break
 
-        facet_abi = abis.get(facet, [])
         for item in facet_abi:
             if item["type"] == "function":
                 reserved_selectors.add(abi.encode_function_signature(item))
@@ -124,6 +178,12 @@ def facet_cut(
 
     diamond = DiamondCutFacet.DiamondCutFacet(diamond_address)
     calldata = b""
+    if FACET_INIT_CALLDATA.get(facet_name) is not None:
+        if initializer_args is None:
+            initializer_args = []
+        calldata = FACET_INIT_CALLDATA[facet_name](
+            initializer_address, *initializer_args
+        )
     transaction = diamond.diamond_cut(
         [diamond_cut_action], initializer_address, calldata, transaction_config
     )
@@ -170,7 +230,7 @@ def diamond_gogogo(
 
     Returns addresses of all the deployed contracts with the contract names as keys.
     """
-    result: Dict[str, Any] = {}
+    result: Dict[str, Any] = {"contracts": {}, "attached": []}
 
     try:
         diamond_cut_facet = DiamondCutFacet.DiamondCutFacet(None)
@@ -179,7 +239,7 @@ def diamond_gogogo(
         print(e)
         result["error"] = "Failed to deploy DiamondCutFacet"
         return result
-    result["DiamondCutFacet"] = diamond_cut_facet.address
+    result["contracts"]["DiamondCutFacet"] = diamond_cut_facet.address
 
     try:
         diamond = Diamond.Diamond(None)
@@ -188,7 +248,7 @@ def diamond_gogogo(
         print(e)
         result["error"] = "Failed to deploy Diamond"
         return result
-    result["Diamond"] = diamond.address
+    result["contracts"]["Diamond"] = diamond.address
 
     try:
         diamond_loupe_facet = DiamondLoupeFacet.DiamondLoupeFacet(None)
@@ -197,7 +257,7 @@ def diamond_gogogo(
         print(e)
         result["error"] = "Failed to deploy DiamondLoupeFacet"
         return result
-    result["DiamondLoupeFacet"] = diamond_loupe_facet.address
+    result["contracts"]["DiamondLoupeFacet"] = diamond_loupe_facet.address
 
     try:
         ownership_facet = OwnershipFacet.OwnershipFacet(None)
@@ -206,9 +266,7 @@ def diamond_gogogo(
         print(e)
         result["error"] = "Failed to deploy OwnershipFacet"
         return result
-    result["OwnershipFacet"] = ownership_facet.address
-
-    result["attached"] = []
+    result["contracts"]["OwnershipFacet"] = ownership_facet.address
 
     try:
         facet_cut(
@@ -323,7 +381,7 @@ def create_lootboxes_from_config(
             if item["rewardType"] == 20:
                 erc20_contract = MockErc20(item["tokenAddress"])
                 erc20_decimals = erc20_contract.decimals()
-                item["tokenAmount"] *= 10 ** erc20_decimals
+                item["tokenAmount"] *= 10**erc20_decimals
             lootbox_items.append(_lootbox_item_from_json_object(item))
 
         lootboxes.append(
@@ -404,7 +462,7 @@ def create_lootboxes_from_config(
     return results
 
 
-def gogogo(
+def lootbox_gogogo(
     terminus_address,
     vrf_coordinator_address,
     link_token_address,
@@ -460,11 +518,62 @@ def gogogo(
     return contracts
 
 
-def handle_gogogo(args: argparse.Namespace) -> None:
+def gofp_gogogo(
+    admin_terminus_address: str,
+    admin_terminus_pool_id: int,
+    transaction_config: Dict[str, Any],
+) -> Dict[str, Any]:
+    deployment_info = diamond_gogogo(
+        owner_address=transaction_config["from"].address,
+        transaction_config=transaction_config,
+    )
+
+    gofp_facet = GOFPFacet.GOFPFacet(None)
+    gofp_facet.deploy(transaction_config=transaction_config)
+    deployment_info["contracts"]["GOFPFacet"] = gofp_facet.address
+
+    diamond_address = deployment_info["contracts"]["Diamond"]
+    facet_cut(
+        diamond_address,
+        "GOFPFacet",
+        gofp_facet.address,
+        "add",
+        transaction_config,
+        initializer_address=gofp_facet.address,
+        feature=EngineFeatures.GOFP,
+        initializer_args=[admin_terminus_address, admin_terminus_pool_id],
+    )
+    deployment_info["attached"].append("GOFPFacet")
+
+    return deployment_info
+
+
+def handle_facet_cut(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    diamond_address = args.address
+    action = args.action
+    facet_name = args.facet_name
+    facet_address = args.facet_address
+    transaction_config = Diamond.get_transaction_config(args)
+    facet_cut(
+        diamond_address,
+        facet_name,
+        facet_address,
+        action,
+        transaction_config,
+        initializer_address=args.initializer_address,
+        ignore_methods=args.ignore_methods,
+        ignore_selectors=args.ignore_selectors,
+        methods=args.methods,
+        selectors=args.selectors,
+    )
+
+
+def handle_lootbox_gogogo(args: argparse.Namespace) -> None:
     network.connect(args.network)
     terminus_address = args.terminus_address
     transaction_config = MockTerminus.get_transaction_config(args)
-    result = gogogo(
+    result = lootbox_gogogo(
         terminus_address,
         args.vrf_coordinator_address,
         args.link_token_address,
@@ -473,6 +582,18 @@ def handle_gogogo(args: argparse.Namespace) -> None:
         transaction_config,
     )
 
+    if args.outfile is not None:
+        with args.outfile:
+            json.dump(result, args.outfile)
+    json.dump(result, sys.stdout, indent=4)
+
+
+def handle_gofp_gogogo(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    transaction_config = MockTerminus.get_transaction_config(args)
+    result = gofp_gogogo(
+        args.admin_terminus_address, args.admin_terminus_pool_id, transaction_config
+    )
     if args.outfile is not None:
         with args.outfile:
             json.dump(result, args.outfile)
@@ -515,13 +636,90 @@ def generate_cli():
     parser.set_defaults(func=lambda _: parser.print_help())
     subcommands = parser.add_subparsers()
 
-    gogogo_parser = subcommands.add_parser(
-        "gogogo",
+    facet_cut_parser = subcommands.add_parser(
+        "facet-cut",
+        help="Operate on facets of a Diamond contract",
+        description="Operate on facets of a Diamond contract",
+    )
+    Diamond.add_default_arguments(facet_cut_parser, transact=True)
+    facet_cut_parser.add_argument(
+        "--facet-name",
+        required=True,
+        choices=FACETS,
+        help="Name of facet to cut into or out of diamond",
+    )
+    facet_cut_parser.add_argument(
+        "--facet-address",
+        required=False,
+        default=ZERO_ADDRESS,
+        help=f"Address of deployed facet (default: {ZERO_ADDRESS})",
+    )
+    facet_cut_parser.add_argument(
+        "--action",
+        required=True,
+        choices=FACET_ACTIONS,
+        help="Diamond cut action to take on entire facet",
+    )
+    facet_cut_parser.add_argument(
+        "--initializer-address",
+        default=ZERO_ADDRESS,
+        help=f"Address of contract to run as initializer after cut (default: {ZERO_ADDRESS})",
+    )
+    facet_cut_parser.add_argument(
+        "--ignore-methods",
+        nargs="+",
+        help="Names of methods to ignore when cutting a facet onto or off of the diamond",
+    )
+    facet_cut_parser.add_argument(
+        "--ignore-selectors",
+        nargs="+",
+        help="Method selectors to ignore when cutting a facet onto or off of the diamond",
+    )
+    facet_cut_parser.add_argument(
+        "--methods",
+        nargs="+",
+        help="Names of methods to add (if set, --ignore-methods and --ignore-selectors are not used)",
+    )
+    facet_cut_parser.add_argument(
+        "--selectors",
+        nargs="+",
+        help="Selectors to add (if set, --ignore-methods and --ignore-selectors are not used)",
+    )
+    facet_cut_parser.set_defaults(func=handle_facet_cut)
+
+    gofp_gogogo_parser = subcommands.add_parser(
+        "gofp-gogogo",
+        help="Deploy gofp diamond contract",
+        description="Deploy gofp diamond contract",
+    )
+    Diamond.add_default_arguments(gofp_gogogo_parser, transact=True)
+    gofp_gogogo_parser.add_argument(
+        "--admin-terminus-address",
+        required=True,
+        help="Address of Terminus contract defining access control for this GardenOfForkingPaths contract",
+    )
+    gofp_gogogo_parser.add_argument(
+        "--admin-terminus-pool-id",
+        required=True,
+        type=int,
+        help="Pool ID of Terminus pool for administrators of this GardenOfForkingPaths contract",
+    )
+    gofp_gogogo_parser.add_argument(
+        "-o",
+        "--outfile",
+        type=argparse.FileType("w"),
+        default=None,
+        help="(Optional) file to write deployed addresses to",
+    )
+    gofp_gogogo_parser.set_defaults(func=handle_gofp_gogogo)
+
+    lootbox_gogogo_parser = subcommands.add_parser(
+        "lootbox-gogogo",
         help="Deploys Lootbox contract",
         description="Deploys Lootbox contract",
     )
 
-    gogogo_parser.add_argument(
+    lootbox_gogogo_parser.add_argument(
         "-o",
         "--outfile",
         type=argparse.FileType("w"),
@@ -529,44 +727,44 @@ def generate_cli():
         help="(Optional) file to write deployed addresses to",
     )
 
-    gogogo_parser.add_argument(
+    lootbox_gogogo_parser.add_argument(
         "--terminus-address",
         type=str,
         required=True,
         help="Address of the terminus contract",
     )
 
-    gogogo_parser.add_argument(
+    lootbox_gogogo_parser.add_argument(
         "--vrf-coordinator-address",
         type=str,
         required=True,
         help="Address of the vrf coordinator contract",
     )
 
-    gogogo_parser.add_argument(
+    lootbox_gogogo_parser.add_argument(
         "--link-token-address",
         type=str,
         required=True,
         help="Address of the link token contract",
     )
 
-    gogogo_parser.add_argument(
+    lootbox_gogogo_parser.add_argument(
         "--chainlik-vrf-fee",
         type=int,
         required=True,
         help="Chainlink vrf fee",
     )
 
-    gogogo_parser.add_argument(
+    lootbox_gogogo_parser.add_argument(
         "--chainlik-vrf-keyhash",
         type=str,
         required=True,
         help="Chainlink vrf keyhash",
     )
 
-    MockTerminus.add_default_arguments(gogogo_parser, transact=True)
+    MockTerminus.add_default_arguments(lootbox_gogogo_parser, transact=True)
 
-    gogogo_parser.set_defaults(func=handle_gogogo)
+    lootbox_gogogo_parser.set_defaults(func=handle_lootbox_gogogo)
 
     crafting_gogogo_parser = subcommands.add_parser(
         "crafting-gogogo",

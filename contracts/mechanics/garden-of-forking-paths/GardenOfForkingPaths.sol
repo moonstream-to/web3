@@ -7,11 +7,15 @@
 
 pragma solidity ^0.8.0;
 
+import "../../diamond/libraries/LibDiamond.sol";
+
 library LibGOFP {
     bytes32 constant STORAGE_POSITION =
         keccak256("moonstreamdao.eth.storage.mechanics.GardenOfForkingPaths");
 
     struct GOFPStorage {
+        address AdminTerminusAddress;
+        uint256 AdminTerminusPoolID;
         uint256 NumSessions;
         mapping(uint256 => address) SessionPlayerTokenAddress;
         mapping(uint256 => address) SessionPaymentTokenAddress;
@@ -46,6 +50,15 @@ contract GOFPFacet {
     // SessionActivated(<id>, false)
     event SessionActivated(uint256 indexed sessionID, bool active);
 
+    function init(address adminTerminusAddress, uint256 adminTerminusPoolID)
+        external
+    {
+        LibDiamond.enforceIsContractOwner();
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        gs.AdminTerminusAddress = adminTerminusAddress;
+        gs.AdminTerminusPoolID = adminTerminusPoolID;
+    }
+
     function getSession(uint256 sessionID)
         external
         view
@@ -69,6 +82,11 @@ contract GOFPFacet {
         for (uint256 i = 0; i < stages.length; i++) {
             correctPath[i] = gs.SessionPath[sessionID][i];
         }
+    }
+
+    function adminTerminusInfo() external view returns (address, uint256) {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        return (gs.AdminTerminusAddress, gs.AdminTerminusPoolID);
     }
 
     function numSessions() external view returns (uint256) {

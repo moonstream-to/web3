@@ -96,6 +96,12 @@ class GOFPFacet:
         contract_class = contract_from_build(self.contract_name)
         contract_class.publish_source(self.contract)
 
+    def admin_terminus_info(
+        self, block_number: Optional[Union[str, int]] = "latest"
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.adminTerminusInfo.call(block_identifier=block_number)
+
     def create_session(
         self,
         player_token_address: ChecksumAddress,
@@ -122,6 +128,17 @@ class GOFPFacet:
     ) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.getSession.call(session_id, block_identifier=block_number)
+
+    def init(
+        self,
+        admin_terminus_address: ChecksumAddress,
+        admin_terminus_pool_id: int,
+        transaction_config,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.init(
+            admin_terminus_address, admin_terminus_pool_id, transaction_config
+        )
 
     def num_sessions(self, block_number: Optional[Union[str, int]] = "latest") -> Any:
         self.assert_contract_is_instantiated()
@@ -212,6 +229,13 @@ def handle_verify_contract(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_admin_terminus_info(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    result = contract.admin_terminus_info(block_number=args.block_number)
+    print(result)
+
+
 def handle_create_session(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPFacet(args.address)
@@ -239,6 +263,20 @@ def handle_get_session(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_init(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.init(
+        admin_terminus_address=args.admin_terminus_address,
+        admin_terminus_pool_id=args.admin_terminus_pool_id,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
 def handle_num_sessions(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPFacet(args.address)
@@ -258,6 +296,10 @@ def generate_cli() -> argparse.ArgumentParser:
     verify_contract_parser = subcommands.add_parser("verify-contract")
     add_default_arguments(verify_contract_parser, False)
     verify_contract_parser.set_defaults(func=handle_verify_contract)
+
+    admin_terminus_info_parser = subcommands.add_parser("admin-terminus-info")
+    add_default_arguments(admin_terminus_info_parser, False)
+    admin_terminus_info_parser.set_defaults(func=handle_admin_terminus_info)
 
     create_session_parser = subcommands.add_parser("create-session")
     add_default_arguments(create_session_parser, True)
@@ -287,6 +329,16 @@ def generate_cli() -> argparse.ArgumentParser:
         "--session-id", required=True, help="Type: uint256", type=int
     )
     get_session_parser.set_defaults(func=handle_get_session)
+
+    init_parser = subcommands.add_parser("init")
+    add_default_arguments(init_parser, True)
+    init_parser.add_argument(
+        "--admin-terminus-address", required=True, help="Type: address"
+    )
+    init_parser.add_argument(
+        "--admin-terminus-pool-id", required=True, help="Type: uint256", type=int
+    )
+    init_parser.set_defaults(func=handle_init)
 
     num_sessions_parser = subcommands.add_parser("num-sessions")
     add_default_arguments(num_sessions_parser, False)

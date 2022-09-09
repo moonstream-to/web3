@@ -20,15 +20,22 @@ class GOFPTestCase(unittest.TestCase):
         cls.deployed_contracts = diamond_gogogo(
             accounts[0].address, cls.owner_tx_config
         )
-
-        cls.diamond = Diamond.Diamond(cls.deployed_contracts["Diamond"])
+        cls.diamond_address = cls.deployed_contracts["Diamond"]
 
         gofp_facet = GOFPFacet.GOFPFacet(None)
         gofp_facet.deploy(cls.owner_tx_config)
 
         cls.deployed_contracts["GOFPFacet"] = gofp_facet.address
 
-        facet_cut(cls.diamond.address, "GOFPFacet")
+        facet_cut(
+            cls.diamond_address,
+            "GOFPFacet",
+            gofp_facet.address,
+            "add",
+            cls.owner_tx_config,
+        )
+
+        cls.gofp = GOFPFacet.GOFPFacet(cls.diamond_address)
 
 
 if __name__ == "__main__":
