@@ -39,14 +39,6 @@ library LibGOFP {
 }
 
 contract GOFPFacet is ERC1155Holder, ERC721Holder, TerminusPermissions {
-    event SessionCreated(
-        uint256 indexed sessionID,
-        address indexed playerTokenAddress,
-        address indexed paymentTokenAddress,
-        uint256 paymentAmount,
-        string uri
-    );
-
     modifier onlyGameMaster() {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
@@ -55,6 +47,14 @@ contract GOFPFacet is ERC1155Holder, ERC721Holder, TerminusPermissions {
         );
         _;
     }
+
+    event SessionCreated(
+        uint256 indexed sessionID,
+        address indexed playerTokenAddress,
+        address indexed paymentTokenAddress,
+        uint256 paymentAmount,
+        string uri
+    );
 
     // When session is activated, this fires:
     // SessionActivated(<id>, true)
@@ -126,5 +126,23 @@ contract GOFPFacet is ERC1155Holder, ERC721Holder, TerminusPermissions {
         gs.SessionURI[gs.NumSessions] = uri;
         gs.SessionStages[gs.NumSessions] = stages;
         gs.SessionIsActive[gs.NumSessions] = active;
+
+        emit SessionCreated(
+            gs.NumSessions,
+            playerTokenAddress,
+            paymentTokenAddress,
+            paymentAmount,
+            uri
+        );
+    }
+
+    function setSessionActive(uint256 sessionID, bool active)
+        external
+        onlyGameMaster
+    {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        require(sessionID <= gs.NumSessions, "Invalid session ID");
+        gs.SessionIsActive[sessionID] = active;
+        emit SessionActivated(sessionID, active);
     }
 }

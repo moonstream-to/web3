@@ -43,6 +43,7 @@ class GOFPTestCase(unittest.TestCase):
         cls.terminus.create_pool_v1(1, False, True, cls.owner_tx_config)
         cls.admin_pool_id = cls.terminus.total_pools()
 
+        # It is important for some of the tests that the owner of the contract *not* be the game master.
         cls.terminus.mint(
             cls.game_master.address, cls.admin_pool_id, 1, "", cls.owner_tx_config
         )
