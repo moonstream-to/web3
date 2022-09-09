@@ -54,16 +54,21 @@ class GOFPTestCase(unittest.TestCase):
 
 
 class TestGOFPSessions(GOFPTestCase):
-    def test_create_session(self):
+    def test_create_session_then_get_session_active(self):
         num_sessions_0 = self.gofp.num_sessions()
+
+        actual_payment_amount = 42
+        actual_uri = "https://example.com/test_create_session.json"
+        actual_stages = (5, 5, 3, 3, 2)
+        actual_is_active = True
 
         self.gofp.create_session(
             self.nft.address,
             self.payment_token.address,
-            42,
-            "https://example.com/test_create_session.json",
-            [5, 5, 3, 3, 2],
-            True,
+            actual_payment_amount,
+            actual_uri,
+            actual_stages,
+            actual_is_active,
             self.owner_tx_config,
         )
 
@@ -86,11 +91,11 @@ class TestGOFPSessions(GOFPTestCase):
 
         self.assertEqual(nft_address, self.nft.address)
         self.assertEqual(payment_address, self.payment_token.address)
-        self.assertEqual(payment_amount, 42)
-        self.assertTrue(is_active)
-        self.assertEqual(uri, "https://example.com/test_create_session.json")
-        self.assertEqual(stages, (5, 5, 3, 3, 2))
-        self.assertEqual(correct_path, (0, 0, 0, 0, 0))
+        self.assertEqual(payment_amount, actual_payment_amount)
+        self.assertTrue(actual_is_active)
+        self.assertEqual(uri, actual_uri)
+        self.assertEqual(stages, actual_stages)
+        self.assertEqual(correct_path, tuple([0 for _ in actual_stages]))
 
 
 if __name__ == "__main__":
