@@ -27,20 +27,22 @@ export const getSpenderState = async ({
   spender,
   ctx,
   contractAddress,
+  account,
 }: {
   spender: string;
   ctx: MoonstreamWeb3ProviderInterface;
   contractAddress: string;
+  account: string;
 }) => {
   const erc20contract = new ctx.web3.eth.Contract(erc20abi) as any as MockErc20;
   erc20contract.options.address = contractAddress;
   const allowance =
     spender && spender
-      ? await erc20contract.methods.allowance(ctx?.account, spender).call()
+      ? await erc20contract.methods.allowance(account, spender).call()
       : null;
   const balance =
     spender && spender
-      ? await erc20contract.methods.balanceOf(ctx.account).call()
+      ? await erc20contract.methods.balanceOf(account).call()
       : null;
 
   return { allowance, balance };
