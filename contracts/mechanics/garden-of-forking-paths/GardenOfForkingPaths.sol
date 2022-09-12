@@ -8,7 +8,6 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
-import "@openzeppelin-contracts/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {TerminusPermissions} from "@moonstream/contracts/terminus/TerminusPermissions.sol";
 import "../../diamond/libraries/LibDiamond.sol";
 
@@ -38,7 +37,7 @@ library LibGOFP {
     }
 }
 
-contract GOFPFacet is ERC1155Holder, ERC721Holder, TerminusPermissions {
+contract GOFPFacet is ERC1155Holder, TerminusPermissions {
     modifier onlyGameMaster() {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
@@ -182,5 +181,32 @@ contract GOFPFacet is ERC1155Holder, ERC721Holder, TerminusPermissions {
         );
         gs.SessionPath[sessionID][stage] = path;
         emit PathRegistered(sessionID, stage, path);
+    }
+
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes calldata _data
+    ) public virtual returns (bytes4) {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+
+        // _data is expected to be an encoded uint256 representing the session ID into which the NFT
+        // should be staked.
+        uint256 sessionID;
+        (sessionID) = abi.decode(_data, (uint256));
+        require(
+            sessionID <= gs.NumSessions,
+            "GOFPFacet.onERC721Received: Invalid session"
+        );
+
+        // Note: msg.sender is always the ERC721 contract address in onERC721Received:
+        // https://eips.ethereum.org/EIPS/eip-721
+        require(
+            msg.sender == gs.SessionPlayerTokenAddress[sessionID],
+            "GOFPFacet.onERC721Received: Invalid ERC721 contract for session"
+        );
+
+        return this.onERC721Received.selector;
     }
 }

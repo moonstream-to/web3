@@ -1,7 +1,8 @@
 import unittest
 
-from brownie import accounts, network, web3 as web3_client
+from brownie import accounts, network, web3 as web3_client, ZERO_ADDRESS
 from brownie.exceptions import VirtualMachineError
+from eth_abi import encode
 from moonworm.watch import _fetch_events_chunk
 
 from . import GOFPFacet, MockTerminus, MockErc20, MockERC721
@@ -48,6 +49,12 @@ class GOFPTestCase(unittest.TestCase):
         cls.terminus.mint(
             cls.game_master.address, cls.admin_pool_id, 1, "", cls.owner_tx_config
         )
+
+        # Mint NFTs and ERC20 tokens to player
+        for i in range(1, 6):
+            cls.nft.mint(cls.player.address, i, {"from": cls.owner})
+
+        cls.payment_token.mint(cls.player.address, 10**6, {"from": cls.owner})
 
         cls.deployed_contracts = gofp_gogogo(
             cls.terminus.address, cls.admin_pool_id, cls.owner_tx_config
@@ -591,6 +598,67 @@ class TestAdminFlow(GOFPTestCase):
         self.assertEqual(events[0]["args"]["sessionID"], self.gofp.num_sessions())
         self.assertEqual(events[0]["args"]["stage"], 1)
         self.assertEqual(events[0]["args"]["path"], 5)
+
+
+class TestPlayerFlow(GOFPTestCase):
+    def test_player_can_stake_nft_into_session(self):
+        payment_amount = 131
+        uri = "https://example.com/test.json"
+        stages = (5, 5, 3)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            uri,
+            stages,
+            is_active,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        calldata = encode(["uint256"], [session_id])
+
+        self.nft.safe_transfer_from(
+            self.player.address, self.gofp.address, 1, calldata, {"from": self.player}
+        )
+
+        nft_owner = self.nft.owner_of(1)
+        self.assertEqual(nft_owner, self.gofp.address)
+
+    def test_player_cannot_stake_nft_into_nonexistent_session(self):
+        payment_amount = 131
+        uri = "https://example.com/test.json"
+        stages = (5, 5, 3)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            uri,
+            stages,
+            is_active,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        calldata = encode(["uint256"], [session_id + 1])
+
+        with self.assertRaises(VirtualMachineError):
+            self.nft.safe_transfer_from(
+                self.player.address,
+                self.gofp.address,
+                2,
+                calldata,
+                {"from": self.player},
+            )
+
+        nft_owner = self.nft.owner_of(2)
+        self.assertEqual(nft_owner, self.player.address)
 
 
 if __name__ == "__main__":
