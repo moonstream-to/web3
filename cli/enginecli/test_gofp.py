@@ -391,6 +391,147 @@ class TestAdminFlow(GOFPTestCase):
         self.assertEqual(events[0]["args"]["sessionID"], self.gofp.num_sessions())
         self.assertFalse(events[0]["args"]["active"])
 
+    def test_game_master_can_register_path(self):
+        payment_amount = 131
+        uri = "https://example.com/test_game_master_can_register_path.json"
+        stages = (5, 5, 3)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            uri,
+            stages,
+            is_active,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        # Paths can be registered out of order. In this test, we register paths for stages in the
+        # following order:
+        # Stage 1: Path 5
+        # Stage 0: Path 1
+        # Stage 2: Path 3
+        self.gofp.register_path(session_id, 1, 5, {"from": self.game_master})
+        _, _, _, _, _, _, paths_0 = self.gofp.get_session(session_id)
+        self.assertEqual(paths_0, (0, 5, 0))
+
+        self.gofp.register_path(session_id, 0, 1, {"from": self.game_master})
+        _, _, _, _, _, _, paths_1 = self.gofp.get_session(session_id)
+        self.assertEqual(paths_1, (1, 5, 0))
+
+        self.gofp.register_path(session_id, 2, 3, {"from": self.game_master})
+        _, _, _, _, _, _, paths_2 = self.gofp.get_session(session_id)
+        self.assertEqual(paths_2, (1, 5, 3))
+
+    def test_non_game_master_cannot_register_path(self):
+        payment_amount = 131
+        uri = "https://example.com/test_non_game_master_cannot_register_path.json"
+        stages = (5, 5, 3)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            uri,
+            stages,
+            is_active,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.register_path(session_id, 0, 1, {"from": self.player})
+        _, _, _, _, _, _, paths_0 = self.gofp.get_session(session_id)
+        self.assertEqual(paths_0, (0, 0, 0))
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.register_path(session_id, 1, 5, {"from": self.owner})
+        _, _, _, _, _, _, paths_1 = self.gofp.get_session(session_id)
+        self.assertEqual(paths_1, (0, 0, 0))
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.register_path(session_id, 2, 3, {"from": self.random_person})
+        _, _, _, _, _, _, paths_2 = self.gofp.get_session(session_id)
+        self.assertEqual(paths_2, (0, 0, 0))
+
+    def test_game_master_cannot_register_invalid_path(self):
+        payment_amount = 131
+        uri = "https://example.com/test_game_master_cannot_register_invalid_path.json"
+        stages = (5, 5, 3)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            uri,
+            stages,
+            is_active,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        # Invalid session
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.register_path(session_id + 1, 1, 5, {"from": self.game_master})
+        _, _, _, _, _, _, paths_0 = self.gofp.get_session(session_id)
+        self.assertEqual(paths_0, (0, 0, 0))
+
+        # Invalid stage
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.register_path(session_id, 3, 1, {"from": self.game_master})
+        _, _, _, _, _, _, paths_1 = self.gofp.get_session(session_id)
+        self.assertEqual(paths_1, (0, 0, 0))
+
+        # Path must be >= 1
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.register_path(session_id, 0, 0, {"from": self.game_master})
+        _, _, _, _, _, _, paths_1 = self.gofp.get_session(session_id)
+        self.assertEqual(paths_1, (0, 0, 0))
+
+        # Path must be <= number of choices for the given stage
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.register_path(session_id, 0, 6, {"from": self.game_master})
+        _, _, _, _, _, _, paths_1 = self.gofp.get_session(session_id)
+        self.assertEqual(paths_1, (0, 0, 0))
+
+    def test_game_master_cannot_register_path_multiple_times_for_same_stage(self):
+        payment_amount = 131
+        uri = "https://example.com/test_game_master_cannot_register_path_multiple_times_for_same_stage.json"
+        stages = (5, 5, 3)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            uri,
+            stages,
+            is_active,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        self.gofp.register_path(session_id, 1, 5, {"from": self.game_master})
+        _, _, _, _, _, _, paths_0 = self.gofp.get_session(session_id)
+        self.assertEqual(paths_0, (0, 5, 0))
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.register_path(session_id, 1, 4, {"from": self.game_master})
+        _, _, _, _, _, _, paths_1 = self.gofp.get_session(session_id)
+        self.assertEqual(paths_1, (0, 5, 0))
+
+        self.gofp.register_path(session_id, 2, 3, {"from": self.game_master})
+        _, _, _, _, _, _, paths_2 = self.gofp.get_session(session_id)
+        self.assertEqual(paths_2, (0, 5, 3))
+
 
 if __name__ == "__main__":
     unittest.main()

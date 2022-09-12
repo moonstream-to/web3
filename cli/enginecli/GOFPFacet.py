@@ -185,6 +185,12 @@ class GOFPFacet:
             arg1, arg2, arg3, arg4, transaction_config
         )
 
+    def register_path(
+        self, session_id: int, stage: int, path: int, transaction_config
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.registerPath(session_id, stage, path, transaction_config)
+
     def set_session_active(
         self, session_id: int, active: bool, transaction_config
     ) -> Any:
@@ -389,6 +395,21 @@ def handle_on_erc721_received(args: argparse.Namespace) -> None:
         print(result.info())
 
 
+def handle_register_path(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.register_path(
+        session_id=args.session_id,
+        stage=args.stage,
+        path=args.path,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
 def handle_set_session_active(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPFacet(args.address)
@@ -527,6 +548,19 @@ def generate_cli() -> argparse.ArgumentParser:
         "--arg4", required=True, help="Type: bytes", type=bytes_argument_type
     )
     on_erc721_received_parser.set_defaults(func=handle_on_erc721_received)
+
+    register_path_parser = subcommands.add_parser("register-path")
+    add_default_arguments(register_path_parser, True)
+    register_path_parser.add_argument(
+        "--session-id", required=True, help="Type: uint256", type=int
+    )
+    register_path_parser.add_argument(
+        "--stage", required=True, help="Type: uint256", type=int
+    )
+    register_path_parser.add_argument(
+        "--path", required=True, help="Type: uint256", type=int
+    )
+    register_path_parser.set_defaults(func=handle_register_path)
 
     set_session_active_parser = subcommands.add_parser("set-session-active")
     add_default_arguments(set_session_active_parser, True)

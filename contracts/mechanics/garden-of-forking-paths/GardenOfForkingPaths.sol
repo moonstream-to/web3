@@ -62,6 +62,12 @@ contract GOFPFacet is ERC1155Holder, ERC721Holder, TerminusPermissions {
     // SessionActivated(<id>, false)
     event SessionActivated(uint256 indexed sessionID, bool active);
 
+    event PathRegistered(
+        uint256 indexed sessionID,
+        uint256 stage,
+        uint256 path
+    );
+
     function init(address adminTerminusAddress, uint256 adminTerminusPoolID)
         external
     {
@@ -118,7 +124,7 @@ contract GOFPFacet is ERC1155Holder, ERC721Holder, TerminusPermissions {
         gs.NumSessions++;
         require(
             gs.SessionPlayerTokenAddress[gs.NumSessions] == address(0),
-            "Session already registered"
+            "GOFPFacet.createSession: Session already registered"
         );
         gs.SessionPlayerTokenAddress[gs.NumSessions] = playerTokenAddress;
         gs.SessionPaymentTokenAddress[gs.NumSessions] = paymentTokenAddress;
@@ -141,8 +147,40 @@ contract GOFPFacet is ERC1155Holder, ERC721Holder, TerminusPermissions {
         onlyGameMaster
     {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
-        require(sessionID <= gs.NumSessions, "Invalid session ID");
+        require(
+            sessionID <= gs.NumSessions,
+            "GOFPFacet.setSessionActive: Invalid session ID"
+        );
         gs.SessionIsActive[sessionID] = active;
         emit SessionActivated(sessionID, active);
+    }
+
+    function registerPath(
+        uint256 sessionID,
+        uint256 stage,
+        uint256 path
+    ) external onlyGameMaster {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        require(
+            sessionID <= gs.NumSessions,
+            "GOFPFacet.registerPath: Invalid session"
+        );
+        require(
+            stage < gs.SessionStages[sessionID].length,
+            "GOFPFacet.registerPath: Invalid stage"
+        );
+        // Paths are 1-indexed to avoid possible confusion involving default value of 0
+        require(
+            path >= 1 && path <= gs.SessionStages[sessionID][stage],
+            "GOFPFacet.registerPath: Invalid path"
+        );
+        // We use the default value of 0 as a guard to check that path has not already been set for that
+        // stage. No changes allowed for a given stage after the path was already chosen.
+        require(
+            gs.SessionPath[sessionID][stage] == 0,
+            "GOFPFacet.registerPath: Path has already been chosen for that stage"
+        );
+        gs.SessionPath[sessionID][stage] = path;
+        emit PathRegistered(sessionID, stage, path);
     }
 }
