@@ -532,6 +532,66 @@ class TestAdminFlow(GOFPTestCase):
         _, _, _, _, _, _, paths_2 = self.gofp.get_session(session_id)
         self.assertEqual(paths_2, (0, 5, 3))
 
+    def test_register_path_fires_event(self):
+        path_registered_event_abi = {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "uint256",
+                    "name": "sessionID",
+                    "type": "uint256",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "uint256",
+                    "name": "stage",
+                    "type": "uint256",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "uint256",
+                    "name": "path",
+                    "type": "uint256",
+                },
+            ],
+            "name": "PathRegistered",
+            "type": "event",
+        }
+
+        payment_amount = 131
+        uri = "https://example.com/test_register_path_fires_event.json"
+        stages = (5, 5, 3)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            uri,
+            stages,
+            is_active,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        tx_receipt = self.gofp.register_path(
+            session_id, 1, 5, {"from": self.game_master}
+        )
+        events = _fetch_events_chunk(
+            web3_client,
+            path_registered_event_abi,
+            from_block=tx_receipt.block_number,
+            to_block=tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(events), 1)
+
+        self.assertEqual(events[0]["args"]["sessionID"], self.gofp.num_sessions())
+        self.assertEqual(events[0]["args"]["stage"], 1)
+        self.assertEqual(events[0]["args"]["path"], 5)
+
 
 if __name__ == "__main__":
     unittest.main()
