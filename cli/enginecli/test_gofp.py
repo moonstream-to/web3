@@ -196,12 +196,43 @@ class TestAdminFlow(GOFPTestCase):
         self.assertEqual(num_sessions_1, num_sessions_0)
 
     def test_create_session_fires_event(self):
-        session_created_event_abi = None
-        for item in self.gofp.abi:
-            if item["type"] == "event" and item["name"] == "SessionCreated":
-                session_created_event_abi = item
-
-        self.assertIsNotNone(session_created_event_abi)
+        session_created_event_abi = {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "uint256",
+                    "name": "sessionID",
+                    "type": "uint256",
+                },
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "playerTokenAddress",
+                    "type": "address",
+                },
+                {
+                    "indexed": True,
+                    "internalType": "address",
+                    "name": "paymentTokenAddress",
+                    "type": "address",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "uint256",
+                    "name": "paymentAmount",
+                    "type": "uint256",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "string",
+                    "name": "uri",
+                    "type": "string",
+                },
+            ],
+            "name": "SessionCreated",
+            "type": "event",
+        }
 
         expected_payment_amount = 60
         expected_uri = "https://example.com/test_create_session_fires_event.json"
@@ -234,6 +265,131 @@ class TestAdminFlow(GOFPTestCase):
         )
         self.assertEqual(events[0]["args"]["paymentAmount"], expected_payment_amount)
         self.assertEqual(events[0]["args"]["uri"], expected_uri)
+
+    def test_can_change_session_is_active_as_game_master(self):
+        payment_amount = 130
+        uri = (
+            "https://example.com/test_can_change_session_is_active_as_game_master.json"
+        )
+        stages = (5, 5, 3)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            uri,
+            stages,
+            is_active,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        _, _, _, is_active_0, _, _, _ = self.gofp.get_session(session_id)
+        self.assertFalse(is_active_0)
+
+        self.gofp.set_session_active(session_id, True, {"from": self.game_master})
+
+        _, _, _, is_active_1, _, _, _ = self.gofp.get_session(session_id)
+        self.assertTrue(is_active_1)
+
+        self.gofp.set_session_active(session_id, False, {"from": self.game_master})
+
+        _, _, _, is_active_2, _, _, _ = self.gofp.get_session(session_id)
+        self.assertFalse(is_active_2)
+
+        self.gofp.set_session_active(session_id, False, {"from": self.game_master})
+
+        _, _, _, is_active_3, _, _, _ = self.gofp.get_session(session_id)
+        self.assertFalse(is_active_3)
+
+    def test_cannot_change_session_is_active_as_non_game_master(self):
+        payment_amount = 131
+        uri = "https://example.com/test_cannot_change_session_is_active_as_non_game_master.json"
+        stages = (5, 5, 3)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            uri,
+            stages,
+            is_active,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        _, _, _, is_active_0, _, _, _ = self.gofp.get_session(session_id)
+        self.assertFalse(is_active_0)
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.set_session_active(session_id, True, {"from": self.player})
+
+        _, _, _, is_active_1, _, _, _ = self.gofp.get_session(session_id)
+        self.assertFalse(is_active_1)
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.set_session_active(session_id, True, {"from": self.owner})
+
+        _, _, _, is_active_2, _, _, _ = self.gofp.get_session(session_id)
+        self.assertFalse(is_active_2)
+
+    def test_set_session_active_fires_event(self):
+        session_activated_event_abi = {
+            "anonymous": False,
+            "inputs": [
+                {
+                    "indexed": True,
+                    "internalType": "uint256",
+                    "name": "sessionID",
+                    "type": "uint256",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "bool",
+                    "name": "active",
+                    "type": "bool",
+                },
+            ],
+            "name": "SessionActivated",
+            "type": "event",
+        }
+
+        payment_amount = 131
+        uri = "https://example.com/test_set_session_active_fires_event.json"
+        stages = (5,)
+        is_active = True
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            uri,
+            stages,
+            is_active,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        tx_receipt = self.gofp.set_session_active(
+            session_id, False, {"from": self.game_master}
+        )
+
+        events = _fetch_events_chunk(
+            web3_client,
+            session_activated_event_abi,
+            from_block=tx_receipt.block_number,
+            to_block=tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(events), 1)
+
+        self.assertEqual(events[0]["args"]["sessionID"], self.gofp.num_sessions())
+        self.assertFalse(events[0]["args"]["active"])
 
 
 if __name__ == "__main__":

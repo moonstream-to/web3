@@ -144,6 +144,61 @@ class GOFPFacet:
         self.assert_contract_is_instantiated()
         return self.contract.numSessions.call(block_identifier=block_number)
 
+    def on_erc1155_batch_received(
+        self,
+        arg1: ChecksumAddress,
+        arg2: ChecksumAddress,
+        arg3: List,
+        arg4: List,
+        arg5: bytes,
+        transaction_config,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.onERC1155BatchReceived(
+            arg1, arg2, arg3, arg4, arg5, transaction_config
+        )
+
+    def on_erc1155_received(
+        self,
+        arg1: ChecksumAddress,
+        arg2: ChecksumAddress,
+        arg3: int,
+        arg4: int,
+        arg5: bytes,
+        transaction_config,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.onERC1155Received(
+            arg1, arg2, arg3, arg4, arg5, transaction_config
+        )
+
+    def on_erc721_received(
+        self,
+        arg1: ChecksumAddress,
+        arg2: ChecksumAddress,
+        arg3: int,
+        arg4: bytes,
+        transaction_config,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.onERC721Received(
+            arg1, arg2, arg3, arg4, transaction_config
+        )
+
+    def set_session_active(
+        self, session_id: int, active: bool, transaction_config
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.setSessionActive(session_id, active, transaction_config)
+
+    def supports_interface(
+        self, interface_id: bytes, block_number: Optional[Union[str, int]] = "latest"
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.supportsInterface.call(
+            interface_id, block_identifier=block_number
+        )
+
 
 def get_transaction_config(args: argparse.Namespace) -> Dict[str, Any]:
     signer = network.accounts.load(args.sender, args.password)
@@ -284,6 +339,79 @@ def handle_num_sessions(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_on_erc1155_batch_received(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.on_erc1155_batch_received(
+        arg1=args.arg1,
+        arg2=args.arg2,
+        arg3=args.arg3,
+        arg4=args.arg4,
+        arg5=args.arg5,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
+def handle_on_erc1155_received(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.on_erc1155_received(
+        arg1=args.arg1,
+        arg2=args.arg2,
+        arg3=args.arg3,
+        arg4=args.arg4,
+        arg5=args.arg5,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
+def handle_on_erc721_received(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.on_erc721_received(
+        arg1=args.arg1,
+        arg2=args.arg2,
+        arg3=args.arg3,
+        arg4=args.arg4,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
+def handle_set_session_active(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.set_session_active(
+        session_id=args.session_id,
+        active=args.active,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
+def handle_supports_interface(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    result = contract.supports_interface(
+        interface_id=args.interface_id, block_number=args.block_number
+    )
+    print(result)
+
+
 def generate_cli() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="CLI for GOFPFacet")
     parser.set_defaults(func=lambda _: parser.print_help())
@@ -343,6 +471,79 @@ def generate_cli() -> argparse.ArgumentParser:
     num_sessions_parser = subcommands.add_parser("num-sessions")
     add_default_arguments(num_sessions_parser, False)
     num_sessions_parser.set_defaults(func=handle_num_sessions)
+
+    on_erc1155_batch_received_parser = subcommands.add_parser(
+        "on-erc1155-batch-received"
+    )
+    add_default_arguments(on_erc1155_batch_received_parser, True)
+    on_erc1155_batch_received_parser.add_argument(
+        "--arg1", required=True, help="Type: address"
+    )
+    on_erc1155_batch_received_parser.add_argument(
+        "--arg2", required=True, help="Type: address"
+    )
+    on_erc1155_batch_received_parser.add_argument(
+        "--arg3", required=True, help="Type: uint256[]", nargs="+"
+    )
+    on_erc1155_batch_received_parser.add_argument(
+        "--arg4", required=True, help="Type: uint256[]", nargs="+"
+    )
+    on_erc1155_batch_received_parser.add_argument(
+        "--arg5", required=True, help="Type: bytes", type=bytes_argument_type
+    )
+    on_erc1155_batch_received_parser.set_defaults(func=handle_on_erc1155_batch_received)
+
+    on_erc1155_received_parser = subcommands.add_parser("on-erc1155-received")
+    add_default_arguments(on_erc1155_received_parser, True)
+    on_erc1155_received_parser.add_argument(
+        "--arg1", required=True, help="Type: address"
+    )
+    on_erc1155_received_parser.add_argument(
+        "--arg2", required=True, help="Type: address"
+    )
+    on_erc1155_received_parser.add_argument(
+        "--arg3", required=True, help="Type: uint256", type=int
+    )
+    on_erc1155_received_parser.add_argument(
+        "--arg4", required=True, help="Type: uint256", type=int
+    )
+    on_erc1155_received_parser.add_argument(
+        "--arg5", required=True, help="Type: bytes", type=bytes_argument_type
+    )
+    on_erc1155_received_parser.set_defaults(func=handle_on_erc1155_received)
+
+    on_erc721_received_parser = subcommands.add_parser("on-erc721-received")
+    add_default_arguments(on_erc721_received_parser, True)
+    on_erc721_received_parser.add_argument(
+        "--arg1", required=True, help="Type: address"
+    )
+    on_erc721_received_parser.add_argument(
+        "--arg2", required=True, help="Type: address"
+    )
+    on_erc721_received_parser.add_argument(
+        "--arg3", required=True, help="Type: uint256", type=int
+    )
+    on_erc721_received_parser.add_argument(
+        "--arg4", required=True, help="Type: bytes", type=bytes_argument_type
+    )
+    on_erc721_received_parser.set_defaults(func=handle_on_erc721_received)
+
+    set_session_active_parser = subcommands.add_parser("set-session-active")
+    add_default_arguments(set_session_active_parser, True)
+    set_session_active_parser.add_argument(
+        "--session-id", required=True, help="Type: uint256", type=int
+    )
+    set_session_active_parser.add_argument(
+        "--active", required=True, help="Type: bool", type=boolean_argument_type
+    )
+    set_session_active_parser.set_defaults(func=handle_set_session_active)
+
+    supports_interface_parser = subcommands.add_parser("supports-interface")
+    add_default_arguments(supports_interface_parser, False)
+    supports_interface_parser.add_argument(
+        "--interface-id", required=True, help="Type: bytes4", type=bytes_argument_type
+    )
+    supports_interface_parser.set_defaults(func=handle_supports_interface)
 
     return parser
 
