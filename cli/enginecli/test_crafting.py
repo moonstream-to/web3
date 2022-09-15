@@ -371,8 +371,17 @@ class CraftingTestCase(unittest.TestCase):
             self.crafting.address, input_amount, {"from": accounts[1]}
         )
         block_no_before = web3_client.eth.block_number
-        self.crafting.craft(recipe_id, {"from": accounts[1]})
-
+        tx = self.crafting.craft(recipe_id, {"from": accounts[1]})
+        self._check_if_event_was_fired(
+            tx,
+            {
+                "event": "Craft",
+                "args": {
+                    "recipeId": recipe_id,
+                    "player": accounts[1].address,
+                },
+            },
+        )
         self._check_balances_after_crafting(recipe, block_no_before)
 
     def test_simple_transfer_craft_with_erc1155(self):
