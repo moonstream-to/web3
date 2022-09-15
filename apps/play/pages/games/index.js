@@ -64,6 +64,20 @@ const Games = () => {
               imgPading={24}
               h="450px"
             />
+            <FeatureCard
+              w="300px"
+              imgH="140px"
+              link="/games/OpenGamingCollective/"
+              text="View your Open Gaming Collective badges."
+              imageUrl={
+                "https://s3.amazonaws.com/static.simiotics.com/play/games/ogc-logo.png"
+              }
+              alt="Open Gaming Collective"
+              textColor={"white.100"}
+              level="h2"
+              imgPading={24}
+              h="450px"
+            />
           </Flex>
         </Center>
       </Flex>

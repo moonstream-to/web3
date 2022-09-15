@@ -17,7 +17,6 @@ export async function signAccessToken(
   provider: any,
   duration: number
 ): Promise<string> {
-  console.log("auth flow entring");
   if (duration <= 0 || duration == undefined)
     throw new Error("signAccessToken: duration must be defined");
   if (!provider) throw new Error("signAccessToken: provider must be defined");
