@@ -45,7 +45,7 @@ const FeatureCard = ({
         {...props}
         transition={"1s"}
         spacing={1}
-        px={1}
+        px={5}
         alignItems="center"
         borderRadius="12px"
         borderColor="gray.100"

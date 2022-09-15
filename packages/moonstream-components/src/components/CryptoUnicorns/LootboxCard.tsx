@@ -15,6 +15,7 @@ const _LootboxCard = ({
   lootboxBalance,
   showQuantity = true,
   isVideo = false,
+  grayedOut = false,
   ...props
 }: {
   displayName: string;
@@ -22,6 +23,7 @@ const _LootboxCard = ({
   lootboxBalance: number;
   showQuantity?: boolean;
   isVideo?: boolean;
+  grayedOut?: boolean;
 }) => {
   return (
     <Flex {...props} pb={10}>
@@ -29,12 +31,13 @@ const _LootboxCard = ({
         <Image
           src={imageUrl}
           as={isVideo ? "video" : undefined}
+          filter={grayedOut ? "grayscale(100%)" : undefined}
+          opacity={grayedOut ? "0.3" : undefined}
           loading="lazy"
           w={250}
           borderRadius="sm"
           alt="CU Inventory Item"
         />
-        {/* <video autoPlay loop><source src={imageUrl}></source></video> */}
         <Box w="100%" px={2} justifyContent="left" pb={0}>
           <Text fontSize="md">{displayName}</Text>
           {showQuantity && (

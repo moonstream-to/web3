@@ -119,6 +119,9 @@ const isKnownChain = (_chainId: number) => {
 
 const Web3Provider = ({ children }: { children: JSX.Element }) => {
   const [web3] = React.useState<Web3>(new Web3(null));
+  const [polygonClient] = React.useState<Web3>(
+    new Web3(new Web3.providers.HttpProvider("https://polygon-rpc.com"))
+  );
 
   const _signAccessToken = async (account: string) => {
     if (web3.currentProvider) {
@@ -334,6 +337,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
     <Web3Context.Provider
       value={{
         web3: web3,
+        polygonClient: polygonClient,
         onConnectWalletClick,
         buttonText,
         WALLET_STATES,

@@ -30,6 +30,7 @@ export interface TokenInterface {
 declare function ChangeChain(chainName: supportedChains): void;
 export interface MoonstreamWeb3ProviderInterface {
   web3: Web3;
+  polygonClient: Web3;
   onConnectWalletClick: Function;
   buttonText: String;
   WALLET_STATES: WalletStatesInterface;
