@@ -234,6 +234,9 @@ const OpenGamingCollective = () => {
             bgColor="white"
             borderRadius="md"
             onClick={() => {
+              if (defaultSpyAddress) {
+                setCurrentAccount(defaultSpyAddress);
+              }
               setSpyMode(true);
             }}
             mb={10}
