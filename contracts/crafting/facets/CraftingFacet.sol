@@ -25,6 +25,18 @@ contract CraftingFacet is
     DiamondReentrancyGuard,
     TerminusPermissions
 {
+    event RecipeCreated(
+        uint256 indexed recipeId,
+        Recipe recipe,
+        address operator
+    );
+    event RecipeUpdated(
+        uint256 indexed recipeId,
+        Recipe recipe,
+        address operator
+    );
+    event Craft(uint256 indexed recipeId, address player);
+
     modifier onlyAuthorizedAddress() {
         require(
             _holdsPoolToken(
@@ -50,6 +62,17 @@ contract CraftingFacet is
         LibCrafting.CraftingStorage storage cs = LibCrafting.craftingStorage();
         cs.numRecipes++;
         cs.recipes[cs.numRecipes] = recipe;
+        emit RecipeCreated(cs.numRecipes, recipe, msg.sender);
+        emit RecipeCreated(0, recipe, msg.sender);
+    }
+
+    function updateRecipe(uint256 recipeId, Recipe calldata recipe)
+        external
+        onlyAuthorizedAddress
+    {
+        LibCrafting.CraftingStorage storage cs = LibCrafting.craftingStorage();
+        cs.recipes[recipeId] = recipe;
+        emit RecipeUpdated(recipeId, recipe, msg.sender);
     }
 
     function getRecipe(uint256 recipeId) external view returns (Recipe memory) {
@@ -195,5 +218,6 @@ contract CraftingFacet is
                 }
             }
         }
+        emit Craft(recipeId, msg.sender);
     }
 }

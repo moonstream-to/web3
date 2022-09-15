@@ -92,7 +92,7 @@ def gas_profile():
 if os.environ.get("GAS_PROFILE") is not None:
     print("gas profiling enabled")
     atexit.register(gas_profile)
-    contract_abis = project_abis(".")
+    contract_abis = project_abis("..")
 
     gas_price = os.environ.get("GAS_PROFILE_GAS_PRICE")
     if gas_price is not None:
