@@ -51,6 +51,20 @@ const Games = () => {
             <FeatureCard
               w="300px"
               imgH="140px"
+              link="/games/OpenGamingCollective/"
+              text="View your Open Gaming Collective badges."
+              imageUrl={
+                "https://s3.amazonaws.com/static.simiotics.com/play/games/ogc-logo.png"
+              }
+              alt="Open Gaming Collective"
+              textColor={"white.100"}
+              level="h2"
+              imgPading={24}
+              h="450px"
+            />
+            <FeatureCard
+              w="300px"
+              imgH="140px"
               link="games/crypto unicorns"
               text="Ascension is a blockchain game built by Jam City, an award-winning game company led by former MySpace co-founder and CEO Chris DeWolfe"
               //   heading="Champions Ascension"
@@ -61,20 +75,6 @@ const Games = () => {
               textColor={"white.100"}
               level="h2"
               disabled={true}
-              imgPading={24}
-              h="450px"
-            />
-            <FeatureCard
-              w="300px"
-              imgH="140px"
-              link="/games/OpenGamingCollective/"
-              text="View your Open Gaming Collective badges."
-              imageUrl={
-                "https://s3.amazonaws.com/static.simiotics.com/play/games/ogc-logo.png"
-              }
-              alt="Open Gaming Collective"
-              textColor={"white.100"}
-              level="h2"
               imgPading={24}
               h="450px"
             />
