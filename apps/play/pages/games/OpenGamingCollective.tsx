@@ -112,7 +112,8 @@ const OpenGamingCollective = () => {
   const PLAY_ASSET_PATH = "https://s3.amazonaws.com/static.simiotics.com/play";
   const assets = {
     logo: `${PLAY_ASSET_PATH}/ogc/logo.png`,
-    spy: `${PLAY_ASSET_PATH}/games/spy-icon.png`,
+    blackSpyIcon: `${PLAY_ASSET_PATH}/games/spy-icon-black.png`,
+    whiteSpyIcon: `${PLAY_ASSET_PATH}/games/spy-icon-white.png`,
   };
 
   const badges = [
@@ -151,6 +152,12 @@ const OpenGamingCollective = () => {
             placeItems={"center"}
             fontSize={"lg"}
           >
+            <Image
+              src={assets["whiteSpyIcon"]}
+              alt="Spy Mode"
+              h="16px"
+              pr="2"
+            ></Image>
             Spy Mode
             <Spacer />
             <Center
@@ -241,7 +248,12 @@ const OpenGamingCollective = () => {
             }}
             mb={10}
           >
-            <Image src={assets["spy"]} alt="Spy Mode" h="16px" pr="2"></Image>
+            <Image
+              src={assets["blackSpyIcon"]}
+              alt="Spy Mode"
+              h="16px"
+              pr="2"
+            ></Image>
             Spy Mode
           </Button>
         )}
