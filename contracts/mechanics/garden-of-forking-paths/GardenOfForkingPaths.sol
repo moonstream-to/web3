@@ -11,6 +11,19 @@ import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol"
 import {TerminusPermissions} from "@moonstream/contracts/terminus/TerminusPermissions.sol";
 import "../../diamond/libraries/LibDiamond.sol";
 
+// Why not to make struct Session and have only one mapping? uint => Session
+// Reward as terminus token and use crafting ?
+//
+
+struct Session {
+    address playerTokenAddress;
+    address paymentTokenAddress;
+    uint256 paymentAmount;
+    bool isActive;
+    string URI;
+    uint256[] stages;
+}
+
 library LibGOFP {
     bytes32 constant STORAGE_POSITION =
         keccak256("moonstreamdao.eth.storage.mechanics.GardenOfForkingPaths");
@@ -18,15 +31,9 @@ library LibGOFP {
     struct GOFPStorage {
         address AdminTerminusAddress;
         uint256 AdminTerminusPoolID;
-        uint256 NumSessions;
-        mapping(uint256 => address) SessionPlayerTokenAddress;
-        mapping(uint256 => address) SessionPaymentTokenAddress;
-        mapping(uint256 => uint256) SessionPaymentAmount;
-        mapping(uint256 => bool) SessionIsActive;
-        mapping(uint256 => string) SessionURI;
-        mapping(uint256 => uint256[]) SessionStages;
+        uint256 numSessions;
         // session -> stage -> correct path index
-        mapping(uint256 => mapping(uint256 => uint256)) SessionPath;
+        mapping(uint256 => mapping(uint256 => uint256)) path;
     }
 
     function gofpStorage() internal pure returns (GOFPStorage storage gs) {
@@ -47,13 +54,7 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions {
         _;
     }
 
-    event SessionCreated(
-        uint256 indexed sessionID,
-        address indexed playerTokenAddress,
-        address indexed paymentTokenAddress,
-        uint256 paymentAmount,
-        string uri
-    );
+    event SessionCreated(Session);
 
     // When session is activated, this fires:
     // SessionActivated(<id>, true)
