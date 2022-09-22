@@ -19,8 +19,9 @@ struct Session {
     address playerTokenAddress;
     address paymentTokenAddress;
     uint256 paymentAmount;
-    bool isActive;
-    string URI;
+    bool isActive; // active -> stake if ok,  cannot unstake
+    bool isChoosingActive; // if active -> players can choose path in current stage
+    string uri;
     uint256[] stages;
 }
 
@@ -32,8 +33,23 @@ library LibGOFP {
         address AdminTerminusAddress;
         uint256 AdminTerminusPoolID;
         uint256 numSessions;
+        mapping(uint256 => Session) sessionById;
+        /*
+            // Mapping from owner to list of owned token IDs
+        mapping(address => mapping(uint256 => uint256)) private _ownedTokens;
+
+        // Mapping from token ID to index of the owner tokens list
+        mapping(uint256 => uint256) private _ownedTokensIndex;
+
+        // Array with all token ids, used for enumeration
+        uint256[] private _allTokens;
+
+        // Mapping from token id to position in the allTokens array
+        mapping(uint256 => uint256) private _allTokensIndex;
+         
+        */
         // session -> stage -> correct path index
-        mapping(uint256 => mapping(uint256 => uint256)) path;
+        mapping(uint256 => mapping(uint256 => uint256)) sessionStagePath;
     }
 
     function gofpStorage() internal pure returns (GOFPStorage storage gs) {
@@ -60,8 +76,11 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions {
     // SessionActivated(<id>, true)
     // When session is deactivated, this fires:
     // SessionActivated(<id>, false)
-    event SessionActivated(uint256 indexed sessionID, bool active);
-
+    event SessionActivated(uint256 indexed sessionID, bool isActive);
+    event SessionChoosingActivated(
+        uint256 indexed sessionID,
+        bool isChoosingActive
+    );
     event PathRegistered(
         uint256 indexed sessionID,
         uint256 stage,
@@ -80,27 +99,9 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions {
     function getSession(uint256 sessionID)
         external
         view
-        returns (
-            address playerTokenAddress,
-            address paymentTokenAddress,
-            uint256 paymentamount,
-            bool isActive,
-            string memory uri,
-            uint256[] memory stages,
-            uint256[] memory correctPath
-        )
+        returns (Session memory)
     {
-        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
-        playerTokenAddress = gs.SessionPlayerTokenAddress[sessionID];
-        paymentTokenAddress = gs.SessionPaymentTokenAddress[sessionID];
-        paymentamount = gs.SessionPaymentAmount[sessionID];
-        isActive = gs.SessionIsActive[sessionID];
-        uri = gs.SessionURI[sessionID];
-        stages = gs.SessionStages[sessionID];
-        correctPath = new uint256[](stages.length);
-        for (uint256 i = 0; i < stages.length; i++) {
-            correctPath[i] = gs.SessionPath[sessionID][i];
-        }
+        return LibGOFP.gofpStorage().sessionById[sessionID];
     }
 
     function adminTerminusInfo() external view returns (address, uint256) {
@@ -109,80 +110,128 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions {
     }
 
     function numSessions() external view returns (uint256) {
-        return LibGOFP.gofpStorage().NumSessions;
+        return LibGOFP.gofpStorage().numSessions;
     }
 
     function createSession(
         address playerTokenAddress,
         address paymentTokenAddress,
         uint256 paymentAmount,
+        bool isActive,
         string memory uri,
-        uint256[] memory stages,
-        bool active
+        uint256[] memory stages
     ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
-        gs.NumSessions++;
+        gs.numSessions++;
+
         require(
-            gs.SessionPlayerTokenAddress[gs.NumSessions] == address(0),
+            gs.sessionById[gs.numSessions].playerTokenAddress == address(0),
             "GOFPFacet.createSession: Session already registered"
         );
-        gs.SessionPlayerTokenAddress[gs.NumSessions] = playerTokenAddress;
-        gs.SessionPaymentTokenAddress[gs.NumSessions] = paymentTokenAddress;
-        gs.SessionPaymentAmount[gs.NumSessions] = paymentAmount;
-        gs.SessionURI[gs.NumSessions] = uri;
-        gs.SessionStages[gs.NumSessions] = stages;
-        gs.SessionIsActive[gs.NumSessions] = active;
 
-        emit SessionCreated(
-            gs.NumSessions,
-            playerTokenAddress,
-            paymentTokenAddress,
-            paymentAmount,
-            uri
+        require(
+            playerTokenAddress != address(0),
+            "GOFPFacet.createSession: playerTokenAddress can't be zero address"
         );
+
+        gs.sessionById[gs.numSessions] = Session({
+            playerTokenAddress: playerTokenAddress,
+            paymentTokenAddress: paymentTokenAddress,
+            paymentAmount: paymentAmount,
+            isActive: isActive,
+            isChoosingActive: true,
+            uri: uri,
+            stages: stages
+        });
+
+        emit SessionCreated(gs.sessionById[gs.numSessions]);
     }
 
-    function setSessionActive(uint256 sessionID, bool active)
+    function setSessionActive(uint256 sessionID, bool isActive)
         external
         onlyGameMaster
     {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
-            sessionID <= gs.NumSessions,
+            sessionID <= gs.numSessions,
             "GOFPFacet.setSessionActive: Invalid session ID"
         );
-        gs.SessionIsActive[sessionID] = active;
-        emit SessionActivated(sessionID, active);
+        gs.sessionById[gs.numSessions].isActive = isActive;
+        emit SessionActivated(sessionID, isActive);
     }
 
-    function registerPath(
+    function getCorrectPathForStage(uint256 sessionID, uint256 stage)
+        external
+        view
+        returns (uint256)
+    {
+        return LibGOFP.gofpStorage().sessionStagePath[sessionID][stage];
+    }
+
+    function setCorrectPathForStage(
         uint256 sessionID,
         uint256 stage,
-        uint256 path
+        uint256 path,
+        bool setIsChoosingActive
     ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
-            sessionID <= gs.NumSessions,
-            "GOFPFacet.registerPath: Invalid session"
+            sessionID <= gs.numSessions,
+            "GOFPFacet.setCorrectPathForStage: Invalid session"
         );
         require(
-            stage < gs.SessionStages[sessionID].length,
-            "GOFPFacet.registerPath: Invalid stage"
+            stage < gs.sessionById[sessionID].stages.length,
+            "GOFPFacet.setCorrectPathForStage: Invalid stage"
+        );
+        require(
+            !gs.sessionById[sessionID].isChoosingActive,
+            "GOFPFacet.setCorrectPathForStage: Deactivate isChoosingActive before setting the correct path"
         );
         // Paths are 1-indexed to avoid possible confusion involving default value of 0
         require(
-            path >= 1 && path <= gs.SessionStages[sessionID][stage],
-            "GOFPFacet.registerPath: Invalid path"
+            path >= 1 && path <= gs.sessionById[sessionID].stages[stage],
+            "GOFPFacet.setCorrectPathForStage: Invalid path"
         );
         // We use the default value of 0 as a guard to check that path has not already been set for that
         // stage. No changes allowed for a given stage after the path was already chosen.
         require(
-            gs.SessionPath[sessionID][stage] == 0,
-            "GOFPFacet.registerPath: Path has already been chosen for that stage"
+            gs.sessionStagePath[sessionID][stage] == 0,
+            "GOFPFacet.setCorrectPathForStage: Path has already been chosen for that stage"
         );
-        gs.SessionPath[sessionID][stage] = path;
+        require(
+            stage == 0 || gs.sessionStagePath[sessionID][stage - 1] != 0,
+            "GOFPFacet.setCorrectPathForStage: Path not set for previous stage"
+        );
+        gs.sessionStagePath[sessionID][stage] = path;
+        gs.sessionById[sessionID].isChoosingActive = setIsChoosingActive;
+
         emit PathRegistered(sessionID, stage, path);
+        emit SessionChoosingActivated(sessionID, setIsChoosingActive);
     }
+
+    function setSessionChoosingActive(uint256 sessionID, bool isChoosingActive)
+        external
+        onlyGameMaster
+    {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        require(
+            sessionID <= gs.numSessions,
+            "GOFPFacet.setSessionChoosingActive: Invalid session ID"
+        );
+        gs.sessionById[gs.numSessions].isChoosingActive = isChoosingActive;
+        emit SessionChoosingActivated(sessionID, isChoosingActive);
+    }
+
+    // ReentrancyGuard needed
+    function stakeTokensIntoSession(
+        uint256 sessionID,
+        uint256[] calldata tokenIDs
+    ) external {}
+
+    function unstakeTokensFromSession(
+        uint256 sessionID,
+        uint256[] calldata tokenIDs
+    ) external {}
 
     function onERC721Received(
         address operator,
@@ -197,14 +246,14 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions {
         uint256 sessionID;
         (sessionID) = abi.decode(_data, (uint256));
         require(
-            sessionID <= gs.NumSessions,
+            sessionID <= gs.numSessions,
             "GOFPFacet.onERC721Received: Invalid session"
         );
 
         // Note: msg.sender is always the ERC721 contract address in onERC721Received:
         // https://eips.ethereum.org/EIPS/eip-721
         require(
-            msg.sender == gs.SessionPlayerTokenAddress[sessionID],
+            msg.sender == gs.sessionById[sessionID].playerTokenAddress,
             "GOFPFacet.onERC721Received: Invalid ERC721 contract for session"
         );
 

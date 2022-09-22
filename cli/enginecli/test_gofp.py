@@ -82,9 +82,9 @@ class TestAdminFlow(GOFPTestCase):
             self.nft.address,
             self.payment_token.address,
             expected_payment_amount,
+            expected_is_active,
             expected_uri,
             expected_stages,
-            expected_is_active,
             {"from": self.game_master},
         )
 
@@ -127,9 +127,9 @@ class TestAdminFlow(GOFPTestCase):
             self.nft.address,
             self.payment_token.address,
             expected_payment_amount,
+            expected_is_active,
             expected_uri,
             expected_stages,
-            expected_is_active,
             {"from": self.game_master},
         )
 
@@ -171,9 +171,9 @@ class TestAdminFlow(GOFPTestCase):
                 self.nft.address,
                 self.payment_token.address,
                 failed_payment_amount,
+                failed_is_active,
                 failed_uri,
                 failed_stages,
-                failed_is_active,
                 {"from": self.player},
             )
 
@@ -193,9 +193,9 @@ class TestAdminFlow(GOFPTestCase):
                 self.nft.address,
                 self.payment_token.address,
                 failed_payment_amount,
+                failed_is_active,
                 failed_uri,
                 failed_stages,
-                failed_is_active,
                 {"from": self.owner},
             )
 
@@ -250,9 +250,9 @@ class TestAdminFlow(GOFPTestCase):
             self.nft.address,
             self.payment_token.address,
             expected_payment_amount,
+            expected_is_active,
             expected_uri,
             expected_stages,
-            expected_is_active,
             {"from": self.game_master},
         )
 
@@ -285,9 +285,9 @@ class TestAdminFlow(GOFPTestCase):
             self.nft.address,
             self.payment_token.address,
             payment_amount,
+            is_active,
             uri,
             stages,
-            is_active,
             {"from": self.game_master},
         )
 
@@ -321,9 +321,9 @@ class TestAdminFlow(GOFPTestCase):
             self.nft.address,
             self.payment_token.address,
             payment_amount,
+            is_active,
             uri,
             stages,
-            is_active,
             {"from": self.game_master},
         )
 
@@ -374,9 +374,9 @@ class TestAdminFlow(GOFPTestCase):
             self.nft.address,
             self.payment_token.address,
             payment_amount,
+            is_active,
             uri,
             stages,
-            is_active,
             {"from": self.game_master},
         )
 
@@ -408,9 +408,9 @@ class TestAdminFlow(GOFPTestCase):
             self.nft.address,
             self.payment_token.address,
             payment_amount,
+            is_active,
             uri,
             stages,
-            is_active,
             {"from": self.game_master},
         )
 
@@ -421,16 +421,40 @@ class TestAdminFlow(GOFPTestCase):
         # Stage 1: Path 5
         # Stage 0: Path 1
         # Stage 2: Path 3
-        self.gofp.register_path(session_id, 1, 5, {"from": self.game_master})
-        _, _, _, _, _, _, paths_0 = self.gofp.get_session(session_id)
-        self.assertEqual(paths_0, (0, 5, 0))
 
-        self.gofp.register_path(session_id, 0, 1, {"from": self.game_master})
-        _, _, _, _, _, _, paths_1 = self.gofp.get_session(session_id)
+        self.gofp.set_session_choosing_active(
+            session_id, False, {"from": self.game_master}
+        )
+        self.gofp.set_correct_path_for_stage(
+            session_id, 0, 1, False, {"from": self.game_master}
+        )
+
+        paths_0 = (
+            self.gofp.get_correct_path_for_stage(session_id, 0),
+            self.gofp.get_correct_path_for_stage(session_id, 1),
+            self.gofp.get_correct_path_for_stage(session_id, 2),
+        )
+        self.assertEqual(paths_0, (1, 0, 0))
+
+        self.gofp.set_correct_path_for_stage(
+            session_id, 1, 5, False, {"from": self.game_master}
+        )
+
+        paths_1 = (
+            self.gofp.get_correct_path_for_stage(session_id, 0),
+            self.gofp.get_correct_path_for_stage(session_id, 1),
+            self.gofp.get_correct_path_for_stage(session_id, 2),
+        )
         self.assertEqual(paths_1, (1, 5, 0))
 
-        self.gofp.register_path(session_id, 2, 3, {"from": self.game_master})
-        _, _, _, _, _, _, paths_2 = self.gofp.get_session(session_id)
+        self.gofp.set_correct_path_for_stage(
+            session_id, 2, 3, False, {"from": self.game_master}
+        )
+        paths_2 = (
+            self.gofp.get_correct_path_for_stage(session_id, 0),
+            self.gofp.get_correct_path_for_stage(session_id, 1),
+            self.gofp.get_correct_path_for_stage(session_id, 2),
+        )
         self.assertEqual(paths_2, (1, 5, 3))
 
     def test_non_game_master_cannot_register_path(self):
@@ -443,26 +467,30 @@ class TestAdminFlow(GOFPTestCase):
             self.nft.address,
             self.payment_token.address,
             payment_amount,
+            is_active,
             uri,
             stages,
-            is_active,
             {"from": self.game_master},
         )
 
         session_id = self.gofp.num_sessions()
 
         with self.assertRaises(VirtualMachineError):
-            self.gofp.register_path(session_id, 0, 1, {"from": self.player})
+            self.gofp.set_correct_path_for_stage(
+                session_id, 0, 1, {"from": self.player}
+            )
         _, _, _, _, _, _, paths_0 = self.gofp.get_session(session_id)
         self.assertEqual(paths_0, (0, 0, 0))
 
         with self.assertRaises(VirtualMachineError):
-            self.gofp.register_path(session_id, 1, 5, {"from": self.owner})
+            self.gofp.set_correct_path_for_stage(session_id, 1, 5, {"from": self.owner})
         _, _, _, _, _, _, paths_1 = self.gofp.get_session(session_id)
         self.assertEqual(paths_1, (0, 0, 0))
 
         with self.assertRaises(VirtualMachineError):
-            self.gofp.register_path(session_id, 2, 3, {"from": self.random_person})
+            self.gofp.set_correct_path_for_stage(
+                session_id, 2, 3, {"from": self.random_person}
+            )
         _, _, _, _, _, _, paths_2 = self.gofp.get_session(session_id)
         self.assertEqual(paths_2, (0, 0, 0))
 
@@ -476,9 +504,9 @@ class TestAdminFlow(GOFPTestCase):
             self.nft.address,
             self.payment_token.address,
             payment_amount,
+            is_active,
             uri,
             stages,
-            is_active,
             {"from": self.game_master},
         )
 
@@ -486,25 +514,33 @@ class TestAdminFlow(GOFPTestCase):
 
         # Invalid session
         with self.assertRaises(VirtualMachineError):
-            self.gofp.register_path(session_id + 1, 1, 5, {"from": self.game_master})
+            self.gofp.set_correct_path_for_stage(
+                session_id + 1, 1, 5, {"from": self.game_master}
+            )
         _, _, _, _, _, _, paths_0 = self.gofp.get_session(session_id)
         self.assertEqual(paths_0, (0, 0, 0))
 
         # Invalid stage
         with self.assertRaises(VirtualMachineError):
-            self.gofp.register_path(session_id, 3, 1, {"from": self.game_master})
+            self.gofp.set_correct_path_for_stage(
+                session_id, 3, 1, {"from": self.game_master}
+            )
         _, _, _, _, _, _, paths_1 = self.gofp.get_session(session_id)
         self.assertEqual(paths_1, (0, 0, 0))
 
         # Path must be >= 1
         with self.assertRaises(VirtualMachineError):
-            self.gofp.register_path(session_id, 0, 0, {"from": self.game_master})
+            self.gofp.set_correct_path_for_stage(
+                session_id, 0, 0, {"from": self.game_master}
+            )
         _, _, _, _, _, _, paths_1 = self.gofp.get_session(session_id)
         self.assertEqual(paths_1, (0, 0, 0))
 
         # Path must be <= number of choices for the given stage
         with self.assertRaises(VirtualMachineError):
-            self.gofp.register_path(session_id, 0, 6, {"from": self.game_master})
+            self.gofp.set_correct_path_for_stage(
+                session_id, 0, 6, {"from": self.game_master}
+            )
         _, _, _, _, _, _, paths_1 = self.gofp.get_session(session_id)
         self.assertEqual(paths_1, (0, 0, 0))
 
@@ -518,24 +554,30 @@ class TestAdminFlow(GOFPTestCase):
             self.nft.address,
             self.payment_token.address,
             payment_amount,
+            is_active,
             uri,
             stages,
-            is_active,
             {"from": self.game_master},
         )
 
         session_id = self.gofp.num_sessions()
 
-        self.gofp.register_path(session_id, 1, 5, {"from": self.game_master})
+        self.gofp.set_correct_path_for_stage(
+            session_id, 1, 5, {"from": self.game_master}
+        )
         _, _, _, _, _, _, paths_0 = self.gofp.get_session(session_id)
         self.assertEqual(paths_0, (0, 5, 0))
 
         with self.assertRaises(VirtualMachineError):
-            self.gofp.register_path(session_id, 1, 4, {"from": self.game_master})
+            self.gofp.set_correct_path_for_stage(
+                session_id, 1, 4, {"from": self.game_master}
+            )
         _, _, _, _, _, _, paths_1 = self.gofp.get_session(session_id)
         self.assertEqual(paths_1, (0, 5, 0))
 
-        self.gofp.register_path(session_id, 2, 3, {"from": self.game_master})
+        self.gofp.set_correct_path_for_stage(
+            session_id, 2, 3, {"from": self.game_master}
+        )
         _, _, _, _, _, _, paths_2 = self.gofp.get_session(session_id)
         self.assertEqual(paths_2, (0, 5, 3))
 
@@ -575,15 +617,15 @@ class TestAdminFlow(GOFPTestCase):
             self.nft.address,
             self.payment_token.address,
             payment_amount,
+            is_active,
             uri,
             stages,
-            is_active,
             {"from": self.game_master},
         )
 
         session_id = self.gofp.num_sessions()
 
-        tx_receipt = self.gofp.register_path(
+        tx_receipt = self.gofp.set_correct_path_for_stage(
             session_id, 1, 5, {"from": self.game_master}
         )
         events = _fetch_events_chunk(
@@ -611,9 +653,9 @@ class TestPlayerFlow(GOFPTestCase):
             self.nft.address,
             self.payment_token.address,
             payment_amount,
+            is_active,
             uri,
             stages,
-            is_active,
             {"from": self.game_master},
         )
 
@@ -638,9 +680,9 @@ class TestPlayerFlow(GOFPTestCase):
             self.nft.address,
             self.payment_token.address,
             payment_amount,
+            is_active,
             uri,
             stages,
-            is_active,
             {"from": self.game_master},
         )
 
