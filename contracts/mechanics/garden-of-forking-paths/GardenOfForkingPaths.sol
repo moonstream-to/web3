@@ -21,6 +21,8 @@ struct Session {
     uint256 paymentAmount;
     bool isActive; // active -> stake if ok,  cannot unstake
     bool isChoosingActive; // if active -> players can choose path in current stage
+    uint256 currentStage; //TODO: we need it, otherwise it is needed to loop through to find
+    //the current stage. Logic part also should be changed
     string uri;
     uint256[] stages;
 }
@@ -34,20 +36,10 @@ library LibGOFP {
         uint256 AdminTerminusPoolID;
         uint256 numSessions;
         mapping(uint256 => Session) sessionById;
-        /*
-            // Mapping from owner to list of owned token IDs
-        mapping(address => mapping(uint256 => uint256)) private _ownedTokens;
-
-        // Mapping from token ID to index of the owner tokens list
-        mapping(uint256 => uint256) private _ownedTokensIndex;
-
-        // Array with all token ids, used for enumeration
-        uint256[] private _allTokens;
-
-        // Mapping from token id to position in the allTokens array
-        mapping(uint256 => uint256) private _allTokensIndex;
-         
-        */
+        //stage => tokenId => index in stakedTokens
+        mapping(uint256 => mapping(uint256 => uint256)) stakedTokenIndex;
+        //stage => owner => tokens
+        mapping(uint256 => mapping(address => uint256[])) stakedTokens;
         // session -> stage -> correct path index
         mapping(uint256 => mapping(uint256 => uint256)) sessionStagePath;
     }
@@ -71,11 +63,6 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions {
     }
 
     event SessionCreated(Session);
-
-    // When session is activated, this fires:
-    // SessionActivated(<id>, true)
-    // When session is deactivated, this fires:
-    // SessionActivated(<id>, false)
     event SessionActivated(uint256 indexed sessionID, bool isActive);
     event SessionChoosingActivated(
         uint256 indexed sessionID,
@@ -226,8 +213,18 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions {
     function stakeTokensIntoSession(
         uint256 sessionID,
         uint256[] calldata tokenIDs
-    ) external {}
+    ) external {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        require(
+            sessionID <= gs.numSessions,
+            "GOFPFacet.setSessionChoosingActive: Invalid session ID"
+        );
+        //TODO: Take the payment!
+        require(gs.sessionById[sessionID].);
 
+    }
+
+    // ReentrancyGuard needed
     function unstakeTokensFromSession(
         uint256 sessionID,
         uint256[] calldata tokenIDs
