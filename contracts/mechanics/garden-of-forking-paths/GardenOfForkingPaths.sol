@@ -8,12 +8,11 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import "@openzeppelin-contracts/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {TerminusPermissions} from "@moonstream/contracts/terminus/TerminusPermissions.sol";
 import "../../diamond/libraries/LibDiamond.sol";
-
-// Why not to make struct Session and have only one mapping? uint => Session
-// Reward as terminus token and use crafting ?
-//
 
 struct Session {
     address playerTokenAddress;
@@ -21,8 +20,6 @@ struct Session {
     uint256 paymentAmount;
     bool isActive; // active -> stake if ok,  cannot unstake
     bool isChoosingActive; // if active -> players can choose path in current stage
-    uint256 currentStage; //TODO: we need it, otherwise it is needed to loop through to find
-    //the current stage. Logic part also should be changed
     string uri;
     uint256[] stages;
 }
@@ -38,8 +35,9 @@ library LibGOFP {
         mapping(uint256 => Session) sessionById;
         //stage => tokenId => index in stakedTokens
         mapping(uint256 => mapping(uint256 => uint256)) stakedTokenIndex;
-        //stage => owner => tokens
-        mapping(uint256 => mapping(address => uint256[])) stakedTokens;
+        //stage => owner => tokens, Important: indexing starts from 1
+        mapping(uint256 => mapping(address => mapping(uint256 => uint256))) stakedTokens;
+        mapping(uint256 => mapping(address => uint256)) stakedTokensCountOfOwner;
         // session -> stage -> correct path index
         mapping(uint256 => mapping(uint256 => uint256)) sessionStagePath;
     }
@@ -52,7 +50,7 @@ library LibGOFP {
     }
 }
 
-contract GOFPFacet is ERC1155Holder, TerminusPermissions {
+contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
     modifier onlyGameMaster() {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
@@ -209,6 +207,51 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions {
         emit SessionChoosingActivated(sessionID, isChoosingActive);
     }
 
+    function _addTokenToEnumeration(
+        uint256 sessionId,
+        address owner,
+        uint256 tokenId
+    ) internal {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+
+        require(
+            gs.stakedTokenIndex[sessionId][tokenId] == 0,
+            "GOFPFacet._addTokenToEnumeration: Token was already added to enumeration"
+        );
+        uint256 currStaked = gs.stakedTokensCountOfOwner[sessionId][owner];
+        gs.stakedTokens[sessionId][owner][currStaked + 1] = tokenId;
+        gs.stakedTokenIndex[sessionId][tokenId] = currStaked + 1;
+    }
+
+    function _removeTokenFromEnumeration(
+        uint256 sessionId,
+        address owner,
+        uint256 tokenId
+    ) internal {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        require(
+            gs.stakedTokenIndex[sessionId][tokenId] != 0,
+            "GOFPFacet._removeTokenFromEnumeration: Token wasn't added to enumeration"
+        );
+        uint256 currStaked = gs.stakedTokensCountOfOwner[sessionId][owner];
+        uint256 currIndex = gs.stakedTokenIndex[sessionId][tokenId];
+        uint256 lastToken = gs.stakedTokens[sessionId][owner][currStaked];
+        //TODO add another mapping like dark forest for staker
+        require(
+            currIndex <= currStaked &&
+                gs.stakedTokens[sessionId][owner][currIndex] == tokenId,
+            "GOFPFacet._removeTokenFromEnumeration: Token wasn't staked by the given owner"
+        );
+        //swapping last element with element at given index
+        gs.stakedTokens[sessionId][owner][currIndex] = lastToken;
+        //updating last token's index
+        gs.stakedTokenIndex[sessionId][lastToken] = currIndex;
+        //deleting old lastToken
+        delete gs.stakedTokens[sessionId][owner][currStaked];
+        //updating staked count
+        gs.stakedTokensCountOfOwner[sessionId][owner]--;
+    }
+
     // ReentrancyGuard needed
     function stakeTokensIntoSession(
         uint256 sessionID,
@@ -219,41 +262,37 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions {
             sessionID <= gs.numSessions,
             "GOFPFacet.setSessionChoosingActive: Invalid session ID"
         );
-        //TODO: Take the payment!
-        require(gs.sessionById[sessionID].);
 
+        IERC20 paymentToken = IERC20(
+            gs.sessionById[sessionID].paymentTokenAddress
+        );
+        uint256 paymentAmount = gs.sessionById[sessionID].paymentAmount *
+            tokenIDs.length;
+        paymentToken.transferFrom(msg.sender, address(this), paymentAmount);
+
+        // The first stage path has not been set. (game has not started)
+        require(gs.sessionStagePath[sessionID][0] == 0);
+        // Session is active
+        require(gs.sessionById[gs.numSessions].isActive);
+
+        IERC721 token = IERC721(gs.sessionById[sessionID].playerTokenAddress);
+        for (uint256 i = 0; i < tokenIDs.length; i++) {
+            token.safeTransferFrom(msg.sender, address(this), tokenIDs[i]);
+            //adding to enumeration
+        }
     }
 
     // ReentrancyGuard needed
     function unstakeTokensFromSession(
         uint256 sessionID,
         uint256[] calldata tokenIDs
-    ) external {}
-
-    function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes calldata _data
-    ) public virtual returns (bytes4) {
+    ) external {
+        //TODO add checks that needed
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
-
-        // _data is expected to be an encoded uint256 representing the session ID into which the NFT
-        // should be staked.
-        uint256 sessionID;
-        (sessionID) = abi.decode(_data, (uint256));
-        require(
-            sessionID <= gs.numSessions,
-            "GOFPFacet.onERC721Received: Invalid session"
-        );
-
-        // Note: msg.sender is always the ERC721 contract address in onERC721Received:
-        // https://eips.ethereum.org/EIPS/eip-721
-        require(
-            msg.sender == gs.sessionById[sessionID].playerTokenAddress,
-            "GOFPFacet.onERC721Received: Invalid ERC721 contract for session"
-        );
-
-        return this.onERC721Received.selector;
+        IERC721 token = IERC721(gs.sessionById[sessionID].playerTokenAddress);
+        for (uint256 i = 0; i < tokenIDs.length; i++) {
+            _removeTokenFromEnumeration(sessionID, msg.sender, tokenIDs[i]);
+            token.safeTransferFrom(address(this), msg.sender, tokenIDs[i]);
+        }
     }
 }

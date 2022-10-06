@@ -100,9 +100,9 @@ class TestAdminFlow(GOFPTestCase):
             payment_address,
             payment_amount,
             is_active,
+            is_choosing_active,
             uri,
             stages,
-            correct_path,
         ) = session
 
         self.assertEqual(nft_address, self.nft.address)
@@ -111,7 +111,7 @@ class TestAdminFlow(GOFPTestCase):
         self.assertTrue(is_active)
         self.assertEqual(uri, expected_uri)
         self.assertEqual(stages, expected_stages)
-        self.assertEqual(correct_path, tuple([0 for _ in expected_stages]))
+        self.assertEqual(is_choosing_active, True)
 
     def test_create_session_then_get_session_inactive(self):
         num_sessions_0 = self.gofp.num_sessions()
@@ -145,9 +145,9 @@ class TestAdminFlow(GOFPTestCase):
             payment_address,
             payment_amount,
             is_active,
+            is_choosing_active,
             uri,
             stages,
-            correct_path,
         ) = session
 
         self.assertEqual(nft_address, self.nft.address)
@@ -156,7 +156,7 @@ class TestAdminFlow(GOFPTestCase):
         self.assertFalse(is_active)
         self.assertEqual(uri, expected_uri)
         self.assertEqual(stages, expected_stages)
-        self.assertEqual(correct_path, tuple([0 for _ in expected_stages]))
+        self.assertEqual(is_choosing_active, True)
 
     def test_cannot_create_session_as_player(self):
         num_sessions_0 = self.gofp.num_sessions()
@@ -477,21 +477,33 @@ class TestAdminFlow(GOFPTestCase):
 
         with self.assertRaises(VirtualMachineError):
             self.gofp.set_correct_path_for_stage(
-                session_id, 0, 1, {"from": self.player}
+                session_id, 0, 1, True, {"from": self.player}
             )
-        _, _, _, _, _, _, paths_0 = self.gofp.get_session(session_id)
+        paths_0 = (
+            self.gofp.get_correct_path_for_stage(session_id, 0),
+            self.gofp.get_correct_path_for_stage(session_id, 1),
+            self.gofp.get_correct_path_for_stage(session_id, 2),
+        )
         self.assertEqual(paths_0, (0, 0, 0))
 
         with self.assertRaises(VirtualMachineError):
             self.gofp.set_correct_path_for_stage(session_id, 1, 5, {"from": self.owner})
-        _, _, _, _, _, _, paths_1 = self.gofp.get_session(session_id)
+        paths_1 = (
+            self.gofp.get_correct_path_for_stage(session_id, 0),
+            self.gofp.get_correct_path_for_stage(session_id, 1),
+            self.gofp.get_correct_path_for_stage(session_id, 2),
+        )
         self.assertEqual(paths_1, (0, 0, 0))
 
         with self.assertRaises(VirtualMachineError):
             self.gofp.set_correct_path_for_stage(
                 session_id, 2, 3, {"from": self.random_person}
             )
-        _, _, _, _, _, _, paths_2 = self.gofp.get_session(session_id)
+        paths_2 = (
+            self.gofp.get_correct_path_for_stage(session_id, 0),
+            self.gofp.get_correct_path_for_stage(session_id, 1),
+            self.gofp.get_correct_path_for_stage(session_id, 2),
+        )
         self.assertEqual(paths_2, (0, 0, 0))
 
     def test_game_master_cannot_register_invalid_path(self):
@@ -515,33 +527,49 @@ class TestAdminFlow(GOFPTestCase):
         # Invalid session
         with self.assertRaises(VirtualMachineError):
             self.gofp.set_correct_path_for_stage(
-                session_id + 1, 1, 5, {"from": self.game_master}
+                session_id + 1, 1, 5, True, {"from": self.game_master}
             )
-        _, _, _, _, _, _, paths_0 = self.gofp.get_session(session_id)
+        paths_0 = (
+            self.gofp.get_correct_path_for_stage(session_id, 0),
+            self.gofp.get_correct_path_for_stage(session_id, 1),
+            self.gofp.get_correct_path_for_stage(session_id, 2),
+        )
         self.assertEqual(paths_0, (0, 0, 0))
 
         # Invalid stage
         with self.assertRaises(VirtualMachineError):
             self.gofp.set_correct_path_for_stage(
-                session_id, 3, 1, {"from": self.game_master}
+                session_id, 3, 1, True, {"from": self.game_master}
             )
-        _, _, _, _, _, _, paths_1 = self.gofp.get_session(session_id)
+        paths_1 = (
+            self.gofp.get_correct_path_for_stage(session_id, 0),
+            self.gofp.get_correct_path_for_stage(session_id, 1),
+            self.gofp.get_correct_path_for_stage(session_id, 2),
+        )
         self.assertEqual(paths_1, (0, 0, 0))
 
         # Path must be >= 1
         with self.assertRaises(VirtualMachineError):
             self.gofp.set_correct_path_for_stage(
-                session_id, 0, 0, {"from": self.game_master}
+                session_id, 0, 0, True, {"from": self.game_master}
             )
-        _, _, _, _, _, _, paths_1 = self.gofp.get_session(session_id)
+        paths_1 = (
+            self.gofp.get_correct_path_for_stage(session_id, 0),
+            self.gofp.get_correct_path_for_stage(session_id, 1),
+            self.gofp.get_correct_path_for_stage(session_id, 2),
+        )
         self.assertEqual(paths_1, (0, 0, 0))
 
         # Path must be <= number of choices for the given stage
         with self.assertRaises(VirtualMachineError):
             self.gofp.set_correct_path_for_stage(
-                session_id, 0, 6, {"from": self.game_master}
+                session_id, 0, 6, True, {"from": self.game_master}
             )
-        _, _, _, _, _, _, paths_1 = self.gofp.get_session(session_id)
+        paths_1 = (
+            self.gofp.get_correct_path_for_stage(session_id, 0),
+            self.gofp.get_correct_path_for_stage(session_id, 1),
+            self.gofp.get_correct_path_for_stage(session_id, 2),
+        )
         self.assertEqual(paths_1, (0, 0, 0))
 
     def test_game_master_cannot_register_path_multiple_times_for_same_stage(self):
@@ -563,7 +591,7 @@ class TestAdminFlow(GOFPTestCase):
         session_id = self.gofp.num_sessions()
 
         self.gofp.set_correct_path_for_stage(
-            session_id, 1, 5, {"from": self.game_master}
+            session_id, 1, 5, False, {"from": self.game_master}
         )
         _, _, _, _, _, _, paths_0 = self.gofp.get_session(session_id)
         self.assertEqual(paths_0, (0, 5, 0))
@@ -576,7 +604,7 @@ class TestAdminFlow(GOFPTestCase):
         self.assertEqual(paths_1, (0, 5, 0))
 
         self.gofp.set_correct_path_for_stage(
-            session_id, 2, 3, {"from": self.game_master}
+            session_id, 2, 3, False, {"from": self.game_master}
         )
         _, _, _, _, _, _, paths_2 = self.gofp.get_session(session_id)
         self.assertEqual(paths_2, (0, 5, 3))
@@ -626,7 +654,7 @@ class TestAdminFlow(GOFPTestCase):
         session_id = self.gofp.num_sessions()
 
         tx_receipt = self.gofp.set_correct_path_for_stage(
-            session_id, 1, 5, {"from": self.game_master}
+            session_id, 1, 5, False, {"from": self.game_master}
         )
         events = _fetch_events_chunk(
             web3_client,
@@ -661,15 +689,6 @@ class TestPlayerFlow(GOFPTestCase):
 
         session_id = self.gofp.num_sessions()
 
-        calldata = encode(["uint256"], [session_id])
-
-        self.nft.safe_transfer_from(
-            self.player.address, self.gofp.address, 1, calldata, {"from": self.player}
-        )
-
-        nft_owner = self.nft.owner_of(1)
-        self.assertEqual(nft_owner, self.gofp.address)
-
     def test_player_cannot_stake_nft_into_nonexistent_session(self):
         payment_amount = 131
         uri = "https://example.com/test.json"
@@ -687,20 +706,6 @@ class TestPlayerFlow(GOFPTestCase):
         )
 
         session_id = self.gofp.num_sessions()
-
-        calldata = encode(["uint256"], [session_id + 1])
-
-        with self.assertRaises(VirtualMachineError):
-            self.nft.safe_transfer_from(
-                self.player.address,
-                self.gofp.address,
-                2,
-                calldata,
-                {"from": self.player},
-            )
-
-        nft_owner = self.nft.owner_of(2)
-        self.assertEqual(nft_owner, self.player.address)
 
 
 if __name__ == "__main__":
