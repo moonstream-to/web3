@@ -276,7 +276,7 @@ class TestAdminFlow(GOFPTestCase):
             events[0]["args"]["paymentTokenAddress"], self.payment_token.address
         )
         self.assertEqual(events[0]["args"]["paymentAmount"], expected_payment_amount)
-        self.assertEqual(events[0]["args"]["uri"], expected_uri)
+        self.assertEqual(events[0]["args"]["URI"], expected_uri)
 
     def test_can_change_session_is_active_as_game_master(self):
         payment_amount = 130
@@ -421,44 +421,38 @@ class TestAdminFlow(GOFPTestCase):
 
         session_id = self.gofp.num_sessions()
 
-        # Paths can be registered out of order. In this test, we register paths for stages in the
-        # following order:
-        # Stage 1: Path 5
-        # Stage 0: Path 1
-        # Stage 2: Path 3
-
         self.gofp.set_session_choosing_active(
             session_id, False, {"from": self.game_master}
         )
         self.gofp.set_correct_path_for_stage(
-            session_id, 0, 1, False, {"from": self.game_master}
+            session_id, 1, 1, False, {"from": self.game_master}
         )
 
         paths_0 = (
-            self.gofp.get_correct_path_for_stage(session_id, 0),
             self.gofp.get_correct_path_for_stage(session_id, 1),
             self.gofp.get_correct_path_for_stage(session_id, 2),
+            self.gofp.get_correct_path_for_stage(session_id, 3),
         )
         self.assertEqual(paths_0, (1, 0, 0))
 
         self.gofp.set_correct_path_for_stage(
-            session_id, 1, 5, False, {"from": self.game_master}
+            session_id, 2, 5, False, {"from": self.game_master}
         )
 
         paths_1 = (
-            self.gofp.get_correct_path_for_stage(session_id, 0),
             self.gofp.get_correct_path_for_stage(session_id, 1),
             self.gofp.get_correct_path_for_stage(session_id, 2),
+            self.gofp.get_correct_path_for_stage(session_id, 3),
         )
         self.assertEqual(paths_1, (1, 5, 0))
 
         self.gofp.set_correct_path_for_stage(
-            session_id, 2, 3, False, {"from": self.game_master}
+            session_id, 3, 3, False, {"from": self.game_master}
         )
         paths_2 = (
-            self.gofp.get_correct_path_for_stage(session_id, 0),
             self.gofp.get_correct_path_for_stage(session_id, 1),
             self.gofp.get_correct_path_for_stage(session_id, 2),
+            self.gofp.get_correct_path_for_stage(session_id, 3),
         )
         self.assertEqual(paths_2, (1, 5, 3))
 
@@ -482,34 +476,14 @@ class TestAdminFlow(GOFPTestCase):
 
         with self.assertRaises(VirtualMachineError):
             self.gofp.set_correct_path_for_stage(
-                session_id, 0, 1, True, {"from": self.player}
+                session_id, 1, 1, True, {"from": self.player}
             )
         paths_0 = (
-            self.gofp.get_correct_path_for_stage(session_id, 0),
             self.gofp.get_correct_path_for_stage(session_id, 1),
             self.gofp.get_correct_path_for_stage(session_id, 2),
+            self.gofp.get_correct_path_for_stage(session_id, 3),
         )
         self.assertEqual(paths_0, (0, 0, 0))
-
-        with self.assertRaises(VirtualMachineError):
-            self.gofp.set_correct_path_for_stage(session_id, 1, 5, {"from": self.owner})
-        paths_1 = (
-            self.gofp.get_correct_path_for_stage(session_id, 0),
-            self.gofp.get_correct_path_for_stage(session_id, 1),
-            self.gofp.get_correct_path_for_stage(session_id, 2),
-        )
-        self.assertEqual(paths_1, (0, 0, 0))
-
-        with self.assertRaises(VirtualMachineError):
-            self.gofp.set_correct_path_for_stage(
-                session_id, 2, 3, {"from": self.random_person}
-            )
-        paths_2 = (
-            self.gofp.get_correct_path_for_stage(session_id, 0),
-            self.gofp.get_correct_path_for_stage(session_id, 1),
-            self.gofp.get_correct_path_for_stage(session_id, 2),
-        )
-        self.assertEqual(paths_2, (0, 0, 0))
 
     def test_game_master_cannot_register_invalid_path(self):
         payment_amount = 131
@@ -535,47 +509,53 @@ class TestAdminFlow(GOFPTestCase):
                 session_id + 1, 1, 5, True, {"from": self.game_master}
             )
         paths_0 = (
-            self.gofp.get_correct_path_for_stage(session_id, 0),
             self.gofp.get_correct_path_for_stage(session_id, 1),
             self.gofp.get_correct_path_for_stage(session_id, 2),
+            self.gofp.get_correct_path_for_stage(session_id, 3),
         )
         self.assertEqual(paths_0, (0, 0, 0))
 
-        # Invalid stage
+        # Invalid stage - one greater than number of stages
         with self.assertRaises(VirtualMachineError):
             self.gofp.set_correct_path_for_stage(
-                session_id, 3, 1, True, {"from": self.game_master}
+                session_id, 4, 1, True, {"from": self.game_master}
             )
         paths_1 = (
-            self.gofp.get_correct_path_for_stage(session_id, 0),
             self.gofp.get_correct_path_for_stage(session_id, 1),
             self.gofp.get_correct_path_for_stage(session_id, 2),
+            self.gofp.get_correct_path_for_stage(session_id, 3),
         )
         self.assertEqual(paths_1, (0, 0, 0))
+
+        # Invalid stage - stage 0
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.set_correct_path_for_stage(
+                session_id, 0, 1, True, {"from": self.game_master}
+            )
 
         # Path must be >= 1
         with self.assertRaises(VirtualMachineError):
             self.gofp.set_correct_path_for_stage(
-                session_id, 0, 0, True, {"from": self.game_master}
+                session_id, 1, 0, True, {"from": self.game_master}
             )
-        paths_1 = (
-            self.gofp.get_correct_path_for_stage(session_id, 0),
+        paths_2 = (
             self.gofp.get_correct_path_for_stage(session_id, 1),
             self.gofp.get_correct_path_for_stage(session_id, 2),
+            self.gofp.get_correct_path_for_stage(session_id, 3),
         )
-        self.assertEqual(paths_1, (0, 0, 0))
+        self.assertEqual(paths_2, (0, 0, 0))
 
         # Path must be <= number of choices for the given stage
         with self.assertRaises(VirtualMachineError):
             self.gofp.set_correct_path_for_stage(
-                session_id, 0, 6, True, {"from": self.game_master}
+                session_id, 1, 6, True, {"from": self.game_master}
             )
-        paths_1 = (
-            self.gofp.get_correct_path_for_stage(session_id, 0),
+        paths_3 = (
             self.gofp.get_correct_path_for_stage(session_id, 1),
             self.gofp.get_correct_path_for_stage(session_id, 2),
+            self.gofp.get_correct_path_for_stage(session_id, 3),
         )
-        self.assertEqual(paths_1, (0, 0, 0))
+        self.assertEqual(paths_3, (0, 0, 0))
 
     def test_game_master_cannot_register_path_multiple_times_for_same_stage(self):
         payment_amount = 131
@@ -595,24 +575,40 @@ class TestAdminFlow(GOFPTestCase):
 
         session_id = self.gofp.num_sessions()
 
+        self.gofp.set_session_choosing_active(
+            session_id, False, {"from": self.game_master}
+        )
+
         self.gofp.set_correct_path_for_stage(
             session_id, 1, 5, False, {"from": self.game_master}
         )
-        _, _, _, _, _, _, paths_0 = self.gofp.get_session(session_id)
-        self.assertEqual(paths_0, (0, 5, 0))
+        paths_0 = (
+            self.gofp.get_correct_path_for_stage(session_id, 1),
+            self.gofp.get_correct_path_for_stage(session_id, 2),
+            self.gofp.get_correct_path_for_stage(session_id, 3),
+        )
+        self.assertEqual(paths_0, (5, 0, 0))
 
         with self.assertRaises(VirtualMachineError):
             self.gofp.set_correct_path_for_stage(
-                session_id, 1, 4, {"from": self.game_master}
+                session_id, 1, 4, False, {"from": self.game_master}
             )
-        _, _, _, _, _, _, paths_1 = self.gofp.get_session(session_id)
-        self.assertEqual(paths_1, (0, 5, 0))
+        paths_1 = (
+            self.gofp.get_correct_path_for_stage(session_id, 1),
+            self.gofp.get_correct_path_for_stage(session_id, 2),
+            self.gofp.get_correct_path_for_stage(session_id, 3),
+        )
+        self.assertEqual(paths_1, (5, 0, 0))
 
         self.gofp.set_correct_path_for_stage(
             session_id, 2, 3, False, {"from": self.game_master}
         )
-        _, _, _, _, _, _, paths_2 = self.gofp.get_session(session_id)
-        self.assertEqual(paths_2, (0, 5, 3))
+        paths_2 = (
+            self.gofp.get_correct_path_for_stage(session_id, 1),
+            self.gofp.get_correct_path_for_stage(session_id, 2),
+            self.gofp.get_correct_path_for_stage(session_id, 3),
+        )
+        self.assertEqual(paths_2, (5, 3, 0))
 
     def test_register_path_fires_event(self):
         path_registered_event_abi = {
@@ -657,6 +653,8 @@ class TestAdminFlow(GOFPTestCase):
         )
 
         session_id = self.gofp.num_sessions()
+
+        self.gofp.set_session_choosing_active(session_id, False, {"from": self.game_master})
 
         tx_receipt = self.gofp.set_correct_path_for_stage(
             session_id, 1, 5, False, {"from": self.game_master}

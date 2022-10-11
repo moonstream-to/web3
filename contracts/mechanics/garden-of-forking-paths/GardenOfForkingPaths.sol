@@ -28,16 +28,19 @@ library LibGOFP {
     bytes32 constant STORAGE_POSITION =
         keccak256("moonstreamdao.eth.storage.mechanics.GardenOfForkingPaths");
 
+    // All arrays and implicit arrays (implemented with maps) are 1-indexed.
+    // This helps us avoid any confusion that stems from 0 being the default value for uint256.
     struct GOFPStorage {
         address AdminTerminusAddress;
         uint256 AdminTerminusPoolID;
         uint256 numSessions;
         mapping(uint256 => Session) sessionById;
-        //stage => tokenId => index in stakedTokens
+        // stage => tokenId => index in stakedTokens
         mapping(uint256 => mapping(uint256 => uint256)) stakedTokenIndex;
-        //stage => owner => tokens, Important: indexing starts from 1
-        mapping(uint256 => mapping(address => mapping(uint256 => uint256))) stakedTokens;
+        // stage => owner => numTokensStaked
         mapping(uint256 => mapping(address => uint256)) stakedTokensCountOfOwner;
+        // stage => owner => tokens, Important: indexing starts from 1
+        mapping(uint256 => mapping(address => mapping(uint256 => uint256))) stakedTokens;
         // session -> stage -> correct path index
         mapping(uint256 => mapping(uint256 => uint256)) sessionStagePath;
     }
@@ -163,6 +166,10 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
         view
         returns (uint256)
     {
+        require(
+            stage > 0,
+            "GOFPFacet.getCorrectPathForStage: Stages are 1-indexed, 0 is not a valid stage"
+        );
         return LibGOFP.gofpStorage().sessionStagePath[sessionID][stage];
     }
 
@@ -172,13 +179,18 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
         uint256 path,
         bool setIsChoosingActive
     ) external onlyGameMaster {
+        require(
+            stage > 0,
+            "GOFPFacet.setCorrectPathForStage: Stages are 1-indexed, 0 is not a valid stage"
+        );
+        uint256 stageIndex = stage - 1;
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
             sessionID <= gs.numSessions,
             "GOFPFacet.setCorrectPathForStage: Invalid session"
         );
         require(
-            stage < gs.sessionById[sessionID].stages.length,
+            stageIndex < gs.sessionById[sessionID].stages.length,
             "GOFPFacet.setCorrectPathForStage: Invalid stage"
         );
         require(
@@ -187,7 +199,7 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
         );
         // Paths are 1-indexed to avoid possible confusion involving default value of 0
         require(
-            path >= 1 && path <= gs.sessionById[sessionID].stages[stage],
+            path >= 1 && path <= gs.sessionById[sessionID].stages[stageIndex],
             "GOFPFacet.setCorrectPathForStage: Invalid path"
         );
         // We use the default value of 0 as a guard to check that path has not already been set for that
@@ -196,8 +208,12 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
             gs.sessionStagePath[sessionID][stage] == 0,
             "GOFPFacet.setCorrectPathForStage: Path has already been chosen for that stage"
         );
+        // You cannot set the path for a stage if the path for its previous stage has not been previously
+        // set.
+        // We use the stageIndex to access the path because stageIndex = stage - 1. This is just a
+        // convenience. It would be more correct to access the "stage - 1" key in the mapping.
         require(
-            stage == 0 || gs.sessionStagePath[sessionID][stage - 1] != 0,
+            stage <= 1 || gs.sessionStagePath[sessionID][stageIndex] != 0,
             "GOFPFacet.setCorrectPathForStage: Path not set for previous stage"
         );
         gs.sessionStagePath[sessionID][stage] = path;
