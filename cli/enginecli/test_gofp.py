@@ -7,6 +7,8 @@ from moonworm.watch import _fetch_events_chunk
 from . import GOFPFacet, MockTerminus, MockErc20, MockERC721
 from .core import gofp_gogogo
 
+MAX_UINT = 2**256 - 1
+
 
 class GOFPTestCase(unittest.TestCase):
     @classmethod
@@ -654,7 +656,9 @@ class TestAdminFlow(GOFPTestCase):
 
         session_id = self.gofp.num_sessions()
 
-        self.gofp.set_session_choosing_active(session_id, False, {"from": self.game_master})
+        self.gofp.set_session_choosing_active(
+            session_id, False, {"from": self.game_master}
+        )
 
         tx_receipt = self.gofp.set_correct_path_for_stage(
             session_id, 1, 5, False, {"from": self.game_master}
@@ -674,11 +678,11 @@ class TestAdminFlow(GOFPTestCase):
 
 
 class TestPlayerFlow(GOFPTestCase):
-    def test_player_can_stake_nft_into_session(self):
+    def test_player_can_stake_and_unstake_nfts(self):
         payment_amount = 131
-        uri = "https://example.com/test.json"
+        uri = "https://example.com/test_player_can_stake_and_unstake_nfts.json"
         stages = (5, 5, 3)
-        is_active = False
+        is_active = True
 
         self.gofp.create_session(
             self.nft.address,
@@ -692,23 +696,29 @@ class TestPlayerFlow(GOFPTestCase):
 
         session_id = self.gofp.num_sessions()
 
-    def test_player_cannot_stake_nft_into_nonexistent_session(self):
-        payment_amount = 131
-        uri = "https://example.com/test.json"
-        stages = (5, 5, 3)
-        is_active = False
+        # Mint 2 NFTs to the player
+        total_nfts = self.nft.total_supply()
+        self.nft.mint(self.player.address, total_nfts + 1, {"from": self.owner})
+        self.nft.mint(self.player.address, total_nfts + 2, {"from": self.owner})
 
-        self.gofp.create_session(
-            self.nft.address,
-            self.payment_token.address,
-            payment_amount,
-            is_active,
-            uri,
-            stages,
-            {"from": self.game_master},
+        token_ids = [total_nfts + 1, total_nfts + 2]
+
+        # Mint 2*payment_amount of payment_token to player
+        self.payment_token.mint(
+            self.player.address, 2 * payment_amount, {"from": self.owner}
         )
 
-        session_id = self.gofp.num_sessions()
+        self.payment_token.approve(self.gofp.address, MAX_UINT, {"from": self.player})
+        self.nft.set_approval_for_all(self.gofp.address, True, {"from": self.player})
+
+        num_staked_0 = self.gofp.num_tokens_staked_into_session(session_id, self.player.address)
+
+        self.gofp.stake_tokens_into_session(
+            session_id, token_ids, {"from": self.player}
+        )
+
+        num_staked_1 = self.gofp.num_tokens_staked_into_session(session_id, self.player.address)
+        self.assertEqual(num_staked_1, num_staked_0 + 2)
 
 
 if __name__ == "__main__":

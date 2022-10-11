@@ -155,6 +155,17 @@ class GOFPFacet:
         self.assert_contract_is_instantiated()
         return self.contract.numSessions.call(block_identifier=block_number)
 
+    def num_tokens_staked_into_session(
+        self,
+        session_id: int,
+        staker: ChecksumAddress,
+        block_number: Optional[Union[str, int]] = "latest",
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.numTokensStakedIntoSession.call(
+            session_id, staker, block_identifier=block_number
+        )
+
     def on_erc1155_batch_received(
         self,
         arg1: ChecksumAddress,
@@ -396,6 +407,15 @@ def handle_num_sessions(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_num_tokens_staked_into_session(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    result = contract.num_tokens_staked_into_session(
+        session_id=args.session_id, staker=args.staker, block_number=args.block_number
+    )
+    print(result)
+
+
 def handle_on_erc1155_batch_received(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPFacet(args.address)
@@ -600,6 +620,20 @@ def generate_cli() -> argparse.ArgumentParser:
     num_sessions_parser = subcommands.add_parser("num-sessions")
     add_default_arguments(num_sessions_parser, False)
     num_sessions_parser.set_defaults(func=handle_num_sessions)
+
+    num_tokens_staked_into_session_parser = subcommands.add_parser(
+        "num-tokens-staked-into-session"
+    )
+    add_default_arguments(num_tokens_staked_into_session_parser, False)
+    num_tokens_staked_into_session_parser.add_argument(
+        "--session-id", required=True, help="Type: uint256", type=int
+    )
+    num_tokens_staked_into_session_parser.add_argument(
+        "--staker", required=True, help="Type: address"
+    )
+    num_tokens_staked_into_session_parser.set_defaults(
+        func=handle_num_tokens_staked_into_session
+    )
 
     on_erc1155_batch_received_parser = subcommands.add_parser(
         "on-erc1155-batch-received"

@@ -20,7 +20,7 @@ struct Session {
     uint256 paymentAmount;
     bool isActive; // active -> stake if ok,  cannot unstake
     bool isChoosingActive; // if active -> players can choose path in current stage
-    string uri;
+    string URI;
     uint256[] stages;
 }
 
@@ -38,10 +38,12 @@ library LibGOFP {
         // stage => tokenId => index in stakedTokens
         mapping(uint256 => mapping(uint256 => uint256)) stakedTokenIndex;
         // stage => owner => numTokensStaked
-        mapping(uint256 => mapping(address => uint256)) stakedTokensCountOfOwner;
-        // stage => owner => tokens, Important: indexing starts from 1
+        mapping(uint256 => mapping(address => uint256)) numStakedByOwnerIntoSession;
+        // stage => owner => index => tokenID
+        // The index refers to the tokens that the given owner has staked into the given sessions.
+        // The index starts from 1.
         mapping(uint256 => mapping(address => mapping(uint256 => uint256))) stakedTokens;
-        // session -> stage -> correct path index
+        // session => stage => correct path index
         mapping(uint256 => mapping(uint256 => uint256)) sessionStagePath;
     }
 
@@ -53,6 +55,48 @@ library LibGOFP {
     }
 }
 
+/*
+ The GOFPFacet is a smart contract that can either be used standalone or as part of an EIP2535 Diamond
+ proxy contract.
+
+ It implements the Garden of Forking Paths, a multiplayer choose your own adventure game mechanic.
+
+ Garden of Forking Paths is run in sessions. Each session consists of a given number of stages. Each
+ stage consists of a given number of paths.
+
+ Everything on the Garden of Forking Paths is 1-indexed.
+
+ There are two kinds of accounts that can interact with the Garden of Forking Paths:
+ 1. Game Masters
+ 2. Players
+
+ Game Masters are accounts which hold an admin badge as defined by LibGOFP.AdminTerminusAddress and
+ LibGOFP.AdminTerminusPoolID. The badge is expected to be a Terminus badge (non-transferable token).
+
+ Game Masters can:
+ - [x] Create sessions
+ - [x] Mark sessions as active or inactive
+ - [x] Mark sessions as active or inactive for the purposes of NFTs choosing a path in a the current stage
+ - [x] Register the correct path for the current stage
+ - [ ] Update the metadata for a session
+ - [ ] Set a reward for NFT holders who make a choice with an NFT in each stage
+ - [ ] Rescue NFTs and send them to a specified address
+
+ Players can:
+ - [ ] Stake their NFTs into a sesssion if the correct first stage path has not been chosen
+ - [ ] Unstake their NFTs from a session if the session is inactive
+ - [ ] Have one of their NFTs choose a path in the current stage PROVIDED THAT the current stage is the first
+    stage OR that the NFT chose the correct path in the previous stage
+
+ Anybody can:
+ - [ ] View details of a session
+ - [ ] View whether a session is active
+ - [ ] View whether a session is open for NFT choices
+ - [ ] View the correct path for a given stage
+ - [ ] View how many tokens a given owner has staked into a given session
+ - [ ] View the token ID of the <n>th token that a given owner has staked into a given session for any valid
+       value of n
+ */
 contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
     modifier onlyGameMaster() {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
@@ -113,7 +157,7 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
         address paymentTokenAddress,
         uint256 paymentAmount,
         bool isActive,
-        string memory uri,
+        string memory URI,
         uint256[] memory stages
     ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
@@ -135,7 +179,7 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
             paymentAmount: paymentAmount,
             isActive: isActive,
             isChoosingActive: true,
-            uri: uri,
+            URI: URI,
             stages: stages
         });
         emit SessionCreated(
@@ -143,7 +187,7 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
             playerTokenAddress,
             paymentTokenAddress,
             paymentAmount,
-            uri,
+            URI,
             isActive
         );
     }
@@ -236,6 +280,28 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
         emit SessionChoosingActivated(sessionID, isChoosingActive);
     }
 
+    /*
+        // stage => tokenId => index in stakedTokens
+        mapping(uint256 => mapping(uint256 => uint256)) stakedTokenIndex;
+        // stage => owner => numTokensStaked
+        mapping(uint256 => mapping(address => uint256)) numStakedByOwnerIntoSession;
+        // stage => owner => index => tokenID
+        // The index refers to the tokens that the given owner has staked into the given sessions.
+        // The index starts from 1.
+        mapping(uint256 => mapping(address => mapping(uint256 => uint256))) stakedTokens;
+*/
+
+    function numTokensStakedIntoSession(uint256 sessionID, address staker)
+        external
+        view
+        returns (uint256)
+    {
+        return
+            LibGOFP.gofpStorage().numStakedByOwnerIntoSession[sessionID][
+                staker
+            ];
+    }
+
     function _addTokenToEnumeration(
         uint256 sessionId,
         address owner,
@@ -247,9 +313,10 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
             gs.stakedTokenIndex[sessionId][tokenId] == 0,
             "GOFPFacet._addTokenToEnumeration: Token was already added to enumeration"
         );
-        uint256 currStaked = gs.stakedTokensCountOfOwner[sessionId][owner];
+        uint256 currStaked = gs.numStakedByOwnerIntoSession[sessionId][owner];
         gs.stakedTokens[sessionId][owner][currStaked + 1] = tokenId;
         gs.stakedTokenIndex[sessionId][tokenId] = currStaked + 1;
+        gs.numStakedByOwnerIntoSession[sessionId][owner]++;
     }
 
     function _removeTokenFromEnumeration(
@@ -262,7 +329,7 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
             gs.stakedTokenIndex[sessionId][tokenId] != 0,
             "GOFPFacet._removeTokenFromEnumeration: Token wasn't added to enumeration"
         );
-        uint256 currStaked = gs.stakedTokensCountOfOwner[sessionId][owner];
+        uint256 currStaked = gs.numStakedByOwnerIntoSession[sessionId][owner];
         uint256 currIndex = gs.stakedTokenIndex[sessionId][tokenId];
         uint256 lastToken = gs.stakedTokens[sessionId][owner][currStaked];
         //TODO add another mapping like dark forest for staker
@@ -278,7 +345,7 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
         //deleting old lastToken
         delete gs.stakedTokens[sessionId][owner][currStaked];
         //updating staked count
-        gs.stakedTokensCountOfOwner[sessionId][owner]--;
+        gs.numStakedByOwnerIntoSession[sessionId][owner]--;
     }
 
     // ReentrancyGuard needed
@@ -289,7 +356,7 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
             sessionID <= gs.numSessions,
-            "GOFPFacet.setSessionChoosingActive: Invalid session ID"
+            "GOFPFacet.stakeTokensIntoSession: Invalid session ID"
         );
 
         IERC20 paymentToken = IERC20(
@@ -299,15 +366,20 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
             tokenIDs.length;
         paymentToken.transferFrom(msg.sender, address(this), paymentAmount);
 
-        // The first stage path has not been set. (game has not started)
-        require(gs.sessionStagePath[sessionID][0] == 0);
-        // Session is active
-        require(gs.sessionById[gs.numSessions].isActive);
+        require(
+            gs.sessionById[gs.numSessions].isActive,
+            "GOFPFacet.stakeTokensIntoSession: Cannot stake tokens into inactive session"
+        );
+
+        require(
+            gs.sessionStagePath[sessionID][1] == 0,
+            "GOFPFacet.stakeTokensIntoSession: The first stage for this session has already been resolved"
+        );
 
         IERC721 token = IERC721(gs.sessionById[sessionID].playerTokenAddress);
         for (uint256 i = 0; i < tokenIDs.length; i++) {
             token.safeTransferFrom(msg.sender, address(this), tokenIDs[i]);
-            //adding to enumeration
+            _addTokenToEnumeration(sessionID, msg.sender, tokenIDs[i]);
         }
     }
 
