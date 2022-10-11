@@ -2,7 +2,6 @@ import unittest
 
 from brownie import accounts, network, web3 as web3_client, ZERO_ADDRESS
 from brownie.exceptions import VirtualMachineError
-from eth_abi import encode
 from moonworm.watch import _fetch_events_chunk
 
 from . import GOFPFacet, MockTerminus, MockErc20, MockERC721
@@ -207,7 +206,7 @@ class TestAdminFlow(GOFPTestCase):
             "anonymous": False,
             "inputs": [
                 {
-                    "indexed": True,
+                    "indexed": False,
                     "internalType": "uint256",
                     "name": "sessionID",
                     "type": "uint256",
@@ -233,8 +232,14 @@ class TestAdminFlow(GOFPTestCase):
                 {
                     "indexed": False,
                     "internalType": "string",
-                    "name": "uri",
+                    "name": "URI",
                     "type": "string",
+                },
+                {
+                    "indexed": False,
+                    "internalType": "bool",
+                    "name": "active",
+                    "type": "bool",
                 },
             ],
             "name": "SessionCreated",

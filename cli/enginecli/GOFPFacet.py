@@ -183,6 +183,19 @@ class GOFPFacet:
             arg1, arg2, arg3, arg4, arg5, transaction_config
         )
 
+    def on_erc721_received(
+        self,
+        arg1: ChecksumAddress,
+        arg2: ChecksumAddress,
+        arg3: int,
+        arg4: bytes,
+        transaction_config,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.onERC721Received(
+            arg1, arg2, arg3, arg4, transaction_config
+        )
+
     def set_correct_path_for_stage(
         self,
         session_id: int,
@@ -417,6 +430,22 @@ def handle_on_erc1155_received(args: argparse.Namespace) -> None:
         print(result.info())
 
 
+def handle_on_erc721_received(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.on_erc721_received(
+        arg1=args.arg1,
+        arg2=args.arg2,
+        arg3=args.arg3,
+        arg4=args.arg4,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
 def handle_set_correct_path_for_stage(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPFacet(args.address)
@@ -611,6 +640,22 @@ def generate_cli() -> argparse.ArgumentParser:
         "--arg5", required=True, help="Type: bytes", type=bytes_argument_type
     )
     on_erc1155_received_parser.set_defaults(func=handle_on_erc1155_received)
+
+    on_erc721_received_parser = subcommands.add_parser("on-erc721-received")
+    add_default_arguments(on_erc721_received_parser, True)
+    on_erc721_received_parser.add_argument(
+        "--arg1", required=True, help="Type: address"
+    )
+    on_erc721_received_parser.add_argument(
+        "--arg2", required=True, help="Type: address"
+    )
+    on_erc721_received_parser.add_argument(
+        "--arg3", required=True, help="Type: uint256", type=int
+    )
+    on_erc721_received_parser.add_argument(
+        "--arg4", required=True, help="Type: bytes", type=bytes_argument_type
+    )
+    on_erc721_received_parser.set_defaults(func=handle_on_erc721_received)
 
     set_correct_path_for_stage_parser = subcommands.add_parser(
         "set-correct-path-for-stage"

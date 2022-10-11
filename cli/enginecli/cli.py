@@ -1,7 +1,17 @@
 import argparse
 import logging
 
-from . import core, drop, Dropper, Lootbox, MockErc20, MockTerminus, setup_drop, CraftingFacet
+from . import (
+    core,
+    drop,
+    Dropper,
+    Lootbox,
+    MockErc20,
+    MockTerminus,
+    setup_drop,
+    CraftingFacet,
+    GOFPFacet,
+)
 
 
 logging.basicConfig(level=logging.INFO)
@@ -36,6 +46,9 @@ def main() -> None:
 
     crafting_parser = CraftingFacet.generate_cli()
     subparsers.add_parser("crafting", parents=[crafting_parser], add_help=False)
+
+    gofp_parser = GOFPFacet.generate_cli()
+    subparsers.add_parser("gofp", parents=[gofp_parser], add_help=False)
 
     setup_drop_parser = setup_drop.generate_cli()
     subparsers.add_parser("setup-drop", parents=[setup_drop_parser], add_help=False)

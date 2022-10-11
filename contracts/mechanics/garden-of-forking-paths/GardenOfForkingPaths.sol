@@ -60,7 +60,14 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
         _;
     }
 
-    event SessionCreated(Session);
+    event SessionCreated(
+        uint256 sessionID,
+        address indexed playerTokenAddress,
+        address indexed paymentTokenAddress,
+        uint256 paymentAmount,
+        string URI,
+        bool active
+    );
     event SessionActivated(uint256 indexed sessionID, bool isActive);
     event SessionChoosingActivated(
         uint256 indexed sessionID,
@@ -128,8 +135,14 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
             uri: uri,
             stages: stages
         });
-
-        emit SessionCreated(gs.sessionById[gs.numSessions]);
+        emit SessionCreated(
+            gs.numSessions,
+            playerTokenAddress,
+            paymentTokenAddress,
+            paymentAmount,
+            uri,
+            isActive
+        );
     }
 
     function setSessionActive(uint256 sessionID, bool isActive)
