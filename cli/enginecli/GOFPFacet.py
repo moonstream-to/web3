@@ -250,6 +250,18 @@ class GOFPFacet:
             interface_id, block_identifier=block_number
         )
 
+    def token_of_staker_in_session_by_index(
+        self,
+        session_id: int,
+        staker: ChecksumAddress,
+        index: int,
+        block_number: Optional[Union[str, int]] = "latest",
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.tokenOfStakerInSessionByIndex.call(
+            session_id, staker, index, block_identifier=block_number
+        )
+
     def unstake_tokens_from_session(
         self, session_id: int, token_i_ds: List, transaction_config
     ) -> Any:
@@ -533,6 +545,18 @@ def handle_supports_interface(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_token_of_staker_in_session_by_index(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    result = contract.token_of_staker_in_session_by_index(
+        session_id=args.session_id,
+        staker=args.staker,
+        index=args.index,
+        block_number=args.block_number,
+    )
+    print(result)
+
+
 def handle_unstake_tokens_from_session(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPFacet(args.address)
@@ -759,6 +783,23 @@ def generate_cli() -> argparse.ArgumentParser:
         "--interface-id", required=True, help="Type: bytes4", type=bytes_argument_type
     )
     supports_interface_parser.set_defaults(func=handle_supports_interface)
+
+    token_of_staker_in_session_by_index_parser = subcommands.add_parser(
+        "token-of-staker-in-session-by-index"
+    )
+    add_default_arguments(token_of_staker_in_session_by_index_parser, False)
+    token_of_staker_in_session_by_index_parser.add_argument(
+        "--session-id", required=True, help="Type: uint256", type=int
+    )
+    token_of_staker_in_session_by_index_parser.add_argument(
+        "--staker", required=True, help="Type: address"
+    )
+    token_of_staker_in_session_by_index_parser.add_argument(
+        "--index", required=True, help="Type: uint256", type=int
+    )
+    token_of_staker_in_session_by_index_parser.set_defaults(
+        func=handle_token_of_staker_in_session_by_index
+    )
 
     unstake_tokens_from_session_parser = subcommands.add_parser(
         "unstake-tokens-from-session"

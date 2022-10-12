@@ -302,6 +302,14 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
             ];
     }
 
+    function tokenOfStakerInSessionByIndex(
+        uint256 sessionID,
+        address staker,
+        uint256 index
+    ) external view returns (uint256) {
+        return LibGOFP.gofpStorage().stakedTokens[sessionID][staker][index];
+    }
+
     function _addTokenToEnumeration(
         uint256 sessionId,
         address owner,
