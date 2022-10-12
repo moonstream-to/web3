@@ -144,6 +144,9 @@ alembic.dev.ini
 alembic.prod.ini
 alembic.test.ini
 
+scratch/
+outdir/
+
 
 #Node
 node_modules/
