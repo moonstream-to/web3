@@ -140,6 +140,17 @@ class GOFPFacet:
         self.assert_contract_is_instantiated()
         return self.contract.getSession.call(session_id, block_identifier=block_number)
 
+    def get_staked_token_info(
+        self,
+        nft_address: ChecksumAddress,
+        token_id: int,
+        block_number: Optional[Union[str, int]] = "latest",
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.getStakedTokenInfo.call(
+            nft_address, token_id, block_identifier=block_number
+        )
+
     def init(
         self,
         admin_terminus_address: ChecksumAddress,
@@ -398,6 +409,17 @@ def handle_get_session(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_get_staked_token_info(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    result = contract.get_staked_token_info(
+        nft_address=args.nft_address,
+        token_id=args.token_id,
+        block_number=args.block_number,
+    )
+    print(result)
+
+
 def handle_init(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPFacet(args.address)
@@ -630,6 +652,16 @@ def generate_cli() -> argparse.ArgumentParser:
         "--session-id", required=True, help="Type: uint256", type=int
     )
     get_session_parser.set_defaults(func=handle_get_session)
+
+    get_staked_token_info_parser = subcommands.add_parser("get-staked-token-info")
+    add_default_arguments(get_staked_token_info_parser, False)
+    get_staked_token_info_parser.add_argument(
+        "--nft-address", required=True, help="Type: address"
+    )
+    get_staked_token_info_parser.add_argument(
+        "--token-id", required=True, help="Type: uint256", type=int
+    )
+    get_staked_token_info_parser.set_defaults(func=handle_get_staked_token_info)
 
     init_parser = subcommands.add_parser("init")
     add_default_arguments(init_parser, True)

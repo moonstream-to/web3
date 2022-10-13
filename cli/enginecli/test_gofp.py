@@ -713,6 +713,13 @@ class TestPlayerFlow(GOFPTestCase):
         self.payment_token.approve(self.gofp.address, MAX_UINT, {"from": self.player})
         self.nft.set_approval_for_all(self.gofp.address, True, {"from": self.player})
 
+        for token_id in token_ids:
+            staked_session_id, owner = self.gofp.get_staked_token_info(
+                self.nft.address, token_id
+            )
+            self.assertEqual(staked_session_id, 0)
+            self.assertEqual(owner, ZERO_ADDRESS)
+
         num_staked_0 = self.gofp.num_tokens_staked_into_session(
             session_id, self.player.address
         )
@@ -734,6 +741,13 @@ class TestPlayerFlow(GOFPTestCase):
         self.assertEqual(
             num_owned_by_contract_1, num_owned_by_contract_0 + len(token_ids)
         )
+
+        for token_id in token_ids:
+            staked_session_id, owner = self.gofp.get_staked_token_info(
+                self.nft.address, token_id
+            )
+            self.assertEqual(staked_session_id, session_id)
+            self.assertEqual(owner, self.player.address)
 
         for i, token_id in enumerate(token_ids):
             self.assertEqual(
@@ -767,6 +781,25 @@ class TestPlayerFlow(GOFPTestCase):
         self.assertEqual(
             num_owned_by_contract_2, num_owned_by_contract_1 - len(unstaked_token_ids)
         )
+
+        staked_session_id, owner = self.gofp.get_staked_token_info(
+            self.nft.address, token_ids[0]
+        )
+        self.assertEqual(staked_session_id, session_id)
+        self.assertEqual(owner, self.player.address)
+
+        staked_session_id, owner = self.gofp.get_staked_token_info(
+            self.nft.address, token_ids[-1]
+        )
+        self.assertEqual(staked_session_id, session_id)
+        self.assertEqual(owner, self.player.address)
+
+        for token_id in unstaked_token_ids:
+            staked_session_id, owner = self.gofp.get_staked_token_info(
+                self.nft.address, token_id
+            )
+            self.assertEqual(staked_session_id, 0)
+            self.assertEqual(owner, ZERO_ADDRESS)
 
         self.assertEqual(
             self.gofp.token_of_staker_in_session_by_index(

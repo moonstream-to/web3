@@ -35,16 +35,20 @@ library LibGOFP {
         uint256 AdminTerminusPoolID;
         uint256 numSessions;
         mapping(uint256 => Session) sessionById;
-        // stage => tokenId => index in stakedTokens
+        // session => stage => correct path for that stage
+        mapping(uint256 => mapping(uint256 => uint256)) sessionStagePath;
+        // nftAddress => tokenId => sessionId
+        mapping(address => mapping(uint256 => uint256)) stakedTokenSession;
+        // nftAddress => tokenId => owner
+        mapping(address => mapping(uint256 => address)) stakedTokenOwner;
+        // session => owner => numTokensStaked
+        mapping(uint256 => mapping(address => uint256)) numTokensStakedByOwnerInSession;
+        // sessionId => tokenId => index in tokensStakedByOwnerInSession
         mapping(uint256 => mapping(uint256 => uint256)) stakedTokenIndex;
-        // stage => owner => numTokensStaked
-        mapping(uint256 => mapping(address => uint256)) numStakedByOwnerIntoSession;
-        // stage => owner => index => tokenID
+        // session => owner => index => tokenID
         // The index refers to the tokens that the given owner has staked into the given sessions.
         // The index starts from 1.
-        mapping(uint256 => mapping(address => mapping(uint256 => uint256))) stakedTokens;
-        // session => stage => correct path index
-        mapping(uint256 => mapping(uint256 => uint256)) sessionStagePath;
+        mapping(uint256 => mapping(address => mapping(uint256 => uint256))) tokensStakedByOwnerInSession;
     }
 
     function gofpStorage() internal pure returns (GOFPStorage storage gs) {
@@ -55,48 +59,48 @@ library LibGOFP {
     }
 }
 
-/*
- The GOFPFacet is a smart contract that can either be used standalone or as part of an EIP2535 Diamond
- proxy contract.
+/**
+The GOFPFacet is a smart contract that can either be used standalone or as part of an EIP2535 Diamond
+proxy contract.
 
- It implements the Garden of Forking Paths, a multiplayer choose your own adventure game mechanic.
+It implements the Garden of Forking Paths, a multiplayer choose your own adventure game mechanic.
 
- Garden of Forking Paths is run in sessions. Each session consists of a given number of stages. Each
- stage consists of a given number of paths.
+Garden of Forking Paths is run in sessions. Each session consists of a given number of stages. Each
+stage consists of a given number of paths.
 
- Everything on the Garden of Forking Paths is 1-indexed.
+Everything on the Garden of Forking Paths is 1-indexed.
 
- There are two kinds of accounts that can interact with the Garden of Forking Paths:
- 1. Game Masters
- 2. Players
+There are two kinds of accounts that can interact with the Garden of Forking Paths:
+1. Game Masters
+2. Players
 
- Game Masters are accounts which hold an admin badge as defined by LibGOFP.AdminTerminusAddress and
- LibGOFP.AdminTerminusPoolID. The badge is expected to be a Terminus badge (non-transferable token).
+Game Masters are accounts which hold an admin badge as defined by LibGOFP.AdminTerminusAddress and
+LibGOFP.AdminTerminusPoolID. The badge is expected to be a Terminus badge (non-transferable token).
 
- Game Masters can:
- - [x] Create sessions
- - [x] Mark sessions as active or inactive
- - [x] Mark sessions as active or inactive for the purposes of NFTs choosing a path in a the current stage
- - [x] Register the correct path for the current stage
- - [ ] Update the metadata for a session
- - [ ] Set a reward for NFT holders who make a choice with an NFT in each stage
- - [ ] Rescue NFTs and send them to a specified address
+Game Masters can:
+- [x] Create sessions
+- [x] Mark sessions as active or inactive
+- [x] Mark sessions as active or inactive for the purposes of NFTs choosing a path in a the current stage
+- [x] Register the correct path for the current stage
+- [ ] Update the metadata for a session
+- [ ] Set a reward for NFT holders who make a choice with an NFT in each stage
+- [ ] Rescue NFTs and send them to a specified address
 
- Players can:
- - [ ] Stake their NFTs into a sesssion if the correct first stage path has not been chosen
- - [ ] Unstake their NFTs from a session if the session is inactive
- - [ ] Have one of their NFTs choose a path in the current stage PROVIDED THAT the current stage is the first
-    stage OR that the NFT chose the correct path in the previous stage
+Players can:
+- [x] Stake their NFTs into a sesssion if the correct first stage path has not been chosen
+- [x] Unstake their NFTs from a session if the session is inactive
+- [ ] Have one of their NFTs choose a path in the current stage PROVIDED THAT the current stage is the first
+stage OR that the NFT chose the correct path in the previous stage
 
- Anybody can:
- - [ ] View details of a session
- - [ ] View whether a session is active
- - [ ] View whether a session is open for NFT choices
- - [ ] View the correct path for a given stage
- - [ ] View how many tokens a given owner has staked into a given session
- - [ ] View the token ID of the <n>th token that a given owner has staked into a given session for any valid
-       value of n
- */
+Anybody can:
+- [ ] View details of a session
+- [ ] View whether a session is active
+- [ ] View whether a session is open for NFT choices
+- [ ] View the correct path for a given stage
+- [ ] View how many tokens a given owner has staked into a given session
+- [ ] View the token ID of the <n>th token that a given owner has staked into a given session for any valid
+    value of n
+**/
 contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
     modifier onlyGameMaster() {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
@@ -280,16 +284,25 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
         emit SessionChoosingActivated(sessionID, isChoosingActive);
     }
 
-    /*
-        // stage => tokenId => index in stakedTokens
-        mapping(uint256 => mapping(uint256 => uint256)) stakedTokenIndex;
-        // stage => owner => numTokensStaked
-        mapping(uint256 => mapping(address => uint256)) numStakedByOwnerIntoSession;
-        // stage => owner => index => tokenID
-        // The index refers to the tokens that the given owner has staked into the given sessions.
-        // The index starts from 1.
-        mapping(uint256 => mapping(address => mapping(uint256 => uint256))) stakedTokens;
-*/
+    /**
+    For a given NFT, specified by the `nftAddress` and `tokenID`, this view function returns:
+    1. The sessionId of the session into which the NFT is staked
+    2. The address of the staker
+
+    If the token is not currently staked in the Garden of Forking Paths contract, this method returns
+    0 for the sessionId and the 0 address as the staker.
+    **/
+    function getStakedTokenInfo(address nftAddress, uint256 tokenID)
+        external
+        view
+        returns (uint256, address)
+    {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        return (
+            gs.stakedTokenSession[nftAddress][tokenID],
+            gs.stakedTokenOwner[nftAddress][tokenID]
+        );
+    }
 
     function numTokensStakedIntoSession(uint256 sessionID, address staker)
         external
@@ -297,7 +310,7 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
         returns (uint256)
     {
         return
-            LibGOFP.gofpStorage().numStakedByOwnerIntoSession[sessionID][
+            LibGOFP.gofpStorage().numTokensStakedByOwnerInSession[sessionID][
                 staker
             ];
     }
@@ -307,53 +320,92 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
         address staker,
         uint256 index
     ) external view returns (uint256) {
-        return LibGOFP.gofpStorage().stakedTokens[sessionID][staker][index];
+        return
+            LibGOFP.gofpStorage().tokensStakedByOwnerInSession[sessionID][
+                staker
+            ][index];
     }
 
     function _addTokenToEnumeration(
         uint256 sessionId,
         address owner,
+        address nftAddress,
         uint256 tokenId
     ) internal {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
 
         require(
+            gs.stakedTokenSession[nftAddress][tokenId] == 0,
+            "GOFPFacet._addTokenToEnumeration: Token is already associated with a session on this contract"
+        );
+        require(
+            gs.stakedTokenOwner[nftAddress][tokenId] == address(0),
+            "GOFPFacet._addTokenToEnumeration: Token is already associated with an owner on this contract"
+        );
+        require(
             gs.stakedTokenIndex[sessionId][tokenId] == 0,
             "GOFPFacet._addTokenToEnumeration: Token was already added to enumeration"
         );
-        uint256 currStaked = gs.numStakedByOwnerIntoSession[sessionId][owner];
-        gs.stakedTokens[sessionId][owner][currStaked + 1] = tokenId;
+
+        gs.stakedTokenSession[nftAddress][tokenId] = sessionId;
+        gs.stakedTokenOwner[nftAddress][tokenId] = owner;
+
+        uint256 currStaked = gs.numTokensStakedByOwnerInSession[sessionId][
+            owner
+        ];
+        gs.tokensStakedByOwnerInSession[sessionId][owner][
+            currStaked + 1
+        ] = tokenId;
         gs.stakedTokenIndex[sessionId][tokenId] = currStaked + 1;
-        gs.numStakedByOwnerIntoSession[sessionId][owner]++;
+        gs.numTokensStakedByOwnerInSession[sessionId][owner]++;
     }
 
     function _removeTokenFromEnumeration(
         uint256 sessionId,
         address owner,
+        address nftAddress,
         uint256 tokenId
     ) internal {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
+            gs.stakedTokenSession[nftAddress][tokenId] == sessionId,
+            "GOFPFacet._removeTokenFromEnumeration: Token is not associated with the given session"
+        );
+        require(
+            gs.stakedTokenOwner[nftAddress][tokenId] == owner,
+            "GOFPFacet._removeTokenFromEnumeration: Token is not associated with the given owner"
+        );
+        require(
             gs.stakedTokenIndex[sessionId][tokenId] != 0,
             "GOFPFacet._removeTokenFromEnumeration: Token wasn't added to enumeration"
         );
-        uint256 currStaked = gs.numStakedByOwnerIntoSession[sessionId][owner];
+
+        delete gs.stakedTokenSession[nftAddress][tokenId];
+        delete gs.stakedTokenOwner[nftAddress][tokenId];
+
+        uint256 currStaked = gs.numTokensStakedByOwnerInSession[sessionId][
+            owner
+        ];
         uint256 currIndex = gs.stakedTokenIndex[sessionId][tokenId];
-        uint256 lastToken = gs.stakedTokens[sessionId][owner][currStaked];
-        //TODO add another mapping like dark forest for staker
+        uint256 lastToken = gs.tokensStakedByOwnerInSession[sessionId][owner][
+            currStaked
+        ];
         require(
             currIndex <= currStaked &&
-                gs.stakedTokens[sessionId][owner][currIndex] == tokenId,
+                gs.tokensStakedByOwnerInSession[sessionId][owner][currIndex] ==
+                tokenId,
             "GOFPFacet._removeTokenFromEnumeration: Token wasn't staked by the given owner"
         );
         //swapping last element with element at given index
-        gs.stakedTokens[sessionId][owner][currIndex] = lastToken;
+        gs.tokensStakedByOwnerInSession[sessionId][owner][
+            currIndex
+        ] = lastToken;
         //updating last token's index
         gs.stakedTokenIndex[sessionId][lastToken] = currIndex;
         //deleting old lastToken
-        delete gs.stakedTokens[sessionId][owner][currStaked];
+        delete gs.tokensStakedByOwnerInSession[sessionId][owner][currStaked];
         //updating staked count
-        gs.numStakedByOwnerIntoSession[sessionId][owner]--;
+        gs.numTokensStakedByOwnerInSession[sessionId][owner]--;
     }
 
     // ReentrancyGuard needed
@@ -384,23 +436,35 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
             "GOFPFacet.stakeTokensIntoSession: The first stage for this session has already been resolved"
         );
 
-        IERC721 token = IERC721(gs.sessionById[sessionID].playerTokenAddress);
+        address nftAddress = gs.sessionById[sessionID].playerTokenAddress;
+        IERC721 token = IERC721(nftAddress);
         for (uint256 i = 0; i < tokenIDs.length; i++) {
             token.safeTransferFrom(msg.sender, address(this), tokenIDs[i]);
-            _addTokenToEnumeration(sessionID, msg.sender, tokenIDs[i]);
+            _addTokenToEnumeration(
+                sessionID,
+                msg.sender,
+                nftAddress,
+                tokenIDs[i]
+            );
         }
     }
 
-    // ReentrancyGuard needed
+    // TODO: ReentrancyGuard needed
     function unstakeTokensFromSession(
         uint256 sessionID,
         uint256[] calldata tokenIDs
     ) external {
-        //TODO add checks that needed
+        //TODO: add checks that needed
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
-        IERC721 token = IERC721(gs.sessionById[sessionID].playerTokenAddress);
+        address nftAddress = gs.sessionById[sessionID].playerTokenAddress;
+        IERC721 token = IERC721(nftAddress);
         for (uint256 i = 0; i < tokenIDs.length; i++) {
-            _removeTokenFromEnumeration(sessionID, msg.sender, tokenIDs[i]);
+            _removeTokenFromEnumeration(
+                sessionID,
+                msg.sender,
+                nftAddress,
+                tokenIDs[i]
+            );
             token.safeTransferFrom(address(this), msg.sender, tokenIDs[i]);
         }
     }
