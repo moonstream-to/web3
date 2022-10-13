@@ -29,8 +29,16 @@ library LibGOFP {
     bytes32 constant STORAGE_POSITION =
         keccak256("moonstreamdao.eth.storage.mechanics.GardenOfForkingPaths");
 
-    // All arrays and implicit arrays (implemented with maps) are 1-indexed.
-    // This helps us avoid any confusion that stems from 0 being the default value for uint256.
+    /**
+    All implicit arrays (implemented with maps) are 1-indexed. This applies to:
+    - sessions
+    - stages
+    - paths
+
+    This helps us avoid any confusion that stems from 0 being the default value for uint256.
+    Applying this condition uniformly to all mappings avoids confusion from having to remember which
+    implicit arrays are 0-indexed and which are 1-indexed.
+     */
     struct GOFPStorage {
         address AdminTerminusAddress;
         uint256 AdminTerminusPoolID;
@@ -468,6 +476,11 @@ contract GOFPFacet is
         uint256[] calldata tokenIDs
     ) external diamondNonReentrant {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        require(
+            sessionID <= gs.numSessions,
+            "GOFPFacet.unstakeTokensFromSession: Invalid session ID"
+        );
+
         Session storage session = gs.sessionById[sessionID];
         require(
             !session.isActive,
@@ -497,13 +510,77 @@ contract GOFPFacet is
     If the current stage is not the first stage, it is expected that each of the tokens specified by
     tokenIDs made the correct choice in the previous stage.
      */
-    // function batchChooseCurrentStagePaths(
-    //     uint256 sessionID,
-    //     uint256[] calldata tokenIDs,
-    //     uint256[] calldata paths
-    // ) external {
-    //     LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
-    //     Session session = gs.sessionById[sessionID]
-    //     for (uint256 i = 0; i < tokenIDs.length; i++) {}
-    // }
+    function chooseCurrentStagePaths(
+        uint256 sessionID,
+        uint256[] calldata tokenIDs,
+        uint256[] calldata paths
+    ) external {
+        require(
+            tokenIDs.length == paths.length,
+            "GOFPFacet.chooseCurrentStagePaths: tokenIDs and paths arrays must be of the same length"
+        );
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+
+        require(
+            sessionID <= gs.numSessions,
+            "GOFPFacet.chooseCurrentStagePaths: Invalid session ID"
+        );
+
+        Session storage session = gs.sessionById[sessionID];
+        require(
+            session.isChoosingActive,
+            "GOFPFacet.chooseCurrentStagePaths: Cannot choose paths in a session for which choosing is not active"
+        );
+
+        uint256 i = 0;
+
+        uint256 lastStage = 0;
+        uint256 lastStageCorrectPath = 0;
+
+        for (i = 1; i <= session.stages.length; i++) {
+            if (gs.sessionStagePath[sessionID][i] > 0) {
+                lastStage = i;
+                lastStageCorrectPath = gs.sessionStagePath[sessionID][i];
+            } else {
+                break;
+            }
+        }
+
+        require(
+            lastStage < session.stages.length,
+            "GOFPFacet.chooseCurrentStagePaths: This session has ended"
+        );
+
+        uint256 currentStage = lastStage + 1;
+        // lastStage has no semantic meaning below. It would be more correct to say currentStage - 1.
+        // This is just for convenience, saving one subtraction.
+        uint256 numPaths = session.stages[lastStage];
+
+        for (i = 0; i < tokenIDs.length; i++) {
+            // BEWARE: Setting tokenID and path variables resuls in a "Stack too deep" error message
+            // when compiling this contract. Using calldata array arguments restricts the amount of
+            // stack variables available to us inside the function body.
+            require(
+                gs.stakedTokenIndex[sessionID][tokenIDs[i]] > 0,
+                "GOFPFacet.chooseCurrentStagePaths: Token not currently staked into session"
+            );
+            require(
+                gs.stakedTokenOwner[session.playerTokenAddress][tokenIDs[i]] ==
+                    msg.sender,
+                "GOFPFacet.chooseCurrentStagePaths: Message not sent by token owner"
+            );
+            require(
+                (lastStage == 0) ||
+                    (gs.pathChoices[sessionID][tokenIDs[i]][lastStage] ==
+                        lastStageCorrectPath),
+                "GOFPFacet.chooseCurrentStagePaths: Token did not choose correct path in last stage"
+            );
+            require(
+                (paths[i] >= 1) && (paths[i] <= numPaths),
+                "GOFPFacet.chooseCurrentStagePaths: Invalid path"
+            );
+            gs.pathChoices[sessionID][tokenIDs[i]][currentStage] = paths[i];
+            emit PathChosen(sessionID, tokenIDs[i], currentStage, paths[i]);
+        }
+    }
 }
