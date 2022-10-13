@@ -102,6 +102,14 @@ class GOFPFacet:
         self.assert_contract_is_instantiated()
         return self.contract.adminTerminusInfo.call(block_identifier=block_number)
 
+    def choose_current_stage_paths(
+        self, session_id: int, token_i_ds: List, paths: List, transaction_config
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.chooseCurrentStagePaths(
+            session_id, token_i_ds, paths, transaction_config
+        )
+
     def create_session(
         self,
         player_token_address: ChecksumAddress,
@@ -132,6 +140,18 @@ class GOFPFacet:
         self.assert_contract_is_instantiated()
         return self.contract.getCorrectPathForStage.call(
             session_id, stage, block_identifier=block_number
+        )
+
+    def get_path_choice(
+        self,
+        session_id: int,
+        token_id: int,
+        stage: int,
+        block_number: Optional[Union[str, int]] = "latest",
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.getPathChoice.call(
+            session_id, token_id, stage, block_identifier=block_number
         )
 
     def get_session(
@@ -373,6 +393,21 @@ def handle_admin_terminus_info(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_choose_current_stage_paths(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.choose_current_stage_paths(
+        session_id=args.session_id,
+        token_i_ds=args.token_i_ds,
+        paths=args.paths,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
 def handle_create_session(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPFacet(args.address)
@@ -396,6 +431,18 @@ def handle_get_correct_path_for_stage(args: argparse.Namespace) -> None:
     contract = GOFPFacet(args.address)
     result = contract.get_correct_path_for_stage(
         session_id=args.session_id, stage=args.stage, block_number=args.block_number
+    )
+    print(result)
+
+
+def handle_get_path_choice(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    result = contract.get_path_choice(
+        session_id=args.session_id,
+        token_id=args.token_id,
+        stage=args.stage,
+        block_number=args.block_number,
     )
     print(result)
 
@@ -610,6 +657,23 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(admin_terminus_info_parser, False)
     admin_terminus_info_parser.set_defaults(func=handle_admin_terminus_info)
 
+    choose_current_stage_paths_parser = subcommands.add_parser(
+        "choose-current-stage-paths"
+    )
+    add_default_arguments(choose_current_stage_paths_parser, True)
+    choose_current_stage_paths_parser.add_argument(
+        "--session-id", required=True, help="Type: uint256", type=int
+    )
+    choose_current_stage_paths_parser.add_argument(
+        "--token-i-ds", required=True, help="Type: uint256[]", nargs="+"
+    )
+    choose_current_stage_paths_parser.add_argument(
+        "--paths", required=True, help="Type: uint256[]", nargs="+"
+    )
+    choose_current_stage_paths_parser.set_defaults(
+        func=handle_choose_current_stage_paths
+    )
+
     create_session_parser = subcommands.add_parser("create-session")
     add_default_arguments(create_session_parser, True)
     create_session_parser.add_argument(
@@ -645,6 +709,19 @@ def generate_cli() -> argparse.ArgumentParser:
     get_correct_path_for_stage_parser.set_defaults(
         func=handle_get_correct_path_for_stage
     )
+
+    get_path_choice_parser = subcommands.add_parser("get-path-choice")
+    add_default_arguments(get_path_choice_parser, False)
+    get_path_choice_parser.add_argument(
+        "--session-id", required=True, help="Type: uint256", type=int
+    )
+    get_path_choice_parser.add_argument(
+        "--token-id", required=True, help="Type: uint256", type=int
+    )
+    get_path_choice_parser.add_argument(
+        "--stage", required=True, help="Type: uint256", type=int
+    )
+    get_path_choice_parser.set_defaults(func=handle_get_path_choice)
 
     get_session_parser = subcommands.add_parser("get-session")
     add_default_arguments(get_session_parser, False)

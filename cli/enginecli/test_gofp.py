@@ -1092,6 +1092,174 @@ class TestPlayerFlow(GOFPTestCase):
             )
             self.assertEqual(self.nft.owner_of(token_id), self.gofp.address)
 
+    def test_player_can_make_a_choice_with_staked_nfts_at_first_stage(self):
+        payment_amount = 151
+        uri = "https://example.com/test_player_can_make_a_choice_with_staked_nfts_at_first_stage.json"
+        stages = (5, 5, 3)
+        is_active = True
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        # Mint NFTs to the player
+        total_nfts = self.nft.total_supply()
+
+        num_nfts = 5
+        token_ids = [total_nfts + i for i in range(1, num_nfts + 1)]
+
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+
+        # Mint num_tokens*payment_amount of payment_token to player
+        self.payment_token.mint(
+            self.player.address, len(token_ids) * payment_amount, {"from": self.owner}
+        )
+
+        self.payment_token.approve(self.gofp.address, MAX_UINT, {"from": self.player})
+        self.nft.set_approval_for_all(self.gofp.address, True, {"from": self.player})
+
+        self.gofp.stake_tokens_into_session(
+            session_id, token_ids, {"from": self.player}
+        )
+
+        for token_id in token_ids:
+            first_stage_path = self.gofp.get_path_choice(session_id, token_id, 1)
+            self.assertEqual(first_stage_path, 0)
+
+        self.gofp.choose_current_stage_paths(
+            session_id,
+            token_ids,
+            [token_id % stages[0] + 1 for token_id in token_ids],
+            {"from": self.player},
+        )
+
+        for token_id in token_ids:
+            first_stage_path = self.gofp.get_path_choice(session_id, token_id, 1)
+            self.assertEqual(first_stage_path, token_id % stages[0] + 1)
+
+    def test_player_cannot_make_a_choice_if_session_choosing_inactive(self):
+        payment_amount = 153
+        uri = "https://example.com/test_player_cannot_make_a_choice_if_session_choosing_inactive.json"
+        stages = (5, 5, 3)
+        is_active = True
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        # Mint NFTs to the player
+        total_nfts = self.nft.total_supply()
+
+        num_nfts = 5
+        token_ids = [total_nfts + i for i in range(1, num_nfts + 1)]
+
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+
+        # Mint num_tokens*payment_amount of payment_token to player
+        self.payment_token.mint(
+            self.player.address, len(token_ids) * payment_amount, {"from": self.owner}
+        )
+
+        self.payment_token.approve(self.gofp.address, MAX_UINT, {"from": self.player})
+        self.nft.set_approval_for_all(self.gofp.address, True, {"from": self.player})
+
+        self.gofp.stake_tokens_into_session(
+            session_id, token_ids, {"from": self.player}
+        )
+
+        for token_id in token_ids:
+            first_stage_path = self.gofp.get_path_choice(session_id, token_id, 1)
+            self.assertEqual(first_stage_path, 0)
+
+        self.gofp.set_session_choosing_active(
+            session_id, False, {"from": self.game_master}
+        )
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.choose_current_stage_paths(
+                session_id,
+                token_ids,
+                [token_id % stages[0] + 1 for token_id in token_ids],
+                {"from": self.player},
+            )
+
+        for token_id in token_ids:
+            first_stage_path = self.gofp.get_path_choice(session_id, token_id, 1)
+            self.assertEqual(first_stage_path, 0)
+
+    def test_random_person_cannot_make_a_choice_with_player_nfts(self):
+        payment_amount = 155
+        uri = "https://example.com/test_random_person_cannot_make_a_choice_with_player_nfts.json"
+        stages = (5, 5, 3)
+        is_active = True
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        # Mint NFTs to the player
+        total_nfts = self.nft.total_supply()
+
+        num_nfts = 5
+        token_ids = [total_nfts + i for i in range(1, num_nfts + 1)]
+
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+
+        # Mint num_tokens*payment_amount of payment_token to player
+        self.payment_token.mint(
+            self.player.address, len(token_ids) * payment_amount, {"from": self.owner}
+        )
+
+        self.payment_token.approve(self.gofp.address, MAX_UINT, {"from": self.player})
+        self.nft.set_approval_for_all(self.gofp.address, True, {"from": self.player})
+
+        self.gofp.stake_tokens_into_session(
+            session_id, token_ids, {"from": self.player}
+        )
+
+        for token_id in token_ids:
+            first_stage_path = self.gofp.get_path_choice(session_id, token_id, 1)
+            self.assertEqual(first_stage_path, 0)
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.choose_current_stage_paths(
+                session_id,
+                token_ids,
+                [token_id % stages[0] + 1 for token_id in token_ids],
+                {"from": self.random_person},
+            )
+
+        for token_id in token_ids:
+            first_stage_path = self.gofp.get_path_choice(session_id, token_id, 1)
+            self.assertEqual(first_stage_path, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -100,6 +100,7 @@ Game Masters can:
 
 Players can:
 - [x] Stake their NFTs into a sesssion if the correct first stage path has not been chosen
+- [ ] Pay to stake their NFTs
 - [x] Unstake their NFTs from a session if the session is inactive
 - [ ] Have one of their NFTs choose a path in the current stage PROVIDED THAT the current stage is the first
 stage OR that the NFT chose the correct path in the previous stage
@@ -179,6 +180,17 @@ contract GOFPFacet is
         return LibGOFP.gofpStorage().numSessions;
     }
 
+    /**
+    Creates a Garden of Forking Paths session. The session is configured with:
+    - playerTokenAddress - this is the address of ERC721 tokens that can participate in the session
+    - paymentTokenAddress - this is the address of the ERC20 token that each NFT must pay to enter the session
+    - paymentAmount - this is the amount of the payment token that each NFT must pay to enter the session
+    - isActive - this determines if the session is active as soon as it is created or not
+    - isChoosingActive - this determines if NFTs can choose a path in the current stage or not, and is true
+      by default when the session is created
+    - URI - metadata URI describing the session
+    - stages - an array describing the number of path choices at each stage of the session
+     */
     function createSession(
         address playerTokenAddress,
         address paymentTokenAddress,
@@ -347,6 +359,19 @@ contract GOFPFacet is
             LibGOFP.gofpStorage().tokensStakedByOwnerInSession[sessionID][
                 staker
             ][index];
+    }
+
+    /**
+    Returns the path chosen by the given tokenID in the given session and stage.
+
+    Recall: sessions and stages are 1-indexed.
+     */
+    function getPathChoice(
+        uint256 sessionID,
+        uint256 tokenID,
+        uint256 stage
+    ) external view returns (uint256) {
+        return LibGOFP.gofpStorage().pathChoices[sessionID][tokenID][stage];
     }
 
     function _addTokenToEnumeration(
