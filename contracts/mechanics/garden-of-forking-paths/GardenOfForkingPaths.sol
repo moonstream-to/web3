@@ -13,6 +13,7 @@ import "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {TerminusPermissions} from "@moonstream/contracts/terminus/TerminusPermissions.sol";
 import "../../diamond/libraries/LibDiamond.sol";
+import "../../diamond/security/DiamondReentrancyGuard.sol";
 
 struct Session {
     address playerTokenAddress;
@@ -101,7 +102,12 @@ Anybody can:
 - [ ] View the token ID of the <n>th token that a given owner has staked into a given session for any valid
     value of n
 **/
-contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
+contract GOFPFacet is
+    ERC721Holder,
+    ERC1155Holder,
+    TerminusPermissions,
+    DiamondReentrancyGuard
+{
     modifier onlyGameMaster() {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
@@ -408,11 +414,10 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
         gs.numTokensStakedByOwnerInSession[sessionId][owner]--;
     }
 
-    // ReentrancyGuard needed
     function stakeTokensIntoSession(
         uint256 sessionID,
         uint256[] calldata tokenIDs
-    ) external {
+    ) external diamondNonReentrant {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
             sessionID <= gs.numSessions,
@@ -449,11 +454,10 @@ contract GOFPFacet is ERC1155Holder, TerminusPermissions, ERC721Holder {
         }
     }
 
-    // TODO: ReentrancyGuard needed
     function unstakeTokensFromSession(
         uint256 sessionID,
         uint256[] calldata tokenIDs
-    ) external {
+    ) external diamondNonReentrant {
         //TODO: add checks that needed
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         address nftAddress = gs.sessionById[sessionID].playerTokenAddress;
