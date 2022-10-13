@@ -50,6 +50,9 @@ library LibGOFP {
         // The index refers to the tokens that the given owner has staked into the given sessions.
         // The index starts from 1.
         mapping(uint256 => mapping(address => mapping(uint256 => uint256))) tokensStakedByOwnerInSession;
+        // session => tokenID => stage => chosenPath
+        // This mapping tracks the path chosen by each eligible NFT in a session at each stage
+        mapping(uint256 => mapping(uint256 => mapping(uint256 => uint256))) pathChoices;
     }
 
     function gofpStorage() internal pure returns (GOFPStorage storage gs) {
@@ -101,7 +104,7 @@ Anybody can:
 - [ ] View how many tokens a given owner has staked into a given session
 - [ ] View the token ID of the <n>th token that a given owner has staked into a given session for any valid
     value of n
-**/
+ */
 contract GOFPFacet is
     ERC721Holder,
     ERC1155Holder,
@@ -133,6 +136,12 @@ contract GOFPFacet is
     event PathRegistered(
         uint256 indexed sessionID,
         uint256 stage,
+        uint256 path
+    );
+    event PathChosen(
+        uint256 indexed sessionID,
+        uint256 indexed tokenID,
+        uint256 indexed stage,
         uint256 path
     );
 
@@ -297,7 +306,7 @@ contract GOFPFacet is
 
     If the token is not currently staked in the Garden of Forking Paths contract, this method returns
     0 for the sessionId and the 0 address as the staker.
-    **/
+     */
     function getStakedTokenInfo(address nftAddress, uint256 tokenID)
         external
         view
@@ -458,9 +467,13 @@ contract GOFPFacet is
         uint256 sessionID,
         uint256[] calldata tokenIDs
     ) external diamondNonReentrant {
-        //TODO: add checks that needed
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
-        address nftAddress = gs.sessionById[sessionID].playerTokenAddress;
+        Session storage session = gs.sessionById[sessionID];
+        require(
+            !session.isActive,
+            "GOFPFacet.unstakeTokensFromSession: Cannot unstake from active session"
+        );
+        address nftAddress = session.playerTokenAddress;
         IERC721 token = IERC721(nftAddress);
         for (uint256 i = 0; i < tokenIDs.length; i++) {
             _removeTokenFromEnumeration(
@@ -472,4 +485,25 @@ contract GOFPFacet is
             token.safeTransferFrom(address(this), msg.sender, tokenIDs[i]);
         }
     }
+
+    /**
+    For the current stage of the session with the given sessionID, a player may make a choice of paths
+    for each of their tokenIDs.
+
+    The tokenIDs array is expected to be the same length as the paths array.
+
+    A choice may only be made if choosing is currently active for the given session.
+
+    If the current stage is not the first stage, it is expected that each of the tokens specified by
+    tokenIDs made the correct choice in the previous stage.
+     */
+    // function batchChooseCurrentStagePaths(
+    //     uint256 sessionID,
+    //     uint256[] calldata tokenIDs,
+    //     uint256[] calldata paths
+    // ) external {
+    //     LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+    //     Session session = gs.sessionById[sessionID]
+    //     for (uint256 i = 0; i < tokenIDs.length; i++) {}
+    // }
 }

@@ -898,6 +898,200 @@ class TestPlayerFlow(GOFPTestCase):
             self.assertEqual(staked_session_id, session_id)
             self.assertEqual(staker, self.player.address)
 
+    def test_player_cannot_stake_into_inactive_session(self):
+        payment_amount = 133
+        uri = "https://example.com/test_player_cannot_stake_into_inactive_session.json"
+        stages = (5, 5, 3)
+        is_active = True
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        self.gofp.set_session_active(session_id, False, {"from": self.game_master})
+
+        # Mint NFTs to the player
+        total_nfts = self.nft.total_supply()
+
+        num_nfts = 5
+        token_ids = [total_nfts + i for i in range(1, num_nfts + 1)]
+
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+
+        # Mint num_tokens*payment_amount of payment_token to player
+        self.payment_token.mint(
+            self.player.address, len(token_ids) * payment_amount, {"from": self.owner}
+        )
+
+        self.payment_token.approve(self.gofp.address, MAX_UINT, {"from": self.player})
+        self.nft.set_approval_for_all(self.gofp.address, True, {"from": self.player})
+
+        for token_id in token_ids:
+            staked_session_id, owner = self.gofp.get_staked_token_info(
+                self.nft.address, token_id
+            )
+            self.assertEqual(staked_session_id, 0)
+            self.assertEqual(owner, ZERO_ADDRESS)
+
+        num_staked_0 = self.gofp.num_tokens_staked_into_session(
+            session_id, self.player.address
+        )
+        num_owned_by_player_0 = self.nft.balance_of(self.player.address)
+        num_owned_by_contract_0 = self.nft.balance_of(self.gofp.address)
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.stake_tokens_into_session(
+                session_id, token_ids, {"from": self.player}
+            )
+
+        num_staked_1 = self.gofp.num_tokens_staked_into_session(
+            session_id, self.player.address
+        )
+        num_owned_by_player_1 = self.nft.balance_of(self.player.address)
+        num_owned_by_contract_1 = self.nft.balance_of(self.gofp.address)
+
+        self.assertEqual(num_staked_1, num_staked_0)
+        self.assertEqual(num_owned_by_player_1, num_owned_by_player_0)
+        self.assertEqual(num_owned_by_contract_1, num_owned_by_contract_0)
+
+        for token_id in token_ids:
+            staked_session_id, owner = self.gofp.get_staked_token_info(
+                self.nft.address, token_id
+            )
+            self.assertEqual(staked_session_id, 0)
+            self.assertEqual(owner, ZERO_ADDRESS)
+
+        for i, token_id in enumerate(token_ids):
+            self.assertEqual(self.nft.owner_of(token_id), self.player.address)
+
+    def test_player_cannot_unstake_from_active_session(self):
+        payment_amount = 135
+        uri = "https://example.com/test_player_cannot_unstake_from_active_session.json"
+        stages = (5, 5, 3)
+        is_active = True
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        # Mint NFTs to the player
+        total_nfts = self.nft.total_supply()
+
+        num_nfts = 5
+        token_ids = [total_nfts + i for i in range(1, num_nfts + 1)]
+
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+
+        # Mint num_tokens*payment_amount of payment_token to player
+        self.payment_token.mint(
+            self.player.address, len(token_ids) * payment_amount, {"from": self.owner}
+        )
+
+        self.payment_token.approve(self.gofp.address, MAX_UINT, {"from": self.player})
+        self.nft.set_approval_for_all(self.gofp.address, True, {"from": self.player})
+
+        for token_id in token_ids:
+            staked_session_id, owner = self.gofp.get_staked_token_info(
+                self.nft.address, token_id
+            )
+            self.assertEqual(staked_session_id, 0)
+            self.assertEqual(owner, ZERO_ADDRESS)
+
+        num_staked_0 = self.gofp.num_tokens_staked_into_session(
+            session_id, self.player.address
+        )
+        num_owned_by_player_0 = self.nft.balance_of(self.player.address)
+        num_owned_by_contract_0 = self.nft.balance_of(self.gofp.address)
+
+        self.gofp.stake_tokens_into_session(
+            session_id, token_ids, {"from": self.player}
+        )
+
+        num_staked_1 = self.gofp.num_tokens_staked_into_session(
+            session_id, self.player.address
+        )
+        num_owned_by_player_1 = self.nft.balance_of(self.player.address)
+        num_owned_by_contract_1 = self.nft.balance_of(self.gofp.address)
+
+        self.assertEqual(num_staked_1, num_staked_0 + len(token_ids))
+        self.assertEqual(num_owned_by_player_1, num_owned_by_player_0 - len(token_ids))
+        self.assertEqual(
+            num_owned_by_contract_1, num_owned_by_contract_0 + len(token_ids)
+        )
+
+        for token_id in token_ids:
+            staked_session_id, owner = self.gofp.get_staked_token_info(
+                self.nft.address, token_id
+            )
+            self.assertEqual(staked_session_id, session_id)
+            self.assertEqual(owner, self.player.address)
+
+        for i, token_id in enumerate(token_ids):
+            self.assertEqual(
+                self.gofp.token_of_staker_in_session_by_index(
+                    session_id,
+                    self.player.address,
+                    num_staked_1 - len(token_ids) + 1 + i,
+                ),
+                token_ids[i],
+            )
+            self.assertEqual(self.nft.owner_of(token_id), self.gofp.address)
+
+        self.gofp.set_session_active(session_id, True, {"from": self.game_master})
+
+        unstaked_token_ids = [token_ids[i] for i in range(1, len(token_ids) - 1)]
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.unstake_tokens_from_session(
+                session_id, unstaked_token_ids, {"from": self.player}
+            )
+
+        num_staked_2 = self.gofp.num_tokens_staked_into_session(
+            session_id, self.player.address
+        )
+        num_owned_by_player_2 = self.nft.balance_of(self.player.address)
+        num_owned_by_contract_2 = self.nft.balance_of(self.gofp.address)
+
+        self.assertEqual(num_staked_2, num_staked_1)
+        self.assertEqual(num_owned_by_player_2, num_owned_by_player_1)
+        self.assertEqual(num_owned_by_contract_2, num_owned_by_contract_1)
+
+        for token_id in token_ids:
+            staked_session_id, owner = self.gofp.get_staked_token_info(
+                self.nft.address, token_id
+            )
+            self.assertEqual(staked_session_id, session_id)
+            self.assertEqual(owner, self.player.address)
+
+        for i, token_id in enumerate(token_ids):
+            self.assertEqual(
+                self.gofp.token_of_staker_in_session_by_index(
+                    session_id,
+                    self.player.address,
+                    num_staked_1 - len(token_ids) + 1 + i,
+                ),
+                token_ids[i],
+            )
+            self.assertEqual(self.nft.owner_of(token_id), self.gofp.address)
+
 
 if __name__ == "__main__":
     unittest.main()
