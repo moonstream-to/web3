@@ -865,12 +865,12 @@ class TestPlayerFlow(GOFPTestCase):
             session_id, token_ids, {"from": self.player}
         )
 
-        num_staked_1 = self.gofp.num_tokens_staked_into_session(
+        num_staked_0 = self.gofp.num_tokens_staked_into_session(
             session_id, self.player.address
         )
-        num_owned_by_player_1 = self.nft.balance_of(self.player.address)
-        num_owned_by_contract_1 = self.nft.balance_of(self.gofp.address)
-        num_owned_by_random_1 = self.nft.balance_of(self.random_person.address)
+        num_owned_by_player_0 = self.nft.balance_of(self.player.address)
+        num_owned_by_contract_0 = self.nft.balance_of(self.gofp.address)
+        num_owned_by_random_0 = self.nft.balance_of(self.random_person.address)
 
         self.gofp.set_session_active(session_id, False, {"from": self.game_master})
 
@@ -878,6 +878,25 @@ class TestPlayerFlow(GOFPTestCase):
             self.gofp.unstake_tokens_from_session(
                 session_id, token_ids, {"from": self.random_person}
             )
+
+        num_staked_1 = self.gofp.num_tokens_staked_into_session(
+            session_id, self.player.address
+        )
+        num_owned_by_player_1 = self.nft.balance_of(self.player.address)
+        num_owned_by_contract_1 = self.nft.balance_of(self.gofp.address)
+        num_owned_by_random_1 = self.nft.balance_of(self.random_person.address)
+
+        self.assertEqual(num_staked_1, num_staked_0)
+        self.assertEqual(num_owned_by_player_1, num_owned_by_player_0)
+        self.assertEqual(num_owned_by_contract_1, num_owned_by_contract_0)
+        self.assertEqual(num_owned_by_random_1, num_owned_by_random_0)
+
+        for token_id in token_ids:
+            staked_session_id, staker = self.gofp.get_staked_token_info(
+                self.nft.address, token_id
+            )
+            self.assertEqual(staked_session_id, session_id)
+            self.assertEqual(staker, self.player.address)
 
 
 if __name__ == "__main__":
