@@ -9,6 +9,38 @@ from .core import gofp_gogogo
 
 MAX_UINT = 2**256 - 1
 
+PATH_CHOSEN_EVENT_ABI = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "sessionID",
+            "type": "uint256",
+        },
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "tokenID",
+            "type": "uint256",
+        },
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "stage",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "uint256",
+            "name": "path",
+            "type": "uint256",
+        },
+    ],
+    "name": "PathChosen",
+    "type": "event",
+}
+
 
 class GOFPTestCase(unittest.TestCase):
     @classmethod
@@ -204,6 +236,7 @@ class TestAdminFlow(GOFPTestCase):
         self.assertEqual(num_sessions_1, num_sessions_0)
 
     def test_create_session_fires_event(self):
+        # TODO(zomglings): Move to top of file as a constant (see PATH_CHOSEN_EVENT_ABI)
         session_created_event_abi = {
             "anonymous": False,
             "inputs": [
@@ -352,6 +385,7 @@ class TestAdminFlow(GOFPTestCase):
         self.assertFalse(is_active_2)
 
     def test_set_session_active_fires_event(self):
+        # TODO(zomglings): Move to top of file as a constant (see PATH_CHOSEN_EVENT_ABI)
         session_activated_event_abi = {
             "anonymous": False,
             "inputs": [
@@ -613,6 +647,7 @@ class TestAdminFlow(GOFPTestCase):
         self.assertEqual(paths_2, (5, 3, 0))
 
     def test_register_path_fires_event(self):
+        # TODO(zomglings): Move to top of file as a constant (see PATH_CHOSEN_EVENT_ABI)
         path_registered_event_abi = {
             "anonymous": False,
             "inputs": [
@@ -1135,7 +1170,7 @@ class TestPlayerFlow(GOFPTestCase):
             first_stage_path = self.gofp.get_path_choice(session_id, token_id, 1)
             self.assertEqual(first_stage_path, 0)
 
-        self.gofp.choose_current_stage_paths(
+        tx_receipt = self.gofp.choose_current_stage_paths(
             session_id,
             token_ids,
             [token_id % stages[0] + 1 for token_id in token_ids],
@@ -1145,6 +1180,23 @@ class TestPlayerFlow(GOFPTestCase):
         for token_id in token_ids:
             first_stage_path = self.gofp.get_path_choice(session_id, token_id, 1)
             self.assertEqual(first_stage_path, token_id % stages[0] + 1)
+
+        # Check if PathChosen events were fired for each token AND that they were fired in the expected
+        # order. Events should be fired for each token in the order that the token was passed to the
+        # chooseCurrentStagePaths method on the contract.
+        events = _fetch_events_chunk(
+            web3_client,
+            PATH_CHOSEN_EVENT_ABI,
+            from_block=tx_receipt.block_number,
+            to_block=tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(events), len(token_ids))
+        for i, event in enumerate(events):
+            self.assertEqual(event["args"]["sessionID"], session_id)
+            self.assertEqual(event["args"]["tokenID"], token_ids[i])
+            self.assertEqual(event["args"]["stage"], 1)
+            self.assertEqual(event["args"]["path"], token_ids[i] % stages[0] + 1)
 
     def test_player_cannot_make_a_choice_if_session_choosing_inactive(self):
         payment_amount = 153
