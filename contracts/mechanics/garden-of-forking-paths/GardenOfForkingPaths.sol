@@ -497,6 +497,10 @@ contract GOFPFacet is
         address nftAddress = gs.sessionById[sessionID].playerTokenAddress;
         IERC721 token = IERC721(nftAddress);
         for (uint256 i = 0; i < tokenIDs.length; i++) {
+            // TODO(zomglings): Currently, Garden of Forking Paths does not allow even someone who is *approved* to transfer
+            // NFTs on behalf of their owners to stake those NFTs into a session.
+            // We may want to change this in the future. The more correct thing would be to check if the msg.sender
+            // was approved by the NFT owner on the ERC721 contract.
             require(
                 token.ownerOf(tokenIDs[i]) == msg.sender,
                 "GOFPFacet.stakeTokensIntoSession: Cannot stake a token into session which is not owned by message sender"
