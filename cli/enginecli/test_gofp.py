@@ -865,10 +865,7 @@ class TestPlayerFlow(GOFPTestCase):
         """
         Tests that, when a player stakes their tokens into a session which has no payment token set,
         the stake operation works without any ERC20 transfer events.
-
-        This should true even if a payment amount was set when creating the session.
         """
-        payment_amount = 230
         uri = "https://example.com/test_player_can_stake_into_free_session.json"
         stages = (5, 5, 3)
         is_active = True
@@ -876,7 +873,7 @@ class TestPlayerFlow(GOFPTestCase):
         self.gofp.create_session(
             self.nft.address,
             ZERO_ADDRESS,
-            payment_amount,
+            0,
             is_active,
             uri,
             stages,
@@ -942,7 +939,6 @@ class TestPlayerFlow(GOFPTestCase):
                 token_ids[i],
             )
             self.assertEqual(self.nft.owner_of(token_id), self.gofp.address)
-
 
     def test_player_transfers_payment_token_on_staking(self):
         """
@@ -1129,7 +1125,9 @@ class TestPlayerFlow(GOFPTestCase):
         self.assertEqual(num_owned_by_contract_1, num_owned_by_contract_0)
         self.assertEqual(player_payment_token_balance_1, player_payment_token_balance_0)
         self.assertEqual(gofp_payment_token_balance_1, gofp_payment_token_balance_0)
-        self.assertEqual(random_person_payment_token_balance_1, random_person_payment_token_balance_0)
+        self.assertEqual(
+            random_person_payment_token_balance_1, random_person_payment_token_balance_0
+        )
 
     def test_random_person_cannot_unstake_nfts(self):
         payment_amount = 1337

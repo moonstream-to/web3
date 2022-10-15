@@ -100,10 +100,11 @@ Game Masters can:
 
 Players can:
 - [x] Stake their NFTs into a sesssion if the correct first stage path has not been chosen
-- [ ] Pay to stake their NFTs
+- [x] Pay to stake their NFTs
 - [x] Unstake their NFTs from a session if the session is inactive
 - [x] Have one of their NFTs choose a path in the current stage PROVIDED THAT the current stage is the first
 stage OR that the NFT chose the correct path in the previous stage
+- [ ] Collect their reward for making a choice with an NFT in the current stage of a session
 
 Anybody can:
 - [ ] View details of a session
@@ -210,6 +211,11 @@ contract GOFPFacet is
         require(
             playerTokenAddress != address(0),
             "GOFPFacet.createSession: playerTokenAddress can't be zero address"
+        );
+
+        require(
+            paymentTokenAddress != address(0) || paymentAmount == 0,
+            "GOFPFacet.createSession: If paymentTokenAddress is the 0 address, paymentAmount should also be 0"
         );
 
         gs.sessionById[gs.numSessions] = Session({
