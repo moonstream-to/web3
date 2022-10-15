@@ -142,6 +142,14 @@ class GOFPFacet:
             session_id, stage, block_identifier=block_number
         )
 
+    def get_current_stage(
+        self, session_id: int, block_number: Optional[Union[str, int]] = "latest"
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.getCurrentStage.call(
+            session_id, block_identifier=block_number
+        )
+
     def get_path_choice(
         self,
         session_id: int,
@@ -435,6 +443,15 @@ def handle_get_correct_path_for_stage(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_get_current_stage(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    result = contract.get_current_stage(
+        session_id=args.session_id, block_number=args.block_number
+    )
+    print(result)
+
+
 def handle_get_path_choice(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPFacet(args.address)
@@ -709,6 +726,13 @@ def generate_cli() -> argparse.ArgumentParser:
     get_correct_path_for_stage_parser.set_defaults(
         func=handle_get_correct_path_for_stage
     )
+
+    get_current_stage_parser = subcommands.add_parser("get-current-stage")
+    add_default_arguments(get_current_stage_parser, False)
+    get_current_stage_parser.add_argument(
+        "--session-id", required=True, help="Type: uint256", type=int
+    )
+    get_current_stage_parser.set_defaults(func=handle_get_current_stage)
 
     get_path_choice_parser = subcommands.add_parser("get-path-choice")
     add_default_arguments(get_path_choice_parser, False)

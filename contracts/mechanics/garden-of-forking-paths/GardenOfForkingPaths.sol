@@ -525,6 +525,35 @@ contract GOFPFacet is
     }
 
     /**
+    Returns the number of the current stage.
+     */
+    function getCurrentStage(uint256 sessionID)
+        external
+        view
+        returns (uint256)
+    {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        require(
+            sessionID <= gs.numSessions,
+            "GOFPFacet.getCurrentStage: Invalid session ID"
+        );
+
+        Session storage session = gs.sessionById[sessionID];
+
+        uint256 lastStage = 0;
+
+        for (uint256 i = 1; i <= session.stages.length; i++) {
+            if (gs.sessionStagePath[sessionID][i] > 0) {
+                lastStage = i;
+            } else {
+                break;
+            }
+        }
+
+        return lastStage + 1;
+    }
+
+    /**
     For the current stage of the session with the given sessionID, a player may make a choice of paths
     for each of their tokenIDs.
 

@@ -1312,6 +1312,277 @@ class TestPlayerFlow(GOFPTestCase):
             first_stage_path = self.gofp.get_path_choice(session_id, token_id, 1)
             self.assertEqual(first_stage_path, 0)
 
+    def test_player_can_make_a_choice_with_only_surviving_staked_nfts_at_second_stage(
+        self,
+    ):
+        payment_amount = 170
+        uri = "https://example.com/test_player_can_make_a_choice_with_only_surviving_staked_nfts_at_second_stage.json"
+        stages = (5, 5, 3)
+        is_active = True
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        # Mint NFTs to the player
+        total_nfts = self.nft.total_supply()
+
+        num_nfts = 5
+        token_ids = [total_nfts + i for i in range(1, num_nfts + 1)]
+
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+
+        # Mint num_tokens*payment_amount of payment_token to player
+        self.payment_token.mint(
+            self.player.address, len(token_ids) * payment_amount, {"from": self.owner}
+        )
+
+        self.payment_token.approve(self.gofp.address, MAX_UINT, {"from": self.player})
+        self.nft.set_approval_for_all(self.gofp.address, True, {"from": self.player})
+
+        self.gofp.stake_tokens_into_session(
+            session_id, token_ids, {"from": self.player}
+        )
+
+        # First half (rounded down) of tokens will make the correct choice. Rest will make an incorrect
+        # choice.
+        # Correct path: 3
+        first_stage_correct_path = 3
+        first_stage_incorrect_path = 2
+        num_correct = int(num_nfts / 2)
+        first_stage_path_choices = [first_stage_correct_path] * num_correct + [
+            first_stage_incorrect_path
+        ] * (num_nfts - num_correct)
+
+        self.gofp.choose_current_stage_paths(
+            session_id,
+            token_ids,
+            first_stage_path_choices,
+            {"from": self.player},
+        )
+
+        expected_correct_tokens = []
+        expected_incorrect_tokens = []
+
+        for i, token_id in enumerate(token_ids):
+            first_stage_path = self.gofp.get_path_choice(session_id, token_ids[i], 1)
+            if i < num_correct:
+                self.assertEqual(first_stage_path, first_stage_correct_path)
+                expected_correct_tokens.append(token_id)
+            else:
+                self.assertEqual(first_stage_path, first_stage_incorrect_path)
+                expected_incorrect_tokens.append(token_id)
+
+        self.gofp.set_session_choosing_active(
+            session_id, False, {"from": self.game_master}
+        )
+        self.gofp.set_correct_path_for_stage(
+            session_id, 1, first_stage_correct_path, True, {"from": self.game_master}
+        )
+
+        # Check that current stage has progressed to stage 2
+        self.assertEqual(self.gofp.get_current_stage(session_id), 2)
+
+        self.gofp.choose_current_stage_paths(
+            session_id,
+            expected_correct_tokens,
+            [1 for _ in expected_correct_tokens],
+            {"from": self.player},
+        )
+
+        for token_id in expected_incorrect_tokens:
+            with self.assertRaises(VirtualMachineError):
+                self.gofp.choose_current_stage_paths(
+                    session_id,
+                    [token_id],
+                    [2],
+                    {"from": self.player},
+                )
+
+        for token_id in expected_correct_tokens:
+            self.assertEqual(self.gofp.get_path_choice(session_id, token_id, 2), 1)
+
+        for token_id in expected_incorrect_tokens:
+            self.assertEqual(self.gofp.get_path_choice(session_id, token_id, 2), 0)
+
+
+class TestFullGames(GOFPTestCase):
+    def test_single_player_game(self):
+        payment_amount = 337
+        uri = "https://example.com/test_single_player_game.json"
+        # NOTE: The test assumes that there are 3 stages. You can change the number of paths per change,
+        # but do not change the number of stages.
+        # The stage numbers also need to be coprime to each other - Chinese Remainder Theorem!
+        stages = (2, 3, 5)
+        correct_paths = (2, 1, 3)
+        is_active = True
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        # Player will distribute NFTs evenly across choices at every stage. So we give them enough NFTs
+        # to have a single winning NFT at the end of the game.
+        # So if stages = (2, 3, 5), num_nfts = 2 * 3 * 5 = 30.
+        num_nfts = 1
+        for i in stages:
+            num_nfts *= i
+
+        # Mint NFTs to the player
+        total_nfts = self.nft.total_supply()
+
+        token_ids = [total_nfts + i for i in range(1, num_nfts + 1)]
+
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+
+        # Mint num_tokens*payment_amount of payment_token to player
+        self.payment_token.mint(
+            self.player.address, len(token_ids) * payment_amount, {"from": self.owner}
+        )
+
+        self.payment_token.approve(self.gofp.address, MAX_UINT, {"from": self.player})
+        self.nft.set_approval_for_all(self.gofp.address, True, {"from": self.player})
+
+        self.gofp.stake_tokens_into_session(
+            session_id, token_ids, {"from": self.player}
+        )
+
+        # **Stage 1**
+        first_stage_path_choices = [token_id % stages[0] + 1 for token_id in token_ids]
+        first_stage_correct_token_ids = [
+            token_id
+            for token_id in token_ids
+            if token_id % stages[0] + 1 == correct_paths[0]
+        ]
+        # Sanity check for test setup
+        self.assertEqual(len(first_stage_correct_token_ids), int(num_nfts / stages[0]))
+
+        self.gofp.choose_current_stage_paths(
+            session_id,
+            token_ids,
+            first_stage_path_choices,
+            {"from": self.player},
+        )
+
+        self.gofp.set_session_choosing_active(
+            session_id, False, {"from": self.game_master}
+        )
+        self.gofp.set_correct_path_for_stage(
+            session_id, 1, correct_paths[0], True, {"from": self.game_master}
+        )
+
+        # Check that current stage has progressed to stage 2
+        self.assertEqual(self.gofp.get_current_stage(session_id), 2)
+
+        for token_id in token_ids:
+            if token_id not in first_stage_correct_token_ids:
+                with self.assertRaises(VirtualMachineError):
+                    self.gofp.choose_current_stage_paths(
+                        session_id,
+                        [token_id],
+                        [1],
+                        {"from": self.player},
+                    )
+
+        # **Stage 2**
+        second_stage_path_choices = [
+            token_id % stages[1] + 1 for token_id in first_stage_correct_token_ids
+        ]
+        second_stage_correct_token_ids = [
+            token_id
+            for token_id in first_stage_correct_token_ids
+            if token_id % stages[1] + 1 == correct_paths[1]
+        ]
+        # Sanity check for test setup
+        self.assertEqual(
+            len(second_stage_correct_token_ids), int(num_nfts / (stages[0] * stages[1]))
+        )
+
+        self.gofp.choose_current_stage_paths(
+            session_id,
+            first_stage_correct_token_ids,
+            second_stage_path_choices,
+            {"from": self.player},
+        )
+
+        self.gofp.set_session_choosing_active(
+            session_id, False, {"from": self.game_master}
+        )
+        self.gofp.set_correct_path_for_stage(
+            session_id, 2, correct_paths[1], True, {"from": self.game_master}
+        )
+
+        # Check that current stage has progressed to stage 3
+        self.assertEqual(self.gofp.get_current_stage(session_id), 3)
+
+        for token_id in token_ids:
+            if token_id not in second_stage_correct_token_ids:
+                with self.assertRaises(VirtualMachineError):
+                    self.gofp.choose_current_stage_paths(
+                        session_id,
+                        [token_id],
+                        [1],
+                        {"from": self.player},
+                    )
+
+        # **Stage 3**
+        third_stage_path_choices = [
+            token_id % stages[2] + 1 for token_id in second_stage_correct_token_ids
+        ]
+
+        third_stage_correct_token_ids = [
+            token_id
+            for token_id in second_stage_correct_token_ids
+            if token_id % stages[2] + 1 == correct_paths[2]
+        ]
+        # Sanity check for test setup
+        self.assertEqual(len(third_stage_correct_token_ids), 1)
+
+        self.gofp.choose_current_stage_paths(
+            session_id,
+            second_stage_correct_token_ids,
+            third_stage_path_choices,
+            {"from": self.player},
+        )
+
+        self.gofp.set_session_choosing_active(
+            session_id, False, {"from": self.game_master}
+        )
+        self.gofp.set_correct_path_for_stage(
+            session_id, 3, correct_paths[2], True, {"from": self.game_master}
+        )
+
+        # Check that current stage has progressed to stage 4
+        self.assertEqual(self.gofp.get_current_stage(session_id), 4)
+
+        for token_id in token_ids:
+            if token_id not in third_stage_correct_token_ids:
+                with self.assertRaises(VirtualMachineError):
+                    self.gofp.choose_current_stage_paths(
+                        session_id,
+                        [token_id],
+                        [1],
+                        {"from": self.player},
+                    )
+
 
 if __name__ == "__main__":
     unittest.main()
