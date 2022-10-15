@@ -102,7 +102,7 @@ Players can:
 - [x] Stake their NFTs into a sesssion if the correct first stage path has not been chosen
 - [ ] Pay to stake their NFTs
 - [x] Unstake their NFTs from a session if the session is inactive
-- [ ] Have one of their NFTs choose a path in the current stage PROVIDED THAT the current stage is the first
+- [x] Have one of their NFTs choose a path in the current stage PROVIDED THAT the current stage is the first
 stage OR that the NFT chose the correct path in the previous stage
 
 Anybody can:
@@ -466,12 +466,23 @@ contract GOFPFacet is
             "GOFPFacet.stakeTokensIntoSession: Invalid session ID"
         );
 
-        IERC20 paymentToken = IERC20(
-            gs.sessionById[sessionID].paymentTokenAddress
-        );
-        uint256 paymentAmount = gs.sessionById[sessionID].paymentAmount *
-            tokenIDs.length;
-        paymentToken.transferFrom(msg.sender, address(this), paymentAmount);
+        address paymentTokenAddress = gs
+            .sessionById[sessionID]
+            .paymentTokenAddress;
+        if (paymentTokenAddress != address(0)) {
+            IERC20 paymentToken = IERC20(paymentTokenAddress);
+            uint256 paymentAmount = gs.sessionById[sessionID].paymentAmount *
+                tokenIDs.length;
+            bool paymentSuccessful = paymentToken.transferFrom(
+                msg.sender,
+                address(this),
+                paymentAmount
+            );
+            require(
+                paymentSuccessful,
+                "GOFPFacet.stakeTokensIntoSession: Session requires payment but payment was unsuccessful"
+            );
+        }
 
         require(
             gs.sessionById[gs.numSessions].isActive,
@@ -486,6 +497,10 @@ contract GOFPFacet is
         address nftAddress = gs.sessionById[sessionID].playerTokenAddress;
         IERC721 token = IERC721(nftAddress);
         for (uint256 i = 0; i < tokenIDs.length; i++) {
+            require(
+                token.ownerOf(tokenIDs[i]) == msg.sender,
+                "GOFPFacet.stakeTokensIntoSession: Cannot stake a token into session which is not owned by message sender"
+            );
             token.safeTransferFrom(msg.sender, address(this), tokenIDs[i]);
             _addTokenToEnumeration(
                 sessionID,
