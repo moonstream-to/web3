@@ -191,6 +191,59 @@ class TestAdminFlow(GOFPTestCase):
         self.assertEqual(stages, expected_stages)
         self.assertEqual(is_choosing_active, True)
 
+    def test_create_free_session(self):
+        num_sessions_0 = self.gofp.num_sessions()
+
+        expected_uri = "https://example.com/test_create_free_session.json"
+        expected_stages = (5, 5, 3)
+        expected_is_active = False
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.create_session(
+                self.nft.address,
+                ZERO_ADDRESS,
+                1,
+                expected_is_active,
+                expected_uri,
+                expected_stages,
+                {"from": self.game_master},
+            )
+
+        self.gofp.create_session(
+            self.nft.address,
+            ZERO_ADDRESS,
+            0,
+            expected_is_active,
+            expected_uri,
+            expected_stages,
+            {"from": self.game_master},
+        )
+
+        num_sessions_1 = self.gofp.num_sessions()
+        self.assertEqual(num_sessions_1, num_sessions_0 + 1)
+
+        session_id = num_sessions_1
+
+        session = self.gofp.get_session(session_id)
+
+        (
+            nft_address,
+            payment_address,
+            payment_amount,
+            is_active,
+            is_choosing_active,
+            uri,
+            stages,
+        ) = session
+
+        self.assertEqual(nft_address, self.nft.address)
+        self.assertEqual(payment_address, ZERO_ADDRESS)
+        self.assertEqual(payment_amount, 0)
+        self.assertFalse(is_active)
+        self.assertEqual(uri, expected_uri)
+        self.assertEqual(stages, expected_stages)
+        self.assertEqual(is_choosing_active, True)
+
     def test_cannot_create_session_as_player(self):
         num_sessions_0 = self.gofp.num_sessions()
 
