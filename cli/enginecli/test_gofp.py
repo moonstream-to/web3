@@ -2517,7 +2517,6 @@ class TestFullGames(GOFPTestCase):
             {"from": self.game_master},
         )
 
-
         # Player will distribute NFTs evenly across choices at every stage. So we give them enough NFTs
         # to have a single winning NFT at the end of the game.
         # So if stages = (2, 3, 5), num_nfts = 2 * 3 * 5 = 30.
