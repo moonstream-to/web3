@@ -729,6 +729,10 @@ contract GOFPFacet is
                 "GOFPFacet.chooseCurrentStagePaths: Token did not choose correct path in last stage"
             );
             require(
+                gs.pathChoices[sessionID][tokenIDs[i]][currentStage] == 0,
+                "GOFPFacet.chooseCurrentStagePaths: Token has already chosen a path in the current stage"
+            );
+            require(
                 (paths[i] >= 1) && (paths[i] <= numPaths),
                 "GOFPFacet.chooseCurrentStagePaths: Invalid path"
             );

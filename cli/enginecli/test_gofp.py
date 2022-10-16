@@ -2128,6 +2128,88 @@ class TestPlayerFlow(GOFPTestCase):
             reward_amount * len(expected_correct_tokens),
         )
 
+    def test_player_cannnot_make_a_choice_with_same_token_twice(self):
+        payment_amount = 176
+        uri = "https://example.com/test_player_cannnot_make_a_choice_with_same_token_twice.json"
+        stages = (5, 5, 3)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        reward_amount = 6
+        self.gofp.set_stage_rewards(
+            session_id,
+            [1],
+            [self.terminus.address],
+            [self.reward_pool_id],
+            [reward_amount],
+            {"from": self.game_master},
+        )
+
+        self.gofp.set_session_active(session_id, True, {"from": self.game_master})
+
+        # Mint NFTs to the player
+        total_nfts = self.nft.total_supply()
+
+        num_nfts = 5
+        token_ids = [total_nfts + i for i in range(1, num_nfts + 1)]
+
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+
+        # Mint num_tokens*payment_amount of payment_token to player
+        self.payment_token.mint(
+            self.player.address, len(token_ids) * payment_amount, {"from": self.owner}
+        )
+
+        self.payment_token.approve(self.gofp.address, MAX_UINT, {"from": self.player})
+        self.nft.set_approval_for_all(self.gofp.address, True, {"from": self.player})
+
+        self.gofp.stake_tokens_into_session(
+            session_id, token_ids, {"from": self.player}
+        )
+
+        for token_id in token_ids:
+            first_stage_path = self.gofp.get_path_choice(session_id, token_id, 1)
+            self.assertEqual(first_stage_path, 0)
+
+
+        reward_balance_0 = self.terminus.balance_of(self.player.address, self.reward_pool_id)
+
+        self.gofp.choose_current_stage_paths(
+            session_id,
+            token_ids,
+            [token_id % stages[0] + 1 for token_id in token_ids],
+            {"from": self.player},
+        )
+
+        reward_balance_1 = self.terminus.balance_of(self.player.address, self.reward_pool_id)
+        self.assertEqual(reward_balance_1, reward_balance_0 + len(token_ids) * reward_amount)
+
+        for token_id in token_ids:
+            first_stage_path = self.gofp.get_path_choice(session_id, token_id, 1)
+            self.assertEqual(first_stage_path, token_id % stages[0] + 1)
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.choose_current_stage_paths(
+                session_id,
+                token_ids,
+                [token_id % stages[0] + 1 for token_id in token_ids],
+                {"from": self.player},
+            )
+
+        reward_balance_2 = self.terminus.balance_of(self.player.address, self.reward_pool_id)
+        self.assertEqual(reward_balance_2, reward_balance_1)
 
 class TestFullGames(GOFPTestCase):
     def test_single_player_game(self):
