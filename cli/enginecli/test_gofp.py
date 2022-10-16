@@ -53,6 +53,26 @@ SESSION_CREATED_EVENT_ABI = {
     "type": "event",
 }
 
+SESSION_ACTIVATED_EVENT_ABI = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "sessionId",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool",
+        },
+    ],
+    "name": "SessionActivated",
+    "type": "event",
+}
+
 PATH_CHOSEN_EVENT_ABI = {
     "anonymous": False,
     "inputs": [
@@ -363,54 +383,9 @@ class TestAdminFlow(GOFPTestCase):
         num_sessions_1 = self.gofp.num_sessions()
         self.assertEqual(num_sessions_1, num_sessions_0)
 
-    def test_create_session_fires_event(self):
-        # TODO(zomglings): Move to top of file as a constant (see PATH_CHOSEN_EVENT_ABI)
-        session_created_event_abi = {
-            "anonymous": False,
-            "inputs": [
-                {
-                    "indexed": False,
-                    "internalType": "uint256",
-                    "name": "sessionID",
-                    "type": "uint256",
-                },
-                {
-                    "indexed": True,
-                    "internalType": "address",
-                    "name": "playerTokenAddress",
-                    "type": "address",
-                },
-                {
-                    "indexed": True,
-                    "internalType": "address",
-                    "name": "paymentTokenAddress",
-                    "type": "address",
-                },
-                {
-                    "indexed": False,
-                    "internalType": "uint256",
-                    "name": "paymentAmount",
-                    "type": "uint256",
-                },
-                {
-                    "indexed": False,
-                    "internalType": "string",
-                    "name": "URI",
-                    "type": "string",
-                },
-                {
-                    "indexed": False,
-                    "internalType": "bool",
-                    "name": "active",
-                    "type": "bool",
-                },
-            ],
-            "name": "SessionCreated",
-            "type": "event",
-        }
-
+    def test_create_session_fires_events(self):
         expected_payment_amount = 60
-        expected_uri = "https://example.com/test_create_session_fires_event.json"
+        expected_uri = "https://example.com/test_create_session_fires_events.json"
         expected_stages = (5,)
         expected_is_active = True
 
@@ -512,26 +487,7 @@ class TestAdminFlow(GOFPTestCase):
         _, _, _, is_active_2, _, _, _ = self.gofp.get_session(session_id)
         self.assertFalse(is_active_2)
 
-        session_activated_event_abi = {
-            "anonymous": False,
-            "inputs": [
-                {
-                    "indexed": True,
-                    "internalType": "uint256",
-                    "name": "sessionId",
-                    "type": "uint256",
-                },
-                {
-                    "indexed": False,
-                    "internalType": "bool",
-                    "name": "active",
-                    "type": "bool",
-                },
-            ],
-            "name": "SessionActivated",
-            "type": "event",
-        }
-
+    def test_set_session_active_fires_event(self):
         payment_amount = 131
         uri = "https://example.com/test_set_session_active_fires_event.json"
         stages = (5,)
@@ -555,7 +511,7 @@ class TestAdminFlow(GOFPTestCase):
 
         events = _fetch_events_chunk(
             web3_client,
-            session_activated_event_abi,
+            SESSION_ACTIVATED_EVENT_ABI,
             from_block=tx_receipt.block_number,
             to_block=tx_receipt.block_number,
         )
