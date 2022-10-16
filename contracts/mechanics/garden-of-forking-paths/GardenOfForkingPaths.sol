@@ -95,7 +95,7 @@ Game Masters can:
 - [x] Mark sessions as active or inactive for the purposes of NFTs choosing a path in a the current stage
 - [x] Register the correct path for the current stage
 - [ ] Update the metadata for a session
-- [ ] Set a reward for NFT holders who make a choice with an NFT in each stage
+- [ ] Set a reward (Terminus token mint) for NFT holders who make a choice with an NFT in each stage
 - [ ] Rescue NFTs and send them to a specified address
 
 Players can:
@@ -104,7 +104,7 @@ Players can:
 - [x] Unstake their NFTs from a session if the session is inactive
 - [x] Have one of their NFTs choose a path in the current stage PROVIDED THAT the current stage is the first
 stage OR that the NFT chose the correct path in the previous stage
-- [ ] Collect their reward for making a choice with an NFT in the current stage of a session
+- [ ] Collect their reward (Terminus token mint) for making a choice with an NFT in the current stage of a session
 
 Anybody can:
 - [ ] View details of a session
@@ -609,6 +609,10 @@ contract GOFPFacet is
         );
 
         Session storage session = gs.sessionById[sessionID];
+        require(
+            session.isActive,
+            "GOFPFacet.chooseCurrentStagePaths: Cannot choose paths in inactive session"
+        );
         require(
             session.isChoosingActive,
             "GOFPFacet.chooseCurrentStagePaths: Cannot choose paths in a session for which choosing is not active"
