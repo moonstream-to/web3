@@ -196,6 +196,8 @@ class GOFPTestCase(unittest.TestCase):
 
 
 class TestAdminFlow(GOFPTestCase):
+    # TODO(zomglings): Test the following functionality:
+    # - setSessionUri
     def test_create_session_then_get_session_active(self):
         num_sessions_0 = self.gofp.num_sessions()
 
@@ -384,6 +386,8 @@ class TestAdminFlow(GOFPTestCase):
         self.assertEqual(num_sessions_1, num_sessions_0)
 
     def test_create_session_fires_events(self):
+        # TODO(zomglings): "createSession" now also fires SessionActivated, SessionChoosingActivated, and SessionUriChanged events.
+        # This test should also check that those events are fired.
         expected_payment_amount = 60
         expected_uri = "https://example.com/test_create_session_fires_events.json"
         expected_stages = (5,)
@@ -2218,6 +2222,9 @@ class TestPlayerFlow(GOFPTestCase):
 
 
 class TestFullGames(GOFPTestCase):
+    # TODO(zomglings): Test the following functionality:
+    # - In test_single_player_game, test rewards
+    # - Test multiplayer game
     def test_single_player_game(self):
         payment_amount = 337
         uri = "https://example.com/test_single_player_game.json"
