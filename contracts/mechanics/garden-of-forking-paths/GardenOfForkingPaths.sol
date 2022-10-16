@@ -25,6 +25,19 @@ struct Session {
     uint256[] stages;
 }
 
+/**
+StageReward represents the reward an NFT owner can collect by making a choice with their NFT on the
+corresponding stage in a given Garden of Forking Paths session.
+
+The reward must be a Terminus token and the Garden of Forking Paths contract must have minting privileges
+on the token pool.
+ */
+struct StageReward {
+    address terminusAddress;
+    uint256 terminusPoolId;
+    uint256 rewardAmount;
+}
+
 library LibGOFP {
     bytes32 constant STORAGE_POSITION =
         keccak256("moonstreamdao.eth.storage.mechanics.GardenOfForkingPaths");
@@ -44,6 +57,8 @@ library LibGOFP {
         uint256 AdminTerminusPoolID;
         uint256 numSessions;
         mapping(uint256 => Session) sessionById;
+        // session => stage => stageReward
+        mapping(uint256 => mapping(uint256 => StageReward)) sessionStageReward;
         // session => stage => correct path for that stage
         mapping(uint256 => mapping(uint256 => uint256)) sessionStagePath;
         // nftAddress => tokenId => sessionId
@@ -235,6 +250,54 @@ contract GOFPFacet is
             URI,
             isActive
         );
+    }
+
+    function getStageReward(uint256 sessionId, uint256 stage)
+        external
+        view
+        returns (StageReward memory)
+    {
+        return LibGOFP.gofpStorage().sessionStageReward[sessionId][stage];
+    }
+
+    function setStageRewards(
+        uint256 sessionId,
+        uint256[] calldata stages,
+        address[] calldata terminusAddresses,
+        uint256[] calldata terminusPoolIds,
+        uint256[] calldata rewardAmounts
+    ) external onlyGameMaster {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        require(
+            stages.length == terminusAddresses.length,
+            "GOFPFacet.setStageRewards: terminusAddresses must have same length as stages"
+        );
+        require(
+            stages.length == terminusPoolIds.length,
+            "GOFPFacet.setStageRewards: terminusPoolIds must have same length as stages"
+        );
+        require(
+            stages.length == rewardAmounts.length,
+            "GOFPFacet.setStageRewards: rewardAmounts must have same length as stages"
+        );
+
+        Session storage session = gs.sessionById[sessionId];
+        require(
+            !session.isActive,
+            "GOFPFacet.setStageRewards: Cannot set stage rewards on active session"
+        );
+
+        for (uint256 i = 0; i < stages.length; i++) {
+            require(
+                (1 <= stages[i]) && (stages[i] <= session.stages.length),
+                "GOFPFacet.setStageRewards: Invalid stage"
+            );
+            gs.sessionStageReward[sessionId][stages[i]] = StageReward({
+                terminusAddress: terminusAddresses[i],
+                terminusPoolId: terminusPoolIds[i],
+                rewardAmount: rewardAmounts[i]
+            });
+        }
     }
 
     function setSessionActive(uint256 sessionID, bool isActive)
