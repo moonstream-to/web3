@@ -73,6 +73,41 @@ SESSION_ACTIVATED_EVENT_ABI = {
     "type": "event",
 }
 
+SESSION_CHOOSING_ACTIVATED_EVENT_ABI = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "sessionId",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "bool",
+            "name": "isChoosingActive",
+            "type": "bool",
+        },
+    ],
+    "name": "SessionChoosingActivated",
+    "type": "event",
+}
+
+SESSION_URI_CHANGED_EVENT_ABI = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "sessionId",
+            "type": "uint256",
+        },
+        {"indexed": False, "internalType": "string", "name": "uri", "type": "string"},
+    ],
+    "name": "SessionUriChanged",
+    "type": "event",
+}
+
 PATH_CHOSEN_EVENT_ABI = {
     "anonymous": False,
     "inputs": [
@@ -386,8 +421,6 @@ class TestAdminFlow(GOFPTestCase):
         self.assertEqual(num_sessions_1, num_sessions_0)
 
     def test_create_session_fires_events(self):
-        # TODO(zomglings): "createSession" now also fires SessionActivated, SessionChoosingActivated, and SessionUriChanged events.
-        # This test should also check that those events are fired.
         expected_payment_amount = 60
         expected_uri = "https://example.com/test_create_session_fires_events.json"
         expected_stages = (5,)
@@ -403,22 +436,70 @@ class TestAdminFlow(GOFPTestCase):
             {"from": self.game_master},
         )
 
-        events = _fetch_events_chunk(
+        session_created_events = _fetch_events_chunk(
             web3_client,
             SESSION_CREATED_EVENT_ABI,
             from_block=tx_receipt.block_number,
             to_block=tx_receipt.block_number,
         )
 
-        self.assertEqual(len(events), 1)
+        self.assertEqual(len(session_created_events), 1)
 
-        self.assertEqual(events[0]["args"]["sessionId"], self.gofp.num_sessions())
-        self.assertEqual(events[0]["args"]["playerTokenAddress"], self.nft.address)
         self.assertEqual(
-            events[0]["args"]["paymentTokenAddress"], self.payment_token.address
+            session_created_events[0]["args"]["sessionId"], self.gofp.num_sessions()
         )
-        self.assertEqual(events[0]["args"]["paymentAmount"], expected_payment_amount)
-        self.assertEqual(events[0]["args"]["uri"], expected_uri)
+        self.assertEqual(
+            session_created_events[0]["args"]["playerTokenAddress"], self.nft.address
+        )
+        self.assertEqual(
+            session_created_events[0]["args"]["paymentTokenAddress"],
+            self.payment_token.address,
+        )
+        self.assertEqual(
+            session_created_events[0]["args"]["paymentAmount"], expected_payment_amount
+        )
+        self.assertEqual(session_created_events[0]["args"]["uri"], expected_uri)
+
+        session_activated_events = _fetch_events_chunk(
+            web3_client,
+            SESSION_ACTIVATED_EVENT_ABI,
+            from_block=tx_receipt.block_number,
+            to_block=tx_receipt.block_number,
+        )
+        self.assertEqual(len(session_activated_events), 1)
+        self.assertEqual(
+            session_activated_events[0]["args"]["sessionId"], self.gofp.num_sessions()
+        )
+        self.assertEqual(
+            session_activated_events[0]["args"]["active"], expected_is_active
+        )
+
+        session_choosing_activated_events = _fetch_events_chunk(
+            web3_client,
+            SESSION_CHOOSING_ACTIVATED_EVENT_ABI,
+            from_block=tx_receipt.block_number,
+            to_block=tx_receipt.block_number,
+        )
+        self.assertEqual(len(session_choosing_activated_events), 1)
+        self.assertEqual(
+            session_choosing_activated_events[0]["args"]["sessionId"],
+            self.gofp.num_sessions(),
+        )
+        self.assertEqual(
+            session_choosing_activated_events[0]["args"]["isChoosingActive"], True
+        )
+
+        session_uri_changed_events = _fetch_events_chunk(
+            web3_client,
+            SESSION_URI_CHANGED_EVENT_ABI,
+            from_block=tx_receipt.block_number,
+            to_block=tx_receipt.block_number,
+        )
+        self.assertEqual(len(session_uri_changed_events), 1)
+        self.assertEqual(
+            session_uri_changed_events[0]["args"]["sessionId"], self.gofp.num_sessions()
+        )
+        self.assertEqual(session_uri_changed_events[0]["args"]["uri"], expected_uri)
 
     def test_can_change_session_is_active_as_game_master(self):
         payment_amount = 130
