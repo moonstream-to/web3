@@ -103,11 +103,11 @@ class GOFPFacet:
         return self.contract.adminTerminusInfo.call(block_identifier=block_number)
 
     def choose_current_stage_paths(
-        self, session_id: int, token_i_ds: List, paths: List, transaction_config
+        self, session_id: int, token_ids: List, paths: List, transaction_config
     ) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.chooseCurrentStagePaths(
-            session_id, token_i_ds, paths, transaction_config
+            session_id, token_ids, paths, transaction_config
         )
 
     def create_session(
@@ -284,6 +284,10 @@ class GOFPFacet:
             session_id, is_choosing_active, transaction_config
         )
 
+    def set_session_uri(self, session_id: int, uri: str, transaction_config) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.setSessionUri(session_id, uri, transaction_config)
+
     def set_stage_rewards(
         self,
         session_id: int,
@@ -304,11 +308,11 @@ class GOFPFacet:
         )
 
     def stake_tokens_into_session(
-        self, session_id: int, token_i_ds: List, transaction_config
+        self, session_id: int, token_ids: List, transaction_config
     ) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.stakeTokensIntoSession(
-            session_id, token_i_ds, transaction_config
+            session_id, token_ids, transaction_config
         )
 
     def supports_interface(
@@ -332,11 +336,11 @@ class GOFPFacet:
         )
 
     def unstake_tokens_from_session(
-        self, session_id: int, token_i_ds: List, transaction_config
+        self, session_id: int, token_ids: List, transaction_config
     ) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.unstakeTokensFromSession(
-            session_id, token_i_ds, transaction_config
+            session_id, token_ids, transaction_config
         )
 
 
@@ -437,7 +441,7 @@ def handle_choose_current_stage_paths(args: argparse.Namespace) -> None:
     transaction_config = get_transaction_config(args)
     result = contract.choose_current_stage_paths(
         session_id=args.session_id,
-        token_i_ds=args.token_i_ds,
+        token_ids=args.token_ids,
         paths=args.paths,
         transaction_config=transaction_config,
     )
@@ -647,6 +651,18 @@ def handle_set_session_choosing_active(args: argparse.Namespace) -> None:
         print(result.info())
 
 
+def handle_set_session_uri(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.set_session_uri(
+        session_id=args.session_id, uri=args.uri, transaction_config=transaction_config
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
 def handle_set_stage_rewards(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPFacet(args.address)
@@ -670,7 +686,7 @@ def handle_stake_tokens_into_session(args: argparse.Namespace) -> None:
     transaction_config = get_transaction_config(args)
     result = contract.stake_tokens_into_session(
         session_id=args.session_id,
-        token_i_ds=args.token_i_ds,
+        token_ids=args.token_ids,
         transaction_config=transaction_config,
     )
     print(result)
@@ -705,7 +721,7 @@ def handle_unstake_tokens_from_session(args: argparse.Namespace) -> None:
     transaction_config = get_transaction_config(args)
     result = contract.unstake_tokens_from_session(
         session_id=args.session_id,
-        token_i_ds=args.token_i_ds,
+        token_ids=args.token_ids,
         transaction_config=transaction_config,
     )
     print(result)
@@ -738,7 +754,7 @@ def generate_cli() -> argparse.ArgumentParser:
         "--session-id", required=True, help="Type: uint256", type=int
     )
     choose_current_stage_paths_parser.add_argument(
-        "--token-i-ds", required=True, help="Type: uint256[]", nargs="+"
+        "--token-ids", required=True, help="Type: uint256[]", nargs="+"
     )
     choose_current_stage_paths_parser.add_argument(
         "--paths", required=True, help="Type: uint256[]", nargs="+"
@@ -964,6 +980,16 @@ def generate_cli() -> argparse.ArgumentParser:
         func=handle_set_session_choosing_active
     )
 
+    set_session_uri_parser = subcommands.add_parser("set-session-uri")
+    add_default_arguments(set_session_uri_parser, True)
+    set_session_uri_parser.add_argument(
+        "--session-id", required=True, help="Type: uint256", type=int
+    )
+    set_session_uri_parser.add_argument(
+        "--uri", required=True, help="Type: string", type=str
+    )
+    set_session_uri_parser.set_defaults(func=handle_set_session_uri)
+
     set_stage_rewards_parser = subcommands.add_parser("set-stage-rewards")
     add_default_arguments(set_stage_rewards_parser, True)
     set_stage_rewards_parser.add_argument(
@@ -991,7 +1017,7 @@ def generate_cli() -> argparse.ArgumentParser:
         "--session-id", required=True, help="Type: uint256", type=int
     )
     stake_tokens_into_session_parser.add_argument(
-        "--token-i-ds", required=True, help="Type: uint256[]", nargs="+"
+        "--token-ids", required=True, help="Type: uint256[]", nargs="+"
     )
     stake_tokens_into_session_parser.set_defaults(func=handle_stake_tokens_into_session)
 
@@ -1027,7 +1053,7 @@ def generate_cli() -> argparse.ArgumentParser:
         "--session-id", required=True, help="Type: uint256", type=int
     )
     unstake_tokens_from_session_parser.add_argument(
-        "--token-i-ds", required=True, help="Type: uint256[]", nargs="+"
+        "--token-ids", required=True, help="Type: uint256[]", nargs="+"
     )
     unstake_tokens_from_session_parser.set_defaults(
         func=handle_unstake_tokens_from_session

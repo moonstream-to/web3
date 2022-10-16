@@ -312,7 +312,7 @@ contract GOFPFacet is
             sessionId <= gs.numSessions,
             "GOFPFacet.setSessionActive: Invalid session ID"
         );
-        gs.sessionById[gs.numSessions].isActive = isActive;
+        gs.sessionById[sessionId].isActive = isActive;
         emit SessionActivated(sessionId, isActive);
     }
 
@@ -570,7 +570,7 @@ contract GOFPFacet is
         }
 
         require(
-            gs.sessionById[gs.numSessions].isActive,
+            gs.sessionById[sessionId].isActive,
             "GOFPFacet.stakeTokensIntoSession: Cannot stake tokens into inactive session"
         );
 

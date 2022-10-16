@@ -501,11 +501,19 @@ class TestAdminFlow(GOFPTestCase):
         )
         self.assertEqual(session_uri_changed_events[0]["args"]["uri"], expected_uri)
 
-    def test_can_change_session_is_active_as_game_master(self):
+    def test_can_change_session_info_as_game_master_and_not_as_random_person(self):
+        """
+        Tests that game masters can correctly modify the following attributes of a session:
+        - isActive
+        - isChoosingActive
+        - uri
+
+        Also tests that non game masters *cannot* call these methods.
+
+        Also tests that the appropriate events are fired when the methods are called.
+        """
         payment_amount = 130
-        uri = (
-            "https://example.com/test_can_change_session_is_active_as_game_master.json"
-        )
+        uri = "https://example.com/test_can_change_session_info_as_game_master_and_not_as_random_person.json"
         stages = (5, 5, 3)
         is_active = False
 
@@ -521,90 +529,258 @@ class TestAdminFlow(GOFPTestCase):
 
         session_id = self.gofp.num_sessions()
 
-        _, _, _, is_active_0, _, _, _ = self.gofp.get_session(session_id)
-        self.assertFalse(is_active_0)
+        # We create a second session to ensure that the information modified for the first session is not
+        # being modified on the second session instead. This was a bug in a development version of the
+        # contract.
+        other_stages = (1, 1, 1)
+        other_active = False
+        other_uri = "https://example.com/lol.json"
+        self.gofp.create_session(
+            self.nft.address,
+            ZERO_ADDRESS,
+            0,
+            other_active,
+            other_uri,
+            other_stages,
+            {"from": self.game_master},
+        )
 
-        self.gofp.set_session_active(session_id, True, {"from": self.game_master})
+        _, _, _, is_active_0, is_choosing_active_0, uri_0, _ = self.gofp.get_session(
+            session_id
+        )
+        self.assertFalse(is_active_0)
+        self.assertTrue(is_choosing_active_0)
+        self.assertEqual(uri_0, uri)
+
+        # Sanity check: random person should not be game master:
+        self.assertEqual(
+            self.terminus.balance_of(self.random_person.address, self.admin_pool_id), 0
+        )
+
+        # setSessionActive tests
+        session_active_tx_receipt_0 = self.gofp.set_session_active(
+            session_id, True, {"from": self.game_master}
+        )
 
         _, _, _, is_active_1, _, _, _ = self.gofp.get_session(session_id)
         self.assertTrue(is_active_1)
 
-        self.gofp.set_session_active(session_id, False, {"from": self.game_master})
+        session_activated_events_0 = _fetch_events_chunk(
+            web3_client,
+            SESSION_ACTIVATED_EVENT_ABI,
+            from_block=session_active_tx_receipt_0.block_number,
+            to_block=session_active_tx_receipt_0.block_number,
+        )
+        self.assertEqual(len(session_activated_events_0), 1)
+        self.assertEqual(session_activated_events_0[0]["args"]["sessionId"], session_id)
+        self.assertEqual(session_activated_events_0[0]["args"]["active"], is_active_1)
+
+        session_active_tx_receipt_1 = self.gofp.set_session_active(
+            session_id, False, {"from": self.game_master}
+        )
 
         _, _, _, is_active_2, _, _, _ = self.gofp.get_session(session_id)
         self.assertFalse(is_active_2)
 
-        self.gofp.set_session_active(session_id, False, {"from": self.game_master})
+        session_activated_events_1 = _fetch_events_chunk(
+            web3_client,
+            SESSION_ACTIVATED_EVENT_ABI,
+            from_block=session_active_tx_receipt_1.block_number,
+            to_block=session_active_tx_receipt_1.block_number,
+        )
+        self.assertEqual(len(session_activated_events_1), 1)
+        self.assertEqual(session_activated_events_1[0]["args"]["sessionId"], session_id)
+        self.assertEqual(session_activated_events_1[0]["args"]["active"], is_active_2)
+
+        session_active_tx_receipt_2 = self.gofp.set_session_active(
+            session_id, False, {"from": self.game_master}
+        )
 
         _, _, _, is_active_3, _, _, _ = self.gofp.get_session(session_id)
         self.assertFalse(is_active_3)
 
-    def test_cannot_change_session_is_active_as_non_game_master(self):
-        payment_amount = 131
-        uri = "https://example.com/test_cannot_change_session_is_active_as_non_game_master.json"
-        stages = (5, 5, 3)
-        is_active = False
-
-        self.gofp.create_session(
-            self.nft.address,
-            self.payment_token.address,
-            payment_amount,
-            is_active,
-            uri,
-            stages,
-            {"from": self.game_master},
+        session_activated_events_2 = _fetch_events_chunk(
+            web3_client,
+            SESSION_ACTIVATED_EVENT_ABI,
+            from_block=session_active_tx_receipt_2.block_number,
+            to_block=session_active_tx_receipt_2.block_number,
         )
-
-        session_id = self.gofp.num_sessions()
-
-        _, _, _, is_active_0, _, _, _ = self.gofp.get_session(session_id)
-        self.assertFalse(is_active_0)
+        self.assertEqual(len(session_activated_events_2), 1)
+        self.assertEqual(session_activated_events_2[0]["args"]["sessionId"], session_id)
+        self.assertEqual(session_activated_events_2[0]["args"]["active"], is_active_3)
 
         with self.assertRaises(VirtualMachineError):
-            self.gofp.set_session_active(session_id, True, {"from": self.player})
+            self.gofp.set_session_active(session_id, True, {"from": self.random_person})
 
-        _, _, _, is_active_1, _, _, _ = self.gofp.get_session(session_id)
-        self.assertFalse(is_active_1)
+        _, _, _, is_active_4, _, _, _ = self.gofp.get_session(session_id)
+        self.assertEqual(is_active_4, is_active_3)
 
-        with self.assertRaises(VirtualMachineError):
-            self.gofp.set_session_active(session_id, True, {"from": self.owner})
-
-        _, _, _, is_active_2, _, _, _ = self.gofp.get_session(session_id)
-        self.assertFalse(is_active_2)
-
-    def test_set_session_active_fires_event(self):
-        payment_amount = 131
-        uri = "https://example.com/test_set_session_active_fires_event.json"
-        stages = (5,)
-        is_active = True
-
-        self.gofp.create_session(
-            self.nft.address,
-            self.payment_token.address,
-            payment_amount,
-            is_active,
-            uri,
-            stages,
-            {"from": self.game_master},
-        )
-
-        session_id = self.gofp.num_sessions()
-
-        tx_receipt = self.gofp.set_session_active(
+        # setSessionChoosingActive tests
+        session_choosing_active_tx_receipt_0 = self.gofp.set_session_choosing_active(
             session_id, False, {"from": self.game_master}
         )
 
-        events = _fetch_events_chunk(
+        _, _, _, _, is_choosing_active_1, _, _ = self.gofp.get_session(session_id)
+        self.assertFalse(is_choosing_active_1)
+
+        session_choosing_activated_events_0 = _fetch_events_chunk(
             web3_client,
-            SESSION_ACTIVATED_EVENT_ABI,
-            from_block=tx_receipt.block_number,
-            to_block=tx_receipt.block_number,
+            SESSION_CHOOSING_ACTIVATED_EVENT_ABI,
+            from_block=session_choosing_active_tx_receipt_0.block_number,
+            to_block=session_choosing_active_tx_receipt_0.block_number,
+        )
+        self.assertEqual(len(session_choosing_activated_events_0), 1)
+        self.assertEqual(
+            session_choosing_activated_events_0[0]["args"]["sessionId"], session_id
+        )
+        self.assertEqual(
+            session_choosing_activated_events_0[0]["args"]["isChoosingActive"],
+            is_choosing_active_1,
         )
 
-        self.assertEqual(len(events), 1)
+        session_choosing_active_tx_receipt_1 = self.gofp.set_session_choosing_active(
+            session_id, True, {"from": self.game_master}
+        )
 
-        self.assertEqual(events[0]["args"]["sessionId"], self.gofp.num_sessions())
-        self.assertFalse(events[0]["args"]["active"])
+        _, _, _, _, is_choosing_active_2, _, _ = self.gofp.get_session(session_id)
+        self.assertTrue(is_choosing_active_2)
+
+        session_choosing_activated_events_1 = _fetch_events_chunk(
+            web3_client,
+            SESSION_CHOOSING_ACTIVATED_EVENT_ABI,
+            from_block=session_choosing_active_tx_receipt_1.block_number,
+            to_block=session_choosing_active_tx_receipt_1.block_number,
+        )
+        self.assertEqual(len(session_choosing_activated_events_1), 1)
+        self.assertEqual(
+            session_choosing_activated_events_1[0]["args"]["sessionId"], session_id
+        )
+        self.assertEqual(
+            session_choosing_activated_events_1[0]["args"]["isChoosingActive"],
+            is_choosing_active_2,
+        )
+
+        session_choosing_active_tx_receipt_2 = self.gofp.set_session_choosing_active(
+            session_id, True, {"from": self.game_master}
+        )
+
+        _, _, _, _, is_choosing_active_3, _, _ = self.gofp.get_session(session_id)
+        self.assertTrue(is_choosing_active_3)
+
+        session_choosing_activated_events_2 = _fetch_events_chunk(
+            web3_client,
+            SESSION_CHOOSING_ACTIVATED_EVENT_ABI,
+            from_block=session_choosing_active_tx_receipt_2.block_number,
+            to_block=session_choosing_active_tx_receipt_2.block_number,
+        )
+        self.assertEqual(len(session_choosing_activated_events_2), 1)
+        self.assertEqual(
+            session_choosing_activated_events_2[0]["args"]["sessionId"], session_id
+        )
+        self.assertEqual(
+            session_choosing_activated_events_2[0]["args"]["isChoosingActive"],
+            is_choosing_active_3,
+        )
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.set_session_choosing_active(
+                session_id, not is_choosing_active_3, {"from": self.random_person}
+            )
+
+        _, _, _, _, is_choosing_active_4, _, _ = self.gofp.get_session(session_id)
+        self.assertEqual(is_choosing_active_4, is_choosing_active_3)
+
+        # setSessionUri tests
+        new_uri_0 = "https://example.com/new_uri_0.json"
+        session_uri_changed_tx_receipt_0 = self.gofp.set_session_uri(
+            session_id, new_uri_0, {"from": self.game_master}
+        )
+
+        _, _, _, _, _, uri_1, _ = self.gofp.get_session(session_id)
+        self.assertEqual(uri_1, new_uri_0)
+
+        session_uri_changed_events_0 = _fetch_events_chunk(
+            web3_client,
+            SESSION_URI_CHANGED_EVENT_ABI,
+            from_block=session_uri_changed_tx_receipt_0.block_number,
+            to_block=session_uri_changed_tx_receipt_0.block_number,
+        )
+        self.assertEqual(len(session_uri_changed_events_0), 1)
+        self.assertEqual(
+            session_uri_changed_events_0[0]["args"]["sessionId"], session_id
+        )
+        self.assertEqual(
+            session_uri_changed_events_0[0]["args"]["uri"],
+            uri_1,
+        )
+
+        new_uri_1 = "https://example.com/new_uri_1.json"
+        session_uri_changed_tx_receipt_1 = self.gofp.set_session_uri(
+            session_id, new_uri_1, {"from": self.game_master}
+        )
+
+        _, _, _, _, _, uri_2, _ = self.gofp.get_session(session_id)
+        self.assertEqual(uri_2, new_uri_1)
+
+        session_uri_changed_events_1 = _fetch_events_chunk(
+            web3_client,
+            SESSION_URI_CHANGED_EVENT_ABI,
+            from_block=session_uri_changed_tx_receipt_1.block_number,
+            to_block=session_uri_changed_tx_receipt_1.block_number,
+        )
+        self.assertEqual(len(session_uri_changed_events_1), 1)
+        self.assertEqual(
+            session_uri_changed_events_1[0]["args"]["sessionId"], session_id
+        )
+        self.assertEqual(
+            session_uri_changed_events_1[0]["args"]["uri"],
+            uri_2,
+        )
+
+        new_uri_2 = "https://example.com/new_uri_2.json"
+        session_uri_changed_tx_receipt_2 = self.gofp.set_session_uri(
+            session_id, new_uri_2, {"from": self.game_master}
+        )
+
+        _, _, _, _, _, uri_3, _ = self.gofp.get_session(session_id)
+        self.assertEqual(uri_3, new_uri_2)
+
+        session_uri_changed_events_2 = _fetch_events_chunk(
+            web3_client,
+            SESSION_URI_CHANGED_EVENT_ABI,
+            from_block=session_uri_changed_tx_receipt_2.block_number,
+            to_block=session_uri_changed_tx_receipt_2.block_number,
+        )
+        self.assertEqual(len(session_uri_changed_events_2), 1)
+        self.assertEqual(
+            session_uri_changed_events_2[0]["args"]["sessionId"], session_id
+        )
+        self.assertEqual(
+            session_uri_changed_events_2[0]["args"]["uri"],
+            uri_3,
+        )
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.set_session_uri(
+                session_id, f"{uri_3}/{uri_3}", {"from": self.random_person}
+            )
+
+        _, _, _, _, _, uri_4, _ = self.gofp.get_session(session_id)
+        self.assertEqual(uri_4, uri_3)
+
+        # Check that the next session we created was not modified
+        (
+            _,
+            _,
+            _,
+            other_session_active_final,
+            other_session_choosing_active_final,
+            other_session_uri_final,
+            _,
+        ) = self.gofp.get_session(session_id + 1)
+        self.assertEqual(other_session_active_final, other_active)
+        self.assertTrue(other_session_choosing_active_final)
+        self.assertEqual(other_session_uri_final, other_uri)
 
     def test_game_master_can_register_path(self):
         payment_amount = 131
