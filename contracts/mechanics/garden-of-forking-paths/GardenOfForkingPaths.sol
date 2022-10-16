@@ -660,7 +660,7 @@ contract GOFPFacet is
         uint256 sessionID,
         uint256[] memory tokenIDs,
         uint256[] memory paths
-    ) external {
+    ) external diamondNonReentrant {
         require(
             tokenIDs.length == paths.length,
             "GOFPFacet.chooseCurrentStagePaths: tokenIDs and paths arrays must be of the same length"

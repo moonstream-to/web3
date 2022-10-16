@@ -41,6 +41,29 @@ PATH_CHOSEN_EVENT_ABI = {
     "type": "event",
 }
 
+ERC1155_TRANSFER_SINGLE_EVENT = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": True,
+            "internalType": "address",
+            "name": "operator",
+            "type": "address",
+        },
+        {"indexed": True, "internalType": "address", "name": "from", "type": "address"},
+        {"indexed": True, "internalType": "address", "name": "to", "type": "address"},
+        {"indexed": False, "internalType": "uint256", "name": "id", "type": "uint256"},
+        {
+            "indexed": False,
+            "internalType": "uint256",
+            "name": "value",
+            "type": "uint256",
+        },
+    ],
+    "name": "TransferSingle",
+    "type": "event",
+}
+
 
 class GOFPTestCase(unittest.TestCase):
     @classmethod
@@ -78,7 +101,7 @@ class GOFPTestCase(unittest.TestCase):
         cls.terminus.create_pool_v1(1, False, True, cls.owner_tx_config)
         cls.admin_pool_id = cls.terminus.total_pools()
 
-        cls.terminus.create_pool_v1(1, True, True, cls.owner_tx_config)
+        cls.terminus.create_pool_v1(MAX_UINT, True, True, cls.owner_tx_config)
         cls.reward_pool_id = cls.terminus.total_pools()
 
         # It is important for some of the tests that the owner of the contract *not* be the game master.
@@ -1964,6 +1987,146 @@ class TestPlayerFlow(GOFPTestCase):
 
         for token_id in expected_correct_tokens:
             self.assertEqual(self.gofp.get_path_choice(session_id, token_id, 2), 0)
+
+    def test_player_is_rewarded_for_making_a_choice_in_stages_that_have_rewards(
+        self,
+    ):
+        """
+        Tests that reward distribution works correctly when a player chooses a path in a stage that
+        does have an associated reward.
+
+        Also tests that no rewards are distributed when a player chooses a path in a stage that does
+        not have an assocaited reward.
+
+        Test actions:
+        1. Create inactive session
+        2. Associate a reward with stage 2
+        3. Activate session.
+        4. Player chooses paths in stage 1
+        5. Check that no ERC1155 Transfer events fired in that transaction
+        6. Player chooses paths in stage 2
+        7. Check that appropriate ERC1155 Transfer event fired in that transaction
+        """
+        payment_amount = 175
+        uri = "https://example.com/test_player_is_rewarded_for_making_a_choice_in_stages_that_have_rewards.json"
+        stages = (5, 5, 3)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        reward_amount = 5
+        self.gofp.set_stage_rewards(
+            session_id,
+            [2],
+            [self.terminus.address],
+            [self.reward_pool_id],
+            [reward_amount],
+            {"from": self.game_master},
+        )
+
+        self.gofp.set_session_active(session_id, True, {"from": self.game_master})
+
+        # Mint NFTs to the player
+        total_nfts = self.nft.total_supply()
+
+        num_nfts = 5
+        token_ids = [total_nfts + i for i in range(1, num_nfts + 1)]
+
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+
+        # Mint num_tokens*payment_amount of payment_token to player
+        self.payment_token.mint(
+            self.player.address, len(token_ids) * payment_amount, {"from": self.owner}
+        )
+
+        self.payment_token.approve(self.gofp.address, MAX_UINT, {"from": self.player})
+        self.nft.set_approval_for_all(self.gofp.address, True, {"from": self.player})
+
+        self.gofp.stake_tokens_into_session(
+            session_id, token_ids, {"from": self.player}
+        )
+
+        # First half (rounded down) of tokens will make the correct choice. Rest will make an incorrect
+        # choice.
+        # Correct path: 3
+        first_stage_correct_path = 3
+        first_stage_incorrect_path = 2
+        num_correct = int(num_nfts / 2)
+        first_stage_path_choices = [first_stage_correct_path] * num_correct + [
+            first_stage_incorrect_path
+        ] * (num_nfts - num_correct)
+
+        first_stage_tx_receipt = self.gofp.choose_current_stage_paths(
+            session_id,
+            token_ids,
+            first_stage_path_choices,
+            {"from": self.player},
+        )
+
+        first_stage_events = _fetch_events_chunk(
+            web3_client,
+            ERC1155_TRANSFER_SINGLE_EVENT,
+            from_block=first_stage_tx_receipt.block_number,
+            to_block=first_stage_tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(first_stage_events), 0)
+
+        expected_correct_tokens = []
+
+        for i, token_id in enumerate(token_ids):
+            if i < num_correct:
+                expected_correct_tokens.append(token_id)
+
+        self.gofp.set_session_choosing_active(
+            session_id, False, {"from": self.game_master}
+        )
+        self.gofp.set_correct_path_for_stage(
+            session_id, 1, first_stage_correct_path, True, {"from": self.game_master}
+        )
+
+        # Check that current stage has progressed to stage 2
+        self.assertEqual(self.gofp.get_current_stage(session_id), 2)
+
+        second_stage_tx_receipt = self.gofp.choose_current_stage_paths(
+            session_id,
+            expected_correct_tokens,
+            [1 for _ in expected_correct_tokens],
+            {"from": self.player},
+        )
+
+        second_stage_events = _fetch_events_chunk(
+            web3_client,
+            ERC1155_TRANSFER_SINGLE_EVENT,
+            from_block=second_stage_tx_receipt.block_number,
+            to_block=second_stage_tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(second_stage_events), 1)
+
+        erc1155_transfer_single_event = second_stage_events[0]
+        self.assertEqual(erc1155_transfer_single_event["args"]["from"], ZERO_ADDRESS)
+        self.assertEqual(
+            erc1155_transfer_single_event["args"]["to"], self.player.address
+        )
+        self.assertEqual(
+            erc1155_transfer_single_event["args"]["id"], self.reward_pool_id
+        )
+        self.assertEqual(
+            erc1155_transfer_single_event["args"]["value"],
+            reward_amount * len(expected_correct_tokens),
+        )
 
 
 class TestFullGames(GOFPTestCase):
