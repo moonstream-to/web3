@@ -1735,6 +1735,108 @@ class TestPlayerFlow(GOFPTestCase):
         for token_id in expected_incorrect_tokens:
             self.assertEqual(self.gofp.get_path_choice(session_id, token_id, 2), 0)
 
+    def test_player_cannot_make_choice_in_inactive_session(
+        self,
+    ):
+        """
+        Tests that a player cannot make a choice in an inactive session.
+
+        Sets up a multi-stage session and allows player to make choices at stage 1.
+        After setting the correct path at stage 1, marks the session as inactive and checks that
+        player cannot make a choice at stage 2.
+        Player has at least one token which made the correct stage 1 choice.
+        """
+        payment_amount = 174
+        uri = "https://example.com/test_player_cannot_make_choice_in_inactive_session.json"
+        stages = (5, 5, 3)
+        is_active = True
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        # Mint NFTs to the player
+        total_nfts = self.nft.total_supply()
+
+        num_nfts = 5
+        token_ids = [total_nfts + i for i in range(1, num_nfts + 1)]
+
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+
+        # Mint num_tokens*payment_amount of payment_token to player
+        self.payment_token.mint(
+            self.player.address, len(token_ids) * payment_amount, {"from": self.owner}
+        )
+
+        self.payment_token.approve(self.gofp.address, MAX_UINT, {"from": self.player})
+        self.nft.set_approval_for_all(self.gofp.address, True, {"from": self.player})
+
+        self.gofp.stake_tokens_into_session(
+            session_id, token_ids, {"from": self.player}
+        )
+
+        # First half (rounded down) of tokens will make the correct choice. Rest will make an incorrect
+        # choice.
+        # Correct path: 3
+        first_stage_correct_path = 3
+        first_stage_incorrect_path = 2
+        num_correct = int(num_nfts / 2)
+        first_stage_path_choices = [first_stage_correct_path] * num_correct + [
+            first_stage_incorrect_path
+        ] * (num_nfts - num_correct)
+
+        self.gofp.choose_current_stage_paths(
+            session_id,
+            token_ids,
+            first_stage_path_choices,
+            {"from": self.player},
+        )
+
+        expected_correct_tokens = []
+        expected_incorrect_tokens = []
+
+        for i, token_id in enumerate(token_ids):
+            first_stage_path = self.gofp.get_path_choice(session_id, token_ids[i], 1)
+            if i < num_correct:
+                self.assertEqual(first_stage_path, first_stage_correct_path)
+                expected_correct_tokens.append(token_id)
+            else:
+                self.assertEqual(first_stage_path, first_stage_incorrect_path)
+                expected_incorrect_tokens.append(token_id)
+
+        self.gofp.set_session_choosing_active(
+            session_id, False, {"from": self.game_master}
+        )
+        self.gofp.set_correct_path_for_stage(
+            session_id, 1, first_stage_correct_path, True, {"from": self.game_master}
+        )
+
+        # Check that current stage has progressed to stage 2
+        self.assertEqual(self.gofp.get_current_stage(session_id), 2)
+
+        # Mark session as inactive
+        self.gofp.set_session_active(session_id, False, {"from": self.game_master})
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.choose_current_stage_paths(
+                session_id,
+                expected_correct_tokens,
+                [1 for _ in expected_correct_tokens],
+                {"from": self.player},
+            )
+
+        for token_id in expected_correct_tokens:
+            self.assertEqual(self.gofp.get_path_choice(session_id, token_id, 2), 0)
+
 
 class TestFullGames(GOFPTestCase):
     def test_single_player_game(self):

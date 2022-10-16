@@ -609,6 +609,9 @@ contract GOFPFacet is
         );
 
         Session storage session = gs.sessionById[sessionID];
+        // This prevents players from claiming rewards for path choice in inactive sessions.
+        // It is a form of protection for game masters - they can shut down all reward claims from the
+        // Garden of Forking Paths session my marking that session as inactive.
         require(
             session.isActive,
             "GOFPFacet.chooseCurrentStagePaths: Cannot choose paths in inactive session"
