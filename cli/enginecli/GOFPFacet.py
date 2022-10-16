@@ -168,6 +168,17 @@ class GOFPFacet:
         self.assert_contract_is_instantiated()
         return self.contract.getSession.call(session_id, block_identifier=block_number)
 
+    def get_stage_reward(
+        self,
+        session_id: int,
+        stage: int,
+        block_number: Optional[Union[str, int]] = "latest",
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.getStageReward.call(
+            session_id, stage, block_identifier=block_number
+        )
+
     def get_staked_token_info(
         self,
         nft_address: ChecksumAddress,
@@ -271,6 +282,25 @@ class GOFPFacet:
         self.assert_contract_is_instantiated()
         return self.contract.setSessionChoosingActive(
             session_id, is_choosing_active, transaction_config
+        )
+
+    def set_stage_rewards(
+        self,
+        session_id: int,
+        stages: List,
+        terminus_addresses: List,
+        terminus_pool_ids: List,
+        reward_amounts: List,
+        transaction_config,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.setStageRewards(
+            session_id,
+            stages,
+            terminus_addresses,
+            terminus_pool_ids,
+            reward_amounts,
+            transaction_config,
         )
 
     def stake_tokens_into_session(
@@ -473,6 +503,15 @@ def handle_get_session(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_get_stage_reward(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    result = contract.get_stage_reward(
+        session_id=args.session_id, stage=args.stage, block_number=args.block_number
+    )
+    print(result)
+
+
 def handle_get_staked_token_info(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPFacet(args.address)
@@ -601,6 +640,23 @@ def handle_set_session_choosing_active(args: argparse.Namespace) -> None:
     result = contract.set_session_choosing_active(
         session_id=args.session_id,
         is_choosing_active=args.is_choosing_active,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
+def handle_set_stage_rewards(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.set_stage_rewards(
+        session_id=args.session_id,
+        stages=args.stages,
+        terminus_addresses=args.terminus_addresses,
+        terminus_pool_ids=args.terminus_pool_ids,
+        reward_amounts=args.reward_amounts,
         transaction_config=transaction_config,
     )
     print(result)
@@ -754,6 +810,16 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     get_session_parser.set_defaults(func=handle_get_session)
 
+    get_stage_reward_parser = subcommands.add_parser("get-stage-reward")
+    add_default_arguments(get_stage_reward_parser, False)
+    get_stage_reward_parser.add_argument(
+        "--session-id", required=True, help="Type: uint256", type=int
+    )
+    get_stage_reward_parser.add_argument(
+        "--stage", required=True, help="Type: uint256", type=int
+    )
+    get_stage_reward_parser.set_defaults(func=handle_get_stage_reward)
+
     get_staked_token_info_parser = subcommands.add_parser("get-staked-token-info")
     add_default_arguments(get_staked_token_info_parser, False)
     get_staked_token_info_parser.add_argument(
@@ -897,6 +963,25 @@ def generate_cli() -> argparse.ArgumentParser:
     set_session_choosing_active_parser.set_defaults(
         func=handle_set_session_choosing_active
     )
+
+    set_stage_rewards_parser = subcommands.add_parser("set-stage-rewards")
+    add_default_arguments(set_stage_rewards_parser, True)
+    set_stage_rewards_parser.add_argument(
+        "--session-id", required=True, help="Type: uint256", type=int
+    )
+    set_stage_rewards_parser.add_argument(
+        "--stages", required=True, help="Type: uint256[]", nargs="+"
+    )
+    set_stage_rewards_parser.add_argument(
+        "--terminus-addresses", required=True, help="Type: address[]", nargs="+"
+    )
+    set_stage_rewards_parser.add_argument(
+        "--terminus-pool-ids", required=True, help="Type: uint256[]", nargs="+"
+    )
+    set_stage_rewards_parser.add_argument(
+        "--reward-amounts", required=True, help="Type: uint256[]", nargs="+"
+    )
+    set_stage_rewards_parser.set_defaults(func=handle_set_stage_rewards)
 
     stake_tokens_into_session_parser = subcommands.add_parser(
         "stake-tokens-into-session"

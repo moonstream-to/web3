@@ -78,6 +78,9 @@ class GOFPTestCase(unittest.TestCase):
         cls.terminus.create_pool_v1(1, False, True, cls.owner_tx_config)
         cls.admin_pool_id = cls.terminus.total_pools()
 
+        cls.terminus.create_pool_v1(1, True, True, cls.owner_tx_config)
+        cls.reward_pool_id = cls.terminus.total_pools()
+
         # It is important for some of the tests that the owner of the contract *not* be the game master.
         cls.terminus.mint(
             cls.game_master.address, cls.admin_pool_id, 1, "", cls.owner_tx_config
@@ -93,6 +96,11 @@ class GOFPTestCase(unittest.TestCase):
             cls.terminus.address, cls.admin_pool_id, cls.owner_tx_config
         )
         cls.gofp = GOFPFacet.GOFPFacet(cls.deployed_contracts["contracts"]["Diamond"])
+
+        # Set gofp as approved pool operator for reward pool
+        cls.terminus.approve_for_pool(
+            cls.reward_pool_id, cls.gofp.address, cls.owner_tx_config
+        )
 
     def test_admin_terminus_info(self):
         terminus_info = self.gofp.admin_terminus_info()
@@ -763,6 +771,126 @@ class TestAdminFlow(GOFPTestCase):
         self.assertEqual(events[0]["args"]["sessionID"], self.gofp.num_sessions())
         self.assertEqual(events[0]["args"]["stage"], 1)
         self.assertEqual(events[0]["args"]["path"], 5)
+
+    def test_set_and_get_stage_rewards(self):
+        """
+        Tests administrators' ability to set rewards for the stages in a session. Also tests anyone's
+        ability to view the rewards for a given stage in a given session.
+
+        Test actions:
+        1. Create active session
+        2. Check rewards have default values
+        3. Attempt to set rewards on active session should fail
+        4. Check rewards still have default values
+        5. Make session inactive
+        6. Set rewards for all but the first stage
+        7. Check that rewards were correctly set
+        """
+        payment_amount = 132
+        uri = "https://example.com/test_set_and_get_stage_rewards.json"
+        stages = (5, 5, 3, 3, 2)
+        is_active = True
+
+        # Rewards should be associated with all but the first stage in the session.
+        stages_with_rewards = list(range(2, len(stages) + 1))
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        for i in range(1, len(stages) + 1):
+            reward = self.gofp.get_stage_reward(session_id, i)
+            self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.set_stage_rewards(
+                session_id,
+                stages_with_rewards,
+                [self.terminus.address for _ in stages_with_rewards],
+                [self.reward_pool_id for _ in stages_with_rewards],
+                [i + 1 for i, _ in enumerate(stages_with_rewards)],
+                {"from": self.game_master},
+            )
+
+        for i in range(1, len(stages) + 1):
+            reward = self.gofp.get_stage_reward(session_id, i)
+            self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+
+        self.gofp.set_session_active(session_id, False, {"from": self.game_master})
+
+        self.gofp.set_stage_rewards(
+            session_id,
+            stages_with_rewards,
+            [self.terminus.address for _ in stages_with_rewards],
+            [self.reward_pool_id for _ in stages_with_rewards],
+            [i + 1 for i, _ in enumerate(stages_with_rewards)],
+            {"from": self.game_master},
+        )
+
+        reward = self.gofp.get_stage_reward(session_id, 1)
+        self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+
+        for i in range(2, len(stages) + 1):
+            reward = self.gofp.get_stage_reward(session_id, i)
+            self.assertEqual(
+                reward, (self.terminus.address, self.reward_pool_id, i - 1)
+            )
+
+    def test_non_game_master_cannot_set_stage_rewards(self):
+        """
+        Tests that non game master accounts cannot set stage rewards on an inactive session.
+
+        Test actions:
+        1. Create inactive session
+        2. Check that player is not a game master (i.e. does not have game master badge)
+        3. Attempt by player to set rewards on active session should fail
+        4. Check rewards still have default values
+        """
+        payment_amount = 133
+        uri = "https://example.com/test_non_game_master_cannot_set_stage_rewards.json"
+        stages = (5, 5, 3, 3, 2)
+        is_active = False
+
+        # Rewards should be associated with all but the first stage in the session.
+        stages_with_rewards = list(range(2, len(stages) + 1))
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        self.assertEqual(
+            self.terminus.balance_of(self.player.address, self.admin_pool_id), 0
+        )
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.set_stage_rewards(
+                session_id,
+                stages_with_rewards,
+                [self.terminus.address for _ in stages_with_rewards],
+                [self.reward_pool_id for _ in stages_with_rewards],
+                [i + 1 for i, _ in enumerate(stages_with_rewards)],
+                {"from": self.player},
+            )
+
+        for i in range(1, len(stages) + 1):
+            reward = self.gofp.get_stage_reward(session_id, i)
+            self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
 
 
 class TestPlayerFlow(GOFPTestCase):

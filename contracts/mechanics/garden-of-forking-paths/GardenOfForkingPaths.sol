@@ -7,11 +7,12 @@
 
 pragma solidity ^0.8.0;
 
+import {TerminusFacet} from "@moonstream/contracts/terminus/TerminusFacet.sol";
+import {TerminusPermissions} from "@moonstream/contracts/terminus/TerminusPermissions.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin-contracts/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {TerminusPermissions} from "@moonstream/contracts/terminus/TerminusPermissions.sol";
 import "../../diamond/libraries/LibDiamond.sol";
 import "../../diamond/security/DiamondReentrancyGuard.sol";
 
@@ -657,8 +658,8 @@ contract GOFPFacet is
      */
     function chooseCurrentStagePaths(
         uint256 sessionID,
-        uint256[] calldata tokenIDs,
-        uint256[] calldata paths
+        uint256[] memory tokenIDs,
+        uint256[] memory paths
     ) external {
         require(
             tokenIDs.length == paths.length,
@@ -733,6 +734,21 @@ contract GOFPFacet is
             );
             gs.pathChoices[sessionID][tokenIDs[i]][currentStage] = paths[i];
             emit PathChosen(sessionID, tokenIDs[i], currentStage, paths[i]);
+        }
+
+        StageReward storage stageReward = gs.sessionStageReward[sessionID][
+            currentStage
+        ];
+        if (stageReward.terminusAddress != address(0)) {
+            TerminusFacet rewardTerminus = TerminusFacet(
+                stageReward.terminusAddress
+            );
+            rewardTerminus.mint(
+                msg.sender,
+                stageReward.terminusPoolId,
+                stageReward.rewardAmount * tokenIDs.length,
+                ""
+            );
         }
     }
 }
