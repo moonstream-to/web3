@@ -22,7 +22,7 @@ struct Session {
     uint256 paymentAmount;
     bool isActive; // active -> stake if ok,  cannot unstake
     bool isChoosingActive; // if active -> players can choose path in current stage
-    string URI;
+    string uri;
     uint256[] stages;
 }
 
@@ -70,11 +70,11 @@ library LibGOFP {
         mapping(uint256 => mapping(address => uint256)) numTokensStakedByOwnerInSession;
         // sessionId => tokenId => index in tokensStakedByOwnerInSession
         mapping(uint256 => mapping(uint256 => uint256)) stakedTokenIndex;
-        // session => owner => index => tokenID
+        // session => owner => index => tokenId
         // The index refers to the tokens that the given owner has staked into the given sessions.
         // The index starts from 1.
         mapping(uint256 => mapping(address => mapping(uint256 => uint256))) tokensStakedByOwnerInSession;
-        // session => tokenID => stage => chosenPath
+        // session => tokenId => stage => chosenPath
         // This mapping tracks the path chosen by each eligible NFT in a session at each stage
         mapping(uint256 => mapping(uint256 => mapping(uint256 => uint256))) pathChoices;
     }
@@ -111,7 +111,7 @@ Game Masters can:
 - [x] Mark sessions as active or inactive for the purposes of NFTs choosing a path in a the current stage
 - [x] Register the correct path for the current stage
 - [ ] Update the metadata for a session
-- [ ] Set a reward (Terminus token mint) for NFT holders who make a choice with an NFT in each stage
+- [x] Set a reward (Terminus token mint) for NFT holders who make a choice with an NFT in each stage
 - [ ] Rescue NFTs and send them to a specified address
 
 Players can:
@@ -120,15 +120,13 @@ Players can:
 - [x] Unstake their NFTs from a session if the session is inactive
 - [x] Have one of their NFTs choose a path in the current stage PROVIDED THAT the current stage is the first
 stage OR that the NFT chose the correct path in the previous stage
-- [ ] Collect their reward (Terminus token mint) for making a choice with an NFT in the current stage of a session
+- [x] Collect their reward (Terminus token mint) for making a choice with an NFT in the current stage of a session
 
 Anybody can:
-- [ ] View details of a session
-- [ ] View whether a session is active
-- [ ] View whether a session is open for NFT choices
-- [ ] View the correct path for a given stage
-- [ ] View how many tokens a given owner has staked into a given session
-- [ ] View the token ID of the <n>th token that a given owner has staked into a given session for any valid
+- [x] View details of a session
+- [x] View the correct path for a given stage
+- [x] View how many tokens a given owner has staked into a given session
+- [x] View the token ID of the <n>th token that a given owner has staked into a given session for any valid
     value of n
  */
 contract GOFPFacet is
@@ -147,26 +145,27 @@ contract GOFPFacet is
     }
 
     event SessionCreated(
-        uint256 sessionID,
+        uint256 sessionId,
         address indexed playerTokenAddress,
         address indexed paymentTokenAddress,
         uint256 paymentAmount,
-        string URI,
+        string uri,
         bool active
     );
-    event SessionActivated(uint256 indexed sessionID, bool isActive);
+    event SessionActivated(uint256 indexed sessionId, bool isActive);
     event SessionChoosingActivated(
-        uint256 indexed sessionID,
+        uint256 indexed sessionId,
         bool isChoosingActive
     );
+    event SessionUriChanged(uint256 indexed sessionId, string uri);
     event PathRegistered(
-        uint256 indexed sessionID,
+        uint256 indexed sessionId,
         uint256 stage,
         uint256 path
     );
     event PathChosen(
-        uint256 indexed sessionID,
-        uint256 indexed tokenID,
+        uint256 indexed sessionId,
+        uint256 indexed tokenId,
         uint256 indexed stage,
         uint256 path
     );
@@ -180,12 +179,12 @@ contract GOFPFacet is
         gs.AdminTerminusPoolID = adminTerminusPoolID;
     }
 
-    function getSession(uint256 sessionID)
+    function getSession(uint256 sessionId)
         external
         view
         returns (Session memory)
     {
-        return LibGOFP.gofpStorage().sessionById[sessionID];
+        return LibGOFP.gofpStorage().sessionById[sessionId];
     }
 
     function adminTerminusInfo() external view returns (address, uint256) {
@@ -205,7 +204,7 @@ contract GOFPFacet is
     - isActive - this determines if the session is active as soon as it is created or not
     - isChoosingActive - this determines if NFTs can choose a path in the current stage or not, and is true
       by default when the session is created
-    - URI - metadata URI describing the session
+    - uri - metadata uri describing the session
     - stages - an array describing the number of path choices at each stage of the session
      */
     function createSession(
@@ -213,7 +212,7 @@ contract GOFPFacet is
         address paymentTokenAddress,
         uint256 paymentAmount,
         bool isActive,
-        string memory URI,
+        string memory uri,
         uint256[] memory stages
     ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
@@ -240,7 +239,7 @@ contract GOFPFacet is
             paymentAmount: paymentAmount,
             isActive: isActive,
             isChoosingActive: true,
-            URI: URI,
+            uri: uri,
             stages: stages
         });
         emit SessionCreated(
@@ -248,9 +247,12 @@ contract GOFPFacet is
             playerTokenAddress,
             paymentTokenAddress,
             paymentAmount,
-            URI,
+            uri,
             isActive
         );
+        emit SessionActivated(gs.numSessions, isActive);
+        emit SessionChoosingActivated(gs.numSessions, true);
+        emit SessionUriChanged(gs.numSessions, uri);
     }
 
     function getStageReward(uint256 sessionId, uint256 stage)
@@ -301,20 +303,20 @@ contract GOFPFacet is
         }
     }
 
-    function setSessionActive(uint256 sessionID, bool isActive)
+    function setSessionActive(uint256 sessionId, bool isActive)
         external
         onlyGameMaster
     {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
-            sessionID <= gs.numSessions,
+            sessionId <= gs.numSessions,
             "GOFPFacet.setSessionActive: Invalid session ID"
         );
         gs.sessionById[gs.numSessions].isActive = isActive;
-        emit SessionActivated(sessionID, isActive);
+        emit SessionActivated(sessionId, isActive);
     }
 
-    function getCorrectPathForStage(uint256 sessionID, uint256 stage)
+    function getCorrectPathForStage(uint256 sessionId, uint256 stage)
         external
         view
         returns (uint256)
@@ -323,11 +325,11 @@ contract GOFPFacet is
             stage > 0,
             "GOFPFacet.getCorrectPathForStage: Stages are 1-indexed, 0 is not a valid stage"
         );
-        return LibGOFP.gofpStorage().sessionStagePath[sessionID][stage];
+        return LibGOFP.gofpStorage().sessionStagePath[sessionId][stage];
     }
 
     function setCorrectPathForStage(
-        uint256 sessionID,
+        uint256 sessionId,
         uint256 stage,
         uint256 path,
         bool setIsChoosingActive
@@ -339,26 +341,26 @@ contract GOFPFacet is
         uint256 stageIndex = stage - 1;
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
-            sessionID <= gs.numSessions,
+            sessionId <= gs.numSessions,
             "GOFPFacet.setCorrectPathForStage: Invalid session"
         );
         require(
-            stageIndex < gs.sessionById[sessionID].stages.length,
+            stageIndex < gs.sessionById[sessionId].stages.length,
             "GOFPFacet.setCorrectPathForStage: Invalid stage"
         );
         require(
-            !gs.sessionById[sessionID].isChoosingActive,
+            !gs.sessionById[sessionId].isChoosingActive,
             "GOFPFacet.setCorrectPathForStage: Deactivate isChoosingActive before setting the correct path"
         );
         // Paths are 1-indexed to avoid possible confusion involving default value of 0
         require(
-            path >= 1 && path <= gs.sessionById[sessionID].stages[stageIndex],
+            path >= 1 && path <= gs.sessionById[sessionId].stages[stageIndex],
             "GOFPFacet.setCorrectPathForStage: Invalid path"
         );
         // We use the default value of 0 as a guard to check that path has not already been set for that
         // stage. No changes allowed for a given stage after the path was already chosen.
         require(
-            gs.sessionStagePath[sessionID][stage] == 0,
+            gs.sessionStagePath[sessionId][stage] == 0,
             "GOFPFacet.setCorrectPathForStage: Path has already been chosen for that stage"
         );
         // You cannot set the path for a stage if the path for its previous stage has not been previously
@@ -366,82 +368,95 @@ contract GOFPFacet is
         // We use the stageIndex to access the path because stageIndex = stage - 1. This is just a
         // convenience. It would be more correct to access the "stage - 1" key in the mapping.
         require(
-            stage <= 1 || gs.sessionStagePath[sessionID][stageIndex] != 0,
+            stage <= 1 || gs.sessionStagePath[sessionId][stageIndex] != 0,
             "GOFPFacet.setCorrectPathForStage: Path not set for previous stage"
         );
-        gs.sessionStagePath[sessionID][stage] = path;
-        gs.sessionById[sessionID].isChoosingActive = setIsChoosingActive;
+        gs.sessionStagePath[sessionId][stage] = path;
+        gs.sessionById[sessionId].isChoosingActive = setIsChoosingActive;
 
-        emit PathRegistered(sessionID, stage, path);
-        emit SessionChoosingActivated(sessionID, setIsChoosingActive);
+        emit PathRegistered(sessionId, stage, path);
+        emit SessionChoosingActivated(sessionId, setIsChoosingActive);
     }
 
-    function setSessionChoosingActive(uint256 sessionID, bool isChoosingActive)
+    function setSessionChoosingActive(uint256 sessionId, bool isChoosingActive)
         external
         onlyGameMaster
     {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
-            sessionID <= gs.numSessions,
+            sessionId <= gs.numSessions,
             "GOFPFacet.setSessionChoosingActive: Invalid session ID"
         );
-        gs.sessionById[gs.numSessions].isChoosingActive = isChoosingActive;
-        emit SessionChoosingActivated(sessionID, isChoosingActive);
+        gs.sessionById[sessionId].isChoosingActive = isChoosingActive;
+        emit SessionChoosingActivated(sessionId, isChoosingActive);
+    }
+
+    function setSessionUri(uint256 sessionId, string memory uri)
+        external
+        onlyGameMaster
+    {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        require(
+            sessionId <= gs.numSessions,
+            "GOFPFacet.setSessionChoosingActive: Invalid session ID"
+        );
+        gs.sessionById[sessionId].uri = uri;
+        emit SessionUriChanged(sessionId, uri);
     }
 
     /**
-    For a given NFT, specified by the `nftAddress` and `tokenID`, this view function returns:
+    For a given NFT, specified by the `nftAddress` and `tokenId`, this view function returns:
     1. The sessionId of the session into which the NFT is staked
     2. The address of the staker
 
     If the token is not currently staked in the Garden of Forking Paths contract, this method returns
     0 for the sessionId and the 0 address as the staker.
      */
-    function getStakedTokenInfo(address nftAddress, uint256 tokenID)
+    function getStakedTokenInfo(address nftAddress, uint256 tokenId)
         external
         view
         returns (uint256, address)
     {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         return (
-            gs.stakedTokenSession[nftAddress][tokenID],
-            gs.stakedTokenOwner[nftAddress][tokenID]
+            gs.stakedTokenSession[nftAddress][tokenId],
+            gs.stakedTokenOwner[nftAddress][tokenId]
         );
     }
 
-    function numTokensStakedIntoSession(uint256 sessionID, address staker)
+    function numTokensStakedIntoSession(uint256 sessionId, address staker)
         external
         view
         returns (uint256)
     {
         return
-            LibGOFP.gofpStorage().numTokensStakedByOwnerInSession[sessionID][
+            LibGOFP.gofpStorage().numTokensStakedByOwnerInSession[sessionId][
                 staker
             ];
     }
 
     function tokenOfStakerInSessionByIndex(
-        uint256 sessionID,
+        uint256 sessionId,
         address staker,
         uint256 index
     ) external view returns (uint256) {
         return
-            LibGOFP.gofpStorage().tokensStakedByOwnerInSession[sessionID][
+            LibGOFP.gofpStorage().tokensStakedByOwnerInSession[sessionId][
                 staker
             ][index];
     }
 
     /**
-    Returns the path chosen by the given tokenID in the given session and stage.
+    Returns the path chosen by the given tokenId in the given session and stage.
 
     Recall: sessions and stages are 1-indexed.
      */
     function getPathChoice(
-        uint256 sessionID,
-        uint256 tokenID,
+        uint256 sessionId,
+        uint256 tokenId,
         uint256 stage
     ) external view returns (uint256) {
-        return LibGOFP.gofpStorage().pathChoices[sessionID][tokenID][stage];
+        return LibGOFP.gofpStorage().pathChoices[sessionId][tokenId][stage];
     }
 
     function _addTokenToEnumeration(
@@ -527,22 +542,22 @@ contract GOFPFacet is
     }
 
     function stakeTokensIntoSession(
-        uint256 sessionID,
-        uint256[] calldata tokenIDs
+        uint256 sessionId,
+        uint256[] calldata tokenIds
     ) external diamondNonReentrant {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
-            sessionID <= gs.numSessions,
+            sessionId <= gs.numSessions,
             "GOFPFacet.stakeTokensIntoSession: Invalid session ID"
         );
 
         address paymentTokenAddress = gs
-            .sessionById[sessionID]
+            .sessionById[sessionId]
             .paymentTokenAddress;
         if (paymentTokenAddress != address(0)) {
             IERC20 paymentToken = IERC20(paymentTokenAddress);
-            uint256 paymentAmount = gs.sessionById[sessionID].paymentAmount *
-                tokenIDs.length;
+            uint256 paymentAmount = gs.sessionById[sessionId].paymentAmount *
+                tokenIds.length;
             bool paymentSuccessful = paymentToken.transferFrom(
                 msg.sender,
                 address(this),
@@ -560,13 +575,13 @@ contract GOFPFacet is
         );
 
         require(
-            gs.sessionStagePath[sessionID][1] == 0,
+            gs.sessionStagePath[sessionId][1] == 0,
             "GOFPFacet.stakeTokensIntoSession: The first stage for this session has already been resolved"
         );
 
-        address nftAddress = gs.sessionById[sessionID].playerTokenAddress;
+        address nftAddress = gs.sessionById[sessionId].playerTokenAddress;
         IERC721 token = IERC721(nftAddress);
-        for (uint256 i = 0; i < tokenIDs.length; i++) {
+        for (uint256 i = 0; i < tokenIds.length; i++) {
             // TODO(zomglings): Currently, Garden of Forking Paths does not allow even someone who is *approved* to transfer
             // NFTs on behalf of their owners to stake those NFTs into a session.
             // We may want to change this in the future. Perhaps the more correct thing would be to check if the msg.sender
@@ -575,67 +590,67 @@ contract GOFPFacet is
             // Just because person A gives person B approval to transfer ERC721 tokens, doesn't mean they want them to
             // have permission to instigate *another* address with transfer approval to make a transfer.
             require(
-                token.ownerOf(tokenIDs[i]) == msg.sender,
+                token.ownerOf(tokenIds[i]) == msg.sender,
                 "GOFPFacet.stakeTokensIntoSession: Cannot stake a token into session which is not owned by message sender"
             );
-            token.safeTransferFrom(msg.sender, address(this), tokenIDs[i]);
+            token.safeTransferFrom(msg.sender, address(this), tokenIds[i]);
             _addTokenToEnumeration(
-                sessionID,
+                sessionId,
                 msg.sender,
                 nftAddress,
-                tokenIDs[i]
+                tokenIds[i]
             );
         }
     }
 
     function unstakeTokensFromSession(
-        uint256 sessionID,
-        uint256[] calldata tokenIDs
+        uint256 sessionId,
+        uint256[] calldata tokenIds
     ) external diamondNonReentrant {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
-            sessionID <= gs.numSessions,
+            sessionId <= gs.numSessions,
             "GOFPFacet.unstakeTokensFromSession: Invalid session ID"
         );
 
-        Session storage session = gs.sessionById[sessionID];
+        Session storage session = gs.sessionById[sessionId];
         require(
             !session.isActive,
             "GOFPFacet.unstakeTokensFromSession: Cannot unstake from active session"
         );
         address nftAddress = session.playerTokenAddress;
         IERC721 token = IERC721(nftAddress);
-        for (uint256 i = 0; i < tokenIDs.length; i++) {
+        for (uint256 i = 0; i < tokenIds.length; i++) {
             _removeTokenFromEnumeration(
-                sessionID,
+                sessionId,
                 msg.sender,
                 nftAddress,
-                tokenIDs[i]
+                tokenIds[i]
             );
-            token.safeTransferFrom(address(this), msg.sender, tokenIDs[i]);
+            token.safeTransferFrom(address(this), msg.sender, tokenIds[i]);
         }
     }
 
     /**
     Returns the number of the current stage.
      */
-    function getCurrentStage(uint256 sessionID)
+    function getCurrentStage(uint256 sessionId)
         external
         view
         returns (uint256)
     {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
-            sessionID <= gs.numSessions,
+            sessionId <= gs.numSessions,
             "GOFPFacet.getCurrentStage: Invalid session ID"
         );
 
-        Session storage session = gs.sessionById[sessionID];
+        Session storage session = gs.sessionById[sessionId];
 
         uint256 lastStage = 0;
 
         for (uint256 i = 1; i <= session.stages.length; i++) {
-            if (gs.sessionStagePath[sessionID][i] > 0) {
+            if (gs.sessionStagePath[sessionId][i] > 0) {
                 lastStage = i;
             } else {
                 break;
@@ -646,33 +661,33 @@ contract GOFPFacet is
     }
 
     /**
-    For the current stage of the session with the given sessionID, a player may make a choice of paths
-    for each of their tokenIDs.
+    For the current stage of the session with the given sessionId, a player may make a choice of paths
+    for each of their tokenIds.
 
-    The tokenIDs array is expected to be the same length as the paths array.
+    The tokenIds array is expected to be the same length as the paths array.
 
     A choice may only be made if choosing is currently active for the given session.
 
     If the current stage is not the first stage, it is expected that each of the tokens specified by
-    tokenIDs made the correct choice in the previous stage.
+    tokenIds made the correct choice in the previous stage.
      */
     function chooseCurrentStagePaths(
-        uint256 sessionID,
-        uint256[] memory tokenIDs,
+        uint256 sessionId,
+        uint256[] memory tokenIds,
         uint256[] memory paths
     ) external diamondNonReentrant {
         require(
-            tokenIDs.length == paths.length,
-            "GOFPFacet.chooseCurrentStagePaths: tokenIDs and paths arrays must be of the same length"
+            tokenIds.length == paths.length,
+            "GOFPFacet.chooseCurrentStagePaths: tokenIds and paths arrays must be of the same length"
         );
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
 
         require(
-            sessionID <= gs.numSessions,
+            sessionId <= gs.numSessions,
             "GOFPFacet.chooseCurrentStagePaths: Invalid session ID"
         );
 
-        Session storage session = gs.sessionById[sessionID];
+        Session storage session = gs.sessionById[sessionId];
         // This prevents players from claiming rewards for path choice in inactive sessions.
         // It is a form of protection for game masters - they can shut down all reward claims from the
         // Garden of Forking Paths session my marking that session as inactive.
@@ -691,9 +706,9 @@ contract GOFPFacet is
         uint256 lastStageCorrectPath = 0;
 
         for (i = 1; i <= session.stages.length; i++) {
-            if (gs.sessionStagePath[sessionID][i] > 0) {
+            if (gs.sessionStagePath[sessionId][i] > 0) {
                 lastStage = i;
-                lastStageCorrectPath = gs.sessionStagePath[sessionID][i];
+                lastStageCorrectPath = gs.sessionStagePath[sessionId][i];
             } else {
                 break;
             }
@@ -709,38 +724,38 @@ contract GOFPFacet is
         // This is just for convenience, saving one subtraction.
         uint256 numPaths = session.stages[lastStage];
 
-        for (i = 0; i < tokenIDs.length; i++) {
-            // BEWARE: Setting tokenID and path variables resuls in a "Stack too deep" error message
+        for (i = 0; i < tokenIds.length; i++) {
+            // BEWARE: Setting tokenId and path variables resuls in a "Stack too deep" error message
             // when compiling this contract. Using calldata array arguments restricts the amount of
             // stack variables available to us inside the function body.
             require(
-                gs.stakedTokenIndex[sessionID][tokenIDs[i]] > 0,
+                gs.stakedTokenIndex[sessionId][tokenIds[i]] > 0,
                 "GOFPFacet.chooseCurrentStagePaths: Token not currently staked into session"
             );
             require(
-                gs.stakedTokenOwner[session.playerTokenAddress][tokenIDs[i]] ==
+                gs.stakedTokenOwner[session.playerTokenAddress][tokenIds[i]] ==
                     msg.sender,
                 "GOFPFacet.chooseCurrentStagePaths: Message not sent by token owner"
             );
             require(
                 (lastStage == 0) ||
-                    (gs.pathChoices[sessionID][tokenIDs[i]][lastStage] ==
+                    (gs.pathChoices[sessionId][tokenIds[i]][lastStage] ==
                         lastStageCorrectPath),
                 "GOFPFacet.chooseCurrentStagePaths: Token did not choose correct path in last stage"
             );
             require(
-                gs.pathChoices[sessionID][tokenIDs[i]][currentStage] == 0,
+                gs.pathChoices[sessionId][tokenIds[i]][currentStage] == 0,
                 "GOFPFacet.chooseCurrentStagePaths: Token has already chosen a path in the current stage"
             );
             require(
                 (paths[i] >= 1) && (paths[i] <= numPaths),
                 "GOFPFacet.chooseCurrentStagePaths: Invalid path"
             );
-            gs.pathChoices[sessionID][tokenIDs[i]][currentStage] = paths[i];
-            emit PathChosen(sessionID, tokenIDs[i], currentStage, paths[i]);
+            gs.pathChoices[sessionId][tokenIds[i]][currentStage] = paths[i];
+            emit PathChosen(sessionId, tokenIds[i], currentStage, paths[i]);
         }
 
-        StageReward storage stageReward = gs.sessionStageReward[sessionID][
+        StageReward storage stageReward = gs.sessionStageReward[sessionId][
             currentStage
         ];
         if (stageReward.terminusAddress != address(0)) {
@@ -750,7 +765,7 @@ contract GOFPFacet is
             rewardTerminus.mint(
                 msg.sender,
                 stageReward.terminusPoolId,
-                stageReward.rewardAmount * tokenIDs.length,
+                stageReward.rewardAmount * tokenIds.length,
                 ""
             );
         }

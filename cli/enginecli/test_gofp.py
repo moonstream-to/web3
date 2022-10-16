@@ -9,19 +9,63 @@ from .core import gofp_gogogo
 
 MAX_UINT = 2**256 - 1
 
+SESSION_CREATED_EVENT_ABI = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": False,
+            "internalType": "uint256",
+            "name": "sessionId",
+            "type": "uint256",
+        },
+        {
+            "indexed": True,
+            "internalType": "address",
+            "name": "playerTokenAddress",
+            "type": "address",
+        },
+        {
+            "indexed": True,
+            "internalType": "address",
+            "name": "paymentTokenAddress",
+            "type": "address",
+        },
+        {
+            "indexed": False,
+            "internalType": "uint256",
+            "name": "paymentAmount",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "string",
+            "name": "uri",
+            "type": "string",
+        },
+        {
+            "indexed": False,
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool",
+        },
+    ],
+    "name": "SessionCreated",
+    "type": "event",
+}
+
 PATH_CHOSEN_EVENT_ABI = {
     "anonymous": False,
     "inputs": [
         {
             "indexed": True,
             "internalType": "uint256",
-            "name": "sessionID",
+            "name": "sessionId",
             "type": "uint256",
         },
         {
             "indexed": True,
             "internalType": "uint256",
-            "name": "tokenID",
+            "name": "tokenId",
             "type": "uint256",
         },
         {
@@ -382,20 +426,20 @@ class TestAdminFlow(GOFPTestCase):
 
         events = _fetch_events_chunk(
             web3_client,
-            session_created_event_abi,
+            SESSION_CREATED_EVENT_ABI,
             from_block=tx_receipt.block_number,
             to_block=tx_receipt.block_number,
         )
 
         self.assertEqual(len(events), 1)
 
-        self.assertEqual(events[0]["args"]["sessionID"], self.gofp.num_sessions())
+        self.assertEqual(events[0]["args"]["sessionId"], self.gofp.num_sessions())
         self.assertEqual(events[0]["args"]["playerTokenAddress"], self.nft.address)
         self.assertEqual(
             events[0]["args"]["paymentTokenAddress"], self.payment_token.address
         )
         self.assertEqual(events[0]["args"]["paymentAmount"], expected_payment_amount)
-        self.assertEqual(events[0]["args"]["URI"], expected_uri)
+        self.assertEqual(events[0]["args"]["uri"], expected_uri)
 
     def test_can_change_session_is_active_as_game_master(self):
         payment_amount = 130
@@ -468,15 +512,13 @@ class TestAdminFlow(GOFPTestCase):
         _, _, _, is_active_2, _, _, _ = self.gofp.get_session(session_id)
         self.assertFalse(is_active_2)
 
-    def test_set_session_active_fires_event(self):
-        # TODO(zomglings): Move to top of file as a constant (see PATH_CHOSEN_EVENT_ABI)
         session_activated_event_abi = {
             "anonymous": False,
             "inputs": [
                 {
                     "indexed": True,
                     "internalType": "uint256",
-                    "name": "sessionID",
+                    "name": "sessionId",
                     "type": "uint256",
                 },
                 {
@@ -520,7 +562,7 @@ class TestAdminFlow(GOFPTestCase):
 
         self.assertEqual(len(events), 1)
 
-        self.assertEqual(events[0]["args"]["sessionID"], self.gofp.num_sessions())
+        self.assertEqual(events[0]["args"]["sessionId"], self.gofp.num_sessions())
         self.assertFalse(events[0]["args"]["active"])
 
     def test_game_master_can_register_path(self):
@@ -738,7 +780,7 @@ class TestAdminFlow(GOFPTestCase):
                 {
                     "indexed": True,
                     "internalType": "uint256",
-                    "name": "sessionID",
+                    "name": "sessionId",
                     "type": "uint256",
                 },
                 {
@@ -791,7 +833,7 @@ class TestAdminFlow(GOFPTestCase):
 
         self.assertEqual(len(events), 1)
 
-        self.assertEqual(events[0]["args"]["sessionID"], self.gofp.num_sessions())
+        self.assertEqual(events[0]["args"]["sessionId"], self.gofp.num_sessions())
         self.assertEqual(events[0]["args"]["stage"], 1)
         self.assertEqual(events[0]["args"]["path"], 5)
 
@@ -1665,8 +1707,8 @@ class TestPlayerFlow(GOFPTestCase):
 
         self.assertEqual(len(events), len(token_ids))
         for i, event in enumerate(events):
-            self.assertEqual(event["args"]["sessionID"], session_id)
-            self.assertEqual(event["args"]["tokenID"], token_ids[i])
+            self.assertEqual(event["args"]["sessionId"], session_id)
+            self.assertEqual(event["args"]["tokenId"], token_ids[i])
             self.assertEqual(event["args"]["stage"], 1)
             self.assertEqual(event["args"]["path"], token_ids[i] % stages[0] + 1)
 
@@ -2183,8 +2225,9 @@ class TestPlayerFlow(GOFPTestCase):
             first_stage_path = self.gofp.get_path_choice(session_id, token_id, 1)
             self.assertEqual(first_stage_path, 0)
 
-
-        reward_balance_0 = self.terminus.balance_of(self.player.address, self.reward_pool_id)
+        reward_balance_0 = self.terminus.balance_of(
+            self.player.address, self.reward_pool_id
+        )
 
         self.gofp.choose_current_stage_paths(
             session_id,
@@ -2193,8 +2236,12 @@ class TestPlayerFlow(GOFPTestCase):
             {"from": self.player},
         )
 
-        reward_balance_1 = self.terminus.balance_of(self.player.address, self.reward_pool_id)
-        self.assertEqual(reward_balance_1, reward_balance_0 + len(token_ids) * reward_amount)
+        reward_balance_1 = self.terminus.balance_of(
+            self.player.address, self.reward_pool_id
+        )
+        self.assertEqual(
+            reward_balance_1, reward_balance_0 + len(token_ids) * reward_amount
+        )
 
         for token_id in token_ids:
             first_stage_path = self.gofp.get_path_choice(session_id, token_id, 1)
@@ -2208,8 +2255,11 @@ class TestPlayerFlow(GOFPTestCase):
                 {"from": self.player},
             )
 
-        reward_balance_2 = self.terminus.balance_of(self.player.address, self.reward_pool_id)
+        reward_balance_2 = self.terminus.balance_of(
+            self.player.address, self.reward_pool_id
+        )
         self.assertEqual(reward_balance_2, reward_balance_1)
+
 
 class TestFullGames(GOFPTestCase):
     def test_single_player_game(self):
