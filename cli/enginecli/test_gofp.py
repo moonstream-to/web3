@@ -108,6 +108,32 @@ SESSION_URI_CHANGED_EVENT_ABI = {
     "type": "event",
 }
 
+PATH_REGISTERED_EVENT_ABI = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "sessionId",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "uint256",
+            "name": "stage",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "uint256",
+            "name": "path",
+            "type": "uint256",
+        },
+    ],
+    "name": "PathRegistered",
+    "type": "event",
+}
+
 PATH_CHOSEN_EVENT_ABI = {
     "anonymous": False,
     "inputs": [
@@ -139,6 +165,7 @@ PATH_CHOSEN_EVENT_ABI = {
     "name": "PathChosen",
     "type": "event",
 }
+
 
 ERC1155_TRANSFER_SINGLE_EVENT = {
     "anonymous": False,
@@ -988,33 +1015,6 @@ class TestAdminFlow(GOFPTestCase):
         self.assertEqual(paths_2, (5, 3, 0))
 
     def test_register_path_fires_event(self):
-        # TODO(zomglings): Move to top of file as a constant (see PATH_CHOSEN_EVENT_ABI)
-        path_registered_event_abi = {
-            "anonymous": False,
-            "inputs": [
-                {
-                    "indexed": True,
-                    "internalType": "uint256",
-                    "name": "sessionId",
-                    "type": "uint256",
-                },
-                {
-                    "indexed": False,
-                    "internalType": "uint256",
-                    "name": "stage",
-                    "type": "uint256",
-                },
-                {
-                    "indexed": False,
-                    "internalType": "uint256",
-                    "name": "path",
-                    "type": "uint256",
-                },
-            ],
-            "name": "PathRegistered",
-            "type": "event",
-        }
-
         payment_amount = 131
         uri = "https://example.com/test_register_path_fires_event.json"
         stages = (5, 5, 3)
@@ -1041,7 +1041,7 @@ class TestAdminFlow(GOFPTestCase):
         )
         events = _fetch_events_chunk(
             web3_client,
-            path_registered_event_abi,
+            PATH_REGISTERED_EVENT_ABI,
             from_block=tx_receipt.block_number,
             to_block=tx_receipt.block_number,
         )
@@ -2501,6 +2501,22 @@ class TestFullGames(GOFPTestCase):
         )
 
         session_id = self.gofp.num_sessions()
+
+        # We create a second session to ensure that the NFTs are being staked into the right session.
+        # There was a bug in a development version of the contract in which the staking function was
+        # checking if the most *recent* session was active instead of the session with the given sessionId.
+        # This means that, if the most recent function were inactive, players wouldn't be able to stake
+        # eligible tokens even into an active session.
+        self.gofp.create_session(
+            self.random_person.address,
+            ZERO_ADDRESS,
+            0,
+            False,
+            "https://example.com/wrong_session.json",
+            (1,),
+            {"from": self.game_master},
+        )
+
 
         # Player will distribute NFTs evenly across choices at every stage. So we give them enough NFTs
         # to have a single winning NFT at the end of the game.
