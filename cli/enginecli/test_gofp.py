@@ -231,8 +231,6 @@ class GOFPTestCase(unittest.TestCase):
 
 
 class TestAdminFlow(GOFPTestCase):
-    # TODO(zomglings): Test the following functionality:
-    # - setSessionUri
     def test_create_session_then_get_session_active(self):
         num_sessions_0 = self.gofp.num_sessions()
 
