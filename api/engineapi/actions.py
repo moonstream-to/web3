@@ -701,7 +701,7 @@ def get_drops(
     if active:
         query = query.filter(DropperClaim.active == active)
 
-    query = query.order_by(DropperClaim.created_at.asc())
+    query = query.order_by(DropperClaim.created_at.desc())
 
     if limit:
         query = query.limit(limit)
