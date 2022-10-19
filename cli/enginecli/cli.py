@@ -7,6 +7,7 @@ from . import (
     Dropper,
     Lootbox,
     MockErc20,
+    MockERC721,
     MockTerminus,
     setup_drop,
     CraftingFacet,
@@ -36,7 +37,10 @@ def main() -> None:
     subparsers.add_parser("core", parents=[core_parser], add_help=False)
 
     erc20_parser = MockErc20.generate_cli()
-    subparsers.add_parser("mock-erc20", parents=[erc20_parser], add_help=False)
+    subparsers.add_parser("erc20", parents=[erc20_parser], add_help=False)
+
+    erc721_parser = MockERC721.generate_cli()
+    subparsers.add_parser("erc721", parents=[erc721_parser], add_help=False)
 
     drop_parser = drop.generate_cli()
     subparsers.add_parser("drop", parents=[drop_parser], add_help=False)
