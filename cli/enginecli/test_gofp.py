@@ -48,6 +48,12 @@ SESSION_CREATED_EVENT_ABI = {
             "name": "active",
             "type": "bool",
         },
+        {
+            "indexed": False,
+            "internalType": "bool",
+            "name": "isForgiving",
+            "type": "bool",
+        },
     ],
     "name": "SessionCreated",
     "type": "event",
@@ -275,6 +281,7 @@ class TestAdminFlow(GOFPTestCase):
             expected_is_active,
             expected_uri,
             expected_stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -293,6 +300,7 @@ class TestAdminFlow(GOFPTestCase):
             is_choosing_active,
             uri,
             stages,
+            is_forgiving,
         ) = session
 
         self.assertEqual(nft_address, self.nft.address)
@@ -301,6 +309,7 @@ class TestAdminFlow(GOFPTestCase):
         self.assertTrue(is_active)
         self.assertEqual(uri, expected_uri)
         self.assertEqual(stages, expected_stages)
+        self.assertEqual(is_forgiving, False)
         self.assertEqual(is_choosing_active, True)
 
     def test_create_session_then_get_session_inactive(self):
@@ -320,6 +329,7 @@ class TestAdminFlow(GOFPTestCase):
             expected_is_active,
             expected_uri,
             expected_stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -338,6 +348,7 @@ class TestAdminFlow(GOFPTestCase):
             is_choosing_active,
             uri,
             stages,
+            is_forgiving,
         ) = session
 
         self.assertEqual(nft_address, self.nft.address)
@@ -346,6 +357,7 @@ class TestAdminFlow(GOFPTestCase):
         self.assertFalse(is_active)
         self.assertEqual(uri, expected_uri)
         self.assertEqual(stages, expected_stages)
+        self.assertEqual(is_forgiving, False)
         self.assertEqual(is_choosing_active, True)
 
     def test_create_free_session(self):
@@ -363,6 +375,7 @@ class TestAdminFlow(GOFPTestCase):
                 expected_is_active,
                 expected_uri,
                 expected_stages,
+                False,
                 {"from": self.game_master},
             )
 
@@ -373,6 +386,7 @@ class TestAdminFlow(GOFPTestCase):
             expected_is_active,
             expected_uri,
             expected_stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -391,6 +405,7 @@ class TestAdminFlow(GOFPTestCase):
             is_choosing_active,
             uri,
             stages,
+            is_forgiving,
         ) = session
 
         self.assertEqual(nft_address, self.nft.address)
@@ -399,6 +414,7 @@ class TestAdminFlow(GOFPTestCase):
         self.assertFalse(is_active)
         self.assertEqual(uri, expected_uri)
         self.assertEqual(stages, expected_stages)
+        self.assertEqual(is_forgiving, False)
         self.assertEqual(is_choosing_active, True)
 
     def test_cannot_create_session_as_player(self):
@@ -417,6 +433,7 @@ class TestAdminFlow(GOFPTestCase):
                 failed_is_active,
                 failed_uri,
                 failed_stages,
+                False,
                 {"from": self.player},
             )
 
@@ -439,6 +456,7 @@ class TestAdminFlow(GOFPTestCase):
                 failed_is_active,
                 failed_uri,
                 failed_stages,
+                False,
                 {"from": self.owner},
             )
 
@@ -458,6 +476,7 @@ class TestAdminFlow(GOFPTestCase):
             expected_is_active,
             expected_uri,
             expected_stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -549,6 +568,7 @@ class TestAdminFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -567,10 +587,11 @@ class TestAdminFlow(GOFPTestCase):
             other_active,
             other_uri,
             other_stages,
+            False,
             {"from": self.game_master},
         )
 
-        _, _, _, is_active_0, is_choosing_active_0, uri_0, _ = self.gofp.get_session(
+        _, _, _, is_active_0, is_choosing_active_0, uri_0, _, _ = self.gofp.get_session(
             session_id
         )
         self.assertFalse(is_active_0)
@@ -587,7 +608,7 @@ class TestAdminFlow(GOFPTestCase):
             session_id, True, {"from": self.game_master}
         )
 
-        _, _, _, is_active_1, _, _, _ = self.gofp.get_session(session_id)
+        _, _, _, is_active_1, _, _, _, _ = self.gofp.get_session(session_id)
         self.assertTrue(is_active_1)
 
         session_activated_events_0 = _fetch_events_chunk(
@@ -604,7 +625,7 @@ class TestAdminFlow(GOFPTestCase):
             session_id, False, {"from": self.game_master}
         )
 
-        _, _, _, is_active_2, _, _, _ = self.gofp.get_session(session_id)
+        _, _, _, is_active_2, _, _, _, _ = self.gofp.get_session(session_id)
         self.assertFalse(is_active_2)
 
         session_activated_events_1 = _fetch_events_chunk(
@@ -621,7 +642,7 @@ class TestAdminFlow(GOFPTestCase):
             session_id, False, {"from": self.game_master}
         )
 
-        _, _, _, is_active_3, _, _, _ = self.gofp.get_session(session_id)
+        _, _, _, is_active_3, _, _, _, _ = self.gofp.get_session(session_id)
         self.assertFalse(is_active_3)
 
         session_activated_events_2 = _fetch_events_chunk(
@@ -637,7 +658,7 @@ class TestAdminFlow(GOFPTestCase):
         with self.assertRaises(VirtualMachineError):
             self.gofp.set_session_active(session_id, True, {"from": self.random_person})
 
-        _, _, _, is_active_4, _, _, _ = self.gofp.get_session(session_id)
+        _, _, _, is_active_4, _, _, _, _ = self.gofp.get_session(session_id)
         self.assertEqual(is_active_4, is_active_3)
 
         # setSessionChoosingActive tests
@@ -645,7 +666,7 @@ class TestAdminFlow(GOFPTestCase):
             session_id, False, {"from": self.game_master}
         )
 
-        _, _, _, _, is_choosing_active_1, _, _ = self.gofp.get_session(session_id)
+        _, _, _, _, is_choosing_active_1, _, _, _ = self.gofp.get_session(session_id)
         self.assertFalse(is_choosing_active_1)
 
         session_choosing_activated_events_0 = _fetch_events_chunk(
@@ -667,7 +688,7 @@ class TestAdminFlow(GOFPTestCase):
             session_id, True, {"from": self.game_master}
         )
 
-        _, _, _, _, is_choosing_active_2, _, _ = self.gofp.get_session(session_id)
+        _, _, _, _, is_choosing_active_2, _, _, _ = self.gofp.get_session(session_id)
         self.assertTrue(is_choosing_active_2)
 
         session_choosing_activated_events_1 = _fetch_events_chunk(
@@ -689,7 +710,7 @@ class TestAdminFlow(GOFPTestCase):
             session_id, True, {"from": self.game_master}
         )
 
-        _, _, _, _, is_choosing_active_3, _, _ = self.gofp.get_session(session_id)
+        _, _, _, _, is_choosing_active_3, _, _, _ = self.gofp.get_session(session_id)
         self.assertTrue(is_choosing_active_3)
 
         session_choosing_activated_events_2 = _fetch_events_chunk(
@@ -712,7 +733,7 @@ class TestAdminFlow(GOFPTestCase):
                 session_id, not is_choosing_active_3, {"from": self.random_person}
             )
 
-        _, _, _, _, is_choosing_active_4, _, _ = self.gofp.get_session(session_id)
+        _, _, _, _, is_choosing_active_4, _, _, _ = self.gofp.get_session(session_id)
         self.assertEqual(is_choosing_active_4, is_choosing_active_3)
 
         # setSessionUri tests
@@ -721,7 +742,7 @@ class TestAdminFlow(GOFPTestCase):
             session_id, new_uri_0, {"from": self.game_master}
         )
 
-        _, _, _, _, _, uri_1, _ = self.gofp.get_session(session_id)
+        _, _, _, _, _, uri_1, _, _ = self.gofp.get_session(session_id)
         self.assertEqual(uri_1, new_uri_0)
 
         session_uri_changed_events_0 = _fetch_events_chunk(
@@ -744,7 +765,7 @@ class TestAdminFlow(GOFPTestCase):
             session_id, new_uri_1, {"from": self.game_master}
         )
 
-        _, _, _, _, _, uri_2, _ = self.gofp.get_session(session_id)
+        _, _, _, _, _, uri_2, _, _ = self.gofp.get_session(session_id)
         self.assertEqual(uri_2, new_uri_1)
 
         session_uri_changed_events_1 = _fetch_events_chunk(
@@ -767,7 +788,7 @@ class TestAdminFlow(GOFPTestCase):
             session_id, new_uri_2, {"from": self.game_master}
         )
 
-        _, _, _, _, _, uri_3, _ = self.gofp.get_session(session_id)
+        _, _, _, _, _, uri_3, _, _ = self.gofp.get_session(session_id)
         self.assertEqual(uri_3, new_uri_2)
 
         session_uri_changed_events_2 = _fetch_events_chunk(
@@ -790,7 +811,7 @@ class TestAdminFlow(GOFPTestCase):
                 session_id, f"{uri_3}/{uri_3}", {"from": self.random_person}
             )
 
-        _, _, _, _, _, uri_4, _ = self.gofp.get_session(session_id)
+        _, _, _, _, _, uri_4, _, _ = self.gofp.get_session(session_id)
         self.assertEqual(uri_4, uri_3)
 
         # Check that the next session we created was not modified
@@ -801,6 +822,7 @@ class TestAdminFlow(GOFPTestCase):
             other_session_active_final,
             other_session_choosing_active_final,
             other_session_uri_final,
+            _,
             _,
         ) = self.gofp.get_session(session_id + 1)
         self.assertEqual(other_session_active_final, other_active)
@@ -820,6 +842,7 @@ class TestAdminFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -873,6 +896,7 @@ class TestAdminFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -902,6 +926,7 @@ class TestAdminFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -974,6 +999,7 @@ class TestAdminFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -1027,6 +1053,7 @@ class TestAdminFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -1081,6 +1108,7 @@ class TestAdminFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -1149,6 +1177,7 @@ class TestAdminFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -1187,6 +1216,7 @@ class TestPlayerFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -1338,6 +1368,7 @@ class TestPlayerFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -1418,6 +1449,7 @@ class TestPlayerFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -1521,6 +1553,7 @@ class TestPlayerFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -1603,6 +1636,7 @@ class TestPlayerFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -1675,6 +1709,7 @@ class TestPlayerFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -1750,6 +1785,7 @@ class TestPlayerFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -1869,6 +1905,7 @@ class TestPlayerFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -1940,6 +1977,7 @@ class TestPlayerFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -1999,6 +2037,7 @@ class TestPlayerFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -2056,6 +2095,7 @@ class TestPlayerFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -2166,6 +2206,7 @@ class TestPlayerFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -2276,6 +2317,7 @@ class TestPlayerFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -2398,6 +2440,7 @@ class TestPlayerFlow(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -2497,6 +2540,7 @@ class TestFullGames(GOFPTestCase):
             is_active,
             uri,
             stages,
+            False,
             {"from": self.game_master},
         )
 
@@ -2514,6 +2558,7 @@ class TestFullGames(GOFPTestCase):
             False,
             "https://example.com/wrong_session.json",
             (1,),
+            False,
             {"from": self.game_master},
         )
 

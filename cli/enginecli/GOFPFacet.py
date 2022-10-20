@@ -118,6 +118,7 @@ class GOFPFacet:
         is_active: bool,
         uri: str,
         stages: List,
+        is_forgiving: bool,
         transaction_config,
     ) -> Any:
         self.assert_contract_is_instantiated()
@@ -128,6 +129,7 @@ class GOFPFacet:
             is_active,
             uri,
             stages,
+            is_forgiving,
             transaction_config,
         )
 
@@ -461,6 +463,7 @@ def handle_create_session(args: argparse.Namespace) -> None:
         is_active=args.is_active,
         uri=args.uri,
         stages=args.stages,
+        is_forgiving=args.is_forgiving,
         transaction_config=transaction_config,
     )
     print(result)
@@ -782,6 +785,9 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     create_session_parser.add_argument(
         "--stages", required=True, help="Type: uint256[]", nargs="+"
+    )
+    create_session_parser.add_argument(
+        "--is-forgiving", required=True, help="Type: bool", type=boolean_argument_type
     )
     create_session_parser.set_defaults(func=handle_create_session)
 

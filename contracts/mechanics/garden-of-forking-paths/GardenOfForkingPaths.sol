@@ -24,6 +24,10 @@ struct Session {
     bool isChoosingActive; // if active -> players can choose path in current stage
     string uri;
     uint256[] stages;
+    // In forgiving sessions, making the wrong path choice at the previous stage doesn't prevent a
+    // player from choosing a path in the next stage. It *does* prevent them from collecting the reward
+    // for the next stage, though.
+    bool isForgiving;
 }
 
 /**
@@ -150,7 +154,8 @@ contract GOFPFacet is
         address indexed paymentTokenAddress,
         uint256 paymentAmount,
         string uri,
-        bool active
+        bool active,
+        bool isForgiving
     );
     event SessionActivated(uint256 indexed sessionId, bool isActive);
     event SessionChoosingActivated(
@@ -213,7 +218,8 @@ contract GOFPFacet is
         uint256 paymentAmount,
         bool isActive,
         string memory uri,
-        uint256[] memory stages
+        uint256[] memory stages,
+        bool isForgiving
     ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         gs.numSessions++;
@@ -240,7 +246,8 @@ contract GOFPFacet is
             isActive: isActive,
             isChoosingActive: true,
             uri: uri,
-            stages: stages
+            stages: stages,
+            isForgiving: isForgiving
         });
         emit SessionCreated(
             gs.numSessions,
@@ -248,7 +255,8 @@ contract GOFPFacet is
             paymentTokenAddress,
             paymentAmount,
             uri,
-            isActive
+            isActive,
+            isForgiving
         );
         emit SessionActivated(gs.numSessions, isActive);
         emit SessionChoosingActivated(gs.numSessions, true);
@@ -724,6 +732,11 @@ contract GOFPFacet is
         // This is just for convenience, saving one subtraction.
         uint256 numPaths = session.stages[lastStage];
 
+        uint256 rewardAmount = 0;
+        StageReward storage stageReward = gs.sessionStageReward[sessionId][
+            currentStage
+        ];
+
         for (i = 0; i < tokenIds.length; i++) {
             // BEWARE: Setting tokenId and path variables resuls in a "Stack too deep" error message
             // when compiling this contract. Using calldata array arguments restricts the amount of
@@ -739,9 +752,10 @@ contract GOFPFacet is
             );
             require(
                 (lastStage == 0) ||
+                    (session.isForgiving) ||
                     (gs.pathChoices[sessionId][tokenIds[i]][lastStage] ==
                         lastStageCorrectPath),
-                "GOFPFacet.chooseCurrentStagePaths: Token did not choose correct path in last stage"
+                "GOFPFacet.chooseCurrentStagePaths: Session is not forgiving and token did not choose correct path in last stage"
             );
             require(
                 gs.pathChoices[sessionId][tokenIds[i]][currentStage] == 0,
@@ -753,11 +767,21 @@ contract GOFPFacet is
             );
             gs.pathChoices[sessionId][tokenIds[i]][currentStage] = paths[i];
             emit PathChosen(sessionId, tokenIds[i], currentStage, paths[i]);
+
+            // Calculate number of correct choices on last stage for reward distribution, but only if
+            // there is a stage reward.
+            if (stageReward.terminusAddress != address(0)) {
+                if (lastStage == 0) {
+                    rewardAmount += stageReward.rewardAmount;
+                } else if (
+                    gs.pathChoices[sessionId][tokenIds[i]][lastStage] ==
+                    lastStageCorrectPath
+                ) {
+                    rewardAmount += stageReward.rewardAmount;
+                }
+            }
         }
 
-        StageReward storage stageReward = gs.sessionStageReward[sessionId][
-            currentStage
-        ];
         if (stageReward.terminusAddress != address(0)) {
             TerminusFacet rewardTerminus = TerminusFacet(
                 stageReward.terminusAddress
@@ -765,7 +789,7 @@ contract GOFPFacet is
             rewardTerminus.mint(
                 msg.sender,
                 stageReward.terminusPoolId,
-                stageReward.rewardAmount * tokenIds.length,
+                rewardAmount,
                 ""
             );
         }
