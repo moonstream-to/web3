@@ -2702,7 +2702,6 @@ class TestPlayerFlow(GOFPTestCase):
 
 class TestFullGames(GOFPTestCase):
     # TODO(zomglings): Test the following functionality:
-    # - In test_single_player_game, test rewards
     # - Test multiplayer game
     def test_single_player_game(self):
         payment_amount = 337
@@ -2712,7 +2711,7 @@ class TestFullGames(GOFPTestCase):
         # The stage numbers also need to be coprime to each other - Chinese Remainder Theorem!
         stages = (2, 3, 5)
         correct_paths = (2, 1, 3)
-        is_active = True
+        is_active = False
 
         self.gofp.create_session(
             self.nft.address,
@@ -2726,6 +2725,18 @@ class TestFullGames(GOFPTestCase):
         )
 
         session_id = self.gofp.num_sessions()
+
+        # We set rewards for each stage
+        reward_amounts = [1, 2, 4]
+        self.gofp.set_stage_rewards(
+            session_id,
+            [1, 2, 3],
+            [self.terminus.address] * 3,
+            [self.reward_pool_id] * 3,
+            reward_amounts,
+            {"from": self.game_master},
+        )
+        self.gofp.set_session_active(session_id, True, {"from": self.game_master})
 
         # We create a second session to ensure that the NFTs are being staked into the right session.
         # There was a bug in a development version of the contract in which the staking function was
@@ -2780,11 +2791,23 @@ class TestFullGames(GOFPTestCase):
         # Sanity check for test setup
         self.assertEqual(len(first_stage_correct_token_ids), int(num_nfts / stages[0]))
 
+        player_reward_token_balance_0 = self.terminus.balance_of(
+            self.player.address, self.reward_pool_id
+        )
+
         self.gofp.choose_current_stage_paths(
             session_id,
             token_ids,
             first_stage_path_choices,
             {"from": self.player},
+        )
+
+        player_reward_token_balance_1 = self.terminus.balance_of(
+            self.player.address, self.reward_pool_id
+        )
+        self.assertEqual(
+            player_reward_token_balance_1,
+            player_reward_token_balance_0 + int(reward_amounts[0] * len(token_ids)),
         )
 
         self.gofp.set_session_choosing_active(
@@ -2816,6 +2839,7 @@ class TestFullGames(GOFPTestCase):
             for token_id in first_stage_correct_token_ids
             if token_id % stages[1] + 1 == correct_paths[1]
         ]
+
         # Sanity check for test setup
         self.assertEqual(
             len(second_stage_correct_token_ids), int(num_nfts / (stages[0] * stages[1]))
@@ -2826,6 +2850,15 @@ class TestFullGames(GOFPTestCase):
             first_stage_correct_token_ids,
             second_stage_path_choices,
             {"from": self.player},
+        )
+
+        player_reward_token_balance_2 = self.terminus.balance_of(
+            self.player.address, self.reward_pool_id
+        )
+        self.assertEqual(
+            player_reward_token_balance_2,
+            player_reward_token_balance_1
+            + int(reward_amounts[1] * len(token_ids) / stages[0]),
         )
 
         self.gofp.set_session_choosing_active(
@@ -2866,6 +2899,15 @@ class TestFullGames(GOFPTestCase):
             second_stage_correct_token_ids,
             third_stage_path_choices,
             {"from": self.player},
+        )
+
+        player_reward_token_balance_3 = self.terminus.balance_of(
+            self.player.address, self.reward_pool_id
+        )
+        self.assertEqual(
+            player_reward_token_balance_3,
+            player_reward_token_balance_2
+            + int(reward_amounts[2] * len(token_ids) / (stages[0] * stages[1])),
         )
 
         self.gofp.set_session_choosing_active(
