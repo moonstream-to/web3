@@ -360,6 +360,55 @@ class TestAdminFlow(GOFPTestCase):
         self.assertEqual(is_forgiving, False)
         self.assertEqual(is_choosing_active, True)
 
+    def test_create_forgiving_session_then_get_session_active(self):
+        num_sessions_0 = self.gofp.num_sessions()
+
+        expected_payment_amount = 42
+        expected_uri = (
+            "https://example.com/test_create_session_then_get_session_active.json"
+        )
+        expected_stages = (5, 5, 3, 3, 2)
+        expected_is_active = True
+        expected_is_forgiving = True
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            expected_payment_amount,
+            expected_is_active,
+            expected_uri,
+            expected_stages,
+            expected_is_forgiving,
+            {"from": self.game_master},
+        )
+
+        num_sessions_1 = self.gofp.num_sessions()
+        self.assertEqual(num_sessions_1, num_sessions_0 + 1)
+
+        session_id = num_sessions_1
+
+        session = self.gofp.get_session(session_id)
+
+        (
+            nft_address,
+            payment_address,
+            payment_amount,
+            is_active,
+            is_choosing_active,
+            uri,
+            stages,
+            is_forgiving,
+        ) = session
+
+        self.assertEqual(nft_address, self.nft.address)
+        self.assertEqual(payment_address, self.payment_token.address)
+        self.assertEqual(payment_amount, expected_payment_amount)
+        self.assertTrue(is_active)
+        self.assertEqual(uri, expected_uri)
+        self.assertEqual(stages, expected_stages)
+        self.assertEqual(is_forgiving, expected_is_forgiving)
+        self.assertEqual(is_choosing_active, True)
+
     def test_create_free_session(self):
         num_sessions_0 = self.gofp.num_sessions()
 
@@ -468,6 +517,7 @@ class TestAdminFlow(GOFPTestCase):
         expected_uri = "https://example.com/test_create_session_fires_events.json"
         expected_stages = (5,)
         expected_is_active = True
+        expected_is_forgiving = True
 
         tx_receipt = self.gofp.create_session(
             self.nft.address,
@@ -476,7 +526,7 @@ class TestAdminFlow(GOFPTestCase):
             expected_is_active,
             expected_uri,
             expected_stages,
-            False,
+            expected_is_forgiving,
             {"from": self.game_master},
         )
 
@@ -503,6 +553,12 @@ class TestAdminFlow(GOFPTestCase):
             session_created_events[0]["args"]["paymentAmount"], expected_payment_amount
         )
         self.assertEqual(session_created_events[0]["args"]["uri"], expected_uri)
+        self.assertEqual(
+            session_created_events[0]["args"]["active"], expected_is_active
+        )
+        self.assertEqual(
+            session_created_events[0]["args"]["isForgiving"], expected_is_forgiving
+        )
 
         session_activated_events = _fetch_events_chunk(
             web3_client,
