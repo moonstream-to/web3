@@ -2930,6 +2930,231 @@ class TestFullGames(GOFPTestCase):
                         {"from": self.player},
                     )
 
+    def test_forgiving_single_player_game(self):
+        """
+        This test works very similarly to test_single_player_game. The tokens that made the incorrect
+        choice on the previous stage all make the correct choice on the subsequent stage.
+        """
+        payment_amount = 338
+        uri = "https://example.com/test_forgiving_single_player_game.json"
+        # NOTE: The test assumes that there are 3 stages. You can change the number of paths per change,
+        # but do not change the number of stages.
+        # The stage numbers also need to be coprime to each other - Chinese Remainder Theorem!
+        stages = (2, 3, 5)
+        correct_paths = (2, 1, 3)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            True,  # this session is forgiving
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        # We set rewards for each stage
+        reward_amounts = [1, 2, 4]
+        self.gofp.set_stage_rewards(
+            session_id,
+            [1, 2, 3],
+            [self.terminus.address] * 3,
+            [self.reward_pool_id] * 3,
+            reward_amounts,
+            {"from": self.game_master},
+        )
+        self.gofp.set_session_active(session_id, True, {"from": self.game_master})
+
+        # We create a second session to ensure that the NFTs are being staked into the right session.
+        # There was a bug in a development version of the contract in which the staking function was
+        # checking if the most *recent* session was active instead of the session with the given sessionId.
+        # This means that, if the most recent function were inactive, players wouldn't be able to stake
+        # eligible tokens even into an active session.
+        self.gofp.create_session(
+            self.random_person.address,
+            ZERO_ADDRESS,
+            0,
+            False,
+            "https://example.com/wrong_session.json",
+            (1,),
+            False,
+            {"from": self.game_master},
+        )
+
+        # Player will distribute NFTs evenly across choices at every stage. So we give them enough NFTs
+        # to have a single winning NFT at the end of the game.
+        # So if stages = (2, 3, 5), num_nfts = 2 * 3 * 5 = 30.
+        num_nfts = 1
+        for i in stages:
+            num_nfts *= i
+
+        # Mint NFTs to the player
+        total_nfts = self.nft.total_supply()
+
+        token_ids = [total_nfts + i for i in range(1, num_nfts + 1)]
+
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+
+        # Mint num_tokens*payment_amount of payment_token to player
+        self.payment_token.mint(
+            self.player.address, len(token_ids) * payment_amount, {"from": self.owner}
+        )
+
+        self.payment_token.approve(self.gofp.address, MAX_UINT, {"from": self.player})
+        self.nft.set_approval_for_all(self.gofp.address, True, {"from": self.player})
+
+        self.gofp.stake_tokens_into_session(
+            session_id, token_ids, {"from": self.player}
+        )
+
+        # **Stage 1**
+        first_stage_path_choices = [token_id % stages[0] + 1 for token_id in token_ids]
+        first_stage_correct_token_ids = [
+            token_id
+            for token_id in token_ids
+            if token_id % stages[0] + 1 == correct_paths[0]
+        ]
+        # Sanity check for test setup
+        self.assertEqual(len(first_stage_correct_token_ids), int(num_nfts / stages[0]))
+
+        player_reward_token_balance_0 = self.terminus.balance_of(
+            self.player.address, self.reward_pool_id
+        )
+
+        self.gofp.choose_current_stage_paths(
+            session_id,
+            token_ids,
+            first_stage_path_choices,
+            {"from": self.player},
+        )
+
+        player_reward_token_balance_1 = self.terminus.balance_of(
+            self.player.address, self.reward_pool_id
+        )
+        self.assertEqual(
+            player_reward_token_balance_1,
+            player_reward_token_balance_0 + int(reward_amounts[0] * len(token_ids)),
+        )
+
+        self.gofp.set_session_choosing_active(
+            session_id, False, {"from": self.game_master}
+        )
+        self.gofp.set_correct_path_for_stage(
+            session_id, 1, correct_paths[0], True, {"from": self.game_master}
+        )
+
+        # Check that current stage has progressed to stage 2
+        self.assertEqual(self.gofp.get_current_stage(session_id), 2)
+
+        first_stage_incorrect_token_ids = [
+            token_id
+            for token_id in token_ids
+            if token_id not in first_stage_correct_token_ids
+        ]
+
+        # **Stage 2**
+        second_stage_path_choices = [
+            token_id % stages[1] + 1 for token_id in first_stage_correct_token_ids
+        ] + [correct_paths[1] for _ in first_stage_incorrect_token_ids]
+        second_stage_correct_token_ids = [
+            token_id
+            for token_id in first_stage_correct_token_ids
+            if token_id % stages[1] + 1 == correct_paths[1]
+        ] + first_stage_incorrect_token_ids
+
+        # Sanity check for test setup
+        self.assertEqual(
+            len(second_stage_correct_token_ids),
+            int(num_nfts / (stages[0] * stages[1]))
+            + len(first_stage_incorrect_token_ids),
+        )
+
+        self.gofp.choose_current_stage_paths(
+            session_id,
+            first_stage_correct_token_ids + first_stage_incorrect_token_ids,
+            second_stage_path_choices,
+            {"from": self.player},
+        )
+
+        player_reward_token_balance_2 = self.terminus.balance_of(
+            self.player.address, self.reward_pool_id
+        )
+        self.assertEqual(
+            player_reward_token_balance_2,
+            player_reward_token_balance_1
+            + reward_amounts[1] * int(len(token_ids) / stages[0]),
+        )
+
+        self.gofp.set_session_choosing_active(
+            session_id, False, {"from": self.game_master}
+        )
+        self.gofp.set_correct_path_for_stage(
+            session_id, 2, correct_paths[1], True, {"from": self.game_master}
+        )
+
+        # Check that current stage has progressed to stage 3
+        self.assertEqual(self.gofp.get_current_stage(session_id), 3)
+
+        second_stage_incorrect_token_ids = [
+            token_id
+            for token_id in token_ids
+            if token_id not in second_stage_correct_token_ids
+        ]
+
+        # **Stage 3**
+        third_stage_path_choices = [
+            token_id % stages[2] + 1 for token_id in second_stage_correct_token_ids
+        ]
+
+        third_stage_correct_token_ids = [
+            token_id
+            for token_id in second_stage_correct_token_ids
+            if token_id % stages[2] + 1 == correct_paths[2]
+        ]
+        # Sanity check for test setup
+        self.assertEqual(len(third_stage_correct_token_ids), 1)
+
+        self.gofp.choose_current_stage_paths(
+            session_id,
+            second_stage_correct_token_ids,
+            third_stage_path_choices,
+            {"from": self.player},
+        )
+
+        player_reward_token_balance_3 = self.terminus.balance_of(
+            self.player.address, self.reward_pool_id
+        )
+        self.assertEqual(
+            player_reward_token_balance_3,
+            player_reward_token_balance_2
+            + int(reward_amounts[2] * len(token_ids) / (stages[0] * stages[1])),
+        )
+
+        self.gofp.set_session_choosing_active(
+            session_id, False, {"from": self.game_master}
+        )
+        self.gofp.set_correct_path_for_stage(
+            session_id, 3, correct_paths[2], True, {"from": self.game_master}
+        )
+
+        # Check that current stage has progressed to stage 4
+        self.assertEqual(self.gofp.get_current_stage(session_id), 4)
+
+        for token_id in token_ids:
+            if token_id not in third_stage_correct_token_ids:
+                with self.assertRaises(VirtualMachineError):
+                    self.gofp.choose_current_stage_paths(
+                        session_id,
+                        [token_id],
+                        [1],
+                        {"from": self.player},
+                    )
+
 
 if __name__ == "__main__":
     unittest.main()

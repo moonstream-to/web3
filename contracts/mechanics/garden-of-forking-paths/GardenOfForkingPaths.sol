@@ -544,6 +544,8 @@ contract GOFPFacet is
         //updating last token's index
         gs.stakedTokenIndex[sessionId][lastToken] = currIndex;
         //deleting old lastToken
+        // TODO(zomglings): Test stake -> unstake -> restake
+        delete gs.stakedTokenIndex[sessionId][tokenId];
         delete gs.tokensStakedByOwnerInSession[sessionId][owner][currStaked];
         //updating staked count
         gs.numTokensStakedByOwnerInSession[sessionId][owner]--;
