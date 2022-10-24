@@ -172,7 +172,6 @@ PATH_CHOSEN_EVENT_ABI = {
     "type": "event",
 }
 
-
 ERC1155_TRANSFER_SINGLE_EVENT = {
     "anonymous": False,
     "inputs": [
