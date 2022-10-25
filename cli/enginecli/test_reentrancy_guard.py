@@ -20,7 +20,7 @@ class ReentrancyGuardTestCase(unittest.TestCase):
             accounts[0].address, {"from": accounts[0]}
         )
         cls.reentrancy_exploitable = ReentrancyExploitable.ReentrancyExploitable(
-            reentrancy_exploitable_gogogo_result["Diamond"]
+            reentrancy_exploitable_gogogo_result["contracts"]["Diamond"]
         )
 
         reentrancy_exploitable_facet = ReentrancyExploitable.ReentrancyExploitable(None)

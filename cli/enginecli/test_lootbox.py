@@ -7,7 +7,7 @@ from brownie.network import web3 as web3_client
 
 from chainlink import MockChainlinkCoordinator, MockLinkToken, mock_vrf_oracle
 from . import Lootbox, MockTerminus, MockErc20
-from .core import lootbox_item_to_tuple, gogogo
+from .core import lootbox_item_to_tuple, lootbox_gogogo
 
 
 class LootboxTypes(Enum):
@@ -56,7 +56,7 @@ class LootboxTestCase(unittest.TestCase):
         )
         cls.terminus.set_pool_base_price(1, {"from": accounts[0]})
 
-        gogogo_result = gogogo(
+        gogogo_result = lootbox_gogogo(
             cls.terminus.address,
             cls.mock_chainlink_coordinator.address,
             cls.linkToken.address,

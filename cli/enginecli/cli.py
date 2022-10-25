@@ -1,7 +1,18 @@
 import argparse
 import logging
 
-from . import core, drop, Dropper, Lootbox, MockErc20, MockTerminus, setup_drop, CraftingFacet
+from . import (
+    core,
+    drop,
+    Dropper,
+    Lootbox,
+    MockErc20,
+    MockERC721,
+    MockTerminus,
+    setup_drop,
+    CraftingFacet,
+    GOFPFacet,
+)
 
 
 logging.basicConfig(level=logging.INFO)
@@ -26,7 +37,10 @@ def main() -> None:
     subparsers.add_parser("core", parents=[core_parser], add_help=False)
 
     erc20_parser = MockErc20.generate_cli()
-    subparsers.add_parser("mock-erc20", parents=[erc20_parser], add_help=False)
+    subparsers.add_parser("erc20", parents=[erc20_parser], add_help=False)
+
+    erc721_parser = MockERC721.generate_cli()
+    subparsers.add_parser("erc721", parents=[erc721_parser], add_help=False)
 
     drop_parser = drop.generate_cli()
     subparsers.add_parser("drop", parents=[drop_parser], add_help=False)
@@ -36,6 +50,9 @@ def main() -> None:
 
     crafting_parser = CraftingFacet.generate_cli()
     subparsers.add_parser("crafting", parents=[crafting_parser], add_help=False)
+
+    gofp_parser = GOFPFacet.generate_cli()
+    subparsers.add_parser("gofp", parents=[gofp_parser], add_help=False)
 
     setup_drop_parser = setup_drop.generate_cli()
     subparsers.add_parser("setup-drop", parents=[setup_drop_parser], add_help=False)

@@ -6,6 +6,8 @@
 
 set -e
 
+GAS_PROFILE=${GAS_PROFILE:-y}
+
 usage() {
     echo "Usage: $0" [TEST_SPEC ...]
     echo
@@ -28,4 +30,4 @@ cd ..
 brownie compile
 cd -
 set -x
-GAS_PROFILE="y" python -m unittest $TEST_COMMAND 
+GAS_PROFILE="$GAS_PROFILE" python -m unittest $TEST_COMMAND 
