@@ -81,6 +81,9 @@ library LibGOFP {
         // session => tokenId => stage => chosenPath
         // This mapping tracks the path chosen by each eligible NFT in a session at each stage
         mapping(uint256 => mapping(uint256 => mapping(uint256 => uint256))) pathChoices;
+        // session => tokenId => was token ever staked into session?
+        // This guards against a token being staked into a session multiple times.
+        mapping(uint256 => mapping(uint256 => bool)) sessionTokenStakeGuard;
     }
 
     function gofpStorage() internal pure returns (GOFPStorage storage gs) {
@@ -432,6 +435,14 @@ contract GOFPFacet is
         );
     }
 
+    function getSessionTokenStakeGuard(uint256 sessionId, uint256 tokenId)
+        external
+        view
+        returns (bool)
+    {
+        return LibGOFP.gofpStorage().sessionTokenStakeGuard[sessionId][tokenId];
+    }
+
     function numTokensStakedIntoSession(uint256 sessionId, address staker)
         external
         view
@@ -603,7 +614,12 @@ contract GOFPFacet is
                 token.ownerOf(tokenIds[i]) == msg.sender,
                 "GOFPFacet.stakeTokensIntoSession: Cannot stake a token into session which is not owned by message sender"
             );
+            require(
+                !gs.sessionTokenStakeGuard[sessionId][tokenIds[i]],
+                "GOFPFacet.stakeTokensIntoSession: Token was previously staked into session"
+            );
             token.safeTransferFrom(msg.sender, address(this), tokenIds[i]);
+            gs.sessionTokenStakeGuard[sessionId][tokenIds[i]] = true;
             _addTokenToEnumeration(
                 sessionId,
                 msg.sender,
@@ -624,10 +640,6 @@ contract GOFPFacet is
         );
 
         Session storage session = gs.sessionById[sessionId];
-        require(
-            !session.isActive,
-            "GOFPFacet.unstakeTokensFromSession: Cannot unstake from active session"
-        );
         address nftAddress = session.playerTokenAddress;
         IERC721 token = IERC721(nftAddress);
         for (uint256 i = 0; i < tokenIds.length; i++) {

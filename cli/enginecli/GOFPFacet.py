@@ -170,6 +170,17 @@ class GOFPFacet:
         self.assert_contract_is_instantiated()
         return self.contract.getSession.call(session_id, block_identifier=block_number)
 
+    def get_session_token_stake_guard(
+        self,
+        session_id: int,
+        token_id: int,
+        block_number: Optional[Union[str, int]] = "latest",
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.getSessionTokenStakeGuard.call(
+            session_id, token_id, block_identifier=block_number
+        )
+
     def get_stage_reward(
         self,
         session_id: int,
@@ -510,6 +521,17 @@ def handle_get_session(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_get_session_token_stake_guard(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    result = contract.get_session_token_stake_guard(
+        session_id=args.session_id,
+        token_id=args.token_id,
+        block_number=args.block_number,
+    )
+    print(result)
+
+
 def handle_get_stage_reward(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPFacet(args.address)
@@ -831,6 +853,20 @@ def generate_cli() -> argparse.ArgumentParser:
         "--session-id", required=True, help="Type: uint256", type=int
     )
     get_session_parser.set_defaults(func=handle_get_session)
+
+    get_session_token_stake_guard_parser = subcommands.add_parser(
+        "get-session-token-stake-guard"
+    )
+    add_default_arguments(get_session_token_stake_guard_parser, False)
+    get_session_token_stake_guard_parser.add_argument(
+        "--session-id", required=True, help="Type: uint256", type=int
+    )
+    get_session_token_stake_guard_parser.add_argument(
+        "--token-id", required=True, help="Type: uint256", type=int
+    )
+    get_session_token_stake_guard_parser.set_defaults(
+        func=handle_get_session_token_stake_guard
+    )
 
     get_stage_reward_parser = subcommands.add_parser("get-stage-reward")
     add_default_arguments(get_stage_reward_parser, False)
