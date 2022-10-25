@@ -3197,14 +3197,13 @@ class TestFullGames(GOFPTestCase):
         self.assertEqual(self.gofp.get_current_stage(session_id), 4)
 
         for token_id in token_ids:
-            if token_id not in third_stage_correct_token_ids:
-                with self.assertRaises(VirtualMachineError):
-                    self.gofp.choose_current_stage_paths(
-                        session_id,
-                        [token_id],
-                        [1],
-                        {"from": self.player},
-                    )
+            with self.assertRaises(VirtualMachineError):
+                self.gofp.choose_current_stage_paths(
+                    session_id,
+                    [token_id],
+                    [1],
+                    {"from": self.player},
+                )
 
     def test_forgiving_single_player_game(self):
         """
@@ -3426,14 +3425,13 @@ class TestFullGames(GOFPTestCase):
         self.assertEqual(self.gofp.get_current_stage(session_id), 4)
 
         for token_id in token_ids:
-            if token_id not in third_stage_correct_token_ids:
-                with self.assertRaises(VirtualMachineError):
-                    self.gofp.choose_current_stage_paths(
-                        session_id,
-                        [token_id],
-                        [1],
-                        {"from": self.player},
-                    )
+            with self.assertRaises(VirtualMachineError):
+                self.gofp.choose_current_stage_paths(
+                    session_id,
+                    [token_id],
+                    [1],
+                    {"from": self.player},
+                )
 
 
 if __name__ == "__main__":
