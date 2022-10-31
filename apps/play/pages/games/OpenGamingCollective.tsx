@@ -25,19 +25,21 @@ import { hookCommon } from "moonstream-components/src/core/hooks";
 
 const terminusAbi = require("../../../../abi/MockTerminus.json");
 
-type terminusType = "type1" | "type2";
+type terminusType = "type1" | "type2" | "type3";
 
 // TODO: Using an Enum here would make this less clumsy. The Enum defines a type *and* a value.
-const terminusTypes: terminusType[] = ["type1", "type2"];
+const terminusTypes: terminusType[] = ["type1", "type2", "type3"];
 
 const terminusPoolIds: { [key in terminusType]: number } = {
   type1: 1,
   type2: 2,
+  type3: 3,
 };
 
 const defaultBalances: { [key in terminusType]: number } = {
   type1: 0,
   type2: 0,
+  type3: 0,
 };
 
 const OpenGamingCollective = () => {
@@ -128,6 +130,12 @@ const OpenGamingCollective = () => {
         "https://badges.moonstream.to/open-gaming-collective/gr15-i-demoed.png",
       displayName: "Gitcoin GR15: I Demoed!",
       balanceKey: "type2",
+    },
+    {
+      imageUrl:
+        "https://badges.moonstream.to/open-gaming-collective/GR15-OG_Tesseract_final.png",
+      displayName: "Gitcoin GR15: The Open Gaming Tesseract",
+      balanceKey: "type3",
     },
   ];
 
@@ -264,8 +272,8 @@ const OpenGamingCollective = () => {
 
 export async function getStaticProps() {
   const metatags = {
-    title: "Moonstream player portal: Open Gaming Collective",
-    description: "See your badges in the Open Gaming Collective",
+    title: "Moonstream community portal: Open Gaming Collective",
+    description: "See your Open Gaming Collective badges",
   };
   return {
     props: { metaTags: { DEFAULT_METATAGS, ...metatags } },
