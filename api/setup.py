@@ -13,6 +13,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "boto3",
+        "bugout>=0.1.19",
         "eip712",
         "eth-typing>=2.3.0",
         "fastapi",

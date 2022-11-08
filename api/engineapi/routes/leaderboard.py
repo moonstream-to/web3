@@ -8,10 +8,12 @@ from web3 import Web3
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from typing import List
 
 from .. import actions
 from .. import data
 from .. import db
+from ..middleware import BroodAuthMiddleware
 from ..settings import DOCS_TARGET_PATH
 from ..version import VERSION
 
@@ -22,6 +24,13 @@ tags_metadata = [
     {"name": "leaderboard", "description": "Moonstream Engine leaderboard API"}
 ]
 
+
+leaderboad_whitelist = {
+    "/leaderboard/quartiles": "GET",
+    "/leaderboard/count/addresses": "GET",
+    "/leaderboard/position": "GET",
+    "/leaderboard": "GET",
+}
 
 app = FastAPI(
     title=f"Moonstream Engine leaderboard API",
@@ -40,6 +49,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(BroodAuthMiddleware, whitelist=leaderboad_whitelist)
 
 
 @app.get("/count/addresses")
@@ -105,6 +116,7 @@ async def position(
     return positions
 
 
+@app.get("")
 @app.get("/")
 async def leaderboard(
     request: Request,
@@ -123,3 +135,25 @@ async def leaderboard(
     )
 
     return leaderboard
+
+
+@app.put("/{leaderboard_id}/scores")
+async def leaderboard(
+    request: Request,
+    leaderboard_id: UUID,
+    scores: List[data.Score],
+    db_session: Session = Depends(db.yield_db_session),
+):
+
+    """
+    Put the leaderboard to the database.
+    """
+
+    leaderboard_points = actions.add_scores(
+        db_session=db_session,
+        leaderboard_id=leaderboard_id,
+        scores=scores,
+        overwrite=True,
+    )
+
+    return leaderboard_points

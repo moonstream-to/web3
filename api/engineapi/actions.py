@@ -11,6 +11,7 @@ from sqlalchemy import func, text, or_
 from web3 import Web3
 from web3.types import ChecksumAddress
 
+from .data import Score
 from .contracts import Dropper_interface, ERC20_interface, Terminus_interface
 from .models import (
     DropperClaimant,
@@ -1066,20 +1067,30 @@ def list_leaderboards(db_session: Session, limit: int, offset: int):
     return query.all()
 
 
-def add_scores(db_session: Session, leaderboard_id, scores):
+def add_scores(
+    db_session: Session,
+    leaderboard_id: uuid.UUID,
+    scores: List[Score],
+    overwrite: bool = False,
+):
     """
     Add scores to the leaderboard
     """
 
     leaderboard_scores = []
 
+    if overwrite:
+        db_session.query(LeaderboardScores).filter(
+            LeaderboardScores.leaderboard_id == leaderboard_id
+        ).delete()
+
     for score in scores:
         leaderboard_scores.append(
             {
                 "leaderboard_id": leaderboard_id,
-                "address": score["address"],
-                "score": score["score"],
-                "points_data": score["points_data"],
+                "address": score.address,
+                "score": score.score,
+                "points_data": score.points_data,
             }
         )
 

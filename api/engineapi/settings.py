@@ -2,6 +2,14 @@ import os
 
 from web3 import Web3, HTTPProvider
 from web3.middleware import geth_poa_middleware
+from bugout.app import Bugout
+
+# Bugout
+BUGOUT_BROOD_URL = os.environ.get("BUGOUT_BROOD_URL", "https://auth.bugout.dev")
+BUGOUT_SPIRE_URL = os.environ.get("BUGOUT_SPIRE_URL", "https://spire.bugout.dev")
+
+
+bugout_client = Bugout(brood_api_url=BUGOUT_BROOD_URL, spire_api_url=BUGOUT_SPIRE_URL)
 
 
 # Origin
@@ -139,3 +147,5 @@ except:
     raise ValueError(
         f"ENGINE_DB_POOL_RECYCLE_SECONDS must be an integer: {ENGINE_DB_POOL_RECYCLE_SECONDS_RAW}"
     )
+
+MOONSTREAM_APPLICATION_ID = os.environ.get("MOONSTREAM_APPLICATION_ID", "")

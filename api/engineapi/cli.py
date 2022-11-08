@@ -316,8 +316,9 @@ def list_claimants_handler(args: argparse.Namespace) -> None:
 
 def add_scores_handler(args: argparse.Namespace) -> None:
 
-    scores = []
-
+    """
+    Adding scores to leaderboard
+    """
     with open(args.input_file, "r") as f:
 
         json_input = json.load(f)
@@ -328,7 +329,8 @@ def add_scores_handler(args: argparse.Namespace) -> None:
                 scores = actions.add_scores(
                     db_session=db_session,
                     leaderboard_id=args.leaderboard_id,
-                    scores=json_input,
+                    scores=[data.Score(**score) for score in json_input],
+                    overwrite=args.overwrite,
                 )
             except Exception as err:
                 logger.error(f"Unhandled /add_scores exception: {err}")
@@ -519,9 +521,11 @@ def main() -> None:
     parser_leaderboard_score.add_argument(
         "--input-file",
         type=str,
-        required=True,
+        required=False,
         help="File with scores",
     )
+
+    parser_leaderboard_score.add_argument("--overwrite", type=bool, default=True)
 
     parser_leaderboard_score.set_defaults(func=add_scores_handler)
 
