@@ -55,7 +55,6 @@ app.add_middleware(BroodAuthMiddleware, whitelist=leaderboad_whitelist)
 
 @app.get("/count/addresses")
 async def count_addresses(
-    request: Request,
     leaderboard_id: UUID,
     db_session: Session = Depends(db.yield_db_session),
 ):
@@ -71,7 +70,6 @@ async def count_addresses(
 
 @app.get("/quartiles")
 async def quartiles(
-    request: Request,
     leaderboard_id: UUID,
     db_session: Session = Depends(db.yield_db_session),
 ):
@@ -93,7 +91,6 @@ async def quartiles(
 
 @app.get("/position")
 async def position(
-    request: Request,
     leaderboard_id: UUID,
     address: str,
     window_size: int = 1,
@@ -119,7 +116,6 @@ async def position(
 @app.get("")
 @app.get("/")
 async def leaderboard(
-    request: Request,
     leaderboard_id: UUID,
     limit: int = 10,
     offset: int = 0,
@@ -143,6 +139,7 @@ async def leaderboard(
     leaderboard_id: UUID,
     scores: List[data.Score],
     db_session: Session = Depends(db.yield_db_session),
+    overwrite: bool = False,
 ):
 
     """
@@ -153,7 +150,7 @@ async def leaderboard(
         db_session=db_session,
         leaderboard_id=leaderboard_id,
         scores=scores,
-        overwrite=True,
+        overwrite=overwrite,
     )
 
     return leaderboard_points
