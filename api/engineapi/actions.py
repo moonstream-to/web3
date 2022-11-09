@@ -1088,7 +1088,7 @@ def add_scores(
         leaderboard_scores.append(
             {
                 "leaderboard_id": leaderboard_id,
-                "address": score.address,
+                "address": Web3.toChecksumAddress(score.address),
                 "score": score.score,
                 "points_data": score.points_data,
             }
