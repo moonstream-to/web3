@@ -149,8 +149,11 @@ except:
     )
 
 MOONSTREAM_APPLICATION_ID = os.environ.get("MOONSTREAM_APPLICATION_ID", "")
-
+if MOONSTREAM_APPLICATION_ID == "":
+    raise ValueError("MOONSTREAM_APPLICATION_ID environment variable must be set")
 
 LEADERBOARD_RESOURCE_TYPE = "leaderboard"
 
 MOONSTREAM_ADMIN_ACCESS_TOKEN = os.environ.get("MOONSTREAM_ADMIN_ACCESS_TOKEN", "")
+if MOONSTREAM_ADMIN_ACCESS_TOKEN == "":
+    raise ValueError("MOONSTREAM_ADMIN_ACCESS_TOKEN environment variable must be set")
