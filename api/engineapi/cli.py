@@ -382,6 +382,58 @@ def create_leaderboard_handler(args: argparse.Namespace) -> None:
 #         print(f"Amount of updated claimants: {len(claimant_signature)}")
 
 
+def assign_resource_handler(args: argparse.Namespace) -> None:
+
+    with db.yield_db_session_ctx() as db_session:
+
+        try:
+            resource_id = actions.assign_resource(
+                db_session=db_session,
+                resource_id=args.resource_id,
+                leaderboard_id=args.leaderboard_id,
+            )
+            logger.info(
+                f"leaderboard:{args.leaderboard_id} assign resource_id:{resource_id}"
+            )
+        except Exception as err:
+            logger.error(f"Unhandled /assign_resource exception: {err}")
+            return
+
+
+def list_resources_handler(args: argparse.Namespace) -> None:
+
+    with db.yield_db_session_ctx() as db_session:
+        resources = actions.list_leaderboards_resources(db_session=db_session)
+
+        print(resources)
+
+
+def revoke_resource_handler(args: argparse.Namespace) -> None:
+    with db.yield_db_session_ctx() as db_session:
+        try:
+            resource = actions.revoke_resource(
+                db_session=db_session,
+                leaderboard_id=args.leaderboard_id,
+            )
+        except Exception as err:
+            logger.error(f"Unhandled /revoke_resource exception: {err}")
+            return
+
+
+def add_user_handler(args: argparse.Namespace) -> None:
+    """
+    Add permission to resource cross bugout api.
+    """
+    pass
+
+
+def delete_user_handler(args: argparse.Namespace) -> None:
+    """
+    Delete read access from resource cross bugout api.
+    """
+    pass
+
+
 def main() -> None:
 
     parser = argparse.ArgumentParser(
@@ -471,7 +523,7 @@ def main() -> None:
     parser_leaderboard = subparsers_engine_database.add_parser(
         "leaderboard", description="Leaderboard db commands"
     )
-    parser_leaderboard.set_defaults(func=lambda _: parser_dropper.print_help())
+    parser_leaderboard.set_defaults(func=lambda _: parser_leaderboard.print_help())
 
     subparsers_leaderboard = parser_leaderboard.add_subparsers(
         description="Leaderboard db commands"
@@ -528,6 +580,100 @@ def main() -> None:
     parser_leaderboard_score.add_argument("--overwrite", type=bool, default=True)
 
     parser_leaderboard_score.set_defaults(func=add_scores_handler)
+
+    parser_leaderboard_permissions = subparsers_leaderboard.add_parser(
+        "permissions", description="Manage leaderboard permissions"
+    )
+
+    parser_leaderboard_permissions.set_defaults(
+        func=lambda _: parser_leaderboard_score.print_help()
+    )
+
+    subparsers_leaderboard_permissions = parser_leaderboard_permissions.add_subparsers(
+        description="Manage leaderboard permissions"
+    )
+
+    parser_leaderboard_resource_assign = subparsers_leaderboard_permissions.add_parser(
+        "assign", description="Assign resource to leaderboard"
+    )
+
+    parser_leaderboard_resource_assign.add_argument(
+        "--leaderboard-id",
+        type=str,
+        required=True,
+        help="Leaderboard id",
+    )
+
+    parser_leaderboard_resource_assign.add_argument(
+        "--resource-id",
+        type=UUID,
+        required=False,
+        help="Resource id",
+    )
+
+    parser_leaderboard_resource_assign.set_defaults(func=assign_resource_handler)
+
+    parser_leaderboard_resource_revoke = subparsers_leaderboard_permissions.add_parser(
+        "revoke", description="Revoke resource from leaderboard"
+    )
+
+    parser_leaderboard_resource_revoke.add_argument(
+        "--leaderboard-id",
+        type=str,
+        required=True,
+        help="Leaderboard id",
+    )
+
+    parser_leaderboard_resource_revoke.set_defaults(func=revoke_resource_handler)
+
+    parser_leaderboard_resource_list = subparsers_leaderboard_permissions.add_parser(
+        "list", description="List leaderboard resources and ids"
+    )
+
+    parser_leaderboard_resource_list.set_defaults(func=list_resources_handler)
+
+    parser_leaderboard_resource_add_user = (
+        subparsers_leaderboard_permissions.add_parser(
+            "add-user", description="Add to user write access to leaderboard"
+        )
+    )
+    parser_leaderboard_resource_add_user.add_argument(
+        "--leaderboard-id",
+        type=str,
+        required=True,
+        help="Leaderboard id",
+    )
+
+    parser_leaderboard_resource_add_user.add_argument(
+        "--user-id",
+        type=str,
+        required=True,
+        help="User id",
+    )
+
+    parser_leaderboard_resource_add_user.set_defaults(func=add_user_handler)
+
+    parser_leaderboard_resource_remove_user = (
+        subparsers_leaderboard_permissions.add_parser(
+            "remove-user", description="Delete write access to leaderboard from user"
+        )
+    )
+
+    parser_leaderboard_resource_remove_user.add_argument(
+        "--leaderboard-id",
+        type=str,
+        required=True,
+        help="Leaderboard id",
+    )
+
+    parser_leaderboard_resource_remove_user.add_argument(
+        "--user-id",
+        type=str,
+        required=True,
+        help="User id",
+    )
+
+    parser_leaderboard_resource_remove_user.set_defaults(func=delete_user_handler)
 
     parser_dropper = subparsers_engine_database.add_parser(
         "dropper", description="Dropper db commands"
