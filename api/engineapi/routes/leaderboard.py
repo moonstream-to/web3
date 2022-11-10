@@ -13,8 +13,8 @@ from typing import List
 from .. import actions
 from .. import data
 from .. import db
-from ..middleware import ExtractBearerTokenMiddleware
-from ..settings import DOCS_TARGET_PATH
+from ..middleware import ExtractBearerTokenMiddleware, EngineHTTPException
+from ..settings import DOCS_TARGET_PATH, bugout_client as bc
 from ..version import VERSION
 
 logger = logging.getLogger(__name__)
@@ -145,6 +145,17 @@ async def leaderboard(
     """
     Put the leaderboard to the database.
     """
+
+    access = actions.check_leaderboard_resource_permissions(
+        db_session=db_session,
+        leaderboard_id=leaderboard_id,
+        token=request.state.token,
+    )
+
+    if not access:
+        raise EngineHTTPException(
+            status_code=403, detail="You don't have access to this leaderboard."
+        )
 
     leaderboard_points = actions.add_scores(
         db_session=db_session,

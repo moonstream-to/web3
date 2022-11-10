@@ -6,6 +6,7 @@ import logging
 from bugout.data import BugoutResource
 from eth_typing import Address
 from hexbytes import HexBytes
+import requests
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text, or_
@@ -1210,3 +1211,26 @@ def revoke_resource(db_session: Session, leaderboard_id: uuid.UUID):
     db_session.flush()
 
     return leaderboard.resource_id
+
+
+def check_leaderboard_resource_permissions(
+    db_session: Session, leaderboard_id: uuid.UUID, token: uuid.UUID
+):
+    """
+    Check if the user has permissions to access the leaderboard
+    """
+    leaderboard = (
+        db_session.query(Leaderboard).filter(Leaderboard.id == leaderboard_id).one()
+    )
+
+    permission_url = f"{bc.brood_url}/resources/{leaderboard.resource_id}/holders"
+    headers = {
+        "Authorization": f"Bearer {token}",
+    }
+    # If user don't have at least read permission return 404
+    result = requests.get(url=permission_url, headers=headers, timeout=10)
+
+    if result.status_code == 200:
+        return True
+
+    return False
