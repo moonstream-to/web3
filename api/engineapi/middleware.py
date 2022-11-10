@@ -129,10 +129,10 @@ class ExtractBearerTokenMiddleware(BaseHTTPMiddleware):
             return Response(
                 status_code=403, content="No authorization header passed with request"
             )
-        user_token_list = authorization_header.split()
-        if len(user_token_list) != 2:
+        authorization_header_components = authorization_header.split()
+        if len(authorization_header_components) != 2:
             return Response(status_code=403, content="Wrong authorization header")
-        user_token: str = user_token_list[-1]
+        user_token: str = authorization_header_components[-1]
 
         request.state.token = user_token
 

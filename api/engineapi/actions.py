@@ -27,7 +27,7 @@ from .settings import (
     BLOCKCHAIN_WEB3_PROVIDERS,
     LEADERBOARD_RESOURCE_TYPE,
     MOONSTREAM_APPLICATION_ID,
-    MOONSTREAM_ACCESS_ADMIN_TOKEN,
+    MOONSTREAM_ADMIN_ACCESS_TOKEN,
     bugout_client as bc,
 )
 
@@ -1132,10 +1132,10 @@ def create_leaderboard_resource(
     }
 
     if token is None:
-        token = MOONSTREAM_ACCESS_ADMIN_TOKEN
+        token = MOONSTREAM_ADMIN_ACCESS_TOKEN
 
     resource = bc.create_resource(
-        token=MOONSTREAM_ACCESS_ADMIN_TOKEN,
+        token=MOONSTREAM_ADMIN_ACCESS_TOKEN,
         application_id=MOONSTREAM_APPLICATION_ID,
         resource_data=resource_data,
         timeout=10,
@@ -1144,7 +1144,9 @@ def create_leaderboard_resource(
 
 
 def assign_resource(
-    db_session: Session, leaderboard_id: uuid.UUID, resource_id: Optional[uuid.UUID]
+    db_session: Session,
+    leaderboard_id: uuid.UUID,
+    resource_id: Optional[uuid.UUID] = None,
 ):
 
     """
@@ -1159,7 +1161,7 @@ def assign_resource(
 
         raise Exception("Leaderboard already has a resource")
 
-    if resource_id:
+    if resource_id is not None:
         leaderboard.resource_id = resource_id
     else:
         # Create resource via admin token

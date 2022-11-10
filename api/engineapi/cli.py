@@ -323,18 +323,25 @@ def add_scores_handler(args: argparse.Namespace) -> None:
 
         json_input = json.load(f)
 
-        with db.yield_db_session_ctx() as db_session:
+        try:
+            new_scores = [data.Score(**score) for score in json_input]
+        except Exception as err:
+            logger.error(f"Can't parse json input in score format")
+            logger.error(f"Invalid input: {err}")
+            return
 
-            try:
-                scores = actions.add_scores(
-                    db_session=db_session,
-                    leaderboard_id=args.leaderboard_id,
-                    scores=[data.Score(**score) for score in json_input],
-                    overwrite=args.overwrite,
-                )
-            except Exception as err:
-                logger.error(f"Unhandled /add_scores exception: {err}")
-                return
+    with db.yield_db_session_ctx() as db_session:
+
+        try:
+            scores = actions.add_scores(
+                db_session=db_session,
+                leaderboard_id=args.leaderboard_id,
+                scores=new_scores,
+                overwrite=args.overwrite,
+            )
+        except Exception as err:
+            logger.error(f"Unhandled /add_scores exception: {err}")
+            return
 
 
 def list_leaderboards_handler(args: argparse.Namespace) -> None:
@@ -405,7 +412,7 @@ def list_resources_handler(args: argparse.Namespace) -> None:
     with db.yield_db_session_ctx() as db_session:
         resources = actions.list_leaderboards_resources(db_session=db_session)
 
-        print(resources)
+        logger.info(resources)
 
 
 def revoke_resource_handler(args: argparse.Namespace) -> None:
@@ -414,6 +421,9 @@ def revoke_resource_handler(args: argparse.Namespace) -> None:
             resource = actions.revoke_resource(
                 db_session=db_session,
                 leaderboard_id=args.leaderboard_id,
+            )
+            logger.info(
+                f"leaderboard:{args.leaderboard_id} revoke resource current resource_id:{resource}"
             )
         except Exception as err:
             logger.error(f"Unhandled /revoke_resource exception: {err}")
@@ -573,7 +583,7 @@ def main() -> None:
     parser_leaderboard_score.add_argument(
         "--input-file",
         type=str,
-        required=False,
+        required=True,
         help="File with scores",
     )
 
