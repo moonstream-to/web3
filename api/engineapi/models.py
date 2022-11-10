@@ -168,6 +168,7 @@ class Leaderboard(Base):  # type: ignore
     )
     title = Column(VARCHAR(128), nullable=False)
     description = Column(String, nullable=True)
+    resource_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     created_at = Column(
         DateTime(timezone=True), server_default=utcnow(), nullable=False
     )

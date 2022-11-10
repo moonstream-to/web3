@@ -3,14 +3,17 @@ from typing import List, Any, Optional, Dict
 import uuid
 import logging
 
+from bugout.data import BugoutResource
 from eth_typing import Address
 from hexbytes import HexBytes
+import requests
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text, or_
 from web3 import Web3
 from web3.types import ChecksumAddress
 
+from .data import Score
 from .contracts import Dropper_interface, ERC20_interface, Terminus_interface
 from .models import (
     DropperClaimant,
@@ -20,7 +23,13 @@ from .models import (
     LeaderboardScores,
 )
 from . import signatures
-from .settings import BLOCKCHAIN_WEB3_PROVIDERS
+from .settings import (
+    BLOCKCHAIN_WEB3_PROVIDERS,
+    LEADERBOARD_RESOURCE_TYPE,
+    MOONSTREAM_APPLICATION_ID,
+    MOONSTREAM_ADMIN_ACCESS_TOKEN,
+    bugout_client as bc,
+)
 
 
 class AuthorizationError(Exception):
@@ -1066,20 +1075,30 @@ def list_leaderboards(db_session: Session, limit: int, offset: int):
     return query.all()
 
 
-def add_scores(db_session: Session, leaderboard_id, scores):
+def add_scores(
+    db_session: Session,
+    leaderboard_id: uuid.UUID,
+    scores: List[Score],
+    overwrite: bool = False,
+):
     """
     Add scores to the leaderboard
     """
 
     leaderboard_scores = []
 
+    if overwrite:
+        db_session.query(LeaderboardScores).filter(
+            LeaderboardScores.leaderboard_id == leaderboard_id
+        ).delete()
+
     for score in scores:
         leaderboard_scores.append(
             {
                 "leaderboard_id": leaderboard_id,
-                "address": score["address"],
-                "score": score["score"],
-                "points_data": score["points_data"],
+                "address": Web3.toChecksumAddress(score.address),
+                "score": score.score,
+                "points_data": score.points_data,
             }
         )
 
@@ -1097,3 +1116,123 @@ def add_scores(db_session: Session, leaderboard_id, scores):
     db_session.commit()
 
     return leaderboard_scores
+
+
+# leadrboard access actions
+
+
+def create_leaderboard_resource(
+    leaderboard_id: uuid.UUID,
+    token: Optional[uuid.UUID] = None,
+) -> BugoutResource:
+
+    resource_data: Dict[str, Any] = {
+        "type": LEADERBOARD_RESOURCE_TYPE,
+        "leaderboard_id": leaderboard_id,
+    }
+
+    if token is None:
+        token = MOONSTREAM_ADMIN_ACCESS_TOKEN
+
+    resource = bc.create_resource(
+        token=MOONSTREAM_ADMIN_ACCESS_TOKEN,
+        application_id=MOONSTREAM_APPLICATION_ID,
+        resource_data=resource_data,
+        timeout=10,
+    )
+    return resource
+
+
+def assign_resource(
+    db_session: Session,
+    leaderboard_id: uuid.UUID,
+    resource_id: Optional[uuid.UUID] = None,
+):
+
+    """
+    Assign a resource handler to a leaderboard
+    """
+
+    leaderboard = (
+        db_session.query(Leaderboard).filter(Leaderboard.id == leaderboard_id).one()
+    )
+
+    if leaderboard.resource_id is not None:
+
+        raise Exception("Leaderboard already has a resource")
+
+    if resource_id is not None:
+        leaderboard.resource_id = resource_id
+    else:
+        # Create resource via admin token
+
+        resource = create_leaderboard_resource(
+            leaderboard_id=leaderboard_id,
+        )
+
+        leaderboard.resource_id = resource.id
+
+    db_session.commit()
+    db_session.flush()
+
+    return leaderboard.resource_id
+
+
+def list_leaderboards_resources(
+    db_session: Session,
+):
+
+    """
+    List all leaderboards resources
+    """
+
+    query = db_session.query(Leaderboard.id, Leaderboard.title, Leaderboard.resource_id)
+
+    return query.all()
+
+
+def revoke_resource(db_session: Session, leaderboard_id: uuid.UUID):
+
+    """
+    Revoke a resource handler to a leaderboard
+    """
+
+    # TODO(ANDREY): Delete resource via admin token
+
+    leaderboard = (
+        db_session.query(Leaderboard).filter(Leaderboard.id == leaderboard_id).one()
+    )
+
+    if leaderboard.resource_id is None:
+
+        raise Exception("Leaderboard does not have a resource")
+
+    leaderboard.resource_id = None
+
+    db_session.commit()
+    db_session.flush()
+
+    return leaderboard.resource_id
+
+
+def check_leaderboard_resource_permissions(
+    db_session: Session, leaderboard_id: uuid.UUID, token: uuid.UUID
+):
+    """
+    Check if the user has permissions to access the leaderboard
+    """
+    leaderboard = (
+        db_session.query(Leaderboard).filter(Leaderboard.id == leaderboard_id).one()
+    )
+
+    permission_url = f"{bc.brood_url}/resources/{leaderboard.resource_id}/holders"
+    headers = {
+        "Authorization": f"Bearer {token}",
+    }
+    # If user don't have at least read permission return 404
+    result = requests.get(url=permission_url, headers=headers, timeout=10)
+
+    if result.status_code == 200:
+        return True
+
+    return False

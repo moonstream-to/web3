@@ -8,11 +8,13 @@ from web3 import Web3
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from typing import List
 
 from .. import actions
 from .. import data
 from .. import db
-from ..settings import DOCS_TARGET_PATH
+from ..middleware import ExtractBearerTokenMiddleware, EngineHTTPException
+from ..settings import DOCS_TARGET_PATH, bugout_client as bc
 from ..version import VERSION
 
 logger = logging.getLogger(__name__)
@@ -23,6 +25,13 @@ tags_metadata = [
 ]
 
 
+leaderboad_whitelist = {
+    "/leaderboard/quartiles": "GET",
+    "/leaderboard/count/addresses": "GET",
+    "/leaderboard/position": "GET",
+    "/leaderboard": "GET",
+}
+
 app = FastAPI(
     title=f"Moonstream Engine leaderboard API",
     description="Moonstream Engine leaderboard API endpoints.",
@@ -32,6 +41,9 @@ app = FastAPI(
     docs_url=None,
     redoc_url=f"/{DOCS_TARGET_PATH}",
 )
+
+
+app.add_middleware(ExtractBearerTokenMiddleware, whitelist=leaderboad_whitelist)
 
 app.add_middleware(
     CORSMiddleware,
@@ -44,7 +56,6 @@ app.add_middleware(
 
 @app.get("/count/addresses")
 async def count_addresses(
-    request: Request,
     leaderboard_id: UUID,
     db_session: Session = Depends(db.yield_db_session),
 ):
@@ -60,7 +71,6 @@ async def count_addresses(
 
 @app.get("/quartiles")
 async def quartiles(
-    request: Request,
     leaderboard_id: UUID,
     db_session: Session = Depends(db.yield_db_session),
 ):
@@ -82,7 +92,6 @@ async def quartiles(
 
 @app.get("/position")
 async def position(
-    request: Request,
     leaderboard_id: UUID,
     address: str,
     window_size: int = 1,
@@ -105,9 +114,9 @@ async def position(
     return positions
 
 
+@app.get("")
 @app.get("/")
 async def leaderboard(
-    request: Request,
     leaderboard_id: UUID,
     limit: int = 10,
     offset: int = 0,
@@ -123,3 +132,37 @@ async def leaderboard(
     )
 
     return leaderboard
+
+
+@app.put("/{leaderboard_id}/scores")
+async def leaderboard(
+    request: Request,
+    leaderboard_id: UUID,
+    scores: List[data.Score],
+    db_session: Session = Depends(db.yield_db_session),
+    overwrite: bool = False,
+):
+
+    """
+    Put the leaderboard to the database.
+    """
+
+    access = actions.check_leaderboard_resource_permissions(
+        db_session=db_session,
+        leaderboard_id=leaderboard_id,
+        token=request.state.token,
+    )
+
+    if not access:
+        raise EngineHTTPException(
+            status_code=403, detail="You don't have access to this leaderboard."
+        )
+
+    leaderboard_points = actions.add_scores(
+        db_session=db_session,
+        leaderboard_id=leaderboard_id,
+        scores=scores,
+        overwrite=overwrite,
+    )
+
+    return leaderboard_points

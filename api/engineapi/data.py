@@ -184,3 +184,9 @@ class QuartilesResponse(BaseModel):
 
 class CountAddressesResponse(BaseModel):
     count: int = Field(default_factory=int)
+
+
+class Score(BaseModel):
+    address: str
+    score: int
+    points_data: Dict[str, Any]

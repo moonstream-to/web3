@@ -12,7 +12,7 @@ from .auth import (
     MoonstreamAuthorizationVerificationError,
     verify,
 )
-
+from .settings import bugout_client as bc, MOONSTREAM_APPLICATION_ID
 
 logger = logging.getLogger(__name__)
 
@@ -102,3 +102,38 @@ class EngineHTTPException(HTTPException):
         if internal_error is not None:
             print(internal_error)
             # reporter.error_report(internal_error)
+
+
+class ExtractBearerTokenMiddleware(BaseHTTPMiddleware):
+    """
+    Checks the authorization header on the request and extract token.
+    """
+
+    def __init__(self, app, whitelist: Optional[Dict[str, str]] = None):
+        self.whitelist: Dict[str, str] = {}
+        if whitelist is not None:
+            self.whitelist = whitelist
+        super().__init__(app)
+
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ):
+        # Filter out endpoints with proper method to work without Bearer token (as create_user, login, etc)
+        path = request.url.path.rstrip("/")
+        method = request.method
+        if path in self.whitelist.keys() and self.whitelist[path] == method:
+            return await call_next(request)
+
+        authorization_header = request.headers.get("authorization")
+        if authorization_header is None:
+            return Response(
+                status_code=403, content="No authorization header passed with request"
+            )
+        authorization_header_components = authorization_header.split()
+        if len(authorization_header_components) != 2:
+            return Response(status_code=403, content="Wrong authorization header")
+        user_token: str = authorization_header_components[-1]
+
+        request.state.token = user_token
+
+        return await call_next(request)
