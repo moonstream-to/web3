@@ -13,7 +13,7 @@ from typing import List
 from .. import actions
 from .. import data
 from .. import db
-from ..middleware import BroodAuthMiddleware
+from ..middleware import ExtractBearerTokenMiddleware
 from ..settings import DOCS_TARGET_PATH
 from ..version import VERSION
 
@@ -50,7 +50,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.add_middleware(BroodAuthMiddleware, whitelist=leaderboad_whitelist)
+app.add_middleware(ExtractBearerTokenMiddleware, whitelist=leaderboad_whitelist)
 
 
 @app.get("/count/addresses")

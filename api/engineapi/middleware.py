@@ -3,7 +3,6 @@ import json
 import logging
 from typing import Any, Awaitable, Callable, Dict, Optional
 
-from bugout.data import BugoutUser
 from fastapi import HTTPException, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from web3 import Web3
@@ -105,11 +104,9 @@ class EngineHTTPException(HTTPException):
             # reporter.error_report(internal_error)
 
 
-class BroodAuthMiddleware(BaseHTTPMiddleware):
+class ExtractBearerTokenMiddleware(BaseHTTPMiddleware):
     """
-    Checks the authorization header on the request. If it represents a verified Brood user,
-    create another request and get groups user belongs to, after this
-    adds a brood_user attribute to the request.state. Otherwise raises a 403 error.
+    Checks the authorization header on the request and extract token.
     """
 
     def __init__(self, app, whitelist: Optional[Dict[str, str]] = None):
@@ -137,27 +134,6 @@ class BroodAuthMiddleware(BaseHTTPMiddleware):
             return Response(status_code=403, content="Wrong authorization header")
         user_token: str = user_token_list[-1]
 
-        try:
-            user: BugoutUser = bc.get_user(user_token)
-            if not user.verified:
-                logger.info(
-                    f"Attempted journal access by unverified Brood account: {user.id}"
-                )
-                return Response(
-                    status_code=403,
-                    content="Only verified accounts can access journals",
-                )
-            if str(user.application_id) != str(MOONSTREAM_APPLICATION_ID):
-                return Response(
-                    status_code=403, content="User does not belong to this application"
-                )
-        except BugoutResponseException as e:
-            return Response(status_code=e.status_code, content=e.detail)
-        except Exception as e:
-            logger.error(f"Error processing Brood response: {str(e)}")
-            reporter.error_report(e)
-            return Response(status_code=500, content="Internal server error")
-
-        request.state.user = user
         request.state.token = user_token
+
         return await call_next(request)
