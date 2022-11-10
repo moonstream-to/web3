@@ -42,6 +42,9 @@ app = FastAPI(
     redoc_url=f"/{DOCS_TARGET_PATH}",
 )
 
+
+app.add_middleware(ExtractBearerTokenMiddleware, whitelist=leaderboad_whitelist)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins="*",
@@ -49,8 +52,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.add_middleware(ExtractBearerTokenMiddleware, whitelist=leaderboad_whitelist)
 
 
 @app.get("/count/addresses")
