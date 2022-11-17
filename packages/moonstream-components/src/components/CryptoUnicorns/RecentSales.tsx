@@ -43,10 +43,13 @@ const RecentSales = ({
   };
 
   const fetchSales = async () => {
-    return http({
-      method: "GET",
-      url: salesEndpoint(),
-    });
+    return http(
+      {
+        method: "GET",
+        url: salesEndpoint(),
+      },
+      true
+    );
   };
 
   const salesData = useQuery(

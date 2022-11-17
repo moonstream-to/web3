@@ -22,7 +22,7 @@ const EngineLayout = (props) => {
       direction={"column"}
       w="100%"
       minH="100vh"
-      bgColor={"blue.1200"}
+      bgColor={"#1A1D22"}
       px="7%"
     >
       <Breadcrumb

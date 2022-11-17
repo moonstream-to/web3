@@ -49,10 +49,13 @@ const MostActiveUsers = ({
   };
 
   const fetchActiveUsers = async () => {
-    return http({
-      method: "GET",
-      url: activeUsersEndpoint(),
-    });
+    return http(
+      {
+        method: "GET",
+        url: activeUsersEndpoint(),
+      },
+      true
+    );
   };
 
   const activeUsersData = useQuery(

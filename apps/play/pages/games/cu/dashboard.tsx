@@ -52,10 +52,13 @@ const Dashboard = () => {
   };
 
   const fetchVolume = async () => {
-    return http({
-      method: "GET",
-      url: volumeEndpoint(),
-    });
+    return http(
+      {
+        method: "GET",
+        url: volumeEndpoint(),
+      },
+      true
+    );
   };
 
   const scaleERC20 = (value: number) => {
@@ -106,7 +109,13 @@ const Dashboard = () => {
   };
 
   return (
-    <Box className="Dashboard" borderRadius={"xl"} pt={10} minH="100vh">
+    <Box
+      className="Dashboard"
+      borderRadius={"xl"}
+      pt={10}
+      minH="100vh"
+      bgColor="#1A1D22"
+    >
       <Heading>Crypto Unicorns Dashboard</Heading>
       <HStack my="10" alignItems="top">
         <VStack mr="40px">
