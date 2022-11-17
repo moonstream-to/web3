@@ -12,7 +12,11 @@
     "generate_classes_cu": "typechain --target=web3-v1 --out-dir games/cu 'games/cu/*.json'"
   },
   "dependencies": {
-    "moonstream-components": "1.0.0"
+    "@nivo/bar": "^0.80.0",
+    "@nivo/core": "^0.80.0",
+    "@nivo/line": "^0.80.0",
+    "moonstream-components": "1.0.0",
+    "yarn": "^1.22.19"
   },
   "devDependencies": {
     "@babel/core": "^7.14.3",
