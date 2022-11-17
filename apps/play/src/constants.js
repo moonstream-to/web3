@@ -79,14 +79,10 @@ and getStaticProps of the page (see /pages_templates for examples)
 export const AWS_ASSETS_PATH = `https://s3.amazonaws.com/static.simiotics.com/moonstream/assets`;
 
 /*
-White Logo with text URL (.png)
+New Logo URL (.png)
 */
-export const WHITE_LOGO_W_TEXT_URL = `https://s3.amazonaws.com/static.simiotics.com/moonstream/assets/moon-logo%2Btext-white.png`;
-
-/*
-White Logo URL (.svg)
-*/
-export const WHITE_LOGO_SVG = `https://s3.amazonaws.com/static.simiotics.com/moonstream/assets/moon-logo%2Btext-white.png`;
+export const PRIMARY_MOON_LOGO_URL = `${AWS_ASSETS_PATH}/moonstream-full-logo-2022.png`;
+export const BACKGROUND_COLOR = "#1A1D22";
 
 export const TIME_RANGE_SECONDS = {
   day: 86400,
