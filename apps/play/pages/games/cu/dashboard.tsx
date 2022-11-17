@@ -175,34 +175,12 @@ const Dashboard = () => {
             </Tabs>
           </Flex>
         </VStack>
-        <TotalSupply
-          dataApi={DATA_API}
-          w="600px"
-          p={5}
-          bgColor={panelBackground}
-          rounded="xl"
-        ></TotalSupply>
+        <TotalSupply dataApi={DATA_API}></TotalSupply>
       </HStack>
 
       <HStack my={5} alignItems="top">
-        <RecentSales
-          dataApi={DATA_API}
-          w="600px"
-          h="340px"
-          mr="40px"
-          p={5}
-          bgColor={panelBackground}
-          rounded="xl"
-        />
-        <MostActiveUsers
-          dataApi={DATA_API}
-          mt={10}
-          w="600px"
-          h="340px"
-          p={5}
-          bgColor={panelBackground}
-          rounded="xl"
-        />
+        <RecentSales dataApi={DATA_API} />
+        <MostActiveUsers dataApi={DATA_API} />
       </HStack>
     </Box>
   );

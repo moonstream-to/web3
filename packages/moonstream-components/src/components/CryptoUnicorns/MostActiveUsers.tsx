@@ -4,13 +4,11 @@ import {
   Flex,
   Text,
   Spinner,
-  FlexProps,
   Spacer,
   Select,
   Link,
   HStack,
 } from "@chakra-ui/react";
-import { ExternalLinkIcon } from "@chakra-ui/icons";
 import RadioFilter from "../RadioFilter";
 import http from "moonstream-components/src/core/utils/http";
 import queryCacheProps from "moonstream-components/src/core/hooks/hookCommon";
@@ -24,13 +22,7 @@ import {
   SHADOWCORN_CONTRACT_ADDRESS,
 } from "../../core/cu/constants";
 
-const MostActiveUsers = ({
-  dataApi,
-  ...props
-}: {
-  dataApi: string;
-  props: FlexProps;
-}) => {
+const MostActiveUsers = ({ dataApi }: { dataApi: string }) => {
   const [volumePeriod, setVolumePeriod] = useState<Period>(Period.Day);
   const [userType, setUserType] = useState<string>("seller");
   const [userAssetType, setUserAssetType] = useState<AssetType>(
@@ -83,7 +75,15 @@ const MostActiveUsers = ({
   };
 
   return (
-    <Flex {...props} flexDirection="column">
+    <Flex
+      mt={10}
+      w="600px"
+      h="340px"
+      p={5}
+      bgColor="#2D2D2D"
+      rounded="xl"
+      flexDirection="column"
+    >
       <HStack>
         <Text fontSize="lg" fontWeight="bold">
           Most Active Users

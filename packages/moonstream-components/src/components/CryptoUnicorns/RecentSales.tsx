@@ -1,15 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "react-query";
-import {
-  Flex,
-  Text,
-  Spinner,
-  Link,
-  FlexProps,
-  HStack,
-  Spacer,
-} from "@chakra-ui/react";
-import { ExternalLinkIcon } from "@chakra-ui/icons";
+import { Flex, Text, Spinner, Link, HStack, Spacer } from "@chakra-ui/react";
 import RadioFilter from "../RadioFilter";
 import http from "moonstream-components/src/core/utils/http";
 import queryCacheProps from "moonstream-components/src/core/hooks/hookCommon";
@@ -20,13 +11,7 @@ import {
   SHADOWCORN_CONTRACT_ADDRESS,
 } from "../../core/cu/constants";
 
-const RecentSales = ({
-  dataApi,
-  ...props
-}: {
-  dataApi: string;
-  props: FlexProps;
-}) => {
+const RecentSales = ({ dataApi }: { dataApi: string }) => {
   const [salesAssetType, setSalesAssetType] = useState<AssetType>(
     AssetType.Unicorn
   );
@@ -105,7 +90,15 @@ const RecentSales = ({
   };
 
   return (
-    <Flex {...props} flexDirection="column">
+    <Flex
+      w="600px"
+      h="340px"
+      mr="40px"
+      p={5}
+      bgColor="#2D2D2D"
+      rounded="xl"
+      flexDirection="column"
+    >
       <Text fontSize="lg" fontWeight="bold">
         Recent Sales
       </Text>
