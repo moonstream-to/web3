@@ -26,7 +26,7 @@ import TotalSupply from "moonstream-components/src/components/CryptoUnicorns/Tot
 import queryCacheProps from "moonstream-components/src/core/hooks/hookCommon";
 import http from "moonstream-components/src/core/utils/http";
 
-const DATA_API = "https://data.moonstream.to/dev/";
+const DATA_API = "https://data.moonstream.to/prod/";
 
 const Dashboard = () => {
   const [volumeAssetType, setVolumeAssetType] = useState<AssetType>(
@@ -47,7 +47,7 @@ const Dashboard = () => {
 
   const [volumePeriod, setVolumePeriod] = useState<Period>(Period.Day);
   const volumeEndpoint = () => {
-    const endpoint = `${DATA_API}cu_volume/${getAssetAddress()}/${volumePeriod}/data.json`;
+    const endpoint = `${DATA_API}erc20_721_volume/${getAssetAddress()}/${volumePeriod}/data.json`;
     return endpoint;
   };
 
@@ -75,7 +75,7 @@ const Dashboard = () => {
               id: "UNIM",
               color: "#F5468F",
               data: res.data.data.map((item: any) => {
-                let volume: number = item.volume;
+                let volume: number = item.value;
                 if (
                   volumeAssetType == AssetType.UNIM ||
                   volumeAssetType == AssetType.RBW
