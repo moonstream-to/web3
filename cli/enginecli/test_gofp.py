@@ -140,6 +140,44 @@ PATH_REGISTERED_EVENT_ABI = {
     "type": "event",
 }
 
+STAGE_REWARD_CHANGED_ABI = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "sessionId",
+            "type": "uint256",
+        },
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "stage",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "address",
+            "name": "terminusAddress",
+            "type": "address",
+        },
+        {
+            "indexed": False,
+            "internalType": "uint256",
+            "name": "terminusPoolId",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "uint256",
+            "name": "rewardAmount",
+            "type": "uint256",
+        },
+    ],
+    "name": "StageRewardChanged",
+    "type": "event",
+}
+
 PATH_CHOSEN_EVENT_ABI = {
     "anonymous": False,
     "inputs": [
@@ -1147,6 +1185,7 @@ class TestAdminFlow(GOFPTestCase):
         5. Make session inactive
         6. Set rewards for all but the first stage
         7. Check that rewards were correctly set
+        8. Check that the extend StageRewardChanged events are fired
         """
         payment_amount = 132
         uri = "https://example.com/test_set_and_get_stage_rewards.json"
@@ -1189,7 +1228,7 @@ class TestAdminFlow(GOFPTestCase):
 
         self.gofp.set_session_active(session_id, False, {"from": self.game_master})
 
-        self.gofp.set_stage_rewards(
+        tx_receipt = self.gofp.set_stage_rewards(
             session_id,
             stages_with_rewards,
             [self.terminus.address for _ in stages_with_rewards],
@@ -1206,6 +1245,35 @@ class TestAdminFlow(GOFPTestCase):
             self.assertEqual(
                 reward, (self.terminus.address, self.reward_pool_id, i - 1)
             )
+
+        events = _fetch_events_chunk(
+            web3_client,
+            STAGE_REWARD_CHANGED_ABI,
+            from_block=tx_receipt.block_number,
+            to_block=tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(events), len(stages_with_rewards))
+        self.assertListEqual(
+            [event["args"]["sessionId"] for event in events],
+            [session_id for _ in stages_with_rewards],
+        )
+        self.assertListEqual(
+            [event["args"]["stage"] for event in events],
+            [stage for stage in stages_with_rewards],
+        )
+        self.assertListEqual(
+            [event["args"]["terminusAddress"] for event in events],
+            [self.terminus.address for _ in stages_with_rewards],
+        )
+        self.assertListEqual(
+            [event["args"]["terminusPoolId"] for event in events],
+            [self.reward_pool_id for _ in stages_with_rewards],
+        )
+        self.assertListEqual(
+            [event["args"]["rewardAmount"] for event in events],
+            [i + 1 for i, _ in enumerate(stages_with_rewards)],
+        )
 
     def test_non_game_master_cannot_set_stage_rewards(self):
         """
