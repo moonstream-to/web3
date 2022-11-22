@@ -4,6 +4,7 @@ from brownie import network
 
 from . import Dropper
 
+
 def setup_drop(args: argparse.Namespace) -> None:
     network.connect(args.network)
     tx_config = Dropper.get_transaction_config(args)
@@ -12,10 +13,22 @@ def setup_drop(args: argparse.Namespace) -> None:
 
     claim_id = args.claim_id
     if claim_id is None:
-        if args.claim_type is None or args.claim_address is None or args.claim_pool_id is None:
-            raise ValueError("Please specify the following arguments: --claim-type, --claim-address, --claim-pool-id")
+        if (
+            args.claim_type is None
+            or args.claim_address is None
+            or args.claim_pool_id is None
+        ):
+            raise ValueError(
+                "Please specify the following arguments: --claim-type, --claim-address, --claim-pool-id"
+            )
 
-        dropper.create_claim(args.claim_type, args.claim_address, args.claim_pool_id, args.claim_default_amount, tx_config)
+        dropper.create_claim(
+            args.claim_type,
+            args.claim_address,
+            args.claim_pool_id,
+            args.claim_default_amount,
+            tx_config,
+        )
 
         claim_id = dropper.num_claims()
 
