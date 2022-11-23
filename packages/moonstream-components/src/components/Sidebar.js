@@ -26,7 +26,7 @@ import ChainSelector from "./ChainSelector";
 
 const Sidebar = () => {
   const ui = useContext(UIContext);
-  const { WHITE_LOGO_W_TEXT_URL, COPYRIGHT_NAME } =
+  const { PRIMARY_MOON_LOGO_URL, COPYRIGHT_NAME } =
     useContext(MoonstreamContext);
   const web3Provider = useContext(Web3Context);
   return (
@@ -39,7 +39,7 @@ const Sidebar = () => {
       hidden={!ui.sidebarVisible}
     >
       <SidebarHeader>
-        <Flex>
+        <Flex alignItems="center">
           <IconButton
             ml={4}
             justifySelf="flex-start"
@@ -62,12 +62,10 @@ const Sidebar = () => {
           />
           <RouterLink href="/" passHref>
             <Image
-              // h="full"
-              // maxH="100%"
-              maxW="120px"
-              py="0.75rem"
+              w="120px"
+              h="14px"
               pl={5}
-              src={WHITE_LOGO_W_TEXT_URL}
+              src={PRIMARY_MOON_LOGO_URL}
               alt="Logo"
             />
           </RouterLink>
