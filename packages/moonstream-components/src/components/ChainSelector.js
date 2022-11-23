@@ -18,8 +18,19 @@ const ChainSelector = () => {
     <code>
       <Menu>
         <MenuButton
+          h="36px"
           mx={2}
+          borderRadius="10px"
           as={Button}
+          textDecoration="none"
+          _expanded={{
+            color: "white",
+            fontWeight: "700",
+            backgroundColor: "#1A1D22",
+          }}
+          _active={{ textDecoration: "none", backgroundColor: "#1A1D22" }}
+          _focus={{ textDecoration: "none", backgroundColor: "#1A1D22" }}
+          _hover={{ textDecoration: "none", fontWeight: "700" }}
           rightIcon={<ChevronDownIcon />}
           leftIcon={
             <Image
@@ -36,17 +47,31 @@ const ChainSelector = () => {
               }
             ></Image>
           }
-          // color="white"
-          colorScheme="orange"
+          color="white"
           variant="outline"
-          fontSize={"24px"}
+          fontSize="16px"
         >
           {web3Provider.targetChain?.name ?? "Chain selector"}
         </MenuButton>
-        <MenuList>
+        <MenuList
+          bg="#1A1D22"
+          color="white"
+          borderRadius="30px"
+          border="1px solid white"
+        >
           <MenuItem
-            fontSize={"24px"}
-            isDisabled={web3Provider.targetChain?.name === "ethereum"}
+            fontSize={"16px"}
+            _hover={{
+              backgroundColor: "transparent",
+              color: "#F56646",
+              fontWeight: "700",
+            }}
+            _focus={{
+              backgroundColor: "transparent",
+              color: "#F56646",
+              fontWeight: "700",
+            }}
+            // isDisabled={web3Provider.targetChain?.name === "ethereum"}
             onClick={() => {
               web3Provider.changeChain("ethereum");
             }}
@@ -55,13 +80,18 @@ const ChainSelector = () => {
               // w="24px"
               h="24px"
               mr={6}
-              src="https://s3.amazonaws.com/static.simiotics.com/moonstream/assets/eth-diamond-black.png"
+              src="https://s3.amazonaws.com/static.simiotics.com/moonstream/assets/eth-diamond-rainbow.png"
             ></Image>
             Ethereum
           </MenuItem>
           <MenuItem
-            fontSize={"24px"}
-            isDisabled={web3Provider.targetChain?.name === "polygon"}
+            fontSize={"16px"}
+            _hover={{
+              backgroundColor: "transparent",
+              color: "#F56646",
+              fontWeight: "700",
+            }}
+            // isDisabled={web3Provider.targetChain?.name === "polygon"}
             onClick={() => {
               web3Provider.changeChain("polygon");
             }}
@@ -75,8 +105,13 @@ const ChainSelector = () => {
             Polygon
           </MenuItem>
           <MenuItem
-            fontSize={"24px"}
-            isDisabled={web3Provider.targetChain?.name === "mumbai"}
+            fontSize={"16px"}
+            _hover={{
+              backgroundColor: "transparent",
+              color: "#F56646",
+              fontWeight: "700",
+            }}
+            // isDisabled={web3Provider.targetChain?.name === "mumbai"}
             onClick={() => {
               web3Provider.changeChain("mumbai");
             }}
@@ -90,8 +125,13 @@ const ChainSelector = () => {
             Mumbai
           </MenuItem>
           <MenuItem
-            fontSize={"24px"}
-            isDisabled={web3Provider.targetChain?.name === "localhost"}
+            fontSize={"16px"}
+            _hover={{
+              backgroundColor: "transparent",
+              color: "#F56646",
+              fontWeight: "700",
+            }}
+            // isDisabled={web3Provider.targetChain?.name === "localhost"}
             onClick={() => {
               web3Provider.changeChain("localhost");
             }}
