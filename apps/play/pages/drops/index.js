@@ -68,7 +68,12 @@ const Drops = () => {
           )
           .map((contract) => {
             return (
-              <DropperContract key={contract.id} contractResource={contract}>
+              <DropperContract
+                mt="20px"
+                borderRadius="20px"
+                key={contract.id}
+                contractResource={contract}
+              >
                 <ButtonGroup
                   direction="row"
                   variant={"solid"}
@@ -77,6 +82,8 @@ const Drops = () => {
                   <Button
                     as={Link}
                     variant="outline"
+                    color="#F56646"
+                    borderColor="#F56646"
                     onClick={() => {
                       if (query?.dropId) {
                         router.push({
@@ -94,7 +101,27 @@ const Drops = () => {
                   >
                     {query?.dropId ? `Back to list` : `See claims`}
                   </Button>
-                  <Button disabled>Claim all at once </Button>
+                  <Button
+                    disabled
+                    _disabled={{
+                      backgroundColor: "#4D4D4D",
+                      color: "gray.1100",
+                    }}
+                    _focus={{
+                      backgroundColor: "#4D4D4D",
+                      color: "gray.1100",
+                    }}
+                    _hover={{
+                      backgroundColor: "#4D4D4D",
+                      color: "gray.1100",
+                    }}
+                    _active={{
+                      backgroundColor: "#4D4D4D",
+                      color: "gray.1100",
+                    }}
+                  >
+                    Claim all at once
+                  </Button>
                 </ButtonGroup>
               </DropperContract>
             );

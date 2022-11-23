@@ -10,13 +10,13 @@ import {
 const _DropList = ({ contractResource, children, ...props }) => {
   return (
     <Flex
-      borderRadius={"md"}
-      bgColor="blue.800"
+      borderRadius="20px"
+      bgColor="#353535"
       w="100%"
       direction={"column"}
       p={4}
       mt={2}
-      textColor={"gray.300"}
+      textColor={"white"}
       {...props}
     >
       <Heading as={"h2"} fontSize="lg" mt={2} borderBottomWidth="2px">
@@ -38,7 +38,7 @@ const _DropList = ({ contractResource, children, ...props }) => {
             minW="200px"
             flexWrap={"wrap"}
             w="100%"
-            bgColor={"blue.1100"}
+            bgColor={"#232323"}
             borderRadius="md"
             px={2}
             // pt={4}
