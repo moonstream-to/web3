@@ -62,9 +62,9 @@ const theme = extendTheme({
   },
 
   fonts: {
-    heading: '"Work Sans", sans-serif',
-    body: '"Work Sans", sans-serif',
-    mono: '"Work Sans", monospace',
+    heading: '"Space Grotesk", sans-serif',
+    body: '"Space Grotesk", sans-serif',
+    mono: '"Space Grotesk", monospace',
   },
   fontSizes: {
     xs: "0.625rem", //10px
@@ -165,6 +165,7 @@ const theme = extendTheme({
       700: "#fd7835",
       800: "#fd671b",
       900: "#FD5602",
+      1000: "#F56646",
     },
 
     green: {
@@ -184,6 +185,7 @@ const theme = extendTheme({
     black: {
       100: "#333399",
       200: "#111442",
+      300: "#1A1D22",
     },
   },
 });
