@@ -37,7 +37,6 @@ const Homepage = () => {
               heading="Inventory"
               imageUrl={assets["lender"]}
               alt="Inventory"
-              textColor={"white.100"}
               level="h2"
               // imgH="220px"
               h="450px"

@@ -41,14 +41,14 @@ const FeatureCard = ({
   return (
     <Wrapper>
       <Stack
-        bgColor={props.disabled ? "gray.1600" : undefined}
+        bg="#353535"
         {...props}
         transition={"1s"}
         spacing={1}
         px={5}
         alignItems="center"
-        borderRadius="12px"
-        borderColor="gray.100"
+        borderRadius="20px"
+        borderColor="white"
         borderWidth={"1px"}
         _hover={{ transform: "scale(1.05)", transition: "0.42s" }}
         m={2}
@@ -70,11 +70,7 @@ const FeatureCard = ({
         <Heading textAlign="center" as={level ?? "h2"} _hover={{}}>
           {heading}
         </Heading>
-        <chakra.span
-          textAlign={"center"}
-          textColor={textColor ?? "blue.400"}
-          px={2}
-        >
+        <chakra.span textAlign={"center"} px={2}>
           {text}
         </chakra.span>
       </Stack>
