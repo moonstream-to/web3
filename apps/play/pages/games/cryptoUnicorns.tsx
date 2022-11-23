@@ -1409,7 +1409,7 @@ const CryptoUnicorns = () => {
     <Flex
       className="Games"
       borderRadius={"xl"}
-      bgColor={spyMode ? "#2D2D2D" : "blue.1000"}
+      bgColor={spyMode ? "#2D2D2D" : "#1A1D22"}
     >
       <Flex w="100%" minH="100vh" direction={"column"} px="7%" mt="100px">
         <Box display={spyMode ? "none" : ""}>
@@ -1511,7 +1511,7 @@ const CryptoUnicorns = () => {
           </code>
           <Center>
             <code>
-              <Stack p={4} bgColor={"blue.1200"} spacing={2}>
+              <Stack p={4} bgColor={"#1A1D22"} spacing={2}>
                 <Box w="100%">
                   <FormLabel mb="8px" wordBreak={"break-all"} w="fit-content">
                     {"UNIM to stash"}

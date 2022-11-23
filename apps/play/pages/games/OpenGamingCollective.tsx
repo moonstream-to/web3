@@ -143,7 +143,7 @@ const OpenGamingCollective = () => {
     <Flex
       className="Games"
       borderRadius={"xl"}
-      bgColor={spyMode ? "#2D2D2D" : "blue.1000"}
+      bgColor={spyMode ? "#2D2D2D" : "#1A1D22"}
     >
       <Flex w="100%" minH="100vh" direction={"column"} px="7%" mt="50px">
         {spyMode && (

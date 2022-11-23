@@ -8,7 +8,7 @@ const Games = () => {
       <Flex
         w="100%"
         minH="100vh"
-        bgColor={"blue.1200"}
+        bgColor={"#1A1D22"}
         direction={"column"}
         px="7%"
         mt="100px"
