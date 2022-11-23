@@ -117,14 +117,13 @@ Game Masters can:
 - [x] Mark sessions as active or inactive
 - [x] Mark sessions as active or inactive for the purposes of NFTs choosing a path in a the current stage
 - [x] Register the correct path for the current stage
-- [ ] Update the metadata for a session
+- [x] Update the metadata for a session
 - [x] Set a reward (Terminus token mint) for NFT holders who make a choice with an NFT in each stage
-- [ ] Rescue NFTs and send them to a specified address
 
 Players can:
 - [x] Stake their NFTs into a sesssion if the correct first stage path has not been chosen
 - [x] Pay to stake their NFTs
-- [x] Unstake their NFTs from a session if the session is inactive
+- [x] Unstake their NFTs from a session at any time
 - [x] Have one of their NFTs choose a path in the current stage PROVIDED THAT the current stage is the first
 stage OR that the NFT chose the correct path in the previous stage
 - [x] Collect their reward (Terminus token mint) for making a choice with an NFT in the current stage of a session
@@ -164,6 +163,13 @@ contract GOFPFacet is
     event SessionChoosingActivated(
         uint256 indexed sessionId,
         bool isChoosingActive
+    );
+    event StageRewardChanged(
+        uint256 indexed sessionId,
+        uint256 indexed stage,
+        address terminusAddress,
+        uint256 terminusPoolId,
+        uint256 rewardAmount
     );
     event SessionUriChanged(uint256 indexed sessionId, string uri);
     event PathRegistered(
@@ -311,6 +317,13 @@ contract GOFPFacet is
                 terminusPoolId: terminusPoolIds[i],
                 rewardAmount: rewardAmounts[i]
             });
+            emit StageRewardChanged(
+                sessionId,
+                stages[i],
+                terminusAddresses[i],
+                terminusPoolIds[i],
+                rewardAmounts[i]
+            );
         }
     }
 
