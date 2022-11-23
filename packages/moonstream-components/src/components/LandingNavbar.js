@@ -146,6 +146,7 @@ const LandingNavbar = () => {
                   p="10px 20px"
                   fontSize="16px"
                   fontWeight="400"
+                  textTransform="none"
                   backgroundColor="white"
                   color="#1A1D22"
                   borderRadius="10px"
