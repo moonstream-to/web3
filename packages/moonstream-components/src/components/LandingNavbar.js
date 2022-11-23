@@ -35,7 +35,6 @@ const LandingNavbar = () => {
         <>
           <IconButton
             alignSelf="flex-start"
-            colorScheme="blue"
             variant="solid"
             onClick={() => ui.setSidebarToggled(!ui.sidebarToggled)}
             icon={<HamburgerIcon />}
@@ -114,27 +113,29 @@ const LandingNavbar = () => {
           </ButtonGroup>
           {web3Provider.buttonText !== web3Provider.WALLET_STATES.CONNECTED && (
             <Button
+              bg="linear-gradient(92.26deg, #F56646 8.41%, #FFFFFF 255.37%)"
+              borderRadius="30px"
+              color="white"
+              fontSize="16px"
+              fontWeight="700"
+              p="8px 30px"
+              h="36px"
+              _hover={{
+                bg: "linear-gradient(92.26deg, #F4532F; 8.41%, #FFFFFF 255.37%)",
+              }}
               isDisabled={
                 web3Provider.WALLET_STATES.UNKNOWN_CHAIN ===
                 web3Provider.buttonText
-              }
-              colorScheme={
-                web3Provider.buttonText === web3Provider.WALLET_STATES.CONNECTED
-                  ? "green"
-                  : web3Provider.WALLET_STATES.UNKNOWN_CHAIN ===
-                    web3Provider.buttonText
-                  ? "red"
-                  : "green"
               }
               onClick={web3Provider.onConnectWalletClick}
             >
               {web3Provider.buttonText}
               {"  "}
-              <Image
+              {/* <Image
                 pl={2}
                 h="24px"
                 src="https://s3.amazonaws.com/static.simiotics.com/metamask/metamask-fox.svg"
-              />
+              /> */}
             </Button>
           )}
 
@@ -142,23 +143,25 @@ const LandingNavbar = () => {
             <Flex>
               <code>
                 <Badge
-                  colorScheme={"blue"}
-                  variant={"subtle"}
-                  size="md"
+                  p="10px 20px"
                   fontSize="16px"
-                  borderRadius={"md"}
+                  fontWeight="400"
+                  backgroundColor="white"
+                  color="#1A1D22"
+                  borderRadius="10px"
                   mr={2}
-                  p={0}
+                  h="36px"
                 >
                   <Skeleton
                     isLoaded={web3Provider.account}
-                    h="100%"
                     colorScheme={"red"}
                     w="100%"
                     borderRadius={"inherit"}
                     startColor="red.500"
                     endColor="blue.500"
-                    p={1}
+                    fontSize="16px"
+                    lineHeight="16px"
+                    p={0}
                   >
                     {web3Provider.account}
                   </Skeleton>

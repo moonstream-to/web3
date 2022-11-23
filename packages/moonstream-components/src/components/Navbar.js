@@ -11,8 +11,8 @@ const Navbar = () => {
       shadow={"outline"}
       alignItems="center"
       id="Navbar"
-      minH="3rem"
-      maxH="3rem"
+      minH="56px"
+      maxH="56px"
       bgColor="#1A1D22"
       direction="row"
       w="100%"
