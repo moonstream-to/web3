@@ -81,8 +81,9 @@ export const AWS_ASSETS_PATH = `https://s3.amazonaws.com/static.simiotics.com/mo
 /*
 White Logo with text URL (.png)
 */
-export const WHITE_LOGO_W_TEXT_URL = `https://s3.amazonaws.com/static.simiotics.com/moonstream/assets/moon-logo%2Btext-white.png`;
+// export const WHITE_LOGO_W_TEXT_URL = `https://s3.amazonaws.com/static.simiotics.com/moonstream/assets/moon-logo%2Btext-white.png`;
 
+export const WHITE_LOGO_W_TEXT_URL = `${AWS_ASSETS_PATH}/moonstream-full-logo-2022.png`;
 /*
 White Logo URL (.svg)
 */

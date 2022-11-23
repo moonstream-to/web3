@@ -43,19 +43,15 @@ const LandingNavbar = () => {
       )}
       <Flex
         pl={ui.isMobileView ? 2 : 8}
-        justifySelf="flex-start"
         h="100%"
-        py={1}
-        w="200px"
-        minW="200px"
-        // flexGrow={1}
+        alignItems="center"
         id="Logo Container"
       >
         <RouterLink href="/" passHref>
           <Link
             as={Image}
-            w="fit-content"
-            h="auto"
+            w="160px"
+            h="23px"
             justifyContent="left"
             src={WHITE_LOGO_W_TEXT_URL}
             alt="Logo"
