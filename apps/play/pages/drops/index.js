@@ -5,14 +5,13 @@ import {
   Image,
   Center,
   Spinner,
-  Link,
   ButtonGroup,
 } from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
-import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
+import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout";
 import { useRouter } from "moonstream-components/src/core/hooks";
-import DropperContract from "moonstream-components/src/components/DropperContract";
+import DropperContract from "moonstream-components/src/components/DropperContractPlay";
 import usePlayerClaims from "moonstream-components/src/core/hooks/dropper/useClaims";
 import { useDrops } from "moonstream-components/src/core/hooks/dropper";
 const assets = {
@@ -54,7 +53,7 @@ const Drops = () => {
     <Flex
       w="100%"
       minH="100vh"
-      bgColor={"blue.1200"}
+      bgColor={"#1A1D22"}
       direction={"column"}
       px="7%"
     >
@@ -68,15 +67,16 @@ const Drops = () => {
           )
           .map((contract) => {
             return (
-              <DropperContract key={contract.id} contractResource={contract}>
-                <ButtonGroup
-                  direction="row"
-                  variant={"solid"}
-                  colorScheme="orange"
-                >
+              <DropperContract
+                mt="20px"
+                borderRadius="20px"
+                key={contract.id}
+                contractResource={contract}
+              >
+                <ButtonGroup direction="row" variant={"solid"} mt="10px">
                   <Button
-                    as={Link}
-                    variant="outline"
+                    as={Button}
+                    variant="orangeOutline"
                     onClick={() => {
                       if (query?.dropId) {
                         router.push({
@@ -94,7 +94,9 @@ const Drops = () => {
                   >
                     {query?.dropId ? `Back to list` : `See claims`}
                   </Button>
-                  <Button disabled>Claim all at once </Button>
+                  <Button disabled variant="orangeOutline">
+                    Claim all at once
+                  </Button>
                 </ButtonGroup>
               </DropperContract>
             );

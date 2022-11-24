@@ -1,7 +1,7 @@
 import React from "react";
 import { RedocStandalone } from "redoc";
 import { Box } from "@chakra-ui/react";
-import { getLayout } from "moonstream-components/src/layouts/RootLayout";
+import { getLayout } from "moonstream-components/src/layoutsForPlay/RootLayout";
 import { DEFAULT_METATAGS } from "../src/constants";
 
 const API =

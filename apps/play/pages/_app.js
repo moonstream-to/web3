@@ -15,7 +15,7 @@ const AppContext = dynamic(() => import("../src/AppContext"), {
   ssr: false,
 });
 const DefaultLayout = dynamic(
-  () => import("moonstream-components/src/layouts"),
+  () => import("moonstream-components/src/layoutsForPlay"),
   {
     ssr: false,
   }

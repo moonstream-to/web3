@@ -1,13 +1,5 @@
 import React from "react";
-import {
-  Flex,
-  Image,
-  Text,
-  chakra,
-  Spacer,
-  VStack,
-  Box,
-} from "@chakra-ui/react";
+import { Flex, Image, Text, chakra, Spacer, VStack } from "@chakra-ui/react";
 
 const _LootboxCard = ({
   displayName,
@@ -26,20 +18,30 @@ const _LootboxCard = ({
   grayedOut?: boolean;
 }) => {
   return (
-    <Flex {...props} pb={10}>
-      <VStack maxW="250" border="solid" borderColor="#373E9B" borderRadius="lg">
+    <Flex {...props} p="20px" bg="#353535" borderRadius="20px">
+      <VStack maxW="250">
         <Image
           src={imageUrl}
           as={isVideo ? "video" : undefined}
           filter={grayedOut ? "grayscale(100%)" : undefined}
           opacity={grayedOut ? "0.3" : undefined}
           loading="lazy"
-          w={250}
-          borderRadius="sm"
+          w="100%"
+          borderRadius="10px"
+          border="1px solid #4D4D4D"
           alt="CU Inventory Item"
         />
-        <Box w="100%" px={2} justifyContent="left" pb={0}>
-          <Text fontSize="md">{displayName}</Text>
+        <Flex
+          direction="column"
+          justifyContent="space-between"
+          w="100%"
+          h="80px"
+          px={2}
+          pb={0}
+        >
+          <Text fontSize="md" fontWeight="700">
+            {displayName}
+          </Text>
           {showQuantity && (
             <Flex fontSize="sm" w="100%">
               <Text>Quantity</Text>
@@ -47,7 +49,7 @@ const _LootboxCard = ({
               <Text>{lootboxBalance}</Text>
             </Flex>
           )}
-        </Box>
+        </Flex>
       </VStack>
     </Flex>
   );

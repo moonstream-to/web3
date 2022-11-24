@@ -114,6 +114,43 @@ const variantGhost = (props) => {
   };
 };
 
+const variantWhiteOutline = (props) => {
+  const color = props["data-selected"] ? "white" : "#BFBFBF";
+  return {
+    color,
+    borderColor: color,
+    padding: "10px 20px",
+    borderWidth: "2px",
+    borderStyle: "solid",
+    borderRadius: "100px",
+    fontWeight: "400",
+    fontSize: "20px",
+  };
+};
+
+const variantOrangeOutline = () => {
+  return {
+    color: "#F56646",
+    backgroundColor: "transparent",
+    borderColor: "#F56646",
+    borderStyle: "solid",
+    borderWidth: "2px",
+    borderRadius: "10px",
+    fontWeight: "500",
+    _hover: {
+      borderColor: "#F4532F",
+      backgroundColor: "transparent",
+      color: "#F4532F",
+      fontWeight: "700",
+    },
+    _active: {
+      color: "#F4532F",
+      borderColor: "#F4532F",
+      textDecoration: "none",
+    },
+  };
+};
+
 const Button = {
   // 1. We can update the base styles
   baseStyle: () => ({
@@ -151,6 +188,8 @@ const Button = {
     ghost: variantGhost,
     outline: variantOutline,
     link: variantLink,
+    orangeOutline: variantOrangeOutline,
+    whiteOutline: variantWhiteOutline,
   },
 };
 export default Button;

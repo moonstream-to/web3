@@ -1,12 +1,12 @@
 import React, { useContext } from "react";
 
 import { Flex, Spinner } from "@chakra-ui/react";
-import Paginator from "moonstream-components/src/components/Paginator";
-import ClaimCard from "moonstream-components/src/components/ClaimCard";
+import Paginator from "moonstream-components/src/components/PaginatorPlay";
+import ClaimCard from "moonstream-components/src/components/ClaimCardPlay";
 import usePlayerClaims from "moonstream-components/src/core/hooks/dropper/useClaims";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { useRouter } from "moonstream-components/src/core/hooks";
-import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
+import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout";
 const DropDetails = () => {
   const router = useRouter();
   const web3Provider = useContext(Web3Context);
@@ -35,7 +35,7 @@ const DropDetails = () => {
           return (
             <ClaimCard
               // mx={20}
-              mt={2}
+              mt="10px"
               key={`pc-${claim.dropper_claim_id}`}
               address={dropperAddress}
               drop={claim}
