@@ -26,7 +26,7 @@ import ChainSelector from "./ChainSelector";
 
 const Sidebar = () => {
   const ui = useContext(UIContext);
-  const { PRIMARY_MOON_LOGO_URL, COPYRIGHT_NAME } =
+  const { WHITE_LOGO_W_TEXT_URL, COPYRIGHT_NAME } =
     useContext(MoonstreamContext);
   const web3Provider = useContext(Web3Context);
   return (
@@ -39,13 +39,11 @@ const Sidebar = () => {
       hidden={!ui.sidebarVisible}
     >
       <SidebarHeader>
-        <Flex alignItems="center">
+        <Flex>
           <IconButton
             ml={4}
             justifySelf="flex-start"
-            bg="transparent"
-            color="white"
-            // colorScheme="blue"
+            colorScheme="blue"
             aria-label="App navigation"
             icon={
               ui.isMobileView ? (
@@ -64,10 +62,12 @@ const Sidebar = () => {
           />
           <RouterLink href="/" passHref>
             <Image
-              w="120px"
-              h="14px"
+              // h="full"
+              // maxH="100%"
+              maxW="120px"
+              py="0.75rem"
               pl={5}
-              src={PRIMARY_MOON_LOGO_URL}
+              src={WHITE_LOGO_W_TEXT_URL}
               alt="Logo"
             />
           </RouterLink>
@@ -91,8 +91,6 @@ const Sidebar = () => {
                 whiteSpace="break-spaces"
               ></Badge>
               <Badge
-                className="sidebar-account"
-                id="sidebar-account"
                 colorScheme={"blue"}
                 variant={"subtle"}
                 size="sm"
@@ -110,7 +108,6 @@ const Sidebar = () => {
                   startColor="red.500"
                   endColor="blue.500"
                   p={1}
-                  textTransform="none"
                 >
                   {web3Provider.account}
                 </Skeleton>
