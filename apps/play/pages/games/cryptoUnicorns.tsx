@@ -1,5 +1,5 @@
 import React, { useContext, useEffect } from "react";
-import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout";
+import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
 import {
   Flex,
   Center,
@@ -20,6 +20,7 @@ import {
   HStack,
   Grid,
 } from "@chakra-ui/react";
+import { CloseIcon } from "@chakra-ui/icons";
 const StashABI = require("../../games/cu/StashABI.json");
 import { StashABI as StashABIType } from "../../games/cu/StashABI";
 const GameBankABI = require("../../games/cu/GameBankABI.json");
@@ -36,7 +37,7 @@ import {
   MAX_INT,
   chainByChainId,
 } from "moonstream-components/src/core/providers/Web3Provider";
-import LootboxCard from "../../../../packages/moonstream-components/src/components/CryptoUnicorns/LootboxCardPlay";
+import LootboxCard from "../../../../packages/moonstream-components/src/components/CryptoUnicorns/LootboxCard";
 import { MockTerminus as TerminusFacet } from "../../../../types/contracts/MockTerminus";
 import { hookCommon } from "moonstream-components/src/core/hooks";
 
@@ -1408,9 +1409,9 @@ const CryptoUnicorns = () => {
     <Flex
       className="Games"
       borderRadius={"xl"}
-      bgColor={spyMode ? "#1A1D22" : "#1A1D22"}
+      bgColor={spyMode ? "#2D2D2D" : "blue.1000"}
     >
-      <Flex w="100%" minH="100vh" direction={"column"} px="7%" mt="60px">
+      <Flex w="100%" minH="100vh" direction={"column"} px="7%" mt="100px">
         <Box display={spyMode ? "none" : ""}>
           <Flex
             w="100%"
@@ -1510,7 +1511,7 @@ const CryptoUnicorns = () => {
           </code>
           <Center>
             <code>
-              <Stack p={4} bgColor={"#1A1D22"} spacing={2}>
+              <Stack p={4} bgColor={"blue.1200"} spacing={2}>
                 <Box w="100%">
                   <FormLabel mb="8px" wordBreak={"break-all"} w="fit-content">
                     {"UNIM to stash"}
@@ -1675,17 +1676,7 @@ const CryptoUnicorns = () => {
           boxShadow="xl"
           placeItems={"center"}
           fontSize={"lg"}
-          fontWeight="700"
         >
-          {spyMode && (
-            <Image
-              src="https://s3.amazonaws.com/static.simiotics.com/play/cu/spy-icon.png"
-              alt="Spy Mode"
-              h="24px"
-              pr="2"
-              filter="invert(100%)"
-            ></Image>
-          )}
           {spyMode ? "Spy Mode" : "Inventory"}
           <Spacer />
           {spyMode && (
@@ -1700,10 +1691,8 @@ const CryptoUnicorns = () => {
                 }
               }}
             >
-              <Text pr={2} cursor="pointer">
-                exit
-              </Text>
-              {/* <CloseIcon h="10px" /> */}
+              <Text pr={2}>exit</Text>
+              <CloseIcon h="10px" />
             </Center>
           )}
         </Flex>
@@ -1726,15 +1715,8 @@ const CryptoUnicorns = () => {
               />
               <InputRightElement width="3rem">
                 <Button
-                  h="2rem"
-                  size="md"
-                  bg="transparent"
-                  _hover={{
-                    backgroundColor: "transparent",
-                  }}
-                  _focus={{
-                    textDecoration: "none",
-                  }}
+                  h="1.75rem"
+                  size="sm"
                   onClick={() => {
                     if (spyAddressInput?.current != null) {
                       spyAddressInput.current.value = "";
@@ -1747,10 +1729,15 @@ const CryptoUnicorns = () => {
             </InputGroup>
           </Flex>
         )}
-        <Flex pb={4} flexDirection="row" wrap="wrap">
+        <Flex pb={4} flexDirection="row">
           <Button
-            variant="whiteOutline"
-            data-selected={displayType == 0 ? true : false}
+            size="sm"
+            height="24px"
+            border="1px"
+            textColor={displayType == 0 ? "white" : "#B6B6B6"}
+            borderColor={displayType == 0 ? "white" : "#B6B6B6"}
+            bgColor="transparent"
+            borderRadius="20px"
             onClick={() => {
               setDisplayType(0);
             }}
@@ -1758,8 +1745,13 @@ const CryptoUnicorns = () => {
             <Text px={3}>Unicorns</Text>
           </Button>
           <Button
-            variant="whiteOutline"
-            data-selected={displayType == 6 ? true : false}
+            size="sm"
+            height="24px"
+            border="1px"
+            textColor={displayType == 6 ? "white" : "#B6B6B6"}
+            borderColor={displayType == 6 ? "white" : "#B6B6B6"}
+            bgColor="transparent"
+            borderRadius="20px"
             onClick={() => {
               setDisplayType(6);
             }}
@@ -1767,8 +1759,13 @@ const CryptoUnicorns = () => {
             <Text px={3}>Shadowcorns</Text>
           </Button>
           <Button
-            variant="whiteOutline"
-            data-selected={displayType == 1 ? true : false}
+            size="sm"
+            height="24px"
+            border="1px"
+            textColor={displayType == 1 ? "white" : "#B6B6B6"}
+            borderColor={displayType == 1 ? "white" : "#B6B6B6"}
+            bgColor="transparent"
+            borderRadius="20px"
             onClick={() => {
               setDisplayType(1);
             }}
@@ -1776,8 +1773,13 @@ const CryptoUnicorns = () => {
             <Text px={3}>Lands</Text>
           </Button>
           <Button
-            variant="whiteOutline"
-            data-selected={displayType == 2 ? true : false}
+            size="sm"
+            height="24px"
+            border="1px"
+            textColor={displayType == 2 ? "white" : "#B6B6B6"}
+            borderColor={displayType == 2 ? "white" : "#B6B6B6"}
+            bgColor="transparent"
+            borderRadius="20px"
             onClick={() => {
               setDisplayType(2);
             }}
@@ -1785,8 +1787,13 @@ const CryptoUnicorns = () => {
             <Text px={3}>Lootboxes</Text>
           </Button>
           <Button
-            variant="whiteOutline"
-            data-selected={displayType == 3 ? true : false}
+            size="sm"
+            height="24px"
+            border="1px"
+            textColor={displayType == 3 ? "white" : "#B6B6B6"}
+            borderColor={displayType == 3 ? "white" : "#B6B6B6"}
+            bgColor="transparent"
+            borderRadius="20px"
             onClick={() => {
               setDisplayType(3);
             }}
@@ -1794,8 +1801,13 @@ const CryptoUnicorns = () => {
             <Text px={3}>Keystones</Text>
           </Button>
           <Button
-            variant="whiteOutline"
-            data-selected={displayType == 4 ? true : false}
+            size="sm"
+            height="24px"
+            border="1px"
+            textColor={displayType == 4 ? "white" : "#B6B6B6"}
+            borderColor={displayType == 4 ? "white" : "#B6B6B6"}
+            bgColor="transparent"
+            borderRadius="20px"
             onClick={() => {
               setDisplayType(4);
             }}
@@ -1803,18 +1815,21 @@ const CryptoUnicorns = () => {
             <Text px={3}>Badges</Text>
           </Button>
           <Button
-            variant="whiteOutline"
-            data-selected={displayType == 5 ? true : false}
+            size="sm"
+            height="24px"
+            border="1px"
+            textColor={displayType == 5 ? "white" : "#B6B6B6"}
+            borderColor={displayType == 5 ? "white" : "#B6B6B6"}
+            bgColor="transparent"
+            borderRadius="20px"
             onClick={() => {
               setDisplayType(5);
             }}
           >
             <Text px={3}>Miscellaneous</Text>
           </Button>
-        </Flex>
-        <Spacer />
-        {!spyMode && (
-          <Flex justifyContent="end">
+          <Spacer />
+          {!spyMode && (
             <Button
               size="sm"
               height="24px"
@@ -1835,8 +1850,8 @@ const CryptoUnicorns = () => {
               ></Image>
               Spy Mode
             </Button>
-          </Flex>
-        )}
+          )}
+        </Flex>
         {unicorns?.data && displayERC721List(unicorns.data, 0, false)}
         {lands?.data && displayERC721List(lands.data, 1, false)}
         {lootboxBalances?.data && displayCardList(lootboxes, 2)}

@@ -3,8 +3,8 @@ import { Flex, Center } from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 // import { getLayout } from "../src/layouts/AppLayout";
-import FeatureCard from "../../../packages/moonstream-components/src/components/FeatureCardPlay";
-import { getLayout } from "../../../packages/moonstream-components/src/layoutsForPlay/EngineLayout";
+import FeatureCard from "../../../packages/moonstream-components/src/components/FeatureCard";
+import { getLayout } from "../../../packages/moonstream-components/src/layouts/EngineLayout";
 
 const assets: any = {
   onboarding:
@@ -22,7 +22,7 @@ const Homepage = () => {
     <Flex
       w="100%"
       minH="100vh"
-      bgColor={"#1A1D22"}
+      bgColor={"blue.1200"}
       direction={"column"}
       px="7%"
       mt="100px"
@@ -37,6 +37,7 @@ const Homepage = () => {
               heading="Inventory"
               imageUrl={assets["lender"]}
               alt="Inventory"
+              textColor={"white.100"}
               level="h2"
               // imgH="220px"
               h="450px"

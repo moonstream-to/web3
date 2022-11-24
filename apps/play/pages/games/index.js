@@ -1,19 +1,20 @@
 import React from "react";
-import { getLayout } from "../../../../packages/moonstream-components/src/layoutsForPlay/EngineLayout";
+import { getLayout } from "../../../../packages/moonstream-components/src/layouts/EngineLayout";
 import { Flex, Center } from "@chakra-ui/react";
-import FeatureCard from "moonstream-components/src/components/FeatureCardPlay";
+import FeatureCard from "moonstream-components/src/components/FeatureCard";
 const Games = () => {
   return (
     <Flex className="Games">
       <Flex
         w="100%"
         minH="100vh"
-        bgColor={"#1A1D22"}
+        bgColor={"blue.1200"}
         direction={"column"}
+        px="7%"
         mt="100px"
       >
         <Center>
-          <Flex wrap="wrap" justifyContent="center">
+          <Flex>
             <FeatureCard
               w="300px"
               imgH="140px"

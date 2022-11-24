@@ -1,5 +1,5 @@
 import React, { useContext, useEffect } from "react";
-import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout";
+import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
 import {
   Flex,
   Center,
@@ -13,12 +13,13 @@ import {
   Button,
   Grid,
 } from "@chakra-ui/react";
+import { CloseIcon } from "@chakra-ui/icons";
 
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { useQuery } from "react-query";
 import { useRouter } from "moonstream-components/src/core/hooks";
 import { DEFAULT_METATAGS } from "../../src/constants";
-import LootboxCard from "moonstream-components/src/components/CryptoUnicorns/LootboxCardPlay";
+import LootboxCard from "moonstream-components/src/components/CryptoUnicorns/LootboxCard";
 import { MockTerminus as TerminusFacet } from "../../../../types/contracts/MockTerminus";
 import { hookCommon } from "moonstream-components/src/core/hooks";
 
@@ -142,7 +143,7 @@ const OpenGamingCollective = () => {
     <Flex
       className="Games"
       borderRadius={"xl"}
-      bgColor={spyMode ? "#1A1D22" : "#1A1D22"}
+      bgColor={spyMode ? "#2D2D2D" : "blue.1000"}
     >
       <Flex w="100%" minH="100vh" direction={"column"} px="7%" mt="50px">
         {spyMode && (
@@ -177,10 +178,8 @@ const OpenGamingCollective = () => {
                 }
               }}
             >
-              <Text pr={2} cursor="pointer">
-                exit
-              </Text>
-              {/* <CloseIcon h="10px" /> */}
+              <Text pr={2}>exit</Text>
+              <CloseIcon h="10px" />
             </Center>
           </Flex>
         )}
@@ -204,15 +203,8 @@ const OpenGamingCollective = () => {
               />
               <InputRightElement width="3rem">
                 <Button
-                  h="2rem"
-                  size="md"
-                  bg="transparent"
-                  _hover={{
-                    backgroundColor: "transparent",
-                  }}
-                  _focus={{
-                    textDecoration: "none",
-                  }}
+                  h="1.75rem"
+                  size="sm"
                   onClick={() => {
                     if (spyAddressInput?.current != null) {
                       spyAddressInput.current.value = "";

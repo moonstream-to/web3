@@ -2,7 +2,7 @@
 import { useRouter } from "next/router";
 import { useLayoutEffect } from "react";
 
-import { getLayout } from "../../../packages/moonstream-components/src/layoutsForPlay/EntryPointLayout";
+import { getLayout } from "../../../packages/moonstream-components/src/layouts/EntryPointLayout";
 
 const EntryPoint = () => {
   const router = useRouter();
