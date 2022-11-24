@@ -9,9 +9,9 @@ import {
 } from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
-import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
+import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout";
 import { useRouter } from "moonstream-components/src/core/hooks";
-import DropperContract from "moonstream-components/src/components/DropperContract";
+import DropperContract from "moonstream-components/src/components/DropperContractPlay";
 import usePlayerClaims from "moonstream-components/src/core/hooks/dropper/useClaims";
 import { useDrops } from "moonstream-components/src/core/hooks/dropper";
 const assets = {

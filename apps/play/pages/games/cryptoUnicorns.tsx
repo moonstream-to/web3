@@ -1,5 +1,5 @@
 import React, { useContext, useEffect } from "react";
-import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
+import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout";
 import {
   Flex,
   Center,
@@ -36,7 +36,7 @@ import {
   MAX_INT,
   chainByChainId,
 } from "moonstream-components/src/core/providers/Web3Provider";
-import LootboxCard from "../../../../packages/moonstream-components/src/components/CryptoUnicorns/LootboxCard";
+import LootboxCard from "../../../../packages/moonstream-components/src/components/CryptoUnicorns/LootboxCardPlay";
 import { MockTerminus as TerminusFacet } from "../../../../types/contracts/MockTerminus";
 import { hookCommon } from "moonstream-components/src/core/hooks";
 

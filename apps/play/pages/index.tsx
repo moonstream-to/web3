@@ -3,8 +3,8 @@ import { Flex, Center } from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 // import { getLayout } from "../src/layouts/AppLayout";
-import FeatureCard from "../../../packages/moonstream-components/src/components/FeatureCard";
-import { getLayout } from "../../../packages/moonstream-components/src/layouts/EngineLayout";
+import FeatureCard from "../../../packages/moonstream-components/src/components/FeatureCardPlay";
+import { getLayout } from "../../../packages/moonstream-components/src/layoutsForPlay/EngineLayout";
 
 const assets: any = {
   onboarding:

@@ -1,7 +1,7 @@
 import React from "react";
-import { getLayout } from "../../../../packages/moonstream-components/src/layouts/EngineLayout";
+import { getLayout } from "../../../../packages/moonstream-components/src/layoutsForPlay/EngineLayout";
 import { Flex, Center } from "@chakra-ui/react";
-import FeatureCard from "moonstream-components/src/components/FeatureCard";
+import FeatureCard from "moonstream-components/src/components/FeatureCardPlay";
 const Games = () => {
   return (
     <Flex className="Games">
