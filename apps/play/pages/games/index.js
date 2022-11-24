@@ -10,11 +10,10 @@ const Games = () => {
         minH="100vh"
         bgColor={"#1A1D22"}
         direction={"column"}
-        px="7%"
         mt="100px"
       >
         <Center>
-          <Flex>
+          <Flex wrap="wrap" justifyContent="center">
             <FeatureCard
               w="300px"
               imgH="140px"
