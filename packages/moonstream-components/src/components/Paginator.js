@@ -82,12 +82,12 @@ const _Paginator = ({
       <ButtonGroup
         size="sm"
         variant={"outline"}
+        colorScheme="orange"
         justifyContent={"space-between"}
         w="100%"
         alignItems="baseline"
       >
         <Button
-          variant="orangeOutline"
           isDisabled={router.query[`${paginatorKey}Page`] == "0"}
           onClick={() => {
             setpageUpdate(true);
@@ -103,9 +103,6 @@ const _Paginator = ({
         </Button>
         <Spacer />
         <Select
-          bg="transparent"
-          color="white"
-          borderRadius="5px"
           size="sm"
           maxW="150px"
           placeholder="Select page size"
@@ -113,6 +110,7 @@ const _Paginator = ({
             router.appendQuery(`${paginatorKey}Limit`, e.target.value);
           }}
           value={router.query[`${paginatorKey}Limit`] ?? _pageOptions[0]}
+          bgColor="blue.500"
         >
           {_pageOptions.map((pageSize) => {
             return (
@@ -126,7 +124,6 @@ const _Paginator = ({
           })}
         </Select>
         <Button
-          variant="orangeOutline"
           isDisabled={!hasMore}
           onClick={() => {
             setpageUpdate(true);
