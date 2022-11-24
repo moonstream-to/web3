@@ -35,7 +35,7 @@ const DropDetails = () => {
           return (
             <ClaimCard
               // mx={20}
-              mt={2}
+              mt="10px"
               key={`pc-${claim.dropper_claim_id}`}
               address={dropperAddress}
               drop={claim}

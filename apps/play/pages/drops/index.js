@@ -5,7 +5,6 @@ import {
   Image,
   Center,
   Spinner,
-  Link,
   ButtonGroup,
 } from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
@@ -76,22 +75,8 @@ const Drops = () => {
               >
                 <ButtonGroup direction="row" variant={"solid"} mt="10px">
                   <Button
-                    as={Link}
-                    variant="outline"
-                    color="#F56646"
-                    borderColor="#F56646"
-                    _hover={{
-                      color: "#F4532F",
-                      borderColor: "#F4532F",
-                      backgroundColor: "transparent",
-                      textDecoration: "none",
-                      fontWeight: "800",
-                    }}
-                    _active={{
-                      color: "#F4532F",
-                      borderColor: "#F4532F",
-                      backgroundColor: "transparent",
-                    }}
+                    as={Button}
+                    variant="orangeOutline"
                     onClick={() => {
                       if (query?.dropId) {
                         router.push({
@@ -109,26 +94,7 @@ const Drops = () => {
                   >
                     {query?.dropId ? `Back to list` : `See claims`}
                   </Button>
-                  <Button
-                    disabled
-                    _disabled={{
-                      backgroundColor: "#4D4D4D",
-                      color: "gray.1100",
-                      cursor: "default",
-                    }}
-                    _focus={{
-                      backgroundColor: "#4D4D4D",
-                      color: "gray.1100",
-                    }}
-                    _hover={{
-                      backgroundColor: "#4D4D4D",
-                      color: "gray.1100",
-                    }}
-                    _active={{
-                      backgroundColor: "#4D4D4D",
-                      color: "gray.1100",
-                    }}
-                  >
+                  <Button disabled variant="orangeOutline">
                     Claim all at once
                   </Button>
                 </ButtonGroup>

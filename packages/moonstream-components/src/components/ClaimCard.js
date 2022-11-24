@@ -44,8 +44,9 @@ const _ClaimCard = ({ drop, children, ...props }) => {
 
   return (
     <Flex
-      borderRadius={"md"}
-      bgColor="blue.800"
+      bgColor="#353535"
+      border="1px solid white"
+      borderRadius="20px"
       w="100%"
       direction={"column"}
       p={4}
@@ -72,7 +73,7 @@ const _ClaimCard = ({ drop, children, ...props }) => {
             minW="200px"
             flexWrap={"wrap"}
             w="100%"
-            bgColor={"blue.1100"}
+            bgColor={"#232323"}
             borderRadius="md"
             px={2}
             // pt={4}
@@ -106,7 +107,7 @@ const _ClaimCard = ({ drop, children, ...props }) => {
             </UnorderedList>
           </Flex>
         </Flex>
-        <Flex
+        {/* <Flex
           //TODO: add claim metadata here
           flexGrow={1}
           m={2}
@@ -114,14 +115,14 @@ const _ClaimCard = ({ drop, children, ...props }) => {
           flexBasis={"220px"}
           bgColor={"red.500"}
           borderRadius="md"
-        ></Flex>
+        ></Flex> */}
       </Flex>
       <Flex direction={"row"} justifyContent="space-evenly" pt={4}>
         <Button
-          variant={"solid"}
+          variant={"orangeOutline"}
           size="xl"
+          borderWidth="3px"
           isLoading={dropperContract.claimWeb3Drop.isLoading}
-          colorScheme="green"
           isDisabled={!dropperContract.claimState.data?.canClaim}
           onClick={() =>
             dropperContract.claimWeb3Drop.mutate({
