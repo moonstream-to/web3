@@ -74,16 +74,24 @@ const Drops = () => {
                 key={contract.id}
                 contractResource={contract}
               >
-                <ButtonGroup
-                  direction="row"
-                  variant={"solid"}
-                  colorScheme="orange"
-                >
+                <ButtonGroup direction="row" variant={"solid"} mt="10px">
                   <Button
                     as={Link}
                     variant="outline"
                     color="#F56646"
                     borderColor="#F56646"
+                    _hover={{
+                      color: "#F4532F",
+                      borderColor: "#F4532F",
+                      backgroundColor: "transparent",
+                      textDecoration: "none",
+                      fontWeight: "800",
+                    }}
+                    _active={{
+                      color: "#F4532F",
+                      borderColor: "#F4532F",
+                      backgroundColor: "transparent",
+                    }}
                     onClick={() => {
                       if (query?.dropId) {
                         router.push({
@@ -106,6 +114,7 @@ const Drops = () => {
                     _disabled={{
                       backgroundColor: "#4D4D4D",
                       color: "gray.1100",
+                      cursor: "default",
                     }}
                     _focus={{
                       backgroundColor: "#4D4D4D",
