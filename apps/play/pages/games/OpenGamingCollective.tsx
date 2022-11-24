@@ -13,7 +13,6 @@ import {
   Button,
   Grid,
 } from "@chakra-ui/react";
-import { CloseIcon } from "@chakra-ui/icons";
 
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 import { useQuery } from "react-query";
@@ -143,7 +142,7 @@ const OpenGamingCollective = () => {
     <Flex
       className="Games"
       borderRadius={"xl"}
-      bgColor={spyMode ? "#2D2D2D" : "#1A1D22"}
+      bgColor={spyMode ? "#1A1D22" : "#1A1D22"}
     >
       <Flex w="100%" minH="100vh" direction={"column"} px="7%" mt="50px">
         {spyMode && (
@@ -178,8 +177,10 @@ const OpenGamingCollective = () => {
                 }
               }}
             >
-              <Text pr={2}>exit</Text>
-              <CloseIcon h="10px" />
+              <Text pr={2} cursor="pointer">
+                exit
+              </Text>
+              {/* <CloseIcon h="10px" /> */}
             </Center>
           </Flex>
         )}
@@ -203,8 +204,15 @@ const OpenGamingCollective = () => {
               />
               <InputRightElement width="3rem">
                 <Button
-                  h="1.75rem"
-                  size="sm"
+                  h="2rem"
+                  size="md"
+                  bg="transparent"
+                  _hover={{
+                    backgroundColor: "transparent",
+                  }}
+                  _focus={{
+                    textDecoration: "none",
+                  }}
                   onClick={() => {
                     if (spyAddressInput?.current != null) {
                       spyAddressInput.current.value = "";
