@@ -49,8 +49,9 @@ const LootboxCard = ({
 
   return (
     <Flex
-      borderRadius={"md"}
-      bgColor="blue.800"
+      borderRadius={"20px"}
+      border="1px solid white"
+      bgColor="#1A1D22"
       w="100%"
       direction={"column"}
       p={4}
@@ -72,12 +73,15 @@ const LootboxCard = ({
       {metadata?.image && (
         <Image
           boxSize="200px"
+          border="1px solid #4D4D4D"
+          borderRadius="10px"
           src={metadata.image}
           alt={metadata.description}
         />
       )}
       {!hasActiveOpening && (
         <Button
+          variant="orangeOutline"
           onClick={openTheLootbox}
           isDisabled={!(state.isFetched && state.data.lootboxBalance !== "0")}
         >
@@ -87,6 +91,7 @@ const LootboxCard = ({
       )}
       {hasActiveOpening && (
         <Button
+          variant="orangeOutline"
           onClick={completeLootboxOpening}
           isDisabled={!activeOpening.isReadyToComplete}
         >

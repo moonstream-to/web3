@@ -43,6 +43,7 @@ const Lootboxes = () => {
         state?.data?.lootboxIds?.map((lootboxId) => {
           return (
             <LootboxCard
+              mt="10px"
               key={`contract-card-${lootboxId}}`}
               contractAddress={contractAddress}
               hasActiveOpening={
