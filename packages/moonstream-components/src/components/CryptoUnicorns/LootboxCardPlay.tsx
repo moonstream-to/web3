@@ -18,7 +18,7 @@ const _LootboxCard = ({
   grayedOut?: boolean;
 }) => {
   return (
-    <Flex {...props} p="20px" bg="#353535" borderRadius="20px">
+    <Flex {...props} p="20px" bg="#353535" borderRadius="20px" maxW="290px">
       <VStack maxW="250">
         <Image
           src={imageUrl}
