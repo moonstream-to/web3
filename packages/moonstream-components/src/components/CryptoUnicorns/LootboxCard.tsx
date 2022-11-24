@@ -28,6 +28,7 @@ const _LootboxCard = ({
           loading="lazy"
           w="100%"
           borderRadius="10px"
+          border="1px solid #4D4D4D"
           alt="CU Inventory Item"
         />
         <Flex
