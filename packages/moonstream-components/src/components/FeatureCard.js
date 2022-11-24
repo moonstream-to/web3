@@ -22,7 +22,7 @@ const FeatureCard = ({
   heading,
   link,
   imageUrl,
-  textColor,
+  textColorP,
   imgH,
   alt,
   level,
@@ -41,7 +41,7 @@ const FeatureCard = ({
   return (
     <Wrapper>
       <Stack
-        bg="#353535"
+        bg={props.disabled ? "transparent" : "#353535"}
         {...props}
         transition={"1s"}
         spacing={1}
@@ -50,7 +50,11 @@ const FeatureCard = ({
         borderRadius="20px"
         borderColor="white"
         borderWidth={"1px"}
-        _hover={{ transform: "scale(1.05)", transition: "0.42s" }}
+        _hover={
+          props.disabled
+            ? {}
+            : { transform: "scale(1.05)", transition: "0.42s" }
+        }
         m={2}
         pb={2}
         pt={imgPading}
@@ -70,7 +74,11 @@ const FeatureCard = ({
         <Heading textAlign="center" as={level ?? "h2"} _hover={{}}>
           {heading}
         </Heading>
-        <chakra.span textAlign={"center"} px={2}>
+        <chakra.span
+          textColor={textColorP ?? "white"}
+          textAlign={"center"}
+          px={2}
+        >
           {text}
         </chakra.span>
       </Stack>
