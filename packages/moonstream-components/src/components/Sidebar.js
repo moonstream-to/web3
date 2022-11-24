@@ -43,7 +43,9 @@ const Sidebar = () => {
           <IconButton
             ml={4}
             justifySelf="flex-start"
-            colorScheme="blue"
+            bg="transparent"
+            color="white"
+            // colorScheme="blue"
             aria-label="App navigation"
             icon={
               ui.isMobileView ? (
@@ -89,6 +91,8 @@ const Sidebar = () => {
                 whiteSpace="break-spaces"
               ></Badge>
               <Badge
+                className="sidebar-account"
+                id="sidebar-account"
                 colorScheme={"blue"}
                 variant={"subtle"}
                 size="sm"
@@ -106,6 +110,7 @@ const Sidebar = () => {
                   startColor="red.500"
                   endColor="blue.500"
                   p={1}
+                  textTransform="none"
                 >
                   {web3Provider.account}
                 </Skeleton>
