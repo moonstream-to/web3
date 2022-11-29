@@ -97,6 +97,7 @@ async def position(
     window_size: int = 1,
     limit: int = 10,
     offset: int = 0,
+    normalize_addresses: bool = True,
     db_session: Session = Depends(db.yield_db_session),
 ):
 
@@ -105,7 +106,8 @@ async def position(
     With given window size.
     """
 
-    address = Web3.toChecksumAddress(address)
+    if normalize_addresses:
+        address = Web3.toChecksumAddress(address)
 
     positions = actions.get_position(
         db_session, leaderboard_id, address, window_size, limit, offset
@@ -139,8 +141,9 @@ async def leaderboard(
     request: Request,
     leaderboard_id: UUID,
     scores: List[data.Score],
-    db_session: Session = Depends(db.yield_db_session),
     overwrite: bool = False,
+    normalize_addresses: bool = True,
+    db_session: Session = Depends(db.yield_db_session),
 ):
 
     """
@@ -163,6 +166,7 @@ async def leaderboard(
         leaderboard_id=leaderboard_id,
         scores=scores,
         overwrite=overwrite,
+        normalize_addresses=normalize_addresses,
     )
 
     return leaderboard_points
