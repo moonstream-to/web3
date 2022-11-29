@@ -1117,8 +1117,11 @@ def add_scores(
             updated_at=datetime.now(),
         ),
     )
-    db_session.execute(result_stmt)
-    db_session.commit()
+    try:
+        db_session.execute(result_stmt)
+        db_session.commit()
+    except:
+        db_session.rollback()
 
     return leaderboard_scores
 
