@@ -45,14 +45,13 @@ const LandingNavbar = () => {
         pl={ui.isMobileView ? 2 : 8}
         justifySelf="flex-start"
         py={1}
-        w="160px"
         // flexGrow={1}
         id="Logo Container"
       >
         <RouterLink href="/" passHref>
           <Link
             as={Image}
-            w="fit-content"
+            w="160px"
             h="auto"
             justifyContent="left"
             src={PRIMARY_MOON_LOGO_URL}
