@@ -15,21 +15,12 @@ import Web3Context from "../core/providers/Web3Provider/context";
 const ChainSelector = () => {
   const web3Provider = useContext(Web3Context);
   return (
-    <Menu>
+    <Menu variant="bw" placement="bottom-end">
       <MenuButton
         h="36px"
         mx={2}
-        borderRadius="10px"
         as={Button}
-        textDecoration="none"
-        _expanded={{
-          color: "white",
-          fontWeight: "700",
-          backgroundColor: "#1A1D22",
-        }}
-        _active={{ textDecoration: "none", backgroundColor: "#1A1D22" }}
-        _focus={{ textDecoration: "none", backgroundColor: "#1A1D22" }}
-        _hover={{ textDecoration: "none", fontWeight: "700" }}
+        variant="bwOutline"
         rightIcon={<ChevronDownIcon />}
         leftIcon={
           <Image
@@ -46,31 +37,12 @@ const ChainSelector = () => {
             }
           ></Image>
         }
-        color="white"
-        variant="outline"
-        fontSize="16px"
       >
         {web3Provider.targetChain?.name ?? "Chain selector"}
       </MenuButton>
-      <MenuList
-        bg="#1A1D22"
-        color="white"
-        borderRadius="30px"
-        border="1px solid white"
-      >
+      <MenuList minW="0">
         <MenuItem
-          fontSize={"16px"}
-          _hover={{
-            backgroundColor: "transparent",
-            color: "#F56646",
-            fontWeight: "700",
-          }}
-          _focus={{
-            backgroundColor: "transparent",
-            color: "#F56646",
-            fontWeight: "700",
-          }}
-          // isDisabled={web3Provider.targetChain?.name === "ethereum"}
+          isDisabled={web3Provider.targetChain?.name === "ethereum"}
           onClick={() => {
             web3Provider.changeChain("ethereum");
           }}
@@ -84,13 +56,7 @@ const ChainSelector = () => {
           Ethereum
         </MenuItem>
         <MenuItem
-          fontSize={"16px"}
-          _hover={{
-            backgroundColor: "transparent",
-            color: "#F56646",
-            fontWeight: "700",
-          }}
-          // isDisabled={web3Provider.targetChain?.name === "polygon"}
+          isDisabled={web3Provider.targetChain?.name === "polygon"}
           onClick={() => {
             web3Provider.changeChain("polygon");
           }}
@@ -104,13 +70,7 @@ const ChainSelector = () => {
           Polygon
         </MenuItem>
         <MenuItem
-          fontSize={"16px"}
-          _hover={{
-            backgroundColor: "transparent",
-            color: "#F56646",
-            fontWeight: "700",
-          }}
-          // isDisabled={web3Provider.targetChain?.name === "mumbai"}
+          isDisabled={web3Provider.targetChain?.name === "mumbai"}
           onClick={() => {
             web3Provider.changeChain("mumbai");
           }}
@@ -124,13 +84,7 @@ const ChainSelector = () => {
           Mumbai
         </MenuItem>
         <MenuItem
-          fontSize={"16px"}
-          _hover={{
-            backgroundColor: "transparent",
-            color: "#F56646",
-            fontWeight: "700",
-          }}
-          // isDisabled={web3Provider.targetChain?.name === "localhost"}
+          isDisabled={web3Provider.targetChain?.name === "localhost"}
           onClick={() => {
             web3Provider.changeChain("localhost");
           }}
