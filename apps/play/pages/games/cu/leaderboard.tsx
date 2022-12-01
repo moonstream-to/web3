@@ -81,7 +81,7 @@ const Leaderboard = () => {
       minH="100vh"
       bgColor="#1A1D22"
     >
-      <Flex my={10} bgColor={panelBackground} rounded="lg" px={10} py={10} direction="column">
+      <Flex mb={10} bgColor={panelBackground} rounded="lg" px={10} py={10} direction="column">
         <HStack mb={10}>
           <Image ml={2} alt={"Shadowcorns"} h="50px" src={assets["shadowcornsLogo"]} />
           <Heading>Throwing Shade Leaderboard</Heading>
