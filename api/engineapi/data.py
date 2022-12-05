@@ -190,3 +190,10 @@ class Score(BaseModel):
     address: str
     score: int
     points_data: Dict[str, Any]
+
+
+class RankResponse(BaseModel):
+    address: str
+    rank: int
+    score: int
+    points_data: Dict[str, Any]

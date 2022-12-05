@@ -1034,6 +1034,43 @@ def get_qurtiles(db_session: Session, leaderboard_id):
     return q1, q2, q3
 
 
+def get_rank(
+    db_session: Session,
+    leaderboard_id: uuid.UUID,
+    rank: int,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+):
+    """
+    Get the leaderboard positions
+    """
+    query = (
+        db_session.query(
+            LeaderboardScores.id,
+            LeaderboardScores.address,
+            LeaderboardScores.score,
+            LeaderboardScores.points_data,
+            func.rank().over(order_by=LeaderboardScores.score.desc()).label("rank"),
+        )
+        .filter(LeaderboardScores.leaderboard_id == leaderboard_id)
+        .order_by(text("rank asc, id asc"))
+    )
+
+    ranked_leaderboard = query.cte(name="ranked_leaderboard")
+
+    positions = db_session.query(ranked_leaderboard).filter(
+        ranked_leaderboard.c.rank == rank
+    )
+
+    if limit:
+        positions = positions.limit(limit)
+
+    if offset:
+        positions = positions.offset(offset)
+
+    return positions
+
+
 def create_leaderboard(db_session: Session, title: str, description: str):
     """
     Create a leaderboard
