@@ -148,7 +148,12 @@ type terminusType =
   | "communityCouncil"
   | "summerOfLoveTier1"
   | "summerOfLoveTier2"
-  | "summerOfLoveTier3";
+  | "summerOfLoveTier3"
+  | "fireShadowcornLootbox"
+  | "slimeShadowcornLootbox"
+  | "soulShadowcornLootbox"
+  | "voltShadowcornLootbox"
+  | "nebulaShadowcornLootbox";
 
 interface LootboxInfo {
   poolIdByChain: {
@@ -193,6 +198,11 @@ const terminusTypes: terminusType[] = [
   "summerOfLoveTier1",
   "summerOfLoveTier2",
   "summerOfLoveTier3",
+  "fireShadowcornLootbox",
+  "slimeShadowcornLootbox",
+  "soulShadowcornLootbox",
+  "voltShadowcornLootbox",
+  "nebulaShadowcornLootbox",
 ];
 
 const terminusInfo: { [key in terminusType]: LootboxInfo } = {
@@ -476,6 +486,46 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
       localhost: -1,
     },
   },
+  fireShadowcornLootbox: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 75,
+      ethereum: -1,
+      localhost: -1,
+    },   
+  },
+  slimeShadowcornLootbox: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 77,
+      ethereum: -1,
+      localhost: -1,
+    },   
+  },
+  soulShadowcornLootbox: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 78,
+      ethereum: -1,
+      localhost: -1,
+    },   
+  },
+  voltShadowcornLootbox: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 79,
+      ethereum: -1,
+      localhost: -1,
+    },   
+  },
+  nebulaShadowcornLootbox: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 76,
+      ethereum: -1,
+      localhost: -1,
+    },   
+  },
 };
 
 const defaultLootboxBalances: { [key in terminusType]: number } = {
@@ -514,6 +564,11 @@ const defaultLootboxBalances: { [key in terminusType]: number } = {
   summerOfLoveTier1: 0,
   summerOfLoveTier2: 0,
   summerOfLoveTier3: 0,
+  fireShadowcornLootbox: 0,
+  slimeShadowcornLootbox: 0,
+  soulShadowcornLootbox: 0,
+  voltShadowcornLootbox: 0,
+  nebulaShadowcornLootbox: 0,
 };
 
 interface NFTMetadata {
@@ -1098,6 +1153,36 @@ const CryptoUnicorns = () => {
       displayName: "RMP Lootbox",
       balanceKey: "RMPLootbox",
     },
+    {
+      imageUrl:
+        "https://i.seadn.io/gae/NY1AJidjM4HnDbOrBw_474MUhbp4tL8EZBRmCXFtPDcEYO_B_pF2D1fua6ggpajhJm5_4xstKg94SySs2QY4mit_XNNd4Rm8LS06?auto=format&w=1000",
+      displayName: "Fire Shadowcorn Lootbox",
+      balanceKey: "fireShadowcornLootbox",
+    },
+    {
+      imageUrl:
+        "https://i.seadn.io/gae/0RBQ7zZ0YJsoh4Ffd38olTDRZKCqlK_3FNpqYF30baO77djp_gedIiD5IRJrUArfmGmQs0VBupzaJyzKaiAHRHolWxrCDm_JvQ_4rQ?auto=format&w=1000",
+      displayName: "Slime Shadowcorn Lootbox",
+      balanceKey: "slimeShadowcornLootbox",
+    }, 
+    {
+      imageUrl:
+        "https://i.seadn.io/gae/J9KyCj2jbkZ93hB_ilcXBBkyhfTgObG8CjFFmFIT8_d2b6nnmpyikbGGO7_7MH45KcH1VSaqFXFeLjbWsLLj0yJxvULxbzB-1PGTETw?auto=format&w=1000",
+      displayName: "Soul Shadowcorn Lootbox",
+      balanceKey: "soulShadowcornLootbox",
+    }, 
+    {
+      imageUrl:
+        "https://i.seadn.io/gae/XroR84IEp89RHeEkI2ozw6h9t-hMXY8HDi1uB2nsmjpv_5-fKZrmyX8T2kF7yFRl8SArBhZOCCf6GmOBTDRLngmkdoj0moBQYt5L6sU?auto=format&w=1000",
+      displayName: "Volt Shadowcorn Lootbox",
+      balanceKey: "voltShadowcornLootbox",
+    }, 
+    {
+      imageUrl:
+        "https://i.seadn.io/gae/U3EE-yhtgc44g3bxUX7FWLiTmNA_q_qdCch-4jxbcd7va_LzDmMm_Mm-RL3RYszPOOu0e8DukUdyBaYo_cSyGM8Dq0l6PYbpreuwrZY?auto=format&w=1000",
+      displayName: "Nebula Shadowcorn Lootbox",
+      balanceKey: "nebulaShadowcornLootbox",
+    },   
   ];
 
   const keystones = [
