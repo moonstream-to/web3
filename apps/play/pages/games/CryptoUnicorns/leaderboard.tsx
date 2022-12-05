@@ -1,6 +1,6 @@
 import React from "react";
 import { useQuery } from "react-query";
-import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
+import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout";
 import {
   Box,
   Heading,
@@ -73,15 +73,15 @@ const Leaderboard = () => {
   return (
     <Box
       className="Dashboard"
-      borderRadius={"xl"}
       pt={10}
+      pb="100px"
       minH="100vh"
       bgColor="#1A1D22"
     >
       <Flex
         mb={10}
+        borderRadius="20px"
         bgColor={panelBackground}
-        rounded="lg"
         px={10}
         py={10}
         direction="column"
@@ -95,7 +95,82 @@ const Leaderboard = () => {
           />
           <Heading>Throwing Shade Leaderboard</Heading>
         </HStack>
-        <Flex ml={"10px"} mr={"250px"}>
+        {/* <Flex ml={"10px"} mr={"250px"}>
+          <IconButton
+            aria-label="Next"
+            size="sm"
+            colorScheme="whiteAlpha"
+            icon={<GrPrevious />}
+            disabled={offset < limit}
+            onClick={() => {
+              if (offset >= limit) {
+                setOffset(offset - limit);
+              }
+            }}
+          ></IconButton>
+          <Spacer />
+          <Text hidden={!leaders.data}>
+            Showing results {offset} - {offset + leaders.data?.data.length}
+          </Text>
+          <Spacer />
+          <IconButton
+            aria-label="Next"
+            size="sm"
+            colorScheme="whiteAlpha"
+            icon={<GrNext />}
+            disabled={!leaders.data || leaders.data.data.length < limit}
+            onClick={() => {
+              setOffset(offset + limit);
+            }}
+          ></IconButton>
+        </Flex> */}
+        {leaders.data ? (
+          <Table variant="unstyled" fontSize="20px">
+            <Thead borderBottom="1px solid #8B8B8B">
+              <Tr>
+                <Th p="10px">
+                  <Text fontSize="20px" textTransform="none">
+                    Rank
+                  </Text>
+                </Th>
+                <Th p="10px">
+                  <Text fontSize="20px" textTransform="none">
+                    Shadowcorn ID
+                  </Text>
+                </Th>
+                <Th p="10px">
+                  <Text fontSize="20px" textTransform="none">
+                    Score
+                  </Text>
+                </Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {leaders.data.data.map((item: any, idx: number) => {
+                return (
+                  <Tr key={idx}>
+                    <Td p="10px">{item.rank}</Td>
+                    <Td p="10px">
+                      <Link
+                        // mb={2}
+                        _hover={{ bgColor: "#454545" }}
+                        href={buildOpenseaLink(item.address)}
+                        isExternal
+                      >
+                        {item.address}&nbsp;&nbsp;&nbsp;
+                        <Icon as={FiExternalLink} />
+                      </Link>
+                    </Td>
+                    <Td p="10px">{item.score}</Td>
+                  </Tr>
+                );
+              })}
+            </Tbody>
+          </Table>
+        ) : (
+          <Spinner alignSelf="center" />
+        )}{" "}
+        <Flex width="50%" mt="15px" ml={"auto"} mr={"auto"} alignItems="center">
           <IconButton
             aria-label="Next"
             size="sm"
@@ -124,52 +199,6 @@ const Leaderboard = () => {
             }}
           ></IconButton>
         </Flex>
-        {leaders.data ? (
-          <Table variant="unstyled">
-            <Thead>
-              <Tr>
-                <Th>
-                  <Text fontSize="lg" fontFamily="heading">
-                    Rank
-                  </Text>
-                </Th>
-                <Th>
-                  <Text fontSize="lg" fontFamily="heading">
-                    Shadowcorn ID
-                  </Text>
-                </Th>
-                <Th>
-                  <Text fontSize="lg" fontFamily="heading">
-                    Score
-                  </Text>
-                </Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {leaders.data.data.map((item: any, idx: number) => {
-                return (
-                  <Tr key={idx}>
-                    <Td>{item.rank}</Td>
-                    <Td>
-                      <Link
-                        mb={2}
-                        _hover={{ bgColor: "#454545" }}
-                        href={buildOpenseaLink(item.address)}
-                        isExternal
-                      >
-                        {item.address}&nbsp;&nbsp;&nbsp;
-                        <Icon as={FiExternalLink} />
-                      </Link>
-                    </Td>
-                    <Td>{item.score}</Td>
-                  </Tr>
-                );
-              })}
-            </Tbody>
-          </Table>
-        ) : (
-          <Spinner alignSelf="center" />
-        )}
       </Flex>
     </Box>
   );
