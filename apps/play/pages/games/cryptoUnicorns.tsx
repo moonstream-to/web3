@@ -20,6 +20,7 @@ import {
   HStack,
   Grid,
 } from "@chakra-ui/react";
+import { useRouter } from "../../../../packages/moonstream-components/src/core/hooks";
 const StashABI = require("../../games/cu/StashABI.json");
 import { StashABI as StashABIType } from "../../games/cu/StashABI";
 const GameBankABI = require("../../games/cu/GameBankABI.json");
@@ -532,6 +533,8 @@ interface NFTInfo {
 }
 
 const CryptoUnicorns = () => {
+  const router = useRouter();
+
   const [currentAccount, setCurrentAccount] = React.useState(
     "0x0000000000000000000000000000000000000000"
   );
@@ -1299,13 +1302,7 @@ const CryptoUnicorns = () => {
   ) => {
     const html = (
       <Box display={displayType == displayId ? undefined : "none"}>
-        <HStack alignSelf="start" pb={4}>
-          <Image ml={2} alt={"bottle"} h="24px" src={assets["unimLogo"]} />
-          <Text pr={4}>UNIM: {getUnimBalance()}</Text>
-          <Image ml={2} alt={"bottle"} h="24px" src={assets["rbwLogo"]} />
-          <Text>RBW: {getRBWBalance()}</Text>
-        </HStack>
-        <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} pb={10}>
+        <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} mt={6} pb={10}>
           {list.map((item: any, idx: any) => {
             if (!lootboxBalances?.data) {
               return;
@@ -1341,14 +1338,9 @@ const CryptoUnicorns = () => {
     return (
       <Box display={displayType == displayId ? undefined : "none"}>
         <HStack pb={4}>
-          <Image ml={2} alt={"bottle"} h="24px" src={assets["unimLogo"]} />
-          <Text pr={4}>UNIM: {getUnimBalance()}</Text>
-          <Image ml={2} alt={"bottle"} h="24px" src={assets["rbwLogo"]} />
-          <Text>RBW: {getRBWBalance()}</Text>
-          <Spacer />
           <Text>{list.length} Items</Text>
         </HStack>
-        <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} pb={10}>
+        <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} mt={6} pb={10}>
           {list.map((item: any, idx: any) => {
             return (
               <LootboxCard
@@ -1816,13 +1808,25 @@ const CryptoUnicorns = () => {
         {!spyMode && (
           <Flex justifyContent="end">
             <Button
-              size="sm"
-              height="24px"
-              width="150px"
+              variant="cuButton"
+              color="white"
+              bg="transparent"
+              _hover={{
+                backgroundColor: "#454545",
+              }}
+              onClick={() => {
+                router.push({
+                  pathname: "/games/CryptoUnicorns/leaderboard",
+                });
+              }}
+            >
+              Leaderboard
+            </Button>
+            <Button
+              variant="cuButton"
               textColor="#D43F8C"
               borderColor="#FFFFFF"
               bgColor="white"
-              borderRadius="md"
               onClick={() => {
                 setSpyMode(true);
               }}
