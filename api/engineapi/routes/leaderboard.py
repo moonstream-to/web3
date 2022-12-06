@@ -164,6 +164,26 @@ async def rank(
     return results
 
 
+@app.get("/ranks")
+async def ranks(
+    leaderboard_id: UUID, db_session: Session = Depends(db.yield_db_session)
+) -> List[data.RankResponse]:
+
+    """
+    Returns the leaderboard scores for the given rank.
+    """
+    ranks = actions.get_ranks(db_session, leaderboard_id)
+    results = [
+        data.RankResponse(
+            score=rank.score,
+            rank=rank.rank,
+            size=rank.size,
+        )
+        for rank in ranks
+    ]
+    return results
+
+
 @app.put("/{leaderboard_id}/scores")
 async def leaderboard(
     request: Request,

@@ -1034,6 +1034,28 @@ def get_qurtiles(db_session: Session, leaderboard_id):
     return q1, q2, q3
 
 
+def get_ranks(db_session: Session, leaderboard_id):
+    """
+    Get the leaderboard rank buckets(rank, size, score)
+    """
+    query = db_session.query(
+        LeaderboardScores.id,
+        LeaderboardScores.address,
+        LeaderboardScores.score,
+        LeaderboardScores.points_data,
+        func.rank().over(order_by=LeaderboardScores.score.desc()).label("rank"),
+    ).filter(LeaderboardScores.leaderboard_id == leaderboard_id)
+
+    ranked_leaderboard = query.cte(name="ranked_leaderboard")
+
+    ranks = db_session.query(
+        ranked_leaderboard.rank,
+        func.count(ranked_leaderboard.id).label("size"),
+        ranked_leaderboard.score,
+    ).group_by(ranked_leaderboard.rank, ranked_leaderboard.score)
+    return ranks
+
+
 def get_rank(
     db_session: Session,
     leaderboard_id: uuid.UUID,
@@ -1042,7 +1064,7 @@ def get_rank(
     offset: Optional[int] = None,
 ):
     """
-    Get the leaderboard positions
+    Get bucket in leaderboard by rank
     """
     query = (
         db_session.query(
