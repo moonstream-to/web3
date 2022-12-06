@@ -108,7 +108,7 @@ const Leaderboard = () => {
           </HStack>
           <Spacer />
           <Flex
-            w={["100%", "100%"]}
+            w={["100%", "100%", "228px"]}
             justifyContent={["start", "start", "end"]}
             mt={["10px", "10px", 0]}
           >
