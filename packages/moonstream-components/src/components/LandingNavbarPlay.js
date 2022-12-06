@@ -36,6 +36,10 @@ const LandingNavbar = () => {
           <IconButton
             alignSelf="flex-start"
             variant="solid"
+            bg="transparent"
+            h="56px"
+            m="0"
+            color="white"
             onClick={() => ui.setSidebarToggled(!ui.sidebarToggled)}
             icon={<HamburgerIcon />}
           />
@@ -45,14 +49,15 @@ const LandingNavbar = () => {
         pl={ui.isMobileView ? 2 : 8}
         justifySelf="flex-start"
         py={1}
-        w="160px"
+        alignItems="center"
         // flexGrow={1}
         id="Logo Container"
+        h="100%"
       >
         <RouterLink href="/" passHref>
           <Link
             as={Image}
-            w="fit-content"
+            w="160px"
             h="auto"
             justifyContent="left"
             src={PRIMARY_MOON_LOGO_URL}
