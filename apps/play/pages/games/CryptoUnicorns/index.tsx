@@ -20,6 +20,8 @@ import {
   HStack,
   Grid,
 } from "@chakra-ui/react";
+import { BsTrophy } from "react-icons/Bs";
+
 import { useRouter } from "../../../../../packages/moonstream-components/src/core/hooks";
 const StashABI = require("../../../games/cu/StashABI.json");
 import { StashABI as StashABIType } from "../../../games/cu/StashABI";
@@ -1808,6 +1810,7 @@ const CryptoUnicorns = () => {
         {!spyMode && (
           <Flex justifyContent="end">
             <Button
+              py="20px"
               variant="cuButton"
               color="white"
               bg="transparent"
@@ -1820,6 +1823,8 @@ const CryptoUnicorns = () => {
                 });
               }}
             >
+              {" "}
+              <BsTrophy style={{ marginRight: "10px" }} />
               Leaderboard
             </Button>
             <Button
