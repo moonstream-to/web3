@@ -5,7 +5,6 @@ import {
   Box,
   Heading,
   Flex,
-  HStack,
   Image,
   Accordion,
   AccordionButton,
@@ -18,6 +17,7 @@ import {
   Grid,
   GridItem,
   Icon,
+  HStack,
 } from "@chakra-ui/react";
 import { InfoOutlineIcon } from "@chakra-ui/icons";
 import { FiExternalLink } from "react-icons/fi";
@@ -81,45 +81,61 @@ const Leaderboard = () => {
   const panelBackground = "#2D2D2D";
 
   return (
-    <Box className="Dashboard" py={10} bgColor="#1A1D22" maxW="1200px">
+    <Box
+      className="Dashboard"
+      py={["10px", "20px", "30px"]}
+      bgColor="#1A1D22"
+      maxW="1200px"
+    >
       <Flex
         borderRadius="20px"
         bgColor={panelBackground}
-        px={10}
-        py={10}
+        p={[2, 4, 10]}
         direction="column"
+        fontSize={["xs", "sm", "lg"]}
       >
-        <HStack>
-          <Image
-            ml={2}
-            alt={"Shadowcorns"}
-            h="50px"
-            src={assets["shadowcornsLogo"]}
-          />
-          <Heading>Throwing Shade Leaderboard</Heading>
+        <Flex alignItems="center" direction={["column", "column", "row"]}>
+          <HStack>
+            <Image
+              ml={2}
+              alt={"Shadowcorns"}
+              h="50px"
+              src={assets["shadowcornsLogo"]}
+            />
+            <Heading fontSize={["lg", "2xl"]}>
+              Throwing Shade Leaderboard
+            </Heading>
+          </HStack>
           <Spacer />
-          <Link
-            verticalAlign="middle"
-            fontSize="20px"
-            p="10px 20px"
-            borderRadius="40px"
-            href={
-              "https://medium.com/@lagunagames/shadowcorns-throwing-shade-4a887d8737bf"
-            }
-            _hover={{
-              bg: "#232323",
-              textTransform: "none",
-            }}
-            isExternal
+          <Flex
+            w="100%"
+            justifyContent={["start", "start", "end"]}
+            mt={["10px", "10px", 0]}
           >
-            <Flex alignItems="center">
-              {" "}
-              <Box>About the event</Box>
-              <InfoOutlineIcon ml="10px" />
-            </Flex>
-          </Link>
-        </HStack>
-        <Box my="30px" fontSize="20px">
+            <Link
+              verticalAlign="middle"
+              fontSize={["xs", "sm", "lg"]}
+              py={["2px", "5px", "10px"]}
+              px={["4px", "10px", "20px"]}
+              borderRadius="40px"
+              href={
+                "https://medium.com/@lagunagames/shadowcorns-throwing-shade-4a887d8737bf"
+              }
+              _hover={{
+                bg: "#232323",
+                textTransform: "none",
+              }}
+              isExternal
+            >
+              <Flex alignItems="center">
+                {" "}
+                <Box>About the event</Box>
+                <InfoOutlineIcon ml={[0.5, 1.25, 2.5]} />
+              </Flex>
+            </Link>
+          </Flex>
+        </Flex>
+        <Box my={["10px", "20px", "30px"]} fontSize={["xs", "sm", "lg"]}>
           Shadowcorns rank on the leaderboard by earning Leaderboard Points.
           Each room a Shadowcorn reaches earns them points. At the end of the
           Throwing Shade Event, the Players will be airdropped rewards based on
@@ -128,36 +144,42 @@ const Leaderboard = () => {
         <Grid
           borderBottom="1px solid #8B8B8B"
           templateColumns="1fr 2fr 1fr"
-          fontSize="20px"
           fontWeight="700"
           pb="10px"
         >
-          <GridItem pl="10px">Rank</GridItem>
-          <GridItem maxW="400px">Shadowcorn</GridItem>
+          <GridItem pl={["2px", "5px", "10px"]}>Rank</GridItem>
+          <GridItem>Shadowcorn</GridItem>
           <GridItem>Score</GridItem>
         </Grid>
         {groups.data ? (
-          <Accordion allowToggle>
+          <Accordion defaultIndex={[0]} allowToggle allowMultiple>
             {[...groups.data.entries()].map(([score, group]) => {
               return (
-                <AccordionItem borderStyle="none" key={score}>
-                  <AccordionButton _hover={{ bg: "#454545" }} p="10px 0px">
+                <AccordionItem
+                  borderStyle="none"
+                  key={score}
+                  fontSize={["xs", "sm", "lg"]}
+                >
+                  <AccordionButton
+                    fontSize={["xs", "sm", "lg"]}
+                    _hover={{ bg: "#454545" }}
+                    p="0"
+                  >
                     <Grid
                       textAlign="left"
                       width="100%"
                       templateColumns="1fr 2fr 1fr"
+                      py={["5px", "10px"]}
                     >
-                      <GridItem fontSize="20px" fontWeight="700" pl="20px">
+                      <GridItem fontWeight="700" pl={["4px", "10px", "20px"]}>
                         {group.rank}
                       </GridItem>
-                      <GridItem
-                        maxW="400px"
-                        fontSize="20px"
-                        fontWeight="400"
-                      >{`${group.records.length} Shadowcorn${
+                      <GridItem fontWeight="400">{`${
+                        group.records.length
+                      } Shadowcorn${
                         group.records.length > 1 ? "s" : ""
                       }`}</GridItem>
-                      <GridItem fontSize="20px" fontWeight="400">
+                      <GridItem fontWeight="400">
                         <Flex width="100%" justifyContent="space-between">
                           {score}
                           <AccordionIcon />
@@ -173,10 +195,13 @@ const Leaderboard = () => {
                           textAlign="left"
                           width="100%"
                           templateColumns="1fr 2fr 1fr"
-                          py="10px"
+                          py={["5px", "10px"]}
                           bg="#232323"
                         >
-                          <GridItem fontSize="20px" fontWeight="700" pl="40px">
+                          <GridItem
+                            fontWeight="700"
+                            pl={["8px", "20px", "40px"]}
+                          >
                             {group.rank}
                           </GridItem>
 
@@ -186,18 +211,12 @@ const Leaderboard = () => {
                             href={buildOpenseaLink(item.address)}
                             isExternal
                           >
-                            <GridItem
-                              maxW="350px"
-                              fontSize="20px"
-                              fontWeight="400"
-                            >
+                            <GridItem fontWeight="400">
                               {item.address}
                               <Icon as={FiExternalLink} ml="10px" />
                             </GridItem>
                           </Link>
-                          <GridItem fontSize="20px" fontWeight="400">
-                            {item.score}
-                          </GridItem>
+                          <GridItem fontWeight="400">{item.score}</GridItem>
                         </Grid>
                       );
                     })}
