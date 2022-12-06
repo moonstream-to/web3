@@ -495,7 +495,7 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
       polygon: 75,
       ethereum: -1,
       localhost: -1,
-    },   
+    },
   },
   slimeShadowcornLootbox: {
     poolIdByChain: {
@@ -503,7 +503,7 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
       polygon: 77,
       ethereum: -1,
       localhost: -1,
-    },   
+    },
   },
   soulShadowcornLootbox: {
     poolIdByChain: {
@@ -511,7 +511,7 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
       polygon: 78,
       ethereum: -1,
       localhost: -1,
-    },   
+    },
   },
   voltShadowcornLootbox: {
     poolIdByChain: {
@@ -519,7 +519,7 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
       polygon: 79,
       ethereum: -1,
       localhost: -1,
-    },   
+    },
   },
   nebulaShadowcornLootbox: {
     poolIdByChain: {
@@ -527,7 +527,7 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
       polygon: 76,
       ethereum: -1,
       localhost: -1,
-    },   
+    },
   },
 };
 
@@ -1169,25 +1169,25 @@ const CryptoUnicorns = () => {
         "https://i.seadn.io/gae/0RBQ7zZ0YJsoh4Ffd38olTDRZKCqlK_3FNpqYF30baO77djp_gedIiD5IRJrUArfmGmQs0VBupzaJyzKaiAHRHolWxrCDm_JvQ_4rQ?auto=format&w=1000",
       displayName: "Slime Shadowcorn Lootbox",
       balanceKey: "slimeShadowcornLootbox",
-    }, 
+    },
     {
       imageUrl:
         "https://i.seadn.io/gae/J9KyCj2jbkZ93hB_ilcXBBkyhfTgObG8CjFFmFIT8_d2b6nnmpyikbGGO7_7MH45KcH1VSaqFXFeLjbWsLLj0yJxvULxbzB-1PGTETw?auto=format&w=1000",
       displayName: "Soul Shadowcorn Lootbox",
       balanceKey: "soulShadowcornLootbox",
-    }, 
+    },
     {
       imageUrl:
         "https://i.seadn.io/gae/XroR84IEp89RHeEkI2ozw6h9t-hMXY8HDi1uB2nsmjpv_5-fKZrmyX8T2kF7yFRl8SArBhZOCCf6GmOBTDRLngmkdoj0moBQYt5L6sU?auto=format&w=1000",
       displayName: "Volt Shadowcorn Lootbox",
       balanceKey: "voltShadowcornLootbox",
-    }, 
+    },
     {
       imageUrl:
         "https://i.seadn.io/gae/U3EE-yhtgc44g3bxUX7FWLiTmNA_q_qdCch-4jxbcd7va_LzDmMm_Mm-RL3RYszPOOu0e8DukUdyBaYo_cSyGM8Dq0l6PYbpreuwrZY?auto=format&w=1000",
       displayName: "Nebula Shadowcorn Lootbox",
       balanceKey: "nebulaShadowcornLootbox",
-    },   
+    },
   ];
 
   const keystones = [
