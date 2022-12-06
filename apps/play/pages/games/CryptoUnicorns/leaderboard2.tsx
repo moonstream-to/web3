@@ -29,7 +29,6 @@ const buildOpenseaLink = (tokenId: string) => {
 const Leaderboard = () => {
   const [limit] = React.useState<number>(0);
   const [offset, setOffset] = React.useState<number>(0);
-  const [scores, setScores] = React.useState<number[]>([]);
 
   const fetchLeaders = async (pageLimit: number, pageOffset: number) => {
     return http(
@@ -58,10 +57,7 @@ const Leaderboard = () => {
               });
             }
           }
-          console.log(groups);
-          setScores(
-            Array.from(new Set(res.data.map((item: any) => item.score)))
-          );
+
           return groups;
         } catch (err) {
           console.log(err);
@@ -97,28 +93,31 @@ const Leaderboard = () => {
         </HStack>
         <Accordion allowToggle>
           {groups.data &&
-            groups.data.keys().map((group: any) => {
+            [...groups.data.entries()].map(([score, group]) => {
               return (
-                <AccordionItem key={group.score}>
+                <AccordionItem key={score}>
                   <AccordionButton>
-                    <Box flex="1" textAlign="left">
-                      {item}
-                    </Box>
+                    <Flex>
+                      <Box flex="1" textAlign="left">
+                        {group.rank}-
+                      </Box>
+                      <Box flex="1" textAlign="left">
+                        {group.records.length}-
+                      </Box>
+                      <Box flex="1" textAlign="left">
+                        {score}
+                      </Box>
+                    </Flex>
                     <AccordionIcon />
                   </AccordionButton>
                   <AccordionPanel pb={4}>
-                    {leaders.data &&
-                      leaders.data.data
-                        .filter((record: any) => record.score === item)
-                        .map((item: any) => {
-                          return (
-                            <Flex key={item.address}>
-                              {item.rank}
-                              {item.address}
-                              {item.score}
-                            </Flex>
-                          );
-                        })}
+                    {group.records.map((item: any) => {
+                      return (
+                        <Flex key={item.address}>
+                          {item.rank}-{item.address}-{item.score}
+                        </Flex>
+                      );
+                    })}
                   </AccordionPanel>
                 </AccordionItem>
               );
