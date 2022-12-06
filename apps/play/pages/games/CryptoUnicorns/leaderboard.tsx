@@ -71,13 +71,7 @@ const Leaderboard = () => {
   const panelBackground = "#2D2D2D";
 
   return (
-    <Box
-      className="Dashboard"
-      pt={10}
-      pb="100px"
-      minH="100vh"
-      bgColor="#1A1D22"
-    >
+    <Box className="Dashboard" py={10} bgColor="#1A1D22">
       <Flex
         mb={10}
         borderRadius="20px"
@@ -95,37 +89,8 @@ const Leaderboard = () => {
           />
           <Heading>Throwing Shade Leaderboard</Heading>
         </HStack>
-        {/* <Flex ml={"10px"} mr={"250px"}>
-          <IconButton
-            aria-label="Next"
-            size="sm"
-            colorScheme="whiteAlpha"
-            icon={<GrPrevious />}
-            disabled={offset < limit}
-            onClick={() => {
-              if (offset >= limit) {
-                setOffset(offset - limit);
-              }
-            }}
-          ></IconButton>
-          <Spacer />
-          <Text hidden={!leaders.data}>
-            Showing results {offset} - {offset + leaders.data?.data.length}
-          </Text>
-          <Spacer />
-          <IconButton
-            aria-label="Next"
-            size="sm"
-            colorScheme="whiteAlpha"
-            icon={<GrNext />}
-            disabled={!leaders.data || leaders.data.data.length < limit}
-            onClick={() => {
-              setOffset(offset + limit);
-            }}
-          ></IconButton>
-        </Flex> */}
         {leaders.data ? (
-          <Table variant="unstyled" fontSize="20px">
+          <Table variant="unstyled" fontSize="20px" maxW="550px">
             <Thead borderBottom="1px solid #8B8B8B">
               <Tr>
                 <Th p="10px">
@@ -149,8 +114,8 @@ const Leaderboard = () => {
               {leaders.data.data.map((item: any, idx: number) => {
                 return (
                   <Tr key={idx}>
-                    <Td p="10px">{item.rank}</Td>
-                    <Td p="10px">
+                    <Td p="11px 10px">{item.rank}</Td>
+                    <Td p="11px 10px">
                       <Link
                         // mb={2}
                         _hover={{ bgColor: "#454545" }}
