@@ -20,6 +20,7 @@ import {
   HStack,
   Image,
 } from "@chakra-ui/react";
+import { InfoOutlineIcon } from "@chakra-ui/icons";
 import http from "moonstream-components/src/core/utils/http";
 import queryCacheProps from "moonstream-components/src/core/hooks/hookCommon";
 import { SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
@@ -80,7 +81,7 @@ const Leaderboard = () => {
         py={10}
         direction="column"
       >
-        <HStack mb={10}>
+        <HStack>
           <Image
             ml={2}
             alt={"Shadowcorns"}
@@ -88,7 +89,34 @@ const Leaderboard = () => {
             src={assets["shadowcornsLogo"]}
           />
           <Heading>Throwing Shade Leaderboard</Heading>
+          <Spacer />
+          <Link
+            verticalAlign="middle"
+            fontSize="20px"
+            p="10px 20px"
+            borderRadius="40px"
+            href={
+              "https://medium.com/@lagunagames/shadowcorns-throwing-shade-4a887d8737bf"
+            }
+            _hover={{
+              bg: "#232323",
+              textTransform: "none",
+            }}
+            isExternal
+          >
+            <Flex alignItems="center">
+              {" "}
+              <Box>About the event</Box>
+              <InfoOutlineIcon ml="10px" />
+            </Flex>
+          </Link>
         </HStack>
+        <Box my="30px">
+          Shadowcorns rank on the leaderboard by earning Leaderboard Points.
+          Each room a Shadowcorn reaches earns them points. At the end of the
+          Throwing Shade Event, the Players will be airdropped rewards based on
+          where they rank on the Leaderboard.
+        </Box>
         {leaders.data ? (
           <Table variant="unstyled" fontSize="20px" maxW="550px">
             <Thead borderBottom="1px solid #8B8B8B">
