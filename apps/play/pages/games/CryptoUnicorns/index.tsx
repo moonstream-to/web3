@@ -20,27 +20,30 @@ import {
   HStack,
   Grid,
 } from "@chakra-ui/react";
-const StashABI = require("../../games/cu/StashABI.json");
-import { StashABI as StashABIType } from "../../games/cu/StashABI";
-const GameBankABI = require("../../games/cu/GameBankABI.json");
-import { GameBankABI as GameBankABIType } from "../../games/cu/GameBankABI";
-const ERC721MetadataABI = require("../../../../abi/MockERC721.json");
-import { MockERC721 } from "../../../../types/contracts/MockERC721";
+import { BsTrophy } from "react-icons/Bs";
+
+import { useRouter } from "../../../../../packages/moonstream-components/src/core/hooks";
+const StashABI = require("../../../games/cu/StashABI.json");
+import { StashABI as StashABIType } from "../../../games/cu/StashABI";
+const GameBankABI = require("../../../games/cu/GameBankABI.json");
+import { GameBankABI as GameBankABIType } from "../../../games/cu/GameBankABI";
+const ERC721MetadataABI = require("../../../../../abi/MockERC721.json");
+import { MockERC721 } from "../../../../../types/contracts/MockERC721";
 
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
-import { supportedChains } from "../../../../types/Moonstream";
+import { supportedChains } from "../../../../../types/Moonstream";
 import { useERC20, useToast } from "moonstream-components/src/core/hooks";
 import { useMutation, useQuery } from "react-query";
-import { DEFAULT_METATAGS } from "../../src/constants";
+import { DEFAULT_METATAGS } from "../../../src/constants";
 import {
   MAX_INT,
   chainByChainId,
 } from "moonstream-components/src/core/providers/Web3Provider";
-import LootboxCard from "../../../../packages/moonstream-components/src/components/CryptoUnicorns/LootboxCardPlay";
-import { MockTerminus as TerminusFacet } from "../../../../types/contracts/MockTerminus";
+import LootboxCard from "../../../../../packages/moonstream-components/src/components/CryptoUnicorns/LootboxCardPlay";
+import { MockTerminus as TerminusFacet } from "../../../../../types/contracts/MockTerminus";
 import { hookCommon } from "moonstream-components/src/core/hooks";
 
-const terminusAbi = require("../../../../abi/MockTerminus.json");
+const terminusAbi = require("../../../../../abi/MockTerminus.json");
 
 const GameBankAddresses: { [key in supportedChains]: string } = {
   mumbai: "0x762aF8cbE298bbFE568BBB6709f854A01c07333D",
@@ -492,7 +495,7 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
       polygon: 75,
       ethereum: -1,
       localhost: -1,
-    },   
+    },
   },
   slimeShadowcornLootbox: {
     poolIdByChain: {
@@ -500,7 +503,7 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
       polygon: 77,
       ethereum: -1,
       localhost: -1,
-    },   
+    },
   },
   soulShadowcornLootbox: {
     poolIdByChain: {
@@ -508,7 +511,7 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
       polygon: 78,
       ethereum: -1,
       localhost: -1,
-    },   
+    },
   },
   voltShadowcornLootbox: {
     poolIdByChain: {
@@ -516,7 +519,7 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
       polygon: 79,
       ethereum: -1,
       localhost: -1,
-    },   
+    },
   },
   nebulaShadowcornLootbox: {
     poolIdByChain: {
@@ -524,7 +527,7 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
       polygon: 76,
       ethereum: -1,
       localhost: -1,
-    },   
+    },
   },
 };
 
@@ -587,6 +590,8 @@ interface NFTInfo {
 }
 
 const CryptoUnicorns = () => {
+  const router = useRouter();
+
   const [currentAccount, setCurrentAccount] = React.useState(
     "0x0000000000000000000000000000000000000000"
   );
@@ -1164,25 +1169,25 @@ const CryptoUnicorns = () => {
         "https://i.seadn.io/gae/0RBQ7zZ0YJsoh4Ffd38olTDRZKCqlK_3FNpqYF30baO77djp_gedIiD5IRJrUArfmGmQs0VBupzaJyzKaiAHRHolWxrCDm_JvQ_4rQ?auto=format&w=1000",
       displayName: "Slime Shadowcorn Lootbox",
       balanceKey: "slimeShadowcornLootbox",
-    }, 
+    },
     {
       imageUrl:
         "https://i.seadn.io/gae/J9KyCj2jbkZ93hB_ilcXBBkyhfTgObG8CjFFmFIT8_d2b6nnmpyikbGGO7_7MH45KcH1VSaqFXFeLjbWsLLj0yJxvULxbzB-1PGTETw?auto=format&w=1000",
       displayName: "Soul Shadowcorn Lootbox",
       balanceKey: "soulShadowcornLootbox",
-    }, 
+    },
     {
       imageUrl:
         "https://i.seadn.io/gae/XroR84IEp89RHeEkI2ozw6h9t-hMXY8HDi1uB2nsmjpv_5-fKZrmyX8T2kF7yFRl8SArBhZOCCf6GmOBTDRLngmkdoj0moBQYt5L6sU?auto=format&w=1000",
       displayName: "Volt Shadowcorn Lootbox",
       balanceKey: "voltShadowcornLootbox",
-    }, 
+    },
     {
       imageUrl:
         "https://i.seadn.io/gae/U3EE-yhtgc44g3bxUX7FWLiTmNA_q_qdCch-4jxbcd7va_LzDmMm_Mm-RL3RYszPOOu0e8DukUdyBaYo_cSyGM8Dq0l6PYbpreuwrZY?auto=format&w=1000",
       displayName: "Nebula Shadowcorn Lootbox",
       balanceKey: "nebulaShadowcornLootbox",
-    },   
+    },
   ];
 
   const keystones = [
@@ -1384,13 +1389,7 @@ const CryptoUnicorns = () => {
   ) => {
     const html = (
       <Box display={displayType == displayId ? undefined : "none"}>
-        <HStack alignSelf="start" pb={4}>
-          <Image ml={2} alt={"bottle"} h="24px" src={assets["unimLogo"]} />
-          <Text pr={4}>UNIM: {getUnimBalance()}</Text>
-          <Image ml={2} alt={"bottle"} h="24px" src={assets["rbwLogo"]} />
-          <Text>RBW: {getRBWBalance()}</Text>
-        </HStack>
-        <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} pb={10}>
+        <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} mt={6} pb={10}>
           {list.map((item: any, idx: any) => {
             if (!lootboxBalances?.data) {
               return;
@@ -1426,14 +1425,9 @@ const CryptoUnicorns = () => {
     return (
       <Box display={displayType == displayId ? undefined : "none"}>
         <HStack pb={4}>
-          <Image ml={2} alt={"bottle"} h="24px" src={assets["unimLogo"]} />
-          <Text pr={4}>UNIM: {getUnimBalance()}</Text>
-          <Image ml={2} alt={"bottle"} h="24px" src={assets["rbwLogo"]} />
-          <Text>RBW: {getRBWBalance()}</Text>
-          <Spacer />
           <Text>{list.length} Items</Text>
         </HStack>
-        <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} pb={10}>
+        <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} mt={6} pb={10}>
           {list.map((item: any, idx: any) => {
             return (
               <LootboxCard
@@ -1901,13 +1895,28 @@ const CryptoUnicorns = () => {
         {!spyMode && (
           <Flex justifyContent="end">
             <Button
-              size="sm"
-              height="24px"
-              width="150px"
+              py="20px"
+              variant="cuButton"
+              color="white"
+              bg="transparent"
+              _hover={{
+                backgroundColor: "#454545",
+              }}
+              onClick={() => {
+                router.push({
+                  pathname: "/games/CryptoUnicorns/leaderboard",
+                });
+              }}
+            >
+              {" "}
+              <BsTrophy style={{ marginRight: "10px" }} />
+              Leaderboard
+            </Button>
+            <Button
+              variant="cuButton"
               textColor="#D43F8C"
               borderColor="#FFFFFF"
               bgColor="white"
-              borderRadius="md"
               onClick={() => {
                 setSpyMode(true);
               }}

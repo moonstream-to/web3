@@ -151,6 +151,18 @@ const variantOrangeOutline = () => {
   };
 };
 
+const variantCUbutton = () => {
+  return {
+    p: "10px 20px",
+    fontSize: "20px",
+    fontWeight: "700",
+    borderRadius: "10px",
+    _hover: {
+      backgroundColor: "#D5D5D5",
+    },
+  };
+};
+
 const Button = {
   // 1. We can update the base styles
   baseStyle: () => ({
@@ -190,6 +202,7 @@ const Button = {
     link: variantLink,
     orangeOutline: variantOrangeOutline,
     whiteOutline: variantWhiteOutline,
+    cuButton: variantCUbutton,
   },
 };
 export default Button;

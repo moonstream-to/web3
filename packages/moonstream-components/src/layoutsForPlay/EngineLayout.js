@@ -29,6 +29,7 @@ const EngineLayout = (props) => {
       <Breadcrumb
         spacing="8px"
         pt={2}
+        fontSize={["sm", "md", "lg"]}
         separator={<ChevronRightIcon color="gray.500" />}
       >
         {path.length !== 0 && (
