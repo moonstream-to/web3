@@ -72,7 +72,7 @@ const Leaderboard = () => {
   const panelBackground = "#2D2D2D";
 
   return (
-    <Box className="Dashboard" py={10} bgColor="#1A1D22">
+    <Box maxW="1200px" className="Dashboard" py={10} bgColor="#1A1D22">
       <Flex
         mb={10}
         borderRadius="20px"
@@ -111,15 +111,15 @@ const Leaderboard = () => {
             </Flex>
           </Link>
         </HStack>
-        <Box my="30px">
+        <Box my="30px" fontSize="20px">
           Shadowcorns rank on the leaderboard by earning Leaderboard Points.
           Each room a Shadowcorn reaches earns them points. At the end of the
           Throwing Shade Event, the Players will be airdropped rewards based on
           where they rank on the Leaderboard.
         </Box>
         {leaders.data ? (
-          <Table variant="unstyled" fontSize="20px" maxW="550px">
-            <Thead borderBottom="1px solid #8B8B8B">
+          <Table variant="unstyled" fontSize="20px">
+            <Thead pb="10px" borderBottom="1px solid #8B8B8B">
               <Tr>
                 <Th p="10px">
                   <Text fontSize="20px" textTransform="none">
