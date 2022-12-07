@@ -119,12 +119,12 @@ const variantWhiteOutline = (props) => {
   return {
     color,
     borderColor: color,
-    padding: "10px 20px",
+    padding: ["2px 5px", "5px 10px", "10px 20px"],
     borderWidth: "2px",
     borderStyle: "solid",
-    borderRadius: "100px",
+    borderRadius: ["50px", "75px", "100px"],
     fontWeight: "400",
-    fontSize: "20px",
+    fontSize: ["sm", "md", "lg"],
   };
 };
 
@@ -153,8 +153,8 @@ const variantOrangeOutline = () => {
 
 const variantCUbutton = () => {
   return {
-    p: "10px 20px",
-    fontSize: "20px",
+    padding: ["5px 10px", "5px 10px", "10px 20px"],
+    fontSize: ["sm", "md", "lg"],
     fontWeight: "700",
     borderRadius: "10px",
     _hover: {
