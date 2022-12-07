@@ -1634,7 +1634,6 @@ const CryptoUnicorns = () => {
                       </FormControl>
                       <Spacer />
                       <Button
-                        // mx={4}
                         isDisabled={
                           (!needAllowanceUNIM || unimToStash === "") &&
                           (notEnoughUNIM || unimToStash == "")
@@ -1649,8 +1648,6 @@ const CryptoUnicorns = () => {
                           unim.setSpenderAllowance.isLoading ||
                           stashUnim.isLoading
                         }
-                        // w="220px"
-                        // colorScheme={"orange"}
                         onClick={() => {
                           if (needAllowanceUNIM) {
                             unim.setSpenderAllowance.mutate(MAX_INT, {
