@@ -18,7 +18,6 @@ import {
   FormErrorMessage,
   Button,
   HStack,
-  Grid,
 } from "@chakra-ui/react";
 
 import { useRouter } from "../../../../../packages/moonstream-components/src/core/hooks";
@@ -1388,7 +1387,7 @@ const CryptoUnicorns = () => {
   ) => {
     const html = (
       <Box display={displayType == displayId ? undefined : "none"}>
-        <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} mt={6} pb={10}>
+        <Flex wrap="wrap" justifyContent="center" gap="20px" mt="20px">
           {list.map((item: any, idx: any) => {
             if (!lootboxBalances?.data) {
               return;
@@ -1400,6 +1399,7 @@ const CryptoUnicorns = () => {
             } else {
               return (
                 <LootboxCard
+                  maxW={["140px", "170px", "220px"]}
                   key={idx}
                   imageUrl={item["imageUrl"]}
                   displayName={item["displayName"]}
@@ -1409,7 +1409,7 @@ const CryptoUnicorns = () => {
               );
             }
           })}
-        </Grid>
+        </Flex>
       </Box>
     );
     return html;
@@ -1426,10 +1426,11 @@ const CryptoUnicorns = () => {
         <HStack pb={4}>
           <Text>{list.length} Items</Text>
         </HStack>
-        <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} mt={6} pb={10}>
+        <Flex wrap="wrap" justifyContent="center" gap="20px" mt="20px">
           {list.map((item: any, idx: any) => {
             return (
               <LootboxCard
+                maxW={["140px", "170px", "220px"]}
                 key={idx}
                 imageUrl={item["metadata"]["image"]}
                 displayName={item["metadata"]["name"]}
@@ -1439,7 +1440,7 @@ const CryptoUnicorns = () => {
               />
             );
           })}
-        </Grid>
+        </Flex>
       </Box>
     );
   };
@@ -1488,13 +1489,19 @@ const CryptoUnicorns = () => {
       borderRadius={"xl"}
       bgColor={spyMode ? "#1A1D22" : "#1A1D22"}
     >
-      <Flex w="100%" minH="100vh" direction={"column"} px="7%" mt="60px">
+      <Flex
+        w="100%"
+        minH="100vh"
+        direction={"column"}
+        px={[0, 0, "7%"]}
+        mt={["20px", "40px", "60px"]}
+      >
         <Box display={spyMode ? "none" : ""}>
           <Flex
             w="100%"
             direction={"row"}
             flexWrap="wrap"
-            mb={12}
+            mb={[3, 6, 12]}
             bgColor="pink.500"
             borderRadius={"xl"}
             boxShadow="xl"
@@ -1504,7 +1511,6 @@ const CryptoUnicorns = () => {
               <Badge
                 colorScheme={"pink"}
                 variant={"solid"}
-                fontSize={"md"}
                 borderRadius={"md"}
                 mr={2}
                 p={1}
@@ -1522,7 +1528,7 @@ const CryptoUnicorns = () => {
                         {unim.spenderState.isLoading ? (
                           <Spinner m={0} size={"lg"} />
                         ) : (
-                          <Flex>
+                          <Flex fontSize={["sm", "md", "lg"]}>
                             {`balance: `} <Spacer />
                             {getUnimBalance()}
                           </Flex>
@@ -1543,20 +1549,15 @@ const CryptoUnicorns = () => {
                 mr={2}
                 p={1}
               >
-                <Flex>
+                <HStack>
                   <Image ml={2} alt={"rbw"} h="48px" src={assets["rbwLogo"]} />
                   <Flex direction={"column"} wrap="nowrap" w="100%">
                     <code>
-                      <Flex
-                        mx={2}
-                        mt={2}
-                        display={"inline-block"}
-                        fontSize="xl"
-                      >
+                      <Flex mx={2} display={"inline-block"} fontSize="xl">
                         {rbw.spenderState.isLoading ? (
                           <Spinner m={0} size={"lg"} />
                         ) : (
-                          <Flex>
+                          <Flex fontSize={["sm", "md", "lg"]}>
                             {`balance: `} <Spacer />
                             {getRBWBalance()}
                           </Flex>
@@ -1564,33 +1565,33 @@ const CryptoUnicorns = () => {
                       </Flex>
                     </code>
                   </Flex>
-                </Flex>
+                </HStack>
               </Badge>
             </Flex>
           </Flex>
-          <code style={{ alignSelf: "center" }}>
-            <Text
-              p={8}
-              textColor={"gray.600"}
-              maxW="1337px"
-              alignSelf={"center"}
-              textAlign="center"
-            >
-              {" "}
-              Use this form to stash any amount of UNIM and RBW into Crypto
-              Unicorns.
-            </Text>
-            <Text mb={4}>
-              WARNING: Only use an account with which you have already logged
-              into the game. Otherwise, the game server will not respect your
-              stash operation.
-            </Text>
-          </code>
+          <Text
+            fontSize={["sm", "md", "lg"]}
+            textColor={"gray.600"}
+            maxW="1337px"
+          >
+            Use this form to stash any amount of UNIM and RBW into Crypto
+            Unicorns.
+          </Text>
+          <Text mb={4} fontSize={["sm", "md", "lg"]}>
+            WARNING: Only use an account with which you have already logged into
+            the game. Otherwise, the game server will not respect your stash
+            operation.
+          </Text>
           <Center>
             <code>
-              <Stack p={4} bgColor={"#1A1D22"} spacing={2}>
+              <Stack bgColor={"#1A1D22"} spacing={2} mx="10px">
                 <Box w="100%">
-                  <FormLabel mb="8px" wordBreak={"break-all"} w="fit-content">
+                  <FormLabel
+                    fontSize={["sm", "md", "lg"]}
+                    mb={["2px", "4px", "8px"]}
+                    wordBreak={"break-all"}
+                    w="fit-content"
+                  >
                     {"UNIM to stash"}
                   </FormLabel>
 
@@ -1601,10 +1602,15 @@ const CryptoUnicorns = () => {
                     w="100%"
                     variant={"outline"}
                   >
-                    <Flex direction={"row"} w="100%" minW="580px">
+                    <Flex
+                      direction={"row"}
+                      w="100%"
+                      minW={["100%", "480px", "580px"]}
+                    >
                       <FormControl isInvalid={notEnoughUNIM}>
                         <Input
-                          w="300px"
+                          w={["100%", "200px", "300px"]}
+                          mt="4px"
                           variant={"outline"}
                           type="search"
                           value={unimToStash}
@@ -1628,19 +1634,23 @@ const CryptoUnicorns = () => {
                       </FormControl>
                       <Spacer />
                       <Button
-                        mx={4}
+                        // mx={4}
                         isDisabled={
                           (!needAllowanceUNIM || unimToStash === "") &&
                           (notEnoughUNIM || unimToStash == "")
                         }
                         size="md"
-                        variant="outline"
+                        variant="cuButton"
+                        textColor="#D43F8C"
+                        borderColor="#FFFFFF"
+                        bgColor="white"
+                        fontSize={["sm", "md", "lg"]}
                         isLoading={
                           unim.setSpenderAllowance.isLoading ||
                           stashUnim.isLoading
                         }
-                        w="220px"
-                        colorScheme={"orange"}
+                        // w="220px"
+                        // colorScheme={"orange"}
                         onClick={() => {
                           if (needAllowanceUNIM) {
                             unim.setSpenderAllowance.mutate(MAX_INT, {
@@ -1664,7 +1674,11 @@ const CryptoUnicorns = () => {
                   </InputGroup>
                 </Box>
                 <Box w="100%">
-                  <FormLabel mb="8px" wordBreak={"break-all"} w="fit-content">
+                  <FormLabel
+                    mb={["2px", "4px", "8px"]}
+                    wordBreak={"break-all"}
+                    w="fit-content"
+                  >
                     {"RBW to stash"}
                   </FormLabel>
 
@@ -1675,10 +1689,15 @@ const CryptoUnicorns = () => {
                     w="100%"
                     variant={"outline"}
                   >
-                    <Flex direction={"row"} w="100%" minW="580px">
+                    <Flex
+                      direction={"row"}
+                      w="100%"
+                      minW={["95%", "480px", "580px"]}
+                    >
                       <FormControl isInvalid={notEnoughRBW}>
                         <Input
-                          w="300px"
+                          w={["100%", "200px", "300px"]}
+                          mt="4px"
                           variant={"outline"}
                           isDisabled={
                             rbw.setSpenderAllowance.isLoading ||
@@ -1702,19 +1721,20 @@ const CryptoUnicorns = () => {
                       </FormControl>
                       <Spacer />
                       <Button
-                        mx={4}
+                        variant="cuButton"
+                        textColor="#D43F8C"
+                        borderColor="#FFFFFF"
+                        bgColor="white"
+                        fontSize={["sm", "md", "lg"]}
                         isDisabled={
                           (!needAllowanceRBW || rbwToStash === "") &&
                           (notEnoughRBW || rbwToStash == "")
                         }
                         size="md"
-                        variant="outline"
                         isLoading={
                           rbw.setSpenderAllowance.isLoading ||
                           stashRBW.isLoading
                         }
-                        w="220px"
-                        colorScheme={"orange"}
                         onClick={() => {
                           if (needAllowanceRBW) {
                             rbw.setSpenderAllowance.mutate(MAX_INT, {
@@ -1752,7 +1772,7 @@ const CryptoUnicorns = () => {
           borderRadius={"xl"}
           boxShadow="xl"
           placeItems={"center"}
-          fontSize={"lg"}
+          fontSize={["md", "md", "lg"]}
           fontWeight="700"
         >
           {spyMode && (
@@ -1890,11 +1910,9 @@ const CryptoUnicorns = () => {
             <Text px={3}>Miscellaneous</Text>
           </Button>
         </Flex>
-        <Spacer />
         {!spyMode && (
           <Flex justifyContent="end">
             <Button
-              py="20px"
               variant="cuButton"
               color="white"
               bg="transparent"
@@ -1921,7 +1939,7 @@ const CryptoUnicorns = () => {
               <Image
                 src="https://s3.amazonaws.com/static.simiotics.com/play/cu/spy-icon.png"
                 alt="Spy Mode"
-                h="16px"
+                h={["12px", "14px", "16px"]}
                 pr="2"
               ></Image>
               Spy Mode
