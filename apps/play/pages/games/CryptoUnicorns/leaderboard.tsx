@@ -25,6 +25,7 @@ import { FiExternalLink } from "react-icons/fi";
 import http from "moonstream-components/src/core/utils/http";
 import queryCacheProps from "moonstream-components/src/core/hooks/hookCommon";
 import { SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
+import { DEFAULT_METATAGS } from "../../../src/constants";
 
 const playAssetPath = "https://s3.amazonaws.com/static.simiotics.com/play";
 const assets = {
@@ -232,6 +233,16 @@ const Leaderboard = () => {
     </Box>
   );
 };
+
+export async function getStaticProps() {
+  const metatags = {
+    title: "Moonstream player portal: Throwing Shade",
+    description: "Throwing Shade Leaderboard",
+  };
+  return {
+    props: { metaTags: { DEFAULT_METATAGS, ...metatags } },
+  };
+}
 
 Leaderboard.getLayout = getLayout;
 
