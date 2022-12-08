@@ -1001,7 +1001,7 @@ def get_leaderboard_positions(
     if offset:
         query = query.offset(offset)
 
-    return query.all()
+    return query
 
 
 def get_qurtiles(db_session: Session, leaderboard_id):
