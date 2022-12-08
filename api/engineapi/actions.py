@@ -1049,10 +1049,10 @@ def get_ranks(db_session: Session, leaderboard_id):
     ranked_leaderboard = query.cte(name="ranked_leaderboard")
 
     ranks = db_session.query(
-        ranked_leaderboard.rank,
-        func.count(ranked_leaderboard.id).label("size"),
-        ranked_leaderboard.score,
-    ).group_by(ranked_leaderboard.rank, ranked_leaderboard.score)
+        ranked_leaderboard.c.rank,
+        func.count(ranked_leaderboard.c.id).label("size"),
+        ranked_leaderboard.c.score,
+    ).group_by(ranked_leaderboard.c.rank, ranked_leaderboard.c.score)
     return ranks
 
 

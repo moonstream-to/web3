@@ -31,6 +31,7 @@ leaderboad_whitelist = {
     "/leaderboard/position": "GET",
     "/leaderboard": "GET",
     "/leaderboard/rank": "GET",
+    "/leaderboard/ranks": "GET",
 }
 
 app = FastAPI(
@@ -167,14 +168,14 @@ async def rank(
 @app.get("/ranks")
 async def ranks(
     leaderboard_id: UUID, db_session: Session = Depends(db.yield_db_session)
-) -> List[data.RankResponse]:
+) -> List[data.RanksResponse]:
 
     """
     Returns the leaderboard scores for the given rank.
     """
     ranks = actions.get_ranks(db_session, leaderboard_id)
     results = [
-        data.RankResponse(
+        data.RanksResponse(
             score=rank.score,
             rank=rank.rank,
             size=rank.size,

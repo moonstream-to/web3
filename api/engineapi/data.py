@@ -202,4 +202,4 @@ class RankResponse(BaseModel):
 class RanksResponse(BaseModel):
     rank: int
     score: int
-    users: int
+    size: int
