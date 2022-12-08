@@ -34,6 +34,7 @@ import { Multicall2 } from "../../../games/cu/Multicall2";
 const ERC721MetadataABI = require("../../../../../abi/MockERC721.json");
 import { MockERC721 } from "../../../../../types/contracts/MockERC721";
 import { GOFP_CONTRACT_ADDRESS, MULTICALL2_CONTRACT_ADDRESS, SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
+import { tokenToString } from "typescript";
 
 
 const playAssetPath = "https://s3.amazonaws.com/static.simiotics.com/play";
@@ -103,14 +104,15 @@ const Leaderboard = () => {
     return Web3.utils.toChecksumAddress(address.substring(0, 2) + address.substring(26))
   };
 
+  const allShadowcorns = [ ...Array(2400).keys() ].map(x => (x+1).toString());
+
   const fetchExplicitOwners = async () => {
-    const shadowcornTokenIds = [ ...Array(2400).keys() ].map(x => x+1);
-    let ownerOfQueries = shadowcornTokenIds.map((tokenId: number) => {
+    let ownerOfQueries = allShadowcorns.map((tokenId: string) => {
       return { target: SHADOWCORN_CONTRACT_ADDRESS, 
                callData: shadowcornsContract.methods.ownerOf(tokenId).encodeABI()};
     });
     return multicallContract.methods.tryAggregate(false, ownerOfQueries).call().then((res: any[]) => {
-      return res.map((item: any, index: number) => { return { tokenId: index + 1, ownerAddress: convertMulticallResponseAddress(item.returnData) } });
+      return res.map((item: any, index: number) => { return { tokenId: (index + 1).toString(), ownerAddress: convertMulticallResponseAddress(item.returnData) } });
     });
   };
 
@@ -126,7 +128,6 @@ const Leaderboard = () => {
     ["fetch_explicit_owners"],
     async () => {
       const results = await fetchExplicitOwners();
-      console.log("explicit_owners", results);
       return results;
     },
     {
@@ -134,6 +135,12 @@ const Leaderboard = () => {
       onSuccess: () => {},
     }
   );
+
+  const getOwnerFromMappingQuery = (tokenId: string, mapQuery: any) => {
+    if (!mapQuery.data) return null;
+    const eIndex = mapQuery.data.findIndex((item: any) => item.tokenId == tokenId);
+    return eIndex >= 0 ? mapQuery.data[eIndex].ownerAddress : null
+  };
 
   const implicitOwners = useQuery(
     ["fetch_implicit_owners", explicitOwners],
@@ -148,8 +155,34 @@ const Leaderboard = () => {
         return { tokenId: tokenId,
                   ownerAddress: parsedResults[index]};
       });
-      console.log("implicit_owners", results);
       return results;
+    },
+    {
+      ...queryCacheProps,
+      onSuccess: () => {},
+    }
+  );
+
+  const owners = useQuery(
+    ["compose_owners", explicitOwners, implicitOwners],
+    async () => {
+      if (!explicitOwners.data) return [];
+      const ownerArray = allShadowcorns.map((tokenId) => {
+        let ownerId = getOwnerFromMappingQuery(tokenId, implicitOwners);
+        if (!ownerId) {
+          const expOwner = getOwnerFromMappingQuery(tokenId, explicitOwners);
+          if (expOwner && expOwner != GOFP_CONTRACT_ADDRESS) {
+            ownerId = expOwner;
+          }
+        }
+        return {
+          tokenId: tokenId,
+          ownerId: ownerId,
+        };
+      });
+
+      console.log("owners", ownerArray);
+      return ownerArray;
     },
     {
       ...queryCacheProps,
