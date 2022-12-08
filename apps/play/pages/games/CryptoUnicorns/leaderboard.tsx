@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useQuery } from "react-query";
 import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout";
 import {
@@ -24,7 +24,17 @@ import { FiExternalLink } from "react-icons/fi";
 
 import http from "moonstream-components/src/core/utils/http";
 import queryCacheProps from "moonstream-components/src/core/hooks/hookCommon";
-import { SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
+
+import Web3 from "web3";
+import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
+const GardenABI = require("../../../games/GoFPABI.json");
+import { GOFPFacet as GardenABIType } from "../../../../../types/contracts/GOFPFacet";
+const MulticallABI = require("../../../games/cu/Multicall2.json");
+import { Multicall2 } from "../../../games/cu/Multicall2";
+const ERC721MetadataABI = require("../../../../../abi/MockERC721.json");
+import { MockERC721 } from "../../../../../types/contracts/MockERC721";
+import { GOFP_CONTRACT_ADDRESS, MULTICALL2_CONTRACT_ADDRESS, SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
+
 
 const playAssetPath = "https://s3.amazonaws.com/static.simiotics.com/play";
 const assets = {
@@ -71,6 +81,75 @@ const Leaderboard = () => {
           console.log(err);
         }
       });
+    },
+    {
+      ...queryCacheProps,
+      onSuccess: () => {},
+    }
+  );
+
+  const web3ctx = useContext(Web3Context);
+  const gardenContract = new web3ctx.polygonClient.eth.Contract(
+    GardenABI, GOFP_CONTRACT_ADDRESS
+  ) as any as GardenABIType;
+  const multicallContract = new web3ctx.polygonClient.eth.Contract(
+    MulticallABI, MULTICALL2_CONTRACT_ADDRESS
+  )
+  const shadowcornsContract = new web3ctx.web3.eth.Contract(
+    ERC721MetadataABI, SHADOWCORN_CONTRACT_ADDRESS
+  ) as unknown as MockERC721;
+
+  const convertMulticallResponseAddress = (address: string) => {
+    return Web3.utils.toChecksumAddress(address.substring(0, 2) + address.substring(26))
+  };
+
+  const fetchExplicitOwners = async () => {
+    const shadowcornTokenIds = [ ...Array(2400).keys() ].map(x => x+1);
+    let ownerOfQueries = shadowcornTokenIds.map((tokenId: number) => {
+      return { target: SHADOWCORN_CONTRACT_ADDRESS, 
+               callData: shadowcornsContract.methods.ownerOf(tokenId).encodeABI()};
+    });
+    return multicallContract.methods.tryAggregate(false, ownerOfQueries).call().then((res: any[]) => {
+      return res.map((item: any, index: number) => { return { tokenId: index + 1, ownerAddress: convertMulticallResponseAddress(item.returnData) } });
+    });
+  };
+
+  const fetchImplicitOwners = async(tokenIds: string[]) => {
+    let stakedTokenInfoQueries = tokenIds.map((tokenId: string) => {
+      return { target: GOFP_CONTRACT_ADDRESS,
+               callData: gardenContract.methods.getStakedTokenInfo(SHADOWCORN_CONTRACT_ADDRESS, tokenId).encodeABI()};
+    });
+    return multicallContract.methods.tryAggregate(false, stakedTokenInfoQueries).call(); 
+  };
+
+  const explicitOwners = useQuery(
+    ["fetch_explicit_owners"],
+    async () => {
+      const results = await fetchExplicitOwners();
+      console.log("explicit_owners", results);
+      return results;
+    },
+    {
+      ...queryCacheProps,
+      onSuccess: () => {},
+    }
+  );
+
+  const implicitOwners = useQuery(
+    ["fetch_implicit_owners", explicitOwners],
+    async () => {
+      if (!explicitOwners.data) return [];
+      const ownedByContract = explicitOwners.data.filter((item: any) => item.ownerAddress == GOFP_CONTRACT_ADDRESS).map((item: any) => item.tokenId);
+      const rawResults = await fetchImplicitOwners(ownedByContract);
+      const parsedResults = rawResults.map((item: any) => {
+        return Web3.utils.toChecksumAddress(item.returnData.substring(0, 2) + item.returnData.substring(90));
+      });
+      const results = ownedByContract.map((tokenId: string, index: number) => {
+        return { tokenId: tokenId,
+                  ownerAddress: parsedResults[index]};
+      });
+      console.log("implicit_owners", results);
+      return results;
     },
     {
       ...queryCacheProps,
