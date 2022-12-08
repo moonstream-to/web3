@@ -1,38 +1,57 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useQuery } from "react-query";
 import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout";
+import LeaderboardGroupHeader from "./../../../components/LeaderboardGroupHeader";
+import LeaderboardGroup from "./../../../components/LeaderboardGroup";
+import { FiExternalLink } from "react-icons/fi";
+import { SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
+
 import {
   Box,
   Heading,
   Flex,
   Image,
   Accordion,
-  AccordionButton,
+  Icon,
+  // AccordionButton,
   AccordionItem,
-  AccordionPanel,
-  AccordionIcon,
+  // AccordionIcon,
   Spacer,
   Link,
   Spinner,
   Grid,
   GridItem,
-  Icon,
   HStack,
 } from "@chakra-ui/react";
 import { InfoOutlineIcon } from "@chakra-ui/icons";
-import { FiExternalLink } from "react-icons/fi";
 
 import http from "moonstream-components/src/core/utils/http";
 import queryCacheProps from "moonstream-components/src/core/hooks/hookCommon";
-import { SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
+// import { SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
 import { DEFAULT_METATAGS } from "../../../src/constants";
+import data from "./shadowcorns.json";
 
 const playAssetPath = "https://s3.amazonaws.com/static.simiotics.com/play";
 const assets = {
   shadowcornsLogo: `${playAssetPath}/cu/shadowcorns-logo.png`,
 };
 
-const buildOpenseaLink = (tokenId: string) => {
+const shadowcorns = new Map<number, { name: string }>();
+if (Array.isArray(data)) {
+  data.forEach((sc) => {
+    const { name } = sc.metadata;
+    shadowcorns.set(sc.token_id, { name });
+
+    // shadowcorns[sc.token_id as keyof typeof shadowcorns] = sc.metadata;
+  });
+}
+// console.log(shadowcorns);
+
+// const buildOpenseaLink = (tokenId: string) => {
+//   return `https://opensea.io/assets/matic/${SHADOWCORN_CONTRACT_ADDRESS}/${tokenId}`;
+// };
+
+const buildOpenseaLink = (tokenId) => {
   return `https://opensea.io/assets/matic/${SHADOWCORN_CONTRACT_ADDRESS}/${tokenId}`;
 };
 
@@ -50,13 +69,33 @@ const Leaderboard = () => {
     );
   };
 
+  useEffect(() => {
+    const url1 = "https://data.moonstream.to/shadowcorns/shadowcorns.json";
+    const url2 =
+      "https://data.moonstream.to/prod/total_supply_erc721/0xA2a13cE1824F3916fC84C65e559391fc6674e6e8/data.json";
+
+    fetch(url1)
+      .then((response) => response.json())
+      .then((data) => console.log(data))
+      .catch((error) => console.log(url1, error));
+    fetch(url2)
+      .then((response) => response.json())
+      .then((data) => console.log(data))
+      .catch((error) => console.log(url2, error));
+  }, []);
+
   const groups = useQuery(
     ["fetch_leaders", limit, offset],
     () => {
       return fetchLeaders(limit, offset).then((res) => {
         try {
-          let groups = new Map<number, { rank: number; records: number[] }>();
+          let groups = new Map<
+            number,
+            { rank: number; records: number[]; score: number }
+          >();
           for (const record of res.data) {
+            record.name =
+              shadowcorns.get(Number(record.address))?.name ?? record.address;
             if (groups.has(record.score)) {
               let { records } = groups.get(record.score)!;
               records.push(record);
@@ -64,6 +103,7 @@ const Leaderboard = () => {
               groups.set(record.score, {
                 rank: record.rank,
                 records: [record],
+                score: record.score,
               });
             }
           }
@@ -161,11 +201,13 @@ const Leaderboard = () => {
                   key={score}
                   fontSize={["xs", "sm", "lg"]}
                 >
-                  <AccordionButton
-                    fontSize={["xs", "sm", "lg"]}
-                    _hover={{ bg: "#454545" }}
-                    p="0"
-                  >
+                  {group.records.length > 1 && (
+                    <>
+                      <LeaderboardGroupHeader group={group} />
+                      <LeaderboardGroup group={group} />
+                    </>
+                  )}
+                  {group.records.length === 1 && (
                     <Grid
                       textAlign="left"
                       width="100%"
@@ -175,53 +217,24 @@ const Leaderboard = () => {
                       <GridItem fontWeight="700" pl={["4px", "10px", "20px"]}>
                         {group.rank}
                       </GridItem>
-                      <GridItem fontWeight="400">{`${
-                        group.records.length
-                      } Shadowcorn${
-                        group.records.length > 1 ? "s" : ""
-                      }`}</GridItem>
+                      <Link
+                        p="0px"
+                        _hover={{ bgColor: "#454545" }}
+                        href={buildOpenseaLink(group.records[0].address)}
+                        isExternal
+                      >
+                        <GridItem fontWeight="400">
+                          {group.records[0].name}
+                          <Icon as={FiExternalLink} ml="10px" />
+                        </GridItem>
+                      </Link>
                       <GridItem fontWeight="400">
                         <Flex width="100%" justifyContent="space-between">
-                          {score}
-                          <AccordionIcon />
+                          {group.score}
                         </Flex>
                       </GridItem>
                     </Grid>
-                  </AccordionButton>
-                  <AccordionPanel p="0px">
-                    {group.records.map((item: any) => {
-                      return (
-                        <Grid
-                          key={item.address}
-                          textAlign="left"
-                          width="100%"
-                          templateColumns="1fr 2fr 1fr"
-                          py={["5px", "10px"]}
-                          bg="#232323"
-                        >
-                          <GridItem
-                            fontWeight="700"
-                            pl={["8px", "20px", "40px"]}
-                          >
-                            {group.rank}
-                          </GridItem>
-
-                          <Link
-                            p="0px"
-                            _hover={{ bgColor: "#454545" }}
-                            href={buildOpenseaLink(item.address)}
-                            isExternal
-                          >
-                            <GridItem fontWeight="400">
-                              {item.address}
-                              <Icon as={FiExternalLink} ml="10px" />
-                            </GridItem>
-                          </Link>
-                          <GridItem fontWeight="400">{item.score}</GridItem>
-                        </Grid>
-                      );
-                    })}
-                  </AccordionPanel>
+                  )}
                 </AccordionItem>
               );
             })}
