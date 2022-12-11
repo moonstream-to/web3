@@ -6,7 +6,7 @@ const buildOpenseaLink = (tokenId) => {
   return `https://opensea.io/assets/matic/${SHADOWCORN_CONTRACT_ADDRESS}/${tokenId}`;
 };
 
-const LeaderboardGroup = ({ group }) => {
+const LeaderboardGroup = ({ group, shadowcorns }) => {
   return (
     <AccordionPanel p="0px">
       {group.records.map((item) => {
@@ -30,7 +30,9 @@ const LeaderboardGroup = ({ group }) => {
               isExternal
             >
               <GridItem fontWeight="400">
-                {item.name}
+                {shadowcorns.data?.has(item.address)
+                  ? shadowcorns.data.get(item.address)?.name
+                  : item.name}
                 <Icon as={FiExternalLink} ml="10px" />
               </GridItem>
             </Link>

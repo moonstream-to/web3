@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useQuery } from "react-query";
 import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout";
 import LeaderboardGroupHeader from "./../../../components/LeaderboardGroupHeader";
@@ -13,45 +13,27 @@ import {
   Image,
   Accordion,
   Icon,
-  // AccordionButton,
   AccordionItem,
-  // AccordionIcon,
   Spacer,
   Link,
   Spinner,
   Grid,
   GridItem,
   HStack,
+  Text,
 } from "@chakra-ui/react";
 import { InfoOutlineIcon } from "@chakra-ui/icons";
 
 import http from "moonstream-components/src/core/utils/http";
 import queryCacheProps from "moonstream-components/src/core/hooks/hookCommon";
-// import { SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
 import { DEFAULT_METATAGS } from "../../../src/constants";
-import data from "./shadowcorns.json";
 
 const playAssetPath = "https://s3.amazonaws.com/static.simiotics.com/play";
 const assets = {
   shadowcornsLogo: `${playAssetPath}/cu/shadowcorns-logo.png`,
 };
 
-const shadowcorns = new Map<number, { name: string }>();
-if (Array.isArray(data)) {
-  data.forEach((sc) => {
-    const { name } = sc.metadata;
-    shadowcorns.set(sc.token_id, { name });
-
-    // shadowcorns[sc.token_id as keyof typeof shadowcorns] = sc.metadata;
-  });
-}
-// console.log(shadowcorns);
-
-// const buildOpenseaLink = (tokenId: string) => {
-//   return `https://opensea.io/assets/matic/${SHADOWCORN_CONTRACT_ADDRESS}/${tokenId}`;
-// };
-
-const buildOpenseaLink = (tokenId) => {
+const buildOpenseaLink = (tokenId: string) => {
   return `https://opensea.io/assets/matic/${SHADOWCORN_CONTRACT_ADDRESS}/${tokenId}`;
 };
 
@@ -69,22 +51,46 @@ const Leaderboard = () => {
     );
   };
 
-  useEffect(() => {
-    const url1 = "https://data.moonstream.to/shadowcorns/shadowcorns.json";
-    const url2 =
-      "https://data.moonstream.to/prod/total_supply_erc721/0xA2a13cE1824F3916fC84C65e559391fc6674e6e8/data.json";
+  const fetchShadowcorns = async () => {
+    return http(
+      {
+        method: "GET",
+        url: "https://data.moonstream.to/shadowcorns/shadowcorns.json",
+      },
+      true
+    );
+  };
 
-    fetch(url1, {
-      mode: "no-cors",
-    })
-      .then((response) => response.json())
-      .then((data) => console.log(data))
-      .catch((error) => console.log(url1, error));
-    fetch(url2)
-      .then((response) => response.json())
-      .then((data) => console.log(data))
-      .catch((error) => console.log(url2, error));
-  }, []);
+  const shadowcorns = useQuery(
+    ["fetch_shadowcorns"],
+    () => {
+      return fetchShadowcorns().then((res) => {
+        const shadowcorns = new Map<string, { name: string; image: string }>();
+        res.data.forEach(
+          (sc: {
+            token_id: number;
+            metadata: { name: string; image: string };
+          }) => {
+            const { name, image } = sc.metadata;
+            shadowcorns.set(String(sc.token_id), { name, image });
+          }
+        );
+        return shadowcorns;
+      });
+    },
+    {
+      ...queryCacheProps,
+      onSuccess: () => {},
+    }
+  );
+
+  // const fethcLinks = async (links) => {
+  //   for ([address, ])
+  // }
+
+  // const mediaLinks = useQuery(["fetch_links"], () => {
+  //   return
+  // });
 
   const groups = useQuery(
     ["fetch_leaders", limit, offset],
@@ -93,11 +99,13 @@ const Leaderboard = () => {
         try {
           let groups = new Map<
             number,
-            { rank: number; records: number[]; score: number }
+            {
+              rank: number;
+              records: { address: string; rank: number; score: number }[];
+              score: number;
+            }
           >();
           for (const record of res.data) {
-            record.name =
-              shadowcorns.get(Number(record.address))?.name ?? record.address;
             if (groups.has(record.score)) {
               let { records } = groups.get(record.score)!;
               records.push(record);
@@ -207,7 +215,10 @@ const Leaderboard = () => {
                   {group.records.length > 1 && (
                     <>
                       <LeaderboardGroupHeader group={group} />
-                      <LeaderboardGroup group={group} />
+                      <LeaderboardGroup
+                        group={group}
+                        shadowcorns={shadowcorns}
+                      />
                     </>
                   )}
                   {group.records.length === 1 && (
@@ -226,10 +237,18 @@ const Leaderboard = () => {
                         href={buildOpenseaLink(group.records[0].address)}
                         isExternal
                       >
-                        <GridItem fontWeight="400">
-                          {group.records[0].name}
-                          <Icon as={FiExternalLink} ml="10px" />
-                        </GridItem>
+                        {shadowcorns.data &&
+                        shadowcorns.data.has(group.records[0].address) ? (
+                          <GridItem fontWeight="400">
+                            {
+                              shadowcorns.data.get(group.records[0].address)!
+                                .name
+                            }
+                            <Icon as={FiExternalLink} ml="10px" />
+                          </GridItem>
+                        ) : (
+                          <Text>{group.records[0].address}</Text>
+                        )}
                       </Link>
                       <GridItem fontWeight="400">
                         <Flex width="100%" justifyContent="space-between">
@@ -261,5 +280,4 @@ export async function getStaticProps() {
 }
 
 Leaderboard.getLayout = getLayout;
-
 export default Leaderboard;
