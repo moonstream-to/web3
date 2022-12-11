@@ -1387,6 +1387,14 @@ const CryptoUnicorns = () => {
   ) => {
     const html = (
       <Box display={displayType == displayId ? undefined : "none"}>
+        {spyMode && (
+          <HStack alignSelf="start" pb={4}>
+            <Image ml={2} alt={"bottle"} h="24px" src={assets["unimLogo"]} />
+            <Text pr={4}>UNIM: {getUnimBalance()}</Text>
+            <Image ml={2} alt={"bottle"} h="24px" src={assets["rbwLogo"]} />
+            <Text>RBW: {getRBWBalance()}</Text>
+          </HStack>
+        )}
         <Flex wrap="wrap" justifyContent="center" gap="20px" mt="20px">
           {list.map((item: any, idx: any) => {
             if (!lootboxBalances?.data) {
@@ -1423,9 +1431,22 @@ const CryptoUnicorns = () => {
   ) => {
     return (
       <Box display={displayType == displayId ? undefined : "none"}>
-        <HStack pb={4}>
-          <Text>{list.length} Items</Text>
-        </HStack>
+        {spyMode && (
+          <HStack alignSelf="start" pb={4}>
+            <Image ml={2} alt={"bottle"} h="24px" src={assets["unimLogo"]} />
+            <Text pr={4}>UNIM: {getUnimBalance()}</Text>
+            <Image ml={2} alt={"bottle"} h="24px" src={assets["rbwLogo"]} />
+            <Text>RBW: {getRBWBalance()}</Text>
+            <Spacer />
+            <Text>{`${list.length} Item${list.length === 1 ? "" : "s"}`}</Text>
+          </HStack>
+        )}
+        {!spyMode && (
+          <HStack alignSelf="start" pb={4}>
+            <Text>{`${list.length} Item${list.length === 1 ? "" : "s"}`}</Text>
+          </HStack>
+        )}
+
         <Flex wrap="wrap" justifyContent="center" gap="20px" mt="20px">
           {list.map((item: any, idx: any) => {
             return (
@@ -1494,7 +1515,7 @@ const CryptoUnicorns = () => {
         minH="100vh"
         direction={"column"}
         px={[0, 0, "7%"]}
-        mt={["20px", "40px", "60px"]}
+        my={["20px", "40px", "60px"]}
       >
         <Box display={spyMode ? "none" : ""}>
           <Flex
@@ -1673,6 +1694,7 @@ const CryptoUnicorns = () => {
                 <Box w="100%">
                   <FormLabel
                     mb={["2px", "4px", "8px"]}
+                    fontSize={["sm", "md", "lg"]}
                     wordBreak={"break-all"}
                     w="fit-content"
                   >
