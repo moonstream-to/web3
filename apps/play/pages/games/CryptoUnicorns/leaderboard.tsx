@@ -137,10 +137,11 @@ const Leaderboard = () => {
           </Flex>
         </Flex>
         <Box my={["10px", "20px", "30px"]} fontSize={["xs", "sm", "lg"]}>
-          Shadowcorns rank on the leaderboard by earning Leaderboard Points.
-          Each room a Shadowcorn reaches earns them points. At the end of the
-          Throwing Shade Event, the Players will be airdropped rewards based on
-          where they rank on the Leaderboard.
+          This leaderboard ranks Shadowcorn NFTs and not player wallets. Each
+          room a Shadowcorn reaches during the Throwing Shade Event earns them
+          points. At the end of the event, players will be airdropped rewards
+          according to their Shadowcorns&apos; ranks. Shadowcorns can share
+          ranks.
         </Box>
         <Grid
           borderBottom="1px solid #8B8B8B"
