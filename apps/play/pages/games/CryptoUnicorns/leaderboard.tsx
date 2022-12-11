@@ -74,7 +74,9 @@ const Leaderboard = () => {
     const url2 =
       "https://data.moonstream.to/prod/total_supply_erc721/0xA2a13cE1824F3916fC84C65e559391fc6674e6e8/data.json";
 
-    fetch(url1)
+    fetch(url1, {
+      mode: "no-cors",
+    })
       .then((response) => response.json())
       .then((data) => console.log(data))
       .catch((error) => console.log(url1, error));
