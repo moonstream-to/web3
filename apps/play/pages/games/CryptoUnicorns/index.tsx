@@ -18,29 +18,30 @@ import {
   FormErrorMessage,
   Button,
   HStack,
-  Grid,
 } from "@chakra-ui/react";
-const StashABI = require("../../games/cu/StashABI.json");
-import { StashABI as StashABIType } from "../../games/cu/StashABI";
-const GameBankABI = require("../../games/cu/GameBankABI.json");
-import { GameBankABI as GameBankABIType } from "../../games/cu/GameBankABI";
-const ERC721MetadataABI = require("../../../../abi/MockERC721.json");
-import { MockERC721 } from "../../../../types/contracts/MockERC721";
+
+import { useRouter } from "../../../../../packages/moonstream-components/src/core/hooks";
+const StashABI = require("../../../games/cu/StashABI.json");
+import { StashABI as StashABIType } from "../../../games/cu/StashABI";
+const GameBankABI = require("../../../games/cu/GameBankABI.json");
+import { GameBankABI as GameBankABIType } from "../../../games/cu/GameBankABI";
+const ERC721MetadataABI = require("../../../../../abi/MockERC721.json");
+import { MockERC721 } from "../../../../../types/contracts/MockERC721";
 
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
-import { supportedChains } from "../../../../types/Moonstream";
+import { supportedChains } from "../../../../../types/Moonstream";
 import { useERC20, useToast } from "moonstream-components/src/core/hooks";
 import { useMutation, useQuery } from "react-query";
-import { DEFAULT_METATAGS } from "../../src/constants";
+import { DEFAULT_METATAGS } from "../../../src/constants";
 import {
   MAX_INT,
   chainByChainId,
 } from "moonstream-components/src/core/providers/Web3Provider";
-import LootboxCard from "../../../../packages/moonstream-components/src/components/CryptoUnicorns/LootboxCardPlay";
-import { MockTerminus as TerminusFacet } from "../../../../types/contracts/MockTerminus";
+import LootboxCard from "../../../../../packages/moonstream-components/src/components/CryptoUnicorns/LootboxCardPlay";
+import { MockTerminus as TerminusFacet } from "../../../../../types/contracts/MockTerminus";
 import { hookCommon } from "moonstream-components/src/core/hooks";
 
-const terminusAbi = require("../../../../abi/MockTerminus.json");
+const terminusAbi = require("../../../../../abi/MockTerminus.json");
 
 const GameBankAddresses: { [key in supportedChains]: string } = {
   mumbai: "0x762aF8cbE298bbFE568BBB6709f854A01c07333D",
@@ -148,7 +149,12 @@ type terminusType =
   | "communityCouncil"
   | "summerOfLoveTier1"
   | "summerOfLoveTier2"
-  | "summerOfLoveTier3";
+  | "summerOfLoveTier3"
+  | "fireShadowcornLootbox"
+  | "slimeShadowcornLootbox"
+  | "soulShadowcornLootbox"
+  | "voltShadowcornLootbox"
+  | "nebulaShadowcornLootbox";
 
 interface LootboxInfo {
   poolIdByChain: {
@@ -193,6 +199,11 @@ const terminusTypes: terminusType[] = [
   "summerOfLoveTier1",
   "summerOfLoveTier2",
   "summerOfLoveTier3",
+  "fireShadowcornLootbox",
+  "slimeShadowcornLootbox",
+  "soulShadowcornLootbox",
+  "voltShadowcornLootbox",
+  "nebulaShadowcornLootbox",
 ];
 
 const terminusInfo: { [key in terminusType]: LootboxInfo } = {
@@ -476,6 +487,46 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
       localhost: -1,
     },
   },
+  fireShadowcornLootbox: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 75,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  slimeShadowcornLootbox: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 77,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  soulShadowcornLootbox: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 78,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  voltShadowcornLootbox: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 79,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  nebulaShadowcornLootbox: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 76,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
 };
 
 const defaultLootboxBalances: { [key in terminusType]: number } = {
@@ -514,6 +565,11 @@ const defaultLootboxBalances: { [key in terminusType]: number } = {
   summerOfLoveTier1: 0,
   summerOfLoveTier2: 0,
   summerOfLoveTier3: 0,
+  fireShadowcornLootbox: 0,
+  slimeShadowcornLootbox: 0,
+  soulShadowcornLootbox: 0,
+  voltShadowcornLootbox: 0,
+  nebulaShadowcornLootbox: 0,
 };
 
 interface NFTMetadata {
@@ -532,6 +588,8 @@ interface NFTInfo {
 }
 
 const CryptoUnicorns = () => {
+  const router = useRouter();
+
   const [currentAccount, setCurrentAccount] = React.useState(
     "0x0000000000000000000000000000000000000000"
   );
@@ -1098,6 +1156,36 @@ const CryptoUnicorns = () => {
       displayName: "RMP Lootbox",
       balanceKey: "RMPLootbox",
     },
+    {
+      imageUrl:
+        "https://i.seadn.io/gae/NY1AJidjM4HnDbOrBw_474MUhbp4tL8EZBRmCXFtPDcEYO_B_pF2D1fua6ggpajhJm5_4xstKg94SySs2QY4mit_XNNd4Rm8LS06?auto=format&w=1000",
+      displayName: "Fire Shadowcorn Lootbox",
+      balanceKey: "fireShadowcornLootbox",
+    },
+    {
+      imageUrl:
+        "https://i.seadn.io/gae/0RBQ7zZ0YJsoh4Ffd38olTDRZKCqlK_3FNpqYF30baO77djp_gedIiD5IRJrUArfmGmQs0VBupzaJyzKaiAHRHolWxrCDm_JvQ_4rQ?auto=format&w=1000",
+      displayName: "Slime Shadowcorn Lootbox",
+      balanceKey: "slimeShadowcornLootbox",
+    },
+    {
+      imageUrl:
+        "https://i.seadn.io/gae/J9KyCj2jbkZ93hB_ilcXBBkyhfTgObG8CjFFmFIT8_d2b6nnmpyikbGGO7_7MH45KcH1VSaqFXFeLjbWsLLj0yJxvULxbzB-1PGTETw?auto=format&w=1000",
+      displayName: "Soul Shadowcorn Lootbox",
+      balanceKey: "soulShadowcornLootbox",
+    },
+    {
+      imageUrl:
+        "https://i.seadn.io/gae/XroR84IEp89RHeEkI2ozw6h9t-hMXY8HDi1uB2nsmjpv_5-fKZrmyX8T2kF7yFRl8SArBhZOCCf6GmOBTDRLngmkdoj0moBQYt5L6sU?auto=format&w=1000",
+      displayName: "Volt Shadowcorn Lootbox",
+      balanceKey: "voltShadowcornLootbox",
+    },
+    {
+      imageUrl:
+        "https://i.seadn.io/gae/U3EE-yhtgc44g3bxUX7FWLiTmNA_q_qdCch-4jxbcd7va_LzDmMm_Mm-RL3RYszPOOu0e8DukUdyBaYo_cSyGM8Dq0l6PYbpreuwrZY?auto=format&w=1000",
+      displayName: "Nebula Shadowcorn Lootbox",
+      balanceKey: "nebulaShadowcornLootbox",
+    },
   ];
 
   const keystones = [
@@ -1299,13 +1387,15 @@ const CryptoUnicorns = () => {
   ) => {
     const html = (
       <Box display={displayType == displayId ? undefined : "none"}>
-        <HStack alignSelf="start" pb={4}>
-          <Image ml={2} alt={"bottle"} h="24px" src={assets["unimLogo"]} />
-          <Text pr={4}>UNIM: {getUnimBalance()}</Text>
-          <Image ml={2} alt={"bottle"} h="24px" src={assets["rbwLogo"]} />
-          <Text>RBW: {getRBWBalance()}</Text>
-        </HStack>
-        <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} pb={10}>
+        {spyMode && (
+          <HStack alignSelf="start" pb={4}>
+            <Image ml={2} alt={"bottle"} h="24px" src={assets["unimLogo"]} />
+            <Text pr={4}>UNIM: {getUnimBalance()}</Text>
+            <Image ml={2} alt={"bottle"} h="24px" src={assets["rbwLogo"]} />
+            <Text>RBW: {getRBWBalance()}</Text>
+          </HStack>
+        )}
+        <Flex wrap="wrap" justifyContent="center" gap="20px" mt="20px">
           {list.map((item: any, idx: any) => {
             if (!lootboxBalances?.data) {
               return;
@@ -1317,6 +1407,7 @@ const CryptoUnicorns = () => {
             } else {
               return (
                 <LootboxCard
+                  maxW={["140px", "170px", "220px"]}
                   key={idx}
                   imageUrl={item["imageUrl"]}
                   displayName={item["displayName"]}
@@ -1326,7 +1417,7 @@ const CryptoUnicorns = () => {
               );
             }
           })}
-        </Grid>
+        </Flex>
       </Box>
     );
     return html;
@@ -1340,18 +1431,27 @@ const CryptoUnicorns = () => {
   ) => {
     return (
       <Box display={displayType == displayId ? undefined : "none"}>
-        <HStack pb={4}>
-          <Image ml={2} alt={"bottle"} h="24px" src={assets["unimLogo"]} />
-          <Text pr={4}>UNIM: {getUnimBalance()}</Text>
-          <Image ml={2} alt={"bottle"} h="24px" src={assets["rbwLogo"]} />
-          <Text>RBW: {getRBWBalance()}</Text>
-          <Spacer />
-          <Text>{list.length} Items</Text>
-        </HStack>
-        <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} pb={10}>
+        {spyMode && (
+          <HStack alignSelf="start" pb={4}>
+            <Image ml={2} alt={"bottle"} h="24px" src={assets["unimLogo"]} />
+            <Text pr={4}>UNIM: {getUnimBalance()}</Text>
+            <Image ml={2} alt={"bottle"} h="24px" src={assets["rbwLogo"]} />
+            <Text>RBW: {getRBWBalance()}</Text>
+            <Spacer />
+            <Text>{`${list.length} Item${list.length === 1 ? "" : "s"}`}</Text>
+          </HStack>
+        )}
+        {!spyMode && (
+          <HStack alignSelf="start" pb={4}>
+            <Text>{`${list.length} Item${list.length === 1 ? "" : "s"}`}</Text>
+          </HStack>
+        )}
+
+        <Flex wrap="wrap" justifyContent="center" gap="20px" mt="20px">
           {list.map((item: any, idx: any) => {
             return (
               <LootboxCard
+                maxW={["140px", "170px", "220px"]}
                 key={idx}
                 imageUrl={item["metadata"]["image"]}
                 displayName={item["metadata"]["name"]}
@@ -1361,7 +1461,7 @@ const CryptoUnicorns = () => {
               />
             );
           })}
-        </Grid>
+        </Flex>
       </Box>
     );
   };
@@ -1410,13 +1510,19 @@ const CryptoUnicorns = () => {
       borderRadius={"xl"}
       bgColor={spyMode ? "#1A1D22" : "#1A1D22"}
     >
-      <Flex w="100%" minH="100vh" direction={"column"} px="7%" mt="60px">
+      <Flex
+        w="100%"
+        minH="100vh"
+        direction={"column"}
+        px={[0, 0, "7%"]}
+        my={["20px", "40px", "60px"]}
+      >
         <Box display={spyMode ? "none" : ""}>
           <Flex
             w="100%"
             direction={"row"}
             flexWrap="wrap"
-            mb={12}
+            mb={[3, 6, 12]}
             bgColor="pink.500"
             borderRadius={"xl"}
             boxShadow="xl"
@@ -1426,7 +1532,6 @@ const CryptoUnicorns = () => {
               <Badge
                 colorScheme={"pink"}
                 variant={"solid"}
-                fontSize={"md"}
                 borderRadius={"md"}
                 mr={2}
                 p={1}
@@ -1444,7 +1549,7 @@ const CryptoUnicorns = () => {
                         {unim.spenderState.isLoading ? (
                           <Spinner m={0} size={"lg"} />
                         ) : (
-                          <Flex>
+                          <Flex fontSize={["sm", "md", "lg"]}>
                             {`balance: `} <Spacer />
                             {getUnimBalance()}
                           </Flex>
@@ -1465,20 +1570,15 @@ const CryptoUnicorns = () => {
                 mr={2}
                 p={1}
               >
-                <Flex>
+                <HStack>
                   <Image ml={2} alt={"rbw"} h="48px" src={assets["rbwLogo"]} />
                   <Flex direction={"column"} wrap="nowrap" w="100%">
                     <code>
-                      <Flex
-                        mx={2}
-                        mt={2}
-                        display={"inline-block"}
-                        fontSize="xl"
-                      >
+                      <Flex mx={2} display={"inline-block"} fontSize="xl">
                         {rbw.spenderState.isLoading ? (
                           <Spinner m={0} size={"lg"} />
                         ) : (
-                          <Flex>
+                          <Flex fontSize={["sm", "md", "lg"]}>
                             {`balance: `} <Spacer />
                             {getRBWBalance()}
                           </Flex>
@@ -1486,33 +1586,33 @@ const CryptoUnicorns = () => {
                       </Flex>
                     </code>
                   </Flex>
-                </Flex>
+                </HStack>
               </Badge>
             </Flex>
           </Flex>
-          <code style={{ alignSelf: "center" }}>
-            <Text
-              p={8}
-              textColor={"gray.600"}
-              maxW="1337px"
-              alignSelf={"center"}
-              textAlign="center"
-            >
-              {" "}
-              Use this form to stash any amount of UNIM and RBW into Crypto
-              Unicorns.
-            </Text>
-            <Text mb={4}>
-              WARNING: Only use an account with which you have already logged
-              into the game. Otherwise, the game server will not respect your
-              stash operation.
-            </Text>
-          </code>
+          <Text
+            fontSize={["sm", "md", "lg"]}
+            textColor={"gray.600"}
+            maxW="1337px"
+          >
+            Use this form to stash any amount of UNIM and RBW into Crypto
+            Unicorns.
+          </Text>
+          <Text mb={4} fontSize={["sm", "md", "lg"]}>
+            WARNING: Only use an account with which you have already logged into
+            the game. Otherwise, the game server will not respect your stash
+            operation.
+          </Text>
           <Center>
             <code>
-              <Stack p={4} bgColor={"#1A1D22"} spacing={2}>
+              <Stack bgColor={"#1A1D22"} spacing={2} mx="10px">
                 <Box w="100%">
-                  <FormLabel mb="8px" wordBreak={"break-all"} w="fit-content">
+                  <FormLabel
+                    fontSize={["sm", "md", "lg"]}
+                    mb={["2px", "4px", "8px"]}
+                    wordBreak={"break-all"}
+                    w="fit-content"
+                  >
                     {"UNIM to stash"}
                   </FormLabel>
 
@@ -1523,10 +1623,15 @@ const CryptoUnicorns = () => {
                     w="100%"
                     variant={"outline"}
                   >
-                    <Flex direction={"row"} w="100%" minW="580px">
+                    <Flex
+                      direction={"row"}
+                      w="100%"
+                      minW={["100%", "480px", "580px"]}
+                    >
                       <FormControl isInvalid={notEnoughUNIM}>
                         <Input
-                          w="300px"
+                          w={["100%", "200px", "300px"]}
+                          mt="4px"
                           variant={"outline"}
                           type="search"
                           value={unimToStash}
@@ -1550,19 +1655,20 @@ const CryptoUnicorns = () => {
                       </FormControl>
                       <Spacer />
                       <Button
-                        mx={4}
                         isDisabled={
                           (!needAllowanceUNIM || unimToStash === "") &&
                           (notEnoughUNIM || unimToStash == "")
                         }
                         size="md"
-                        variant="outline"
+                        variant="cuButton"
+                        textColor="#D43F8C"
+                        borderColor="#FFFFFF"
+                        bgColor="white"
+                        fontSize={["sm", "md", "lg"]}
                         isLoading={
                           unim.setSpenderAllowance.isLoading ||
                           stashUnim.isLoading
                         }
-                        w="220px"
-                        colorScheme={"orange"}
                         onClick={() => {
                           if (needAllowanceUNIM) {
                             unim.setSpenderAllowance.mutate(MAX_INT, {
@@ -1586,7 +1692,12 @@ const CryptoUnicorns = () => {
                   </InputGroup>
                 </Box>
                 <Box w="100%">
-                  <FormLabel mb="8px" wordBreak={"break-all"} w="fit-content">
+                  <FormLabel
+                    mb={["2px", "4px", "8px"]}
+                    fontSize={["sm", "md", "lg"]}
+                    wordBreak={"break-all"}
+                    w="fit-content"
+                  >
                     {"RBW to stash"}
                   </FormLabel>
 
@@ -1597,10 +1708,15 @@ const CryptoUnicorns = () => {
                     w="100%"
                     variant={"outline"}
                   >
-                    <Flex direction={"row"} w="100%" minW="580px">
+                    <Flex
+                      direction={"row"}
+                      w="100%"
+                      minW={["95%", "480px", "580px"]}
+                    >
                       <FormControl isInvalid={notEnoughRBW}>
                         <Input
-                          w="300px"
+                          w={["100%", "200px", "300px"]}
+                          mt="4px"
                           variant={"outline"}
                           isDisabled={
                             rbw.setSpenderAllowance.isLoading ||
@@ -1624,19 +1740,20 @@ const CryptoUnicorns = () => {
                       </FormControl>
                       <Spacer />
                       <Button
-                        mx={4}
+                        variant="cuButton"
+                        textColor="#D43F8C"
+                        borderColor="#FFFFFF"
+                        bgColor="white"
+                        fontSize={["sm", "md", "lg"]}
                         isDisabled={
                           (!needAllowanceRBW || rbwToStash === "") &&
                           (notEnoughRBW || rbwToStash == "")
                         }
                         size="md"
-                        variant="outline"
                         isLoading={
                           rbw.setSpenderAllowance.isLoading ||
                           stashRBW.isLoading
                         }
-                        w="220px"
-                        colorScheme={"orange"}
                         onClick={() => {
                           if (needAllowanceRBW) {
                             rbw.setSpenderAllowance.mutate(MAX_INT, {
@@ -1674,7 +1791,7 @@ const CryptoUnicorns = () => {
           borderRadius={"xl"}
           boxShadow="xl"
           placeItems={"center"}
-          fontSize={"lg"}
+          fontSize={["md", "md", "lg"]}
           fontWeight="700"
         >
           {spyMode && (
@@ -1812,17 +1929,28 @@ const CryptoUnicorns = () => {
             <Text px={3}>Miscellaneous</Text>
           </Button>
         </Flex>
-        <Spacer />
         {!spyMode && (
           <Flex justifyContent="end">
             <Button
-              size="sm"
-              height="24px"
-              width="150px"
+              variant="cuButton"
+              color="white"
+              bg="transparent"
+              _hover={{
+                backgroundColor: "#454545",
+              }}
+              onClick={() => {
+                router.push({
+                  pathname: "/games/CryptoUnicorns/leaderboard",
+                });
+              }}
+            >
+              Leaderboard
+            </Button>
+            <Button
+              variant="cuButton"
               textColor="#D43F8C"
               borderColor="#FFFFFF"
               bgColor="white"
-              borderRadius="md"
               onClick={() => {
                 setSpyMode(true);
               }}
@@ -1830,7 +1958,7 @@ const CryptoUnicorns = () => {
               <Image
                 src="https://s3.amazonaws.com/static.simiotics.com/play/cu/spy-icon.png"
                 alt="Spy Mode"
-                h="16px"
+                h={["12px", "14px", "16px"]}
                 pr="2"
               ></Image>
               Spy Mode
