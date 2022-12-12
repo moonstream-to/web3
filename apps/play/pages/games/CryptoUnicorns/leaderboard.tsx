@@ -25,6 +25,7 @@ import { FiExternalLink } from "react-icons/fi";
 import http from "moonstream-components/src/core/utils/http";
 import queryCacheProps from "moonstream-components/src/core/hooks/hookCommon";
 import { SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
+import { DEFAULT_METATAGS } from "../../../src/constants";
 
 const playAssetPath = "https://s3.amazonaws.com/static.simiotics.com/play";
 const assets = {
@@ -136,10 +137,11 @@ const Leaderboard = () => {
           </Flex>
         </Flex>
         <Box my={["10px", "20px", "30px"]} fontSize={["xs", "sm", "lg"]}>
-          Shadowcorns rank on the leaderboard by earning Leaderboard Points.
-          Each room a Shadowcorn reaches earns them points. At the end of the
-          Throwing Shade Event, the Players will be airdropped rewards based on
-          where they rank on the Leaderboard.
+          This leaderboard ranks Shadowcorn NFTs and not player wallets. Each
+          room a Shadowcorn reaches during the Throwing Shade Event earns them
+          points. At the end of the event, players will be airdropped rewards
+          according to their Shadowcorns&apos; ranks. Shadowcorns can share
+          ranks.
         </Box>
         <Grid
           borderBottom="1px solid #8B8B8B"
@@ -232,6 +234,16 @@ const Leaderboard = () => {
     </Box>
   );
 };
+
+export async function getStaticProps() {
+  const metatags = {
+    title: "Moonstream player portal: Throwing Shade",
+    description: "Throwing Shade Leaderboard",
+  };
+  return {
+    props: { metaTags: { DEFAULT_METATAGS, ...metatags } },
+  };
+}
 
 Leaderboard.getLayout = getLayout;
 
