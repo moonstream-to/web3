@@ -171,7 +171,7 @@ async def ranks(
 ) -> List[data.RanksResponse]:
 
     """
-    Returns the leaderboard scores for the given rank.
+    Returns the leaderboard rank buckets overview with score and size of bucket.
     """
     ranks = actions.get_ranks(db_session, leaderboard_id)
     results = [
