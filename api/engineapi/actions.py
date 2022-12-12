@@ -985,13 +985,14 @@ def get_leaderboard_positions(
     """
     query = (
         db_session.query(
+            LeaderboardScores.id,
             LeaderboardScores.address,
             LeaderboardScores.score,
             LeaderboardScores.points_data,
             func.rank().over(order_by=LeaderboardScores.score.desc()).label("rank"),
         )
         .filter(LeaderboardScores.leaderboard_id == leaderboard_id)
-        .order_by(text("rank asc"))
+        .order_by(text("rank asc, id asc"))
     )
 
     if limit:
@@ -1000,7 +1001,7 @@ def get_leaderboard_positions(
     if offset:
         query = query.offset(offset)
 
-    return query.all()
+    return query
 
 
 def get_qurtiles(db_session: Session, leaderboard_id):
