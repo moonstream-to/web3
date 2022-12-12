@@ -13,6 +13,12 @@ export const LAND_CONTRACT_ADDRESS =
 export const SHADOWCORN_CONTRACT_ADDRESS =
   "0xa7D50EE3D7485288107664cf758E877a0D351725";
 
+export const GOFP_CONTRACT_ADDRESS =
+  "0xDD8bf70a1f3A5557CCaB839E46cAB5533955Da65";
+
+export const MULTICALL2_CONTRACT_ADDRESS =
+  "0xc8E51042792d7405184DfCa245F2d27B94D013b6";
+
 export enum TerminusType {
   commonLootbox = "commonLootbox",
   rareLootbox = "rareLootbox",
