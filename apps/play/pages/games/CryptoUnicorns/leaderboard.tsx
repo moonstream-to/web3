@@ -18,6 +18,7 @@ import {
   Grid,
   GridItem,
   HStack,
+  Text,
 } from "@chakra-ui/react";
 import { InfoOutlineIcon } from "@chakra-ui/icons";
 
@@ -141,6 +142,11 @@ const Leaderboard = () => {
     }
   );
 
+  const ownedShadowcorns = useQuery(["owned_shadowcorns", groups], () => {
+    if (!groups.data) return [];
+    return groups.data.get(1200)!.records;
+  });
+
   const panelBackground = "#2D2D2D";
 
   return (
@@ -205,6 +211,60 @@ const Leaderboard = () => {
           according to their Shadowcorns&apos; ranks. Shadowcorns can share
           ranks.
         </Box>
+
+        {ownedShadowcorns.data && ownedShadowcorns.data.length > 0 && (
+          <Flex
+            bg="#1A1D22"
+            borderRadius="10px"
+            justifyContent="start"
+            p="20px"
+            direction="column"
+            mb="30px"
+          >
+            <Text fontSize="20px" mb="20px" fontWeight="700" pl="30px">
+              Your shadowcorns
+            </Text>
+            <Grid
+              borderBottom="1px solid #8B8B8B"
+              templateColumns="1fr 2fr 1fr"
+              fontWeight="700"
+              pb="10px"
+              width="100%"
+            >
+              <GridItem pl={["2px", "5px", "10px"]}>Rank</GridItem>
+              <GridItem>Shadowcorn</GridItem>
+              <GridItem>Score</GridItem>
+            </Grid>
+            {ownedShadowcorns.data?.map((record) => {
+              return (
+                <Grid
+                  key={record.address}
+                  textAlign="left"
+                  width="100%"
+                  templateColumns="1fr 2fr 1fr"
+                  py={["5px", "10px"]}
+                >
+                  <GridItem fontWeight="700" pl={["4px", "10px", "20px"]}>
+                    {record.rank}
+                  </GridItem>
+
+                  <GridItem fontWeight="400">
+                    <ShadowcornRow
+                      shadowcorn={shadowcorns.data?.get(record.address)}
+                      tokenId={record.address}
+                    />
+                  </GridItem>
+                  <GridItem fontWeight="400">
+                    <Flex width="100%" justifyContent="space-between">
+                      {record.score}
+                    </Flex>
+                  </GridItem>
+                </Grid>
+              );
+            })}
+          </Flex>
+        )}
+
         <Grid
           borderBottom="1px solid #8B8B8B"
           templateColumns="1fr 2fr 1fr"
