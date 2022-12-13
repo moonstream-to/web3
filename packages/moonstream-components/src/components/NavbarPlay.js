@@ -6,9 +6,7 @@ const LandingNavbar = React.lazy(() => import("./LandingNavbarPlay"));
 const Navbar = () => {
   return (
     <Flex
-      boxShadow={["md", "lg"]}
       zIndex={1}
-      shadow={"outline"}
       alignItems="center"
       id="Navbar"
       minH="56px"

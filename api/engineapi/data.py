@@ -192,7 +192,7 @@ class Score(BaseModel):
     points_data: Dict[str, Any]
 
 
-class RankResponse(BaseModel):
+class LeaderboardPosition(BaseModel):
     address: str
     rank: int
     score: int

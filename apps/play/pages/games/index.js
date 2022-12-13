@@ -17,7 +17,7 @@ const Games = () => {
             <FeatureCard
               w="300px"
               imgH="140px"
-              link="games/cryptoUnicorns"
+              link="games/CryptoUnicorns"
               text="A digital pet collecting and farming game, built on blockchain"
               //   heading="Crypto Unicorns"
               imageUrl={

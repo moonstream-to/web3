@@ -125,17 +125,26 @@ async def leaderboard(
     limit: int = 10,
     offset: int = 0,
     db_session: Session = Depends(db.yield_db_session),
-):
+) -> List[data.LeaderboardPosition]:
 
     """
-    Returns the leaderboard.
+    Returns the leaderboard positions.
     """
 
-    leaderboard = actions.get_leaderboard_positions(
+    leaderboard_positions = actions.get_leaderboard_positions(
         db_session, leaderboard_id, limit, offset
     )
+    result = [
+        data.LeaderboardPosition(
+            address=position.address,
+            score=position.score,
+            rank=position.rank,
+            points_data=position.points_data,
+        )
+        for position in leaderboard_positions
+    ]
 
-    return leaderboard
+    return result
 
 
 @app.get("/rank")
@@ -145,7 +154,7 @@ async def rank(
     limit: Optional[int] = None,
     offset: Optional[int] = None,
     db_session: Session = Depends(db.yield_db_session),
-) -> List[data.RankResponse]:
+) -> List[data.LeaderboardPosition]:
 
     """
     Returns the leaderboard scores for the given rank.
@@ -154,7 +163,7 @@ async def rank(
         db_session, leaderboard_id, rank, limit=limit, offset=offset
     )
     results = [
-        data.RankResponse(
+        data.LeaderboardPosition(
             address=rank_position.address,
             score=rank_position.score,
             rank=rank_position.rank,
