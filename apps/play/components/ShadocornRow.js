@@ -24,8 +24,10 @@ const ShadowcornRow = ({ shadowcorn, tokenId }) => {
             borderRadius="4px"
           />
         )}
-        <Text pl="7px">{shadowcorn?.name ?? tokenId}</Text>)
-        <Icon as={FiExternalLink} ml="10px" />
+        <Text pl="7px">
+          {shadowcorn?.name ? `${shadowcorn.name} - ${tokenId}` : tokenId}
+        </Text>
+        <Icon as={FiExternalLink} ml="10px" pb="5px" />
       </HStack>
     </Link>
   );
