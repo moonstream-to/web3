@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { useQuery } from "react-query";
 import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout";
 import {
@@ -49,6 +49,9 @@ const buildOpenseaLink = (tokenId: string) => {
 const Leaderboard = () => {
   const [limit] = React.useState<number>(0);
   const [offset] = React.useState<number>(0);
+  const [currentAccount, setCurrentAccount] = React.useState(
+    GOFP_CONTRACT_ADDRESS
+  );
 
   const fetchLeaders = async (pageLimit: number, pageOffset: number) => {
     return http(
@@ -106,29 +109,42 @@ const Leaderboard = () => {
 
   const allShadowcorns = [ ...Array(2400).keys() ].map(x => (x+1).toString());
 
-  const fetchExplicitOwners = async () => {
-    let ownerOfQueries = allShadowcorns.map((tokenId: string) => {
-      return { target: SHADOWCORN_CONTRACT_ADDRESS, 
-               callData: shadowcornsContract.methods.ownerOf(tokenId).encodeABI()};
-    });
-    return multicallContract.methods.tryAggregate(false, ownerOfQueries).call().then((res: any[]) => {
-      return res.map((item: any, index: number) => { return { tokenId: (index + 1).toString(), ownerAddress: convertMulticallResponseAddress(item.returnData) } });
-    });
-  };
+  // const fetchExplicitOwners = async () => {
+  //   let ownerOfQueries = allShadowcorns.map((tokenId: string) => {
+  //     return { target: SHADOWCORN_CONTRACT_ADDRESS, 
+  //              callData: shadowcornsContract.methods.ownerOf(tokenId).encodeABI()};
+  //   });
+  //   return multicallContract.methods.tryAggregate(false, ownerOfQueries).call().then((res: any[]) => {
+  //     return res.map((item: any, index: number) => { return { tokenId: (index + 1).toString(), ownerAddress: convertMulticallResponseAddress(item.returnData) } });
+  //   });
+  // };
 
-  const fetchImplicitOwners = async(tokenIds: string[]) => {
-    let stakedTokenInfoQueries = tokenIds.map((tokenId: string) => {
-      return { target: GOFP_CONTRACT_ADDRESS,
-               callData: gardenContract.methods.getStakedTokenInfo(SHADOWCORN_CONTRACT_ADDRESS, tokenId).encodeABI()};
-    });
-    return multicallContract.methods.tryAggregate(false, stakedTokenInfoQueries).call(); 
-  };
+  // useEffect(() => {
+  //   if (Web3.utils.isAddress(web3ctx.account)) {
+  //     setCurrentAccount(web3ctx.account);
+  //   }
+  // }, [web3ctx.account]);
 
-  const explicitOwners = useQuery(
-    ["fetch_explicit_owners"],
+  const stakedShadowcorns = useQuery(
+    ["staked_tokens", currentAccount],
     async () => {
-      const results = await fetchExplicitOwners();
-      return results;
+      const numStaked = await gardenContract.methods.numTokensStakedIntoSession(4, currentAccount).call();
+      console.log("Num staked: ", numStaked);
+
+      let stakedTokensQueries = [];
+      for (var i = 1; i <= parseInt(numStaked); i++) {
+        stakedTokensQueries.push({
+          target: GOFP_CONTRACT_ADDRESS,
+          callData: gardenContract.methods.tokenOfStakerInSessionByIndex(4, currentAccount, i.toString()).encodeABI()
+        });
+      }
+
+      console.log(stakedTokensQueries);
+      return multicallContract.methods.tryAggregate(false, stakedTokensQueries).call().then((res: any[]) => {
+        console.log("Staked multicall response");
+        console.log(res);
+      });
+
     },
     {
       ...queryCacheProps,
@@ -136,53 +152,26 @@ const Leaderboard = () => {
     }
   );
 
-  const getOwnerFromMappingQuery = (tokenId: string, mapQuery: any) => {
-    if (!mapQuery.data) return null;
-    const eIndex = mapQuery.data.findIndex((item: any) => item.tokenId == tokenId);
-    return eIndex >= 0 ? mapQuery.data[eIndex].ownerAddress : null
-  };
-
-  const implicitOwners = useQuery(
-    ["fetch_implicit_owners", explicitOwners],
+  const ownedShadowcorns = useQuery(
+    ["owned_tokens", currentAccount],
     async () => {
-      if (!explicitOwners.data) return [];
-      const ownedByContract = explicitOwners.data.filter((item: any) => item.ownerAddress == GOFP_CONTRACT_ADDRESS).map((item: any) => item.tokenId);
-      const rawResults = await fetchImplicitOwners(ownedByContract);
-      const parsedResults = rawResults.map((item: any) => {
-        return Web3.utils.toChecksumAddress(item.returnData.substring(0, 2) + item.returnData.substring(90));
-      });
-      const results = ownedByContract.map((tokenId: string, index: number) => {
-        return { tokenId: tokenId,
-                  ownerAddress: parsedResults[index]};
-      });
-      return results;
-    },
-    {
-      ...queryCacheProps,
-      onSuccess: () => {},
-    }
-  );
-
-  const owners = useQuery(
-    ["compose_owners", explicitOwners, implicitOwners],
-    async () => {
-      if (!explicitOwners.data) return [];
-      const ownerArray = allShadowcorns.map((tokenId) => {
-        let ownerId = getOwnerFromMappingQuery(tokenId, implicitOwners);
-        if (!ownerId) {
-          const expOwner = getOwnerFromMappingQuery(tokenId, explicitOwners);
-          if (expOwner && expOwner != GOFP_CONTRACT_ADDRESS) {
-            ownerId = expOwner;
-          }
-        }
-        return {
-          tokenId: tokenId,
-          ownerId: ownerId,
-        };
+      const numTokens = await shadowcornsContract.methods.balanceOf(currentAccount).call();
+      console.log("Num owned: ", numTokens);
+      let tokenOfOwnerQueries = [];
+      for (var i = 1; i <= parseInt(numTokens); i++) {
+        tokenOfOwnerQueries.push({
+          target: GOFP_CONTRACT_ADDRESS,
+          callData: shadowcornsContract.methods.tokenOfOwnerByIndex(currentAccount, i).encodeABI()
+        });
+      }
+    
+      console.log("queries");
+      console.log(tokenOfOwnerQueries);
+      return multicallContract.methods.tryAggregate(false, tokenOfOwnerQueries).call().then((res: any[]) => {
+        console.log("Owned multicall response");
+        console.log(res);
       });
 
-      console.log("owners", ownerArray);
-      return ownerArray;
     },
     {
       ...queryCacheProps,
