@@ -8,7 +8,7 @@ from web3 import Web3
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from .. import actions
 from .. import data
@@ -30,6 +30,8 @@ leaderboad_whitelist = {
     "/leaderboard/count/addresses": "GET",
     "/leaderboard/position": "GET",
     "/leaderboard": "GET",
+    "/leaderboard/rank": "GET",
+    "/leaderboard/ranks": "GET",
 }
 
 app = FastAPI(
@@ -143,6 +145,53 @@ async def leaderboard(
     ]
 
     return result
+
+
+@app.get("/rank")
+async def rank(
+    leaderboard_id: UUID,
+    rank: int = 1,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+    db_session: Session = Depends(db.yield_db_session),
+) -> List[data.LeaderboardPosition]:
+
+    """
+    Returns the leaderboard scores for the given rank.
+    """
+    leaderboard_rank = actions.get_rank(
+        db_session, leaderboard_id, rank, limit=limit, offset=offset
+    )
+    results = [
+        data.LeaderboardPosition(
+            address=rank_position.address,
+            score=rank_position.score,
+            rank=rank_position.rank,
+            points_data=rank_position.points_data,
+        )
+        for rank_position in leaderboard_rank
+    ]
+    return results
+
+
+@app.get("/ranks")
+async def ranks(
+    leaderboard_id: UUID, db_session: Session = Depends(db.yield_db_session)
+) -> List[data.RanksResponse]:
+
+    """
+    Returns the leaderboard rank buckets overview with score and size of bucket.
+    """
+    ranks = actions.get_ranks(db_session, leaderboard_id)
+    results = [
+        data.RanksResponse(
+            score=rank.score,
+            rank=rank.rank,
+            size=rank.size,
+        )
+        for rank in ranks
+    ]
+    return results
 
 
 @app.put("/{leaderboard_id}/scores")
