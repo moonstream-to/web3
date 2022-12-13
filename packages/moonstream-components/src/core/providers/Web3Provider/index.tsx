@@ -9,6 +9,7 @@ import {
   TokenInterface,
 } from "../../../../../../types/Moonstream";
 import router from "next/router";
+const REQUEST_SIGNATURE = process.env.NEXT_PUBLIC_REQUEST_SIGNATURE == "true";
 
 export const MAX_INT =
   "115792089237316195423570985008687907853269984665640564039457584007913129639935";
@@ -313,6 +314,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
   }, []);
 
   React.useEffect(() => {
+    if (!REQUEST_SIGNATURE) return;
     const token = localStorage.getItem("APP_ACCESS_TOKEN") ?? "";
     const stringToken = Buffer.from(token, "base64").toString("ascii");
     const objectToken: TokenInterface =
