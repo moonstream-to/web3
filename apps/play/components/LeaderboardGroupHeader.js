@@ -4,9 +4,13 @@ import {
   Grid,
   GridItem,
   Flex,
+  HStack,
+  Text,
 } from "@chakra-ui/react";
 
-const LeaderboardGroupHeader = ({ group }) => {
+import GroupImage from "./GroupImage";
+
+const LeaderboardGroupHeader = ({ group, metadata }) => {
   return (
     <AccordionButton
       fontSize={["xs", "sm", "lg"]}
@@ -22,9 +26,19 @@ const LeaderboardGroupHeader = ({ group }) => {
         <GridItem fontWeight="700" pl={["4px", "10px", "20px"]}>
           {group.rank}
         </GridItem>
-        <GridItem fontWeight="400">{`${group.records.length} Shadowcorn${
-          group.records.length > 1 ? "s" : ""
-        }`}</GridItem>
+        <GridItem fontWeight="400">
+          <HStack align="center">
+            <GroupImage
+              shadowcorns={
+                group.records.length > 2
+                  ? group.records.slice(0, 3)
+                  : group.records
+              }
+              metadata={metadata}
+            />
+            <Text pl="7px">{`${group.records.length} Shadowcorns`}</Text>
+          </HStack>
+        </GridItem>
         <GridItem fontWeight="400">
           <Flex width="100%" justifyContent="space-between">
             {group.score}

@@ -1,10 +1,5 @@
-import { AccordionPanel, GridItem, Grid, Link, Icon } from "@chakra-ui/react";
-import { FiExternalLink } from "react-icons/fi";
-import { SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
-
-const buildOpenseaLink = (tokenId) => {
-  return `https://opensea.io/assets/matic/${SHADOWCORN_CONTRACT_ADDRESS}/${tokenId}`;
-};
+import { AccordionPanel, GridItem, Grid } from "@chakra-ui/react";
+import ShadowcornRow from "./ShadocornRow";
 
 const LeaderboardGroup = ({ group, shadowcorns }) => {
   return (
@@ -23,19 +18,12 @@ const LeaderboardGroup = ({ group, shadowcorns }) => {
               {group.rank}
             </GridItem>
 
-            <Link
-              p="0px"
-              _hover={{ bgColor: "#454545" }}
-              href={buildOpenseaLink(item.address)}
-              isExternal
-            >
-              <GridItem fontWeight="400">
-                {shadowcorns.data?.has(item.address)
-                  ? shadowcorns.data.get(item.address)?.name
-                  : item.name}
-                <Icon as={FiExternalLink} ml="10px" />
-              </GridItem>
-            </Link>
+            <GridItem fontWeight="400">
+              <ShadowcornRow
+                shadowcorn={shadowcorns.data?.get(item.address)}
+                tokenId={item.address}
+              />
+            </GridItem>
             <GridItem fontWeight="400">{item.score}</GridItem>
           </Grid>
         );

@@ -3,8 +3,7 @@ import { useQuery } from "react-query";
 import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout";
 import LeaderboardGroupHeader from "./../../../components/LeaderboardGroupHeader";
 import LeaderboardGroup from "./../../../components/LeaderboardGroup";
-import { FiExternalLink } from "react-icons/fi";
-import { SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
+import ShadowcornRow from "../../../components/ShadocornRow";
 
 import {
   Box,
@@ -12,7 +11,6 @@ import {
   Flex,
   Image,
   Accordion,
-  Icon,
   AccordionItem,
   Spacer,
   Link,
@@ -20,7 +18,6 @@ import {
   Grid,
   GridItem,
   HStack,
-  Text,
 } from "@chakra-ui/react";
 import { InfoOutlineIcon } from "@chakra-ui/icons";
 
@@ -31,10 +28,6 @@ import { DEFAULT_METATAGS } from "../../../src/constants";
 const playAssetPath = "https://s3.amazonaws.com/static.simiotics.com/play";
 const assets = {
   shadowcornsLogo: `${playAssetPath}/cu/shadowcorns-logo.png`,
-};
-
-const buildOpenseaLink = (tokenId: string) => {
-  return `https://opensea.io/assets/matic/${SHADOWCORN_CONTRACT_ADDRESS}/${tokenId}`;
 };
 
 const Leaderboard = () => {
@@ -65,14 +58,33 @@ const Leaderboard = () => {
     ["fetch_shadowcorns"],
     () => {
       return fetchShadowcorns().then((res) => {
-        const shadowcorns = new Map<string, { name: string; image: string }>();
+        const shadowcorns = new Map<
+          string,
+          { tokenId: number; name: string; image: string }
+        >();
         res.data.forEach(
           (sc: {
             token_id: number;
-            metadata: { name: string; image: string };
+            metadata: {
+              name: string;
+              attributes: [{ trait_type: string; value: string }];
+            };
           }) => {
-            const { name, image } = sc.metadata;
-            shadowcorns.set(String(sc.token_id), { name, image });
+            const { name, attributes } = sc.metadata;
+            const image = `${playAssetPath}/cu/shadowcorns/shadowcorn_${
+              attributes
+                .find((attr) => attr.trait_type === "Class")
+                ?.value.toLowerCase() ?? ""
+            }_${
+              attributes
+                .find((attr) => attr.trait_type === "Rarity")
+                ?.value.toLowerCase() ?? ""
+            }.jpg`;
+            shadowcorns.set(String(sc.token_id), {
+              tokenId: sc.token_id,
+              name,
+              image,
+            });
           }
         );
         return shadowcorns;
@@ -214,7 +226,10 @@ const Leaderboard = () => {
                 >
                   {group.records.length > 1 && (
                     <>
-                      <LeaderboardGroupHeader group={group} />
+                      <LeaderboardGroupHeader
+                        metadata={shadowcorns.data}
+                        group={group}
+                      />
                       <LeaderboardGroup
                         group={group}
                         shadowcorns={shadowcorns}
@@ -231,25 +246,15 @@ const Leaderboard = () => {
                       <GridItem fontWeight="700" pl={["4px", "10px", "20px"]}>
                         {group.rank}
                       </GridItem>
-                      <Link
-                        p="0px"
-                        _hover={{ bgColor: "#454545" }}
-                        href={buildOpenseaLink(group.records[0].address)}
-                        isExternal
-                      >
-                        {shadowcorns.data &&
-                        shadowcorns.data.has(group.records[0].address) ? (
-                          <GridItem fontWeight="400">
-                            {
-                              shadowcorns.data.get(group.records[0].address)!
-                                .name
-                            }
-                            <Icon as={FiExternalLink} ml="10px" />
-                          </GridItem>
-                        ) : (
-                          <Text>{group.records[0].address}</Text>
-                        )}
-                      </Link>
+
+                      <GridItem fontWeight="400">
+                        <ShadowcornRow
+                          shadowcorn={shadowcorns.data?.get(
+                            group.records[0].address
+                          )}
+                          tokenId={group.records[0].address}
+                        />
+                      </GridItem>
                       <GridItem fontWeight="400">
                         <Flex width="100%" justifyContent="space-between">
                           {group.score}
