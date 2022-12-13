@@ -4,6 +4,8 @@ import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout
 import LeaderboardGroupHeader from "./../../../components/LeaderboardGroupHeader";
 import LeaderboardGroup from "./../../../components/LeaderboardGroup";
 import ShadowcornRow from "../../../components/ShadocornRow";
+import LeaderboardRank from "./../../../components/LeaderboardRank";
+// import LeaderboardRank from "./../../../components/LeaderboardRank";
 
 import {
   Box,
@@ -15,7 +17,6 @@ import {
   Spacer,
   Link,
   Spinner,
-  Grid,
   GridItem,
   HStack,
 } from "@chakra-ui/react";
@@ -197,24 +198,43 @@ const Leaderboard = () => {
           according to their Shadowcorns&apos; ranks. Shadowcorns can share
           ranks.
         </Box>
-        <Grid
-          borderBottom="1px solid #8B8B8B"
-          templateColumns="1fr 2fr 1fr"
+        <Flex
+          textAlign="left"
+          width="100%"
+          justifyContent="space-between"
+          py={["5px", "5px", "10px"]}
+          alignItems="center"
+          borderBottom="1px solid white"
+          fontSize={["14px", "18px", "20px"]}
           fontWeight="700"
-          pb="10px"
         >
-          <GridItem pl={["2px", "5px", "10px"]}>Rank</GridItem>
-          <GridItem>Shadowcorn</GridItem>
-          <GridItem>Score</GridItem>
-        </Grid>
+          <GridItem
+            pl={["2px", "5px", "10px"]}
+            maxW={["55px", "55px", "125px"]}
+            minW={["55px", "55px", "125px"]}
+          >
+            Rank
+          </GridItem>
+          <GridItem mr="auto">Shadowcorn</GridItem>
+          <GridItem
+            maxW={["60px", "80px", "240px"]}
+            minW={["60px", "80px", "240px"]}
+          >
+            Score
+          </GridItem>
+        </Flex>
         {groups.data ? (
-          <Accordion allowToggle allowMultiple>
+          <Accordion
+            allowToggle
+            allowMultiple
+            fontSize={["12px", "16px", "20px"]}
+          >
             {[...groups.data.entries()].map(([score, group]) => {
               return (
                 <AccordionItem
                   borderStyle="none"
                   key={score}
-                  fontSize={["xs", "sm", "lg"]}
+                  verticalAlign="center"
                 >
                   {group.records.length > 1 && (
                     <>
@@ -229,17 +249,20 @@ const Leaderboard = () => {
                     </>
                   )}
                   {group.records.length === 1 && (
-                    <Grid
+                    <Flex
                       textAlign="left"
                       width="100%"
-                      templateColumns="1fr 2fr 1fr"
-                      py={["5px", "10px"]}
+                      justifyContent="space-between"
+                      py={["5px", "5px", "10px"]}
+                      alignItems="center"
                     >
-                      <GridItem fontWeight="700" pl={["4px", "10px", "20px"]}>
-                        {group.rank}
+                      <GridItem
+                        maxW={["55px", "55px", "125px"]}
+                        minW={["55px", "55px", "125px"]}
+                      >
+                        <LeaderboardRank rank={group.rank} />
                       </GridItem>
-
-                      <GridItem fontWeight="400">
+                      <GridItem fontWeight="400" mr="auto">
                         <ShadowcornRow
                           shadowcorn={shadowcorns.data?.get(
                             group.records[0].address
@@ -247,12 +270,17 @@ const Leaderboard = () => {
                           tokenId={group.records[0].address}
                         />
                       </GridItem>
-                      <GridItem fontWeight="400">
+                      <GridItem
+                        my="auto"
+                        fontWeight="400"
+                        maxW={["60px", "80px", "240px"]}
+                        minW={["60px", "80px", "240px"]}
+                      >
                         <Flex width="100%" justifyContent="space-between">
                           {group.score}
                         </Flex>
                       </GridItem>
-                    </Grid>
+                    </Flex>
                   )}
                 </AccordionItem>
               );

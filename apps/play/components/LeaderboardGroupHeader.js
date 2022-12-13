@@ -1,33 +1,33 @@
 import {
   AccordionButton,
   AccordionIcon,
-  Grid,
   GridItem,
   Flex,
-  HStack,
   Text,
 } from "@chakra-ui/react";
+import LeaderboardRank from "./LeaderboardRank";
 
 import GroupImage from "./GroupImage";
 
 const LeaderboardGroupHeader = ({ group, metadata }) => {
   return (
-    <AccordionButton
-      fontSize={["xs", "sm", "lg"]}
-      _hover={{ bg: "#454545" }}
-      p="0"
-    >
-      <Grid
+    <AccordionButton _hover={{ bg: "#454545" }} p="0">
+      <Flex
         textAlign="left"
         width="100%"
-        templateColumns="1fr 2fr 1fr"
-        py={["5px", "10px"]}
+        py={["5px", "5px", "10px"]}
+        alignItems="center"
+        fontSize={["12px", "16px", "20px"]}
+        justifyContent="space-between"
       >
-        <GridItem fontWeight="700" pl={["4px", "10px", "20px"]}>
-          {group.rank}
+        <GridItem
+          maxW={["55px", "55px", "125px"]}
+          minW={["55px", "55px", "125px"]}
+        >
+          <LeaderboardRank rank={group.rank} />
         </GridItem>
-        <GridItem fontWeight="400">
-          <HStack align="center">
+        <GridItem fontWeight="400" w="100%">
+          <Flex mr="auto" justifyContent="start" alignItems="center">
             <GroupImage
               shadowcorns={
                 group.records.length > 2
@@ -36,16 +36,22 @@ const LeaderboardGroupHeader = ({ group, metadata }) => {
               }
               metadata={metadata}
             />
-            <Text pl="7px">{`${group.records.length} Shadowcorns`}</Text>
-          </HStack>
+            <Text
+              pl={["2px", "5px", "7px"]}
+            >{`${group.records.length} Shadowcorns`}</Text>
+          </Flex>
         </GridItem>
-        <GridItem fontWeight="400">
-          <Flex width="100%" justifyContent="space-between">
+        <GridItem
+          fontWeight="400"
+          maxW={["60px", "80px", "240px"]}
+          minW={["60px", "80px", "240px"]}
+        >
+          <Flex justifyContent="space-between">
             {group.score}
             <AccordionIcon />
           </Flex>
         </GridItem>
-      </Grid>
+      </Flex>
     </AccordionButton>
   );
 };

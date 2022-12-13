@@ -1,33 +1,45 @@
-import { AccordionPanel, GridItem, Grid } from "@chakra-ui/react";
+import { AccordionPanel, GridItem, Flex } from "@chakra-ui/react";
 import ShadowcornRow from "./ShadocornRow";
+import LeaderboardRank from "./LeaderboardRank";
 
 const LeaderboardGroup = ({ group, shadowcorns }) => {
   return (
     <AccordionPanel p="0px">
-      {group.records.map((item) => {
-        return (
-          <Grid
-            key={item.address}
-            textAlign="left"
-            width="100%"
-            templateColumns="1fr 2fr 1fr"
-            py={["5px", "10px"]}
-            bg="#232323"
-          >
-            <GridItem fontWeight="700" pl={["8px", "20px", "40px"]}>
-              {group.rank}
-            </GridItem>
-
-            <GridItem fontWeight="400">
-              <ShadowcornRow
-                shadowcorn={shadowcorns.data?.get(item.address)}
-                tokenId={item.address}
-              />
-            </GridItem>
-            <GridItem fontWeight="400">{item.score}</GridItem>
-          </Grid>
-        );
-      })}
+      <Flex direction="column" borderRadius="10px" bg="#1A1D22">
+        {group.records.map((item) => {
+          return (
+            <Flex
+              key={item.address}
+              textAlign="left"
+              width="100%"
+              py={["5px", "5px", "10px"]}
+              alignItems="center"
+              justifyContent="space-between"
+            >
+              <GridItem
+                maxW={["55px", "55px", "125px"]}
+                minW={["55px", "55px", "125px"]}
+                pl="5px"
+              >
+                <LeaderboardRank rank={group.rank} />
+              </GridItem>
+              <GridItem fontWeight="400" mr="auto">
+                <ShadowcornRow
+                  shadowcorn={shadowcorns.data?.get(item.address)}
+                  tokenId={item.address}
+                />
+              </GridItem>
+              <GridItem
+                fontWeight="400"
+                maxW={["60px", "80px", "240px"]}
+                minW={["60px", "80px", "240px"]}
+              >
+                {item.score}
+              </GridItem>
+            </Flex>
+          );
+        })}
+      </Flex>
     </AccordionPanel>
   );
 };
