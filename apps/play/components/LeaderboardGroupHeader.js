@@ -17,7 +17,7 @@ const LeaderboardGroupHeader = ({ group, metadata }) => {
         width="100%"
         py={["5px", "5px", "10px"]}
         alignItems="center"
-        fontSize={["10px", "10px", "20px"]}
+        fontSize={["12px", "12px", "20px"]}
         justifyContent="space-between"
       >
         <GridItem

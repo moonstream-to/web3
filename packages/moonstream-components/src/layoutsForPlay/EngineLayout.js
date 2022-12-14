@@ -24,7 +24,8 @@ const EngineLayout = (props) => {
       w="100%"
       minH="100vh"
       bgColor={"#1A1D22"}
-      px="7%"
+      pr={["0%", "1%", "6%"]}
+      pl={["2%", "3%", "7%"]}
       id="EngineLayout"
     >
       <Breadcrumb

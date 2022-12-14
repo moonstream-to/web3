@@ -191,7 +191,7 @@ const Leaderboard = () => {
             </Link>
           </Flex>
         </Flex>
-        <Box my={["10px", "20px", "30px"]} fontSize={["xs", "sm", "lg"]}>
+        <Box my={["10px", "20px", "30px"]} fontSize={["14px", "14px", "18px"]}>
           This leaderboard ranks Shadowcorn NFTs and not player wallets. Each
           room a Shadowcorn reaches during the Throwing Shade Event earns them
           points. At the end of the event, players will be airdropped rewards
@@ -205,7 +205,7 @@ const Leaderboard = () => {
           py={["5px", "5px", "10px"]}
           alignItems="center"
           borderBottom="1px solid white"
-          fontSize={["12px", "18px", "20px"]}
+          fontSize={["12px", "14px", "20px"]}
           fontWeight="700"
         >
           <GridItem
@@ -227,7 +227,7 @@ const Leaderboard = () => {
           <Accordion
             allowToggle
             allowMultiple
-            fontSize={["10px", "10px", "20px"]}
+            fontSize={["12px", "12px", "20px"]}
           >
             {[...groups.data.entries()].map(([score, group]) => {
               return (
