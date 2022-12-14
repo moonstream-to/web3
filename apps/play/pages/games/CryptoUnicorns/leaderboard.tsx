@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext, useEffect } from "react";
 import { useQuery } from "react-query";
 import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout";
 import LeaderboardGroupHeader from "./../../../components/LeaderboardGroupHeader";
@@ -26,14 +26,27 @@ import http from "moonstream-components/src/core/utils/http";
 import queryCacheProps from "moonstream-components/src/core/hooks/hookCommon";
 import { DEFAULT_METATAGS } from "../../../src/constants";
 
+import Web3 from "web3";
+import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
+const GardenABI = require("../../../games/GoFPABI.json");
+import { GOFPFacet as GardenABIType } from "../../../../../types/contracts/GOFPFacet";
+const MulticallABI = require("../../../games/cu/Multicall2.json");
+import { Multicall2 } from "../../../games/cu/Multicall2";
+const ERC721MetadataABI = require("../../../../../abi/MockERC721.json");
+import { MockERC721 } from "../../../../../types/contracts/MockERC721";
+import { GOFP_CONTRACT_ADDRESS, MULTICALL2_CONTRACT_ADDRESS, SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
+
 const playAssetPath = "https://s3.amazonaws.com/static.simiotics.com/play";
 const assets = {
   shadowcornsLogo: `${playAssetPath}/cu/shadowcorns-logo.png`,
 };
 
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
 const Leaderboard = () => {
   const [limit] = React.useState<number>(0);
   const [offset] = React.useState<number>(0);
+  const [currentAccount, setCurrentAccount] = React.useState(ZERO_ADDRESS);
 
   const fetchLeaders = async (pageLimit: number, pageOffset: number) => {
     return http(
@@ -126,6 +139,104 @@ const Leaderboard = () => {
         } catch (err) {
           console.log(err);
         }
+      });
+    },
+    {
+      ...queryCacheProps,
+      onSuccess: () => {},
+    }
+  );
+
+  const web3ctx = useContext(Web3Context);
+
+  const convertMulticallResponseAddress = (address: string) => {
+    return Web3.utils.toChecksumAddress(address.substring(0, 2) + address.substring(26))
+  };
+
+  const allShadowcorns = [ ...Array(2400).keys() ].map(x => (x+1).toString());
+
+  // const fetchExplicitOwners = async () => {
+  //   let ownerOfQueries = allShadowcorns.map((tokenId: string) => {
+  //     return { target: SHADOWCORN_CONTRACT_ADDRESS, 
+  //              callData: shadowcornsContract.methods.ownerOf(tokenId).encodeABI()};
+  //   });
+  //   return multicallContract.methods.tryAggregate(false, ownerOfQueries).call().then((res: any[]) => {
+  //     return res.map((item: any, index: number) => { return { tokenId: (index + 1).toString(), ownerAddress: convertMulticallResponseAddress(item.returnData) } });
+  //   });
+  // };
+
+  useEffect(() => {
+    if (Web3.utils.isAddress(web3ctx.account)) {
+      setCurrentAccount(web3ctx.account);
+    }
+    setCurrentAccount("0x9f8B214bF13F62cFA5160ED135E233C9dDb95974");
+    setCurrentAccount("0x5270Be273265f6F8ab034dF137FF82fc1E468F88");
+  }, [web3ctx.account]);
+
+  const stakedShadowcorns = useQuery(
+    ["staked_tokens", currentAccount],
+    async () => {
+      if(currentAccount == ZERO_ADDRESS) return;
+      const gardenContract = new web3ctx.polygonClient.eth.Contract(
+        GardenABI, GOFP_CONTRACT_ADDRESS
+      ) as any as GardenABIType;
+      const multicallContract = new web3ctx.polygonClient.eth.Contract(
+        MulticallABI, MULTICALL2_CONTRACT_ADDRESS
+      )
+      const numStaked = await gardenContract.methods.numTokensStakedIntoSession(4, currentAccount).call();
+      console.log("Num staked: ", numStaked);
+
+      let stakedTokensQueries = [];
+      for (var i = 1; i <= parseInt(numStaked); i++) {
+        stakedTokensQueries.push({
+          target: GOFP_CONTRACT_ADDRESS,
+          callData: gardenContract.methods.tokenOfStakerInSessionByIndex(4, currentAccount, i.toString()).encodeABI()
+        });
+      }
+
+      return multicallContract.methods.tryAggregate(false, stakedTokensQueries).call().then((results: any[]) => {
+        const parsedResults = results.map((result, i) => {
+          return Number(result[1]);
+        });
+        console.log("Staked Shadowcorns: ");
+        console.log(parsedResults);
+        return parsedResults;
+      });
+
+    },
+    {
+      ...queryCacheProps,
+      onSuccess: () => {},
+    }
+  );
+
+  const ownedShadowcorns = useQuery(
+    ["owned_tokens", currentAccount],
+    async () => {
+      if(currentAccount == ZERO_ADDRESS) return;
+      const shadowcornsContract = new web3ctx.polygonClient.eth.Contract(
+        ERC721MetadataABI, SHADOWCORN_CONTRACT_ADDRESS
+      ) as unknown as MockERC721;
+      const multicallContract = new web3ctx.polygonClient.eth.Contract(
+        MulticallABI, MULTICALL2_CONTRACT_ADDRESS
+      )
+      const numTokens = await shadowcornsContract.methods.balanceOf(currentAccount).call();
+      console.log("Num owned: ", numTokens);
+      let tokenOfOwnerQueries = [];
+      for (var i = 0; i < parseInt(numTokens); i++) {
+        tokenOfOwnerQueries.push({
+          target: SHADOWCORN_CONTRACT_ADDRESS,
+          callData: shadowcornsContract.methods.tokenOfOwnerByIndex(currentAccount, i).encodeABI()
+        });
+      }
+    
+      return multicallContract.methods.tryAggregate(false, tokenOfOwnerQueries).call().then((results: any[]) => {
+        const parsedResults = results.map((result, i) => {
+          return Number(result[1]);
+        });
+        console.log("Owned Shadowcorns");
+        console.log(parsedResults);
+        return parsedResults;
       });
     },
     {
