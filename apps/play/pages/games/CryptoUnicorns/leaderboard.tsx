@@ -165,18 +165,19 @@ const Leaderboard = () => {
       let tokenOfOwnerQueries = [];
       for (var i = 1; i <= parseInt(numTokens); i++) {
         tokenOfOwnerQueries.push({
-          target: GOFP_CONTRACT_ADDRESS,
+          target: SHADOWCORN_CONTRACT_ADDRESS,
           callData: shadowcornsContract.methods.tokenOfOwnerByIndex(currentAccount, i).encodeABI()
         });
       }
     
       console.log("queries");
-      console.log(tokenOfOwnerQueries);
-      return multicallContract.methods.tryAggregate(false, tokenOfOwnerQueries).call().then((res: any[]) => {
+      return multicallContract.methods.tryAggregate(false, tokenOfOwnerQueries).call().then((results: any[]) => {
         console.log("Owned multicall response");
+        const res = results.map((result, i) => {
+          return Number(result[1]);
+        });
         console.log(res);
       });
-
     },
     {
       ...queryCacheProps,
