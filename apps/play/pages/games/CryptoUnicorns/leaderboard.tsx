@@ -49,9 +49,7 @@ const buildOpenseaLink = (tokenId: string) => {
 const Leaderboard = () => {
   const [limit] = React.useState<number>(0);
   const [offset] = React.useState<number>(0);
-  const [currentAccount, setCurrentAccount] = React.useState(
-    GOFP_CONTRACT_ADDRESS
-  );
+  const [currentAccount, setCurrentAccount] = React.useState("0x5270Be273265f6F8ab034dF137FF82fc1E468F88");
 
   const fetchLeaders = async (pageLimit: number, pageOffset: number) => {
     return http(
@@ -111,6 +109,7 @@ const Leaderboard = () => {
   // };
 
   // useEffect(() => {
+  //   console.log(web3ctx.account);
   //   if (Web3.utils.isAddress(web3ctx.account)) {
   //     setCurrentAccount(web3ctx.account);
   //   }
@@ -163,7 +162,7 @@ const Leaderboard = () => {
       const numTokens = await shadowcornsContract.methods.balanceOf(currentAccount).call();
       console.log("Num owned: ", numTokens);
       let tokenOfOwnerQueries = [];
-      for (var i = 1; i <= parseInt(numTokens); i++) {
+      for (var i = 0; i < parseInt(numTokens); i++) {
         tokenOfOwnerQueries.push({
           target: SHADOWCORN_CONTRACT_ADDRESS,
           callData: shadowcornsContract.methods.tokenOfOwnerByIndex(currentAccount, i).encodeABI()
@@ -177,6 +176,7 @@ const Leaderboard = () => {
           return Number(result[1]);
         });
         console.log(res);
+        console.log(results);
       });
     },
     {
