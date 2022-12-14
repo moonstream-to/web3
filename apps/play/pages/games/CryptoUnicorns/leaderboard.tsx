@@ -1,39 +1,34 @@
 import React from "react";
 import { useQuery } from "react-query";
 import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout";
+import LeaderboardGroupHeader from "./../../../components/LeaderboardGroupHeader";
+import LeaderboardGroup from "./../../../components/LeaderboardGroup";
+import ShadowcornRow from "../../../components/ShadocornRow";
+import LeaderboardRank from "./../../../components/LeaderboardRank";
+// import LeaderboardRank from "./../../../components/LeaderboardRank";
+
 import {
   Box,
   Heading,
   Flex,
   Image,
   Accordion,
-  AccordionButton,
   AccordionItem,
-  AccordionPanel,
-  AccordionIcon,
   Spacer,
   Link,
   Spinner,
-  Grid,
   GridItem,
-  Icon,
   HStack,
 } from "@chakra-ui/react";
 import { InfoOutlineIcon } from "@chakra-ui/icons";
-import { FiExternalLink } from "react-icons/fi";
 
 import http from "moonstream-components/src/core/utils/http";
 import queryCacheProps from "moonstream-components/src/core/hooks/hookCommon";
-import { SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
 import { DEFAULT_METATAGS } from "../../../src/constants";
 
 const playAssetPath = "https://s3.amazonaws.com/static.simiotics.com/play";
 const assets = {
   shadowcornsLogo: `${playAssetPath}/cu/shadowcorns-logo.png`,
-};
-
-const buildOpenseaLink = (tokenId: string) => {
-  return `https://opensea.io/assets/matic/${SHADOWCORN_CONTRACT_ADDRESS}/${tokenId}`;
 };
 
 const Leaderboard = () => {
@@ -50,12 +45,71 @@ const Leaderboard = () => {
     );
   };
 
+  const fetchShadowcorns = async () => {
+    return http(
+      {
+        method: "GET",
+        url: "https://data.moonstream.to/shadowcorns/shadowcorns.json",
+      },
+      true
+    );
+  };
+
+  const shadowcorns = useQuery(
+    ["fetch_shadowcorns"],
+    () => {
+      return fetchShadowcorns().then((res) => {
+        const shadowcorns = new Map<
+          string,
+          { tokenId: number; name: string; image: string }
+        >();
+        res.data.forEach(
+          (sc: {
+            token_id: number;
+            metadata: {
+              name: string;
+              attributes: [{ trait_type: string; value: string }];
+            };
+          }) => {
+            const { name, attributes } = sc.metadata;
+            const image = `${playAssetPath}/cu/shadowcorns/shadowcorn_${
+              attributes
+                .find((attr) => attr.trait_type === "Class")
+                ?.value.toLowerCase() ?? ""
+            }_${
+              attributes
+                .find((attr) => attr.trait_type === "Rarity")
+                ?.value.toLowerCase() ?? ""
+            }.jpg`;
+            shadowcorns.set(String(sc.token_id), {
+              tokenId: sc.token_id,
+              name,
+              image,
+            });
+          }
+        );
+        return shadowcorns;
+      });
+    },
+    {
+      ...queryCacheProps,
+      onSuccess: () => {},
+    }
+  );
+
   const groups = useQuery(
     ["fetch_leaders", limit, offset],
     () => {
       return fetchLeaders(limit, offset).then((res) => {
         try {
-          let groups = new Map<number, { rank: number; records: number[] }>();
+          let groups = new Map<
+            number,
+            {
+              rank: number;
+              records: { address: string; rank: number; score: number }[];
+              score: number;
+            }
+          >();
           for (const record of res.data) {
             if (groups.has(record.score)) {
               let { records } = groups.get(record.score)!;
@@ -64,6 +118,7 @@ const Leaderboard = () => {
               groups.set(record.score, {
                 rank: record.rank,
                 records: [record],
+                score: record.score,
               });
             }
           }
@@ -136,93 +191,96 @@ const Leaderboard = () => {
             </Link>
           </Flex>
         </Flex>
-        <Box my={["10px", "20px", "30px"]} fontSize={["xs", "sm", "lg"]}>
+        <Box my={["10px", "20px", "30px"]} fontSize={["14px", "14px", "18px"]}>
           This leaderboard ranks Shadowcorn NFTs and not player wallets. Each
           room a Shadowcorn reaches during the Throwing Shade Event earns them
           points. At the end of the event, players will be airdropped rewards
           according to their Shadowcorns&apos; ranks. Shadowcorns can share
           ranks.
         </Box>
-        <Grid
-          borderBottom="1px solid #8B8B8B"
-          templateColumns="1fr 2fr 1fr"
+        <Flex
+          textAlign="left"
+          width="100%"
+          justifyContent="space-between"
+          py={["5px", "5px", "10px"]}
+          alignItems="center"
+          borderBottom="1px solid white"
+          fontSize={["12px", "14px", "20px"]}
           fontWeight="700"
-          pb="10px"
         >
-          <GridItem pl={["2px", "5px", "10px"]}>Rank</GridItem>
-          <GridItem>Shadowcorn</GridItem>
-          <GridItem>Score</GridItem>
-        </Grid>
+          <GridItem
+            maxW={["45px", "45px", "125px"]}
+            minW={["45px", "45px", "125px"]}
+          >
+            Rank
+          </GridItem>
+          <GridItem mr="auto">Shadowcorn</GridItem>
+          <GridItem
+            maxW={["50px", "50px", "140px", "420px"]}
+            minW={["50px", "50px", "140px", "420px"]}
+          >
+            Score
+          </GridItem>
+        </Flex>
         {groups.data ? (
-          <Accordion allowToggle allowMultiple>
+          <Accordion
+            allowToggle
+            allowMultiple
+            fontSize={["12px", "12px", "20px"]}
+          >
             {[...groups.data.entries()].map(([score, group]) => {
               return (
                 <AccordionItem
                   borderStyle="none"
                   key={score}
-                  fontSize={["xs", "sm", "lg"]}
+                  verticalAlign="center"
                 >
-                  <AccordionButton
-                    fontSize={["xs", "sm", "lg"]}
-                    _hover={{ bg: "#454545" }}
-                    p="0"
-                  >
-                    <Grid
+                  {group.records.length > 1 && (
+                    <>
+                      <LeaderboardGroupHeader
+                        metadata={shadowcorns.data}
+                        group={group}
+                      />
+                      <LeaderboardGroup
+                        group={group}
+                        shadowcorns={shadowcorns}
+                      />
+                    </>
+                  )}
+                  {group.records.length === 1 && (
+                    <Flex
                       textAlign="left"
                       width="100%"
-                      templateColumns="1fr 2fr 1fr"
-                      py={["5px", "10px"]}
+                      justifyContent="space-between"
+                      py={["5px", "5px", "10px"]}
+                      alignItems="center"
                     >
-                      <GridItem fontWeight="700" pl={["4px", "10px", "20px"]}>
-                        {group.rank}
+                      <GridItem
+                        maxW={["45px", "45px", "125px"]}
+                        minW={["45px", "45px", "125px"]}
+                      >
+                        <LeaderboardRank rank={group.rank} />
                       </GridItem>
-                      <GridItem fontWeight="400">{`${
-                        group.records.length
-                      } Shadowcorn${
-                        group.records.length > 1 ? "s" : ""
-                      }`}</GridItem>
-                      <GridItem fontWeight="400">
+                      <GridItem fontWeight="400" mr="auto">
+                        <ShadowcornRow
+                          shadowcorn={shadowcorns.data?.get(
+                            group.records[0].address
+                          )}
+                          tokenId={group.records[0].address}
+                        />
+                      </GridItem>
+                      <GridItem
+                        my="auto"
+                        fontWeight="400"
+                        maxW={["50px", "50px", "140px", "420px"]}
+                        minW={["50px", "50px", "140px", "420px"]}
+                      >
                         <Flex width="100%" justifyContent="space-between">
-                          {score}
-                          <AccordionIcon />
+                          {group.score}
                         </Flex>
                       </GridItem>
-                    </Grid>
-                  </AccordionButton>
-                  <AccordionPanel p="0px">
-                    {group.records.map((item: any) => {
-                      return (
-                        <Grid
-                          key={item.address}
-                          textAlign="left"
-                          width="100%"
-                          templateColumns="1fr 2fr 1fr"
-                          py={["5px", "10px"]}
-                          bg="#232323"
-                        >
-                          <GridItem
-                            fontWeight="700"
-                            pl={["8px", "20px", "40px"]}
-                          >
-                            {group.rank}
-                          </GridItem>
-
-                          <Link
-                            p="0px"
-                            _hover={{ bgColor: "#454545" }}
-                            href={buildOpenseaLink(item.address)}
-                            isExternal
-                          >
-                            <GridItem fontWeight="400">
-                              {item.address}
-                              <Icon as={FiExternalLink} ml="10px" />
-                            </GridItem>
-                          </Link>
-                          <GridItem fontWeight="400">{item.score}</GridItem>
-                        </Grid>
-                      );
-                    })}
-                  </AccordionPanel>
+                    </Flex>
+                  )}
                 </AccordionItem>
               );
             })}
@@ -246,5 +304,4 @@ export async function getStaticProps() {
 }
 
 Leaderboard.getLayout = getLayout;
-
 export default Leaderboard;

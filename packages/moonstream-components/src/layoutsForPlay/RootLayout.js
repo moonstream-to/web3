@@ -27,6 +27,7 @@ const RootLayout = (props) => {
         flexGrow={1}
         flexBasis="100px"
         overflowX="hidden"
+        p="0px"
       >
         <Suspense fallback="">
           <Navbar />
