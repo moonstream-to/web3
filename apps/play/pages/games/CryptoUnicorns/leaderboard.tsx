@@ -34,7 +34,7 @@ import { Multicall2 } from "../../../games/cu/Multicall2";
 const ERC721MetadataABI = require("../../../../../abi/MockERC721.json");
 import { MockERC721 } from "../../../../../types/contracts/MockERC721";
 import { GOFP_CONTRACT_ADDRESS, MULTICALL2_CONTRACT_ADDRESS, SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
-import { tokenToString } from "typescript";
+import { EmitHelper, tokenToString } from "typescript";
 
 
 const playAssetPath = "https://s3.amazonaws.com/static.simiotics.com/play";
@@ -93,15 +93,6 @@ const Leaderboard = () => {
   );
 
   const web3ctx = useContext(Web3Context);
-  const gardenContract = new web3ctx.polygonClient.eth.Contract(
-    GardenABI, GOFP_CONTRACT_ADDRESS
-  ) as any as GardenABIType;
-  const multicallContract = new web3ctx.polygonClient.eth.Contract(
-    MulticallABI, MULTICALL2_CONTRACT_ADDRESS
-  )
-  const shadowcornsContract = new web3ctx.web3.eth.Contract(
-    ERC721MetadataABI, SHADOWCORN_CONTRACT_ADDRESS
-  ) as unknown as MockERC721;
 
   const convertMulticallResponseAddress = (address: string) => {
     return Web3.utils.toChecksumAddress(address.substring(0, 2) + address.substring(26))
@@ -128,6 +119,13 @@ const Leaderboard = () => {
   const stakedShadowcorns = useQuery(
     ["staked_tokens", currentAccount],
     async () => {
+      if(!currentAccount) return;
+      const gardenContract = new web3ctx.polygonClient.eth.Contract(
+        GardenABI, GOFP_CONTRACT_ADDRESS
+      ) as any as GardenABIType;
+      const multicallContract = new web3ctx.polygonClient.eth.Contract(
+        MulticallABI, MULTICALL2_CONTRACT_ADDRESS
+      )
       const numStaked = await gardenContract.methods.numTokensStakedIntoSession(4, currentAccount).call();
       console.log("Num staked: ", numStaked);
 
@@ -155,6 +153,13 @@ const Leaderboard = () => {
   const ownedShadowcorns = useQuery(
     ["owned_tokens", currentAccount],
     async () => {
+      if(!currentAccount) return;
+      const shadowcornsContract = new web3ctx.web3.eth.Contract(
+        ERC721MetadataABI, SHADOWCORN_CONTRACT_ADDRESS
+      ) as unknown as MockERC721;
+      const multicallContract = new web3ctx.polygonClient.eth.Contract(
+        MulticallABI, MULTICALL2_CONTRACT_ADDRESS
+      )
       const numTokens = await shadowcornsContract.methods.balanceOf(currentAccount).call();
       console.log("Num owned: ", numTokens);
       let tokenOfOwnerQueries = [];
