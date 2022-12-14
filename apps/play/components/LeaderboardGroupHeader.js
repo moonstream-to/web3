@@ -17,12 +17,12 @@ const LeaderboardGroupHeader = ({ group, metadata }) => {
         width="100%"
         py={["5px", "5px", "10px"]}
         alignItems="center"
-        fontSize={["12px", "16px", "20px"]}
+        fontSize={["10px", "10px", "20px"]}
         justifyContent="space-between"
       >
         <GridItem
-          maxW={["55px", "55px", "125px"]}
-          minW={["55px", "55px", "125px"]}
+          maxW={["45px", "55px", "125px"]}
+          minW={["45px", "55px", "125px"]}
         >
           <LeaderboardRank rank={group.rank} />
         </GridItem>
@@ -43,8 +43,8 @@ const LeaderboardGroupHeader = ({ group, metadata }) => {
         </GridItem>
         <GridItem
           fontWeight="400"
-          maxW={["60px", "80px", "240px"]}
-          minW={["60px", "80px", "240px"]}
+          maxW={["50px", "50px", "240px"]}
+          minW={["50px", "50px", "240px"]}
         >
           <Flex justifyContent="space-between">
             {group.score}

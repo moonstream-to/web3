@@ -17,8 +17,8 @@ const LeaderboardGroup = ({ group, shadowcorns }) => {
               justifyContent="space-between"
             >
               <GridItem
-                maxW={["55px", "55px", "125px"]}
-                minW={["55px", "55px", "125px"]}
+                maxW={["45px", "55px", "125px"]}
+                minW={["45px", "55px", "125px"]}
                 pl="5px"
               >
                 <LeaderboardRank rank={group.rank} />
@@ -31,8 +31,8 @@ const LeaderboardGroup = ({ group, shadowcorns }) => {
               </GridItem>
               <GridItem
                 fontWeight="400"
-                maxW={["60px", "80px", "240px"]}
-                minW={["60px", "80px", "240px"]}
+                maxW={["50px", "50px", "240px"]}
+                minW={["50px", "50px", "240px"]}
               >
                 {item.score}
               </GridItem>

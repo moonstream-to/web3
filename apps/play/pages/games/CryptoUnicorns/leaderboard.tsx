@@ -205,20 +205,20 @@ const Leaderboard = () => {
           py={["5px", "5px", "10px"]}
           alignItems="center"
           borderBottom="1px solid white"
-          fontSize={["14px", "18px", "20px"]}
+          fontSize={["12px", "18px", "20px"]}
           fontWeight="700"
         >
           <GridItem
             pl={["2px", "5px", "10px"]}
-            maxW={["55px", "55px", "125px"]}
-            minW={["55px", "55px", "125px"]}
+            maxW={["45px", "55px", "125px"]}
+            minW={["45px", "55px", "125px"]}
           >
             Rank
           </GridItem>
           <GridItem mr="auto">Shadowcorn</GridItem>
           <GridItem
-            maxW={["60px", "80px", "240px"]}
-            minW={["60px", "80px", "240px"]}
+            maxW={["50px", "50px", "240px"]}
+            minW={["50px", "50px", "240px"]}
           >
             Score
           </GridItem>
@@ -227,7 +227,7 @@ const Leaderboard = () => {
           <Accordion
             allowToggle
             allowMultiple
-            fontSize={["12px", "16px", "20px"]}
+            fontSize={["10px", "10px", "20px"]}
           >
             {[...groups.data.entries()].map(([score, group]) => {
               return (
@@ -257,8 +257,8 @@ const Leaderboard = () => {
                       alignItems="center"
                     >
                       <GridItem
-                        maxW={["55px", "55px", "125px"]}
-                        minW={["55px", "55px", "125px"]}
+                        maxW={["45px", "55px", "125px"]}
+                        minW={["45px", "55px", "125px"]}
                       >
                         <LeaderboardRank rank={group.rank} />
                       </GridItem>
@@ -273,8 +273,8 @@ const Leaderboard = () => {
                       <GridItem
                         my="auto"
                         fontWeight="400"
-                        maxW={["60px", "80px", "240px"]}
-                        minW={["60px", "80px", "240px"]}
+                        maxW={["50px", "50px", "240px"]}
+                        minW={["50px", "50px", "240px"]}
                       >
                         <Flex width="100%" justifyContent="space-between">
                           {group.score}
