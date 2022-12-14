@@ -6,7 +6,7 @@ import logging
 from bugout.data import BugoutResource
 from eth_typing import Address
 from hexbytes import HexBytes
-import requests
+import requests  # type: ignore
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text, or_
@@ -985,13 +985,14 @@ def get_leaderboard_positions(
     """
     query = (
         db_session.query(
+            LeaderboardScores.id,
             LeaderboardScores.address,
             LeaderboardScores.score,
             LeaderboardScores.points_data,
             func.rank().over(order_by=LeaderboardScores.score.desc()).label("rank"),
         )
         .filter(LeaderboardScores.leaderboard_id == leaderboard_id)
-        .order_by(text("rank asc"))
+        .order_by(text("rank asc, id asc"))
     )
 
     if limit:
@@ -1000,7 +1001,7 @@ def get_leaderboard_positions(
     if offset:
         query = query.offset(offset)
 
-    return query.all()
+    return query
 
 
 def get_qurtiles(db_session: Session, leaderboard_id):
@@ -1032,6 +1033,65 @@ def get_qurtiles(db_session: Session, leaderboard_id):
     q3 = db_session.query(ranked_leaderboard).limit(1).offset(index_75).first()
 
     return q1, q2, q3
+
+
+def get_ranks(db_session: Session, leaderboard_id):
+    """
+    Get the leaderboard rank buckets(rank, size, score)
+    """
+    query = db_session.query(
+        LeaderboardScores.id,
+        LeaderboardScores.address,
+        LeaderboardScores.score,
+        LeaderboardScores.points_data,
+        func.rank().over(order_by=LeaderboardScores.score.desc()).label("rank"),
+    ).filter(LeaderboardScores.leaderboard_id == leaderboard_id)
+
+    ranked_leaderboard = query.cte(name="ranked_leaderboard")
+
+    ranks = db_session.query(
+        ranked_leaderboard.c.rank,
+        func.count(ranked_leaderboard.c.id).label("size"),
+        ranked_leaderboard.c.score,
+    ).group_by(ranked_leaderboard.c.rank, ranked_leaderboard.c.score)
+    return ranks
+
+
+def get_rank(
+    db_session: Session,
+    leaderboard_id: uuid.UUID,
+    rank: int,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+):
+    """
+    Get bucket in leaderboard by rank
+    """
+    query = (
+        db_session.query(
+            LeaderboardScores.id,
+            LeaderboardScores.address,
+            LeaderboardScores.score,
+            LeaderboardScores.points_data,
+            func.rank().over(order_by=LeaderboardScores.score.desc()).label("rank"),
+        )
+        .filter(LeaderboardScores.leaderboard_id == leaderboard_id)
+        .order_by(text("rank asc, id asc"))
+    )
+
+    ranked_leaderboard = query.cte(name="ranked_leaderboard")
+
+    positions = db_session.query(ranked_leaderboard).filter(
+        ranked_leaderboard.c.rank == rank
+    )
+
+    if limit:
+        positions = positions.limit(limit)
+
+    if offset:
+        positions = positions.offset(offset)
+
+    return positions
 
 
 def create_leaderboard(db_session: Session, title: str, description: str):

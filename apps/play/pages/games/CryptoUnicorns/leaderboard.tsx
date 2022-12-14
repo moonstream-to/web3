@@ -35,7 +35,7 @@ const ERC721MetadataABI = require("../../../../../abi/MockERC721.json");
 import { MockERC721 } from "../../../../../types/contracts/MockERC721";
 import { GOFP_CONTRACT_ADDRESS, MULTICALL2_CONTRACT_ADDRESS, SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
 import { EmitHelper, tokenToString } from "typescript";
-
+import { DEFAULT_METATAGS } from "../../../src/constants";
 
 const playAssetPath = "https://s3.amazonaws.com/static.simiotics.com/play";
 const assets = {
@@ -49,7 +49,7 @@ const buildOpenseaLink = (tokenId: string) => {
 const Leaderboard = () => {
   const [limit] = React.useState<number>(0);
   const [offset] = React.useState<number>(0);
-  const [currentAccount, setCurrentAccount] = React.useState("0x5270Be273265f6F8ab034dF137FF82fc1E468F88");
+  const [currentAccount, setCurrentAccount] = React.useState("0x9f8B214bF13F62cFA5160ED135E233C9dDb95974");
 
   const fetchLeaders = async (pageLimit: number, pageOffset: number) => {
     return http(
@@ -137,9 +137,13 @@ const Leaderboard = () => {
       }
 
       console.log(stakedTokensQueries);
-      return multicallContract.methods.tryAggregate(false, stakedTokensQueries).call().then((res: any[]) => {
+      return multicallContract.methods.tryAggregate(false, stakedTokensQueries).call().then((results: any[]) => {
         console.log("Staked multicall response");
-        console.log(res);
+        const parsedResults = results.map((result, i) => {
+          return Number(result[1]);
+        });
+        console.log(parsedResults);
+        return parsedResults;
       });
 
     },
@@ -152,32 +156,35 @@ const Leaderboard = () => {
   const ownedShadowcorns = useQuery(
     ["owned_tokens", currentAccount],
     async () => {
-      if(!currentAccount) return;
-      const shadowcornsContract = new web3ctx.web3.eth.Contract(
-        ERC721MetadataABI, SHADOWCORN_CONTRACT_ADDRESS
-      ) as unknown as MockERC721;
-      const multicallContract = new web3ctx.polygonClient.eth.Contract(
-        MulticallABI, MULTICALL2_CONTRACT_ADDRESS
-      )
-      const numTokens = await shadowcornsContract.methods.balanceOf(currentAccount).call();
-      console.log("Num owned: ", numTokens);
-      let tokenOfOwnerQueries = [];
-      for (var i = 0; i < parseInt(numTokens); i++) {
-        tokenOfOwnerQueries.push({
-          target: SHADOWCORN_CONTRACT_ADDRESS,
-          callData: shadowcornsContract.methods.tokenOfOwnerByIndex(currentAccount, i).encodeABI()
+      try {
+        if(!currentAccount) return;
+        const shadowcornsContract = new web3ctx.polygonClient.eth.Contract(
+          ERC721MetadataABI, SHADOWCORN_CONTRACT_ADDRESS
+        ) as unknown as MockERC721;
+        const multicallContract = new web3ctx.polygonClient.eth.Contract(
+          MulticallABI, MULTICALL2_CONTRACT_ADDRESS
+        )
+        const numTokens = await shadowcornsContract.methods.balanceOf(currentAccount).call();
+        console.log("Num owned: ", numTokens);
+        let tokenOfOwnerQueries = [];
+        for (var i = 0; i < parseInt(numTokens); i++) {
+          tokenOfOwnerQueries.push({
+            target: SHADOWCORN_CONTRACT_ADDRESS,
+            callData: shadowcornsContract.methods.tokenOfOwnerByIndex(currentAccount, i).encodeABI()
+          });
+        }
+      
+        return multicallContract.methods.tryAggregate(false, tokenOfOwnerQueries).call().then((results: any[]) => {
+          console.log("Owned multicall response");
+          const parsedResults = results.map((result, i) => {
+            return Number(result[1]);
+          });
+          console.log(parsedResults);
+          return parsedResults;
         });
+      } catch(e) {
+        console.log(e);
       }
-    
-      console.log("queries");
-      return multicallContract.methods.tryAggregate(false, tokenOfOwnerQueries).call().then((results: any[]) => {
-        console.log("Owned multicall response");
-        const res = results.map((result, i) => {
-          return Number(result[1]);
-        });
-        console.log(res);
-        console.log(results);
-      });
     },
     {
       ...queryCacheProps,
@@ -243,10 +250,11 @@ const Leaderboard = () => {
           </Flex>
         </Flex>
         <Box my={["10px", "20px", "30px"]} fontSize={["xs", "sm", "lg"]}>
-          Shadowcorns rank on the leaderboard by earning Leaderboard Points.
-          Each room a Shadowcorn reaches earns them points. At the end of the
-          Throwing Shade Event, the Players will be airdropped rewards based on
-          where they rank on the Leaderboard.
+          This leaderboard ranks Shadowcorn NFTs and not player wallets. Each
+          room a Shadowcorn reaches during the Throwing Shade Event earns them
+          points. At the end of the event, players will be airdropped rewards
+          according to their Shadowcorns&apos; ranks. Shadowcorns can share
+          ranks.
         </Box>
         <Grid
           borderBottom="1px solid #8B8B8B"
@@ -339,6 +347,16 @@ const Leaderboard = () => {
     </Box>
   );
 };
+
+export async function getStaticProps() {
+  const metatags = {
+    title: "Moonstream player portal: Throwing Shade",
+    description: "Throwing Shade Leaderboard",
+  };
+  return {
+    props: { metaTags: { DEFAULT_METATAGS, ...metatags } },
+  };
+}
 
 Leaderboard.getLayout = getLayout;
 

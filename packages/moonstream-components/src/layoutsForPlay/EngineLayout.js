@@ -3,6 +3,7 @@ import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
+  Center,
 } from "@chakra-ui/react";
 import React, { useState } from "react";
 import { ChevronRightIcon } from "@chakra-ui/icons";
@@ -68,7 +69,7 @@ const EngineLayout = (props) => {
           );
         })}
       </Breadcrumb>
-      {props.children}
+      <Center>{props.children}</Center>
     </Flex>
   );
 };

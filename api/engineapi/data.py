@@ -190,3 +190,16 @@ class Score(BaseModel):
     address: str
     score: int
     points_data: Dict[str, Any]
+
+
+class LeaderboardPosition(BaseModel):
+    address: str
+    rank: int
+    score: int
+    points_data: Dict[str, Any]
+
+
+class RanksResponse(BaseModel):
+    rank: int
+    score: int
+    size: int
