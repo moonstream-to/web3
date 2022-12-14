@@ -21,8 +21,8 @@ const LeaderboardGroupHeader = ({ group, metadata }) => {
         justifyContent="space-between"
       >
         <GridItem
-          maxW={["45px", "55px", "125px"]}
-          minW={["45px", "55px", "125px"]}
+          maxW={["45px", "45px", "125px"]}
+          minW={["45px", "45px", "125px"]}
         >
           <LeaderboardRank rank={group.rank} />
         </GridItem>
@@ -37,14 +37,14 @@ const LeaderboardGroupHeader = ({ group, metadata }) => {
               metadata={metadata}
             />
             <Text
-              pl={["2px", "5px", "7px"]}
+              pl={["0px", "0px", "7px"]}
             >{`${group.records.length} Shadowcorns`}</Text>
           </Flex>
         </GridItem>
         <GridItem
           fontWeight="400"
-          maxW={["50px", "50px", "240px"]}
-          minW={["50px", "50px", "240px"]}
+          maxW={["50px", "50px", "140px", "420px"]}
+          minW={["50px", "50px", "140px", "420px"]}
         >
           <Flex justifyContent="space-between">
             {group.score}

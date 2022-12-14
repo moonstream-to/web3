@@ -1,4 +1,5 @@
-import { HStack, Text, Image, Link, Box } from "@chakra-ui/react";
+import { Text, Icon, Image, Link, Box, Flex } from "@chakra-ui/react";
+import { FiExternalLink } from "react-icons/fi";
 import { SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
 
 const buildOpenseaLink = (tokenId) => {
@@ -13,7 +14,7 @@ const ShadowcornRow = ({ shadowcorn, tokenId }) => {
       href={buildOpenseaLink(tokenId)}
       isExternal
     >
-      <HStack>
+      <Flex>
         {shadowcorn && (
           <Image
             alt="sc"
@@ -26,25 +27,20 @@ const ShadowcornRow = ({ shadowcorn, tokenId }) => {
         {shadowcorn?.name && (
           <>
             <Box
-              pl={["2px", "5px", "7px"]}
+              pl={["5px", "5px", "7px"]}
               textOverflow="ellipsis"
               whiteSpace="nowrap"
             >{`${shadowcorn.name} - ${tokenId}`}</Box>
           </>
         )}
         {!shadowcorn?.name && (
-          <Text pl={["2px", "5px", "7px"]} whiteSpace="nowrap">
+          <Text pl={["5px", "5px", "7px"]} whiteSpace="nowrap">
             {tokenId}
           </Text>
         )}
 
-        {/* <Icon
-          as={FiExternalLink}
-          ml="0px" //{["2px", "5px", "7px"]}
-          pb="5px"
-          pl="0px"
-        /> */}
-      </HStack>
+        <Icon as={FiExternalLink} marginInlineStart="2px" pb="5px" />
+      </Flex>
     </Link>
   );
 };
