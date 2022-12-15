@@ -21,7 +21,7 @@ const ShadowcornRow = ({ shadowcorn, tokenId }) => {
             src={shadowcorn.image}
             w={["16px", "20px", "24px"]}
             h={["16px", "20px", "24px"]}
-            borderRadius="4px"
+            borderRadius="50%"
           />
         )}
         {shadowcorn?.name && (
@@ -39,7 +39,12 @@ const ShadowcornRow = ({ shadowcorn, tokenId }) => {
           </Text>
         )}
 
-        <Icon as={FiExternalLink} marginInlineStart="2px" pb="5px" />
+        <Icon
+          as={FiExternalLink}
+          marginInlineStart="2px"
+          my="auto"
+          pb={["4px", "4px", "2px"]}
+        />
       </Flex>
     </Link>
   );

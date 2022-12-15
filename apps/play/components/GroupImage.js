@@ -23,6 +23,7 @@ const GroupImage = ({ shadowcorns, metadata }) => {
                 h={["16px", "20px", "24px"]}
                 alt={item.address}
                 borderRadius="50%"
+                border="2px solid #2D2D2D"
                 position="absolute"
                 left={`${idx * 16}px`}
                 top={["4px", "2px", "0px"]}

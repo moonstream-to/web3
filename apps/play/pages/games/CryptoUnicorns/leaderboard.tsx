@@ -161,7 +161,7 @@ const Leaderboard = () => {
       setCurrentAccount(web3ctx.account);
     }
     // setCurrentAccount("0x9f8B214bF13F62cFA5160ED135E233C9dDb95974");
-    setCurrentAccount("0x5270Be273265f6F8ab034dF137FF82fc1E468F88");
+    // setCurrentAccount("0x5270Be273265f6F8ab034dF137FF82fc1E468F88");
   }, [web3ctx.account]);
 
   const stakedShadowcorns = useQuery(
@@ -260,23 +260,10 @@ const Leaderboard = () => {
     const allShadowcorns = [...groups.data.values()]
       .map((group) => group.records)
       .flat();
-    let shadowcorns: {
-      address: string;
-      rank: number;
-      score: number;
-    }[] = [];
     const ownedTokens = (stakedShadowcorns.data ?? []).concat(
       unstakedShadowcorns.data ?? []
     );
-    // let ownedTokens: number[] = [];
-    // if (stakedShadowcorns.data) {
-    //   ownedTokens = stakedShadowcorns.data;
-    // }
-    // if (unstakedShadowcorns.data) {
-    //   ownedTokens = ownedTokens.concat(unstakedShadowcorns.data);
-    // }
-
-    shadowcorns = allShadowcorns.filter((sc) =>
+    const shadowcorns = allShadowcorns.filter((sc) =>
       ownedTokens.includes(parseInt(sc.address))
     );
     setOwnedShadowcorns(shadowcorns.sort((scA, scB) => scA.rank - scB.rank));

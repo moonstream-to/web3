@@ -19,7 +19,7 @@ const LeaderboardGroup = ({ group, shadowcorns }) => {
               <GridItem
                 maxW={["45px", "45px", "125px"]}
                 minW={["45px", "45px", "125px"]}
-                pl="5px"
+                pl={["5px", "5px", "20px"]}
               >
                 <LeaderboardRank rank={group.rank} />
               </GridItem>

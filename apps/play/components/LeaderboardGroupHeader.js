@@ -11,7 +11,7 @@ import GroupImage from "./GroupImage";
 
 const LeaderboardGroupHeader = ({ group, metadata }) => {
   return (
-    <AccordionButton _hover={{ bg: "#454545" }} p="0">
+    <AccordionButton _hover={{ bg: "#454545" }} p="0" borderRadius="10px">
       <Flex
         textAlign="left"
         width="100%"
