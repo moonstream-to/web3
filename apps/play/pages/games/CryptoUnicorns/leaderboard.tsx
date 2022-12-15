@@ -1,11 +1,10 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useQuery } from "react-query";
 import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout";
 import LeaderboardGroupHeader from "./../../../components/LeaderboardGroupHeader";
 import LeaderboardGroup from "./../../../components/LeaderboardGroup";
 import ShadowcornRow from "../../../components/ShadocornRow";
 import LeaderboardRank from "./../../../components/LeaderboardRank";
-// import LeaderboardRank from "./../../../components/LeaderboardRank";
 
 import {
   Box,
@@ -17,8 +16,9 @@ import {
   Spacer,
   Link,
   Spinner,
-  GridItem,
   HStack,
+  GridItem,
+  Text,
 } from "@chakra-ui/react";
 import { InfoOutlineIcon } from "@chakra-ui/icons";
 
@@ -122,7 +122,11 @@ const Leaderboard = () => {
             number,
             {
               rank: number;
-              records: { address: string; rank: number; score: number }[];
+              records: {
+                address: string;
+                rank: number;
+                score: number;
+              }[];
               score: number;
             }
           >();
@@ -152,29 +156,11 @@ const Leaderboard = () => {
 
   const web3ctx = useContext(Web3Context);
 
-  const convertMulticallResponseAddress = (address: string) => {
-    return Web3.utils.toChecksumAddress(
-      address.substring(0, 2) + address.substring(26)
-    );
-  };
-
-  const allShadowcorns = [...Array(2400).keys()].map((x) => (x + 1).toString());
-
-  // const fetchExplicitOwners = async () => {
-  //   let ownerOfQueries = allShadowcorns.map((tokenId: string) => {
-  //     return { target: SHADOWCORN_CONTRACT_ADDRESS,
-  //              callData: shadowcornsContract.methods.ownerOf(tokenId).encodeABI()};
-  //   });
-  //   return multicallContract.methods.tryAggregate(false, ownerOfQueries).call().then((res: any[]) => {
-  //     return res.map((item: any, index: number) => { return { tokenId: (index + 1).toString(), ownerAddress: convertMulticallResponseAddress(item.returnData) } });
-  //   });
-  // };
-
   useEffect(() => {
     if (Web3.utils.isAddress(web3ctx.account)) {
       setCurrentAccount(web3ctx.account);
     }
-    setCurrentAccount("0x9f8B214bF13F62cFA5160ED135E233C9dDb95974");
+    // setCurrentAccount("0x9f8B214bF13F62cFA5160ED135E233C9dDb95974");
     setCurrentAccount("0x5270Be273265f6F8ab034dF137FF82fc1E468F88");
   }, [web3ctx.account]);
 
@@ -193,8 +179,6 @@ const Leaderboard = () => {
       const numStaked = await gardenContract.methods
         .numTokensStakedIntoSession(4, currentAccount)
         .call();
-      console.log("Num staked: ", numStaked);
-
       let stakedTokensQueries = [];
       for (var i = 1; i <= parseInt(numStaked); i++) {
         stakedTokensQueries.push({
@@ -209,11 +193,9 @@ const Leaderboard = () => {
         .tryAggregate(false, stakedTokensQueries)
         .call()
         .then((results: any[]) => {
-          const parsedResults = results.map((result, i) => {
+          const parsedResults = results.map((result) => {
             return Number(result[1]);
           });
-          console.log("Staked Shadowcorns: ");
-          console.log(parsedResults);
           return parsedResults;
         });
     },
@@ -223,7 +205,7 @@ const Leaderboard = () => {
     }
   );
 
-  const ownedShadowcorns = useQuery(
+  const unstakedShadowcorns = useQuery(
     ["owned_tokens", currentAccount],
     async () => {
       if (currentAccount == ZERO_ADDRESS) return;
@@ -238,7 +220,6 @@ const Leaderboard = () => {
       const numTokens = await shadowcornsContract.methods
         .balanceOf(currentAccount)
         .call();
-      console.log("Num owned: ", numTokens);
       let tokenOfOwnerQueries = [];
       for (var i = 0; i < parseInt(numTokens); i++) {
         tokenOfOwnerQueries.push({
@@ -253,11 +234,9 @@ const Leaderboard = () => {
         .tryAggregate(false, tokenOfOwnerQueries)
         .call()
         .then((results: any[]) => {
-          const parsedResults = results.map((result, i) => {
+          const parsedResults = results.map((result) => {
             return Number(result[1]);
           });
-          console.log("Owned Shadowcorns");
-          console.log(parsedResults);
           return parsedResults;
         });
     },
@@ -266,6 +245,42 @@ const Leaderboard = () => {
       onSuccess: () => {},
     }
   );
+
+  const [ownedShadowcorns, setOwnedShadowcorns] = useState<
+    {
+      address: string;
+      rank: number;
+      score: number;
+    }[]
+  >([]);
+
+  useEffect(() => {
+    if (!groups.data || (!stakedShadowcorns.data && !unstakedShadowcorns.data))
+      return;
+    const allShadowcorns = [...groups.data.values()]
+      .map((group) => group.records)
+      .flat();
+    let shadowcorns: {
+      address: string;
+      rank: number;
+      score: number;
+    }[] = [];
+    const ownedTokens = (stakedShadowcorns.data ?? []).concat(
+      unstakedShadowcorns.data ?? []
+    );
+    // let ownedTokens: number[] = [];
+    // if (stakedShadowcorns.data) {
+    //   ownedTokens = stakedShadowcorns.data;
+    // }
+    // if (unstakedShadowcorns.data) {
+    //   ownedTokens = ownedTokens.concat(unstakedShadowcorns.data);
+    // }
+
+    shadowcorns = allShadowcorns.filter((sc) =>
+      ownedTokens.includes(parseInt(sc.address))
+    );
+    setOwnedShadowcorns(shadowcorns.sort((scA, scB) => scA.rank - scB.rank));
+  }, [stakedShadowcorns.data, unstakedShadowcorns.data, groups.data]);
 
   const panelBackground = "#2D2D2D";
 
@@ -331,6 +346,79 @@ const Leaderboard = () => {
           according to their Shadowcorns&apos; ranks. Shadowcorns can share
           ranks.
         </Box>
+        {ownedShadowcorns.length > 0 && (
+          <Flex
+            bg="#1A1D22"
+            borderRadius="10px"
+            justifyContent="start"
+            py="20px"
+            direction="column"
+            mb="30px"
+          >
+            <Text fontSize="20px" pb="20px" fontWeight="700" pl="30px">
+              Your shadowcorns
+            </Text>
+            <Flex
+              textAlign="left"
+              width="100%"
+              justifyContent="space-between"
+              py={["5px", "5px", "10px"]}
+              alignItems="center"
+              borderBottom="1px solid white"
+              fontSize={["12px", "14px", "20px"]}
+              fontWeight="700"
+            >
+              <GridItem
+                maxW={["45px", "45px", "125px"]}
+                minW={["45px", "45px", "125px"]}
+                pl={["3px", "3px", "10px", "20px"]}
+              >
+                Rank
+              </GridItem>
+              <GridItem mr="auto">Shadowcorn</GridItem>
+              <GridItem
+                maxW={["50px", "50px", "140px", "420px"]}
+                minW={["50px", "50px", "140px", "420px"]}
+              >
+                Score
+              </GridItem>
+            </Flex>
+            {ownedShadowcorns.map((item) => {
+              return (
+                <Flex
+                  key={item.address}
+                  textAlign="left"
+                  width="100%"
+                  py={["5px", "5px", "10px"]}
+                  alignItems="center"
+                  justifyContent="space-between"
+                  fontSize={["12px", "12px", "20px"]}
+                >
+                  <GridItem
+                    maxW={["45px", "45px", "125px"]}
+                    minW={["45px", "45px", "125px"]}
+                    pl={["5px", "5px", "10px", "20px"]}
+                  >
+                    <LeaderboardRank rank={item.rank} />
+                  </GridItem>
+                  <GridItem fontWeight="400" mr="auto">
+                    <ShadowcornRow
+                      shadowcorn={shadowcorns.data?.get(item.address)}
+                      tokenId={item.address}
+                    />
+                  </GridItem>
+                  <GridItem
+                    fontWeight="400"
+                    maxW={["50px", "50px", "140px", "420px"]}
+                    minW={["50px", "50px", "140px", "420px"]}
+                  >
+                    {item.score}
+                  </GridItem>
+                </Flex>
+              );
+            })}
+          </Flex>
+        )}
         <Flex
           textAlign="left"
           width="100%"
