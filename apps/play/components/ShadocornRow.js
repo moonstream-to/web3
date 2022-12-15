@@ -14,7 +14,7 @@ const ShadowcornRow = ({ shadowcorn, tokenId }) => {
       href={buildOpenseaLink(tokenId)}
       isExternal
     >
-      <Flex>
+      <Flex alignItems="center">
         {shadowcorn && (
           <Image
             alt="sc"

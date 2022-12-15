@@ -342,9 +342,22 @@ const Leaderboard = () => {
             direction="column"
             mb="30px"
           >
-            <Text fontSize="20px" pb="20px" fontWeight="700" pl="30px">
-              Your shadowcorns
-            </Text>
+            {" "}
+            <Flex pl="20px" pb="20px">
+              <Image
+                src={`${playAssetPath}/leaderboard/trophy.svg`}
+                h="20px"
+                alt="trophy"
+              />
+              <Text
+                fontSize="20px"
+                fontWeight="700"
+                lineHeight="20px"
+                ml="10px"
+              >
+                Your shadowcorns
+              </Text>
+            </Flex>
             <Flex
               textAlign="left"
               width="100%"
@@ -364,8 +377,8 @@ const Leaderboard = () => {
               </GridItem>
               <GridItem mr="auto">Shadowcorn</GridItem>
               <GridItem
-                maxW={["50px", "50px", "140px", "420px"]}
-                minW={["50px", "50px", "140px", "420px"]}
+                maxW={["50px", "50px", "140px", "200px"]}
+                minW={["50px", "50px", "140px", "200px"]}
               >
                 Score
               </GridItem>
@@ -396,8 +409,8 @@ const Leaderboard = () => {
                   </GridItem>
                   <GridItem
                     fontWeight="400"
-                    maxW={["50px", "50px", "140px", "420px"]}
-                    minW={["50px", "50px", "140px", "420px"]}
+                    maxW={["50px", "50px", "140px", "200px"]}
+                    minW={["50px", "50px", "140px", "200px"]}
                   >
                     {item.score}
                   </GridItem>
@@ -424,8 +437,8 @@ const Leaderboard = () => {
           </GridItem>
           <GridItem mr="auto">Shadowcorn</GridItem>
           <GridItem
-            maxW={["50px", "50px", "140px", "420px"]}
-            minW={["50px", "50px", "140px", "420px"]}
+            maxW={["50px", "50px", "140px", "200px"]}
+            minW={["50px", "50px", "140px", "200px"]}
           >
             Score
           </GridItem>
@@ -480,8 +493,8 @@ const Leaderboard = () => {
                       <GridItem
                         my="auto"
                         fontWeight="400"
-                        maxW={["50px", "50px", "140px", "420px"]}
-                        minW={["50px", "50px", "140px", "420px"]}
+                        maxW={["50px", "50px", "140px", "200px"]}
+                        minW={["50px", "50px", "140px", "200px"]}
                       >
                         <Flex width="100%" justifyContent="space-between">
                           {group.score}

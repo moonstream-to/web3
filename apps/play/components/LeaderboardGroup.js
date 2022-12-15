@@ -31,8 +31,8 @@ const LeaderboardGroup = ({ group, shadowcorns }) => {
               </GridItem>
               <GridItem
                 fontWeight="400"
-                maxW={["50px", "50px", "140px", "420px"]}
-                minW={["50px", "50px", "140px", "420px"]}
+                maxW={["50px", "50px", "140px", "200px"]}
+                minW={["50px", "50px", "140px", "200px"]}
               >
                 {item.score}
               </GridItem>
