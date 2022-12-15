@@ -4,6 +4,7 @@ import {
   GridItem,
   Flex,
   Text,
+  Spacer,
 } from "@chakra-ui/react";
 import LeaderboardRank from "./LeaderboardRank";
 
@@ -11,7 +12,7 @@ import GroupImage from "./GroupImage";
 
 const LeaderboardGroupHeader = ({ group, metadata }) => {
   return (
-    <AccordionButton _hover={{ bg: "#454545" }} p="0">
+    <AccordionButton _hover={{ bg: "#454545" }} p="0" borderRadius="10px">
       <Flex
         textAlign="left"
         width="100%"
@@ -40,11 +41,12 @@ const LeaderboardGroupHeader = ({ group, metadata }) => {
               pl={["0px", "0px", "7px"]}
             >{`${group.records.length} Shadowcorns`}</Text>
           </Flex>
+          <Spacer />
         </GridItem>
         <GridItem
           fontWeight="400"
-          maxW={["50px", "50px", "140px", "420px"]}
-          minW={["50px", "50px", "140px", "420px"]}
+          maxW={["50px", "50px", "140px", "200px"]}
+          minW={["50px", "50px", "140px", "200px"]}
         >
           <Flex justifyContent="space-between">
             {group.score}

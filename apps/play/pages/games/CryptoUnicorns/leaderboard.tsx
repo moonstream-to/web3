@@ -1,11 +1,10 @@
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useQuery } from "react-query";
 import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout";
 import LeaderboardGroupHeader from "./../../../components/LeaderboardGroupHeader";
 import LeaderboardGroup from "./../../../components/LeaderboardGroup";
 import ShadowcornRow from "../../../components/ShadocornRow";
 import LeaderboardRank from "./../../../components/LeaderboardRank";
-// import LeaderboardRank from "./../../../components/LeaderboardRank";
 
 import {
   Box,
@@ -17,8 +16,9 @@ import {
   Spacer,
   Link,
   Spinner,
-  GridItem,
   HStack,
+  GridItem,
+  Text,
 } from "@chakra-ui/react";
 import { InfoOutlineIcon } from "@chakra-ui/icons";
 
@@ -26,14 +26,30 @@ import http from "moonstream-components/src/core/utils/http";
 import queryCacheProps from "moonstream-components/src/core/hooks/hookCommon";
 import { DEFAULT_METATAGS } from "../../../src/constants";
 
+import Web3 from "web3";
+import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
+const GardenABI = require("../../../games/GoFPABI.json");
+import { GOFPFacet as GardenABIType } from "../../../../../types/contracts/GOFPFacet";
+const MulticallABI = require("../../../games/cu/Multicall2.json");
+const ERC721MetadataABI = require("../../../../../abi/MockERC721.json");
+import { MockERC721 } from "../../../../../types/contracts/MockERC721";
+import {
+  GOFP_CONTRACT_ADDRESS,
+  MULTICALL2_CONTRACT_ADDRESS,
+  SHADOWCORN_CONTRACT_ADDRESS,
+} from "moonstream-components/src/core/cu/constants";
+
 const playAssetPath = "https://s3.amazonaws.com/static.simiotics.com/play";
 const assets = {
   shadowcornsLogo: `${playAssetPath}/cu/shadowcorns-logo.png`,
 };
 
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
 const Leaderboard = () => {
   const [limit] = React.useState<number>(0);
   const [offset] = React.useState<number>(0);
+  const [currentAccount, setCurrentAccount] = React.useState(ZERO_ADDRESS);
 
   const fetchLeaders = async (pageLimit: number, pageOffset: number) => {
     return http(
@@ -106,7 +122,11 @@ const Leaderboard = () => {
             number,
             {
               rank: number;
-              records: { address: string; rank: number; score: number }[];
+              records: {
+                address: string;
+                rank: number;
+                score: number;
+              }[];
               score: number;
             }
           >();
@@ -133,6 +153,119 @@ const Leaderboard = () => {
       onSuccess: () => {},
     }
   );
+
+  const web3ctx = useContext(Web3Context);
+
+  useEffect(() => {
+    if (Web3.utils.isAddress(web3ctx.account)) {
+      setCurrentAccount(web3ctx.account);
+    }
+  }, [web3ctx.account]);
+
+  const stakedShadowcorns = useQuery(
+    ["staked_tokens", currentAccount],
+    async () => {
+      if (currentAccount == ZERO_ADDRESS) return;
+      const gardenContract = new web3ctx.polygonClient.eth.Contract(
+        GardenABI,
+        GOFP_CONTRACT_ADDRESS
+      ) as any as GardenABIType;
+      const multicallContract = new web3ctx.polygonClient.eth.Contract(
+        MulticallABI,
+        MULTICALL2_CONTRACT_ADDRESS
+      );
+      const numStaked = await gardenContract.methods
+        .numTokensStakedIntoSession(4, currentAccount)
+        .call();
+      let stakedTokensQueries = [];
+      for (var i = 1; i <= parseInt(numStaked); i++) {
+        stakedTokensQueries.push({
+          target: GOFP_CONTRACT_ADDRESS,
+          callData: gardenContract.methods
+            .tokenOfStakerInSessionByIndex(4, currentAccount, i.toString())
+            .encodeABI(),
+        });
+      }
+
+      return multicallContract.methods
+        .tryAggregate(false, stakedTokensQueries)
+        .call()
+        .then((results: any[]) => {
+          const parsedResults = results.map((result) => {
+            return Number(result[1]);
+          });
+          return parsedResults;
+        });
+    },
+    {
+      ...queryCacheProps,
+      onSuccess: () => {},
+    }
+  );
+
+  const unstakedShadowcorns = useQuery(
+    ["owned_tokens", currentAccount],
+    async () => {
+      if (currentAccount == ZERO_ADDRESS) return;
+      const shadowcornsContract = new web3ctx.polygonClient.eth.Contract(
+        ERC721MetadataABI,
+        SHADOWCORN_CONTRACT_ADDRESS
+      ) as unknown as MockERC721;
+      const multicallContract = new web3ctx.polygonClient.eth.Contract(
+        MulticallABI,
+        MULTICALL2_CONTRACT_ADDRESS
+      );
+      const numTokens = await shadowcornsContract.methods
+        .balanceOf(currentAccount)
+        .call();
+      let tokenOfOwnerQueries = [];
+      for (var i = 0; i < parseInt(numTokens); i++) {
+        tokenOfOwnerQueries.push({
+          target: SHADOWCORN_CONTRACT_ADDRESS,
+          callData: shadowcornsContract.methods
+            .tokenOfOwnerByIndex(currentAccount, i)
+            .encodeABI(),
+        });
+      }
+
+      return multicallContract.methods
+        .tryAggregate(false, tokenOfOwnerQueries)
+        .call()
+        .then((results: any[]) => {
+          const parsedResults = results.map((result) => {
+            return Number(result[1]);
+          });
+          return parsedResults;
+        });
+    },
+    {
+      ...queryCacheProps,
+      onSuccess: () => {},
+    }
+  );
+
+  const [ownedShadowcorns, setOwnedShadowcorns] = useState<
+    {
+      address: string;
+      rank: number;
+      score: number;
+    }[]
+  >([]);
+
+  useEffect(() => {
+    if (!groups.data || (!stakedShadowcorns.data && !unstakedShadowcorns.data))
+      return;
+    const allShadowcorns = [...groups.data.values()]
+      .map((group) => group.records)
+      .flat();
+    const ownedTokens = (stakedShadowcorns.data ?? []).concat(
+      unstakedShadowcorns.data ?? []
+    );
+    const shadowcorns = allShadowcorns.filter((sc) =>
+      ownedTokens.includes(parseInt(sc.address))
+    );
+    setOwnedShadowcorns(shadowcorns.sort((scA, scB) => scA.rank - scB.rank));
+  }, [stakedShadowcorns.data, unstakedShadowcorns.data, groups.data]);
 
   const panelBackground = "#2D2D2D";
 
@@ -198,6 +331,92 @@ const Leaderboard = () => {
           according to their Shadowcorns&apos; ranks. Shadowcorns can share
           ranks.
         </Box>
+        {ownedShadowcorns.length > 0 && (
+          <Flex
+            bg="#1A1D22"
+            borderRadius="10px"
+            justifyContent="start"
+            py="20px"
+            direction="column"
+            mb="30px"
+          >
+            {" "}
+            <Flex pl="20px" pb="20px">
+              <Image
+                src={`${playAssetPath}/leaderboard/trophy.svg`}
+                h="20px"
+                alt="trophy"
+              />
+              <Text
+                fontSize="20px"
+                fontWeight="700"
+                lineHeight="20px"
+                ml="10px"
+              >
+                Your shadowcorns
+              </Text>
+            </Flex>
+            <Flex
+              textAlign="left"
+              width="100%"
+              justifyContent="space-between"
+              py={["5px", "5px", "10px"]}
+              alignItems="center"
+              borderBottom="1px solid white"
+              fontSize={["12px", "14px", "20px"]}
+              fontWeight="700"
+            >
+              <GridItem
+                maxW={["45px", "45px", "125px"]}
+                minW={["45px", "45px", "125px"]}
+                pl={["3px", "3px", "10px", "20px"]}
+              >
+                Rank
+              </GridItem>
+              <GridItem mr="auto">Shadowcorn</GridItem>
+              <GridItem
+                maxW={["50px", "50px", "140px", "200px"]}
+                minW={["50px", "50px", "140px", "200px"]}
+              >
+                Score
+              </GridItem>
+            </Flex>
+            {ownedShadowcorns.map((item) => {
+              return (
+                <Flex
+                  key={item.address}
+                  textAlign="left"
+                  width="100%"
+                  py={["5px", "5px", "10px"]}
+                  alignItems="center"
+                  justifyContent="space-between"
+                  fontSize={["12px", "12px", "20px"]}
+                >
+                  <GridItem
+                    maxW={["45px", "45px", "125px"]}
+                    minW={["45px", "45px", "125px"]}
+                    pl={["5px", "5px", "10px", "20px"]}
+                  >
+                    <LeaderboardRank rank={item.rank} />
+                  </GridItem>
+                  <GridItem width="100%" fontWeight="400" mr="auto">
+                    <ShadowcornRow
+                      shadowcorn={shadowcorns.data?.get(item.address)}
+                      tokenId={item.address}
+                    />
+                  </GridItem>
+                  <GridItem
+                    fontWeight="400"
+                    maxW={["50px", "50px", "140px", "200px"]}
+                    minW={["50px", "50px", "140px", "200px"]}
+                  >
+                    {item.score}
+                  </GridItem>
+                </Flex>
+              );
+            })}
+          </Flex>
+        )}
         <Flex
           textAlign="left"
           width="100%"
@@ -216,8 +435,8 @@ const Leaderboard = () => {
           </GridItem>
           <GridItem mr="auto">Shadowcorn</GridItem>
           <GridItem
-            maxW={["50px", "50px", "140px", "420px"]}
-            minW={["50px", "50px", "140px", "420px"]}
+            maxW={["50px", "50px", "140px", "200px"]}
+            minW={["50px", "50px", "140px", "200px"]}
           >
             Score
           </GridItem>
@@ -261,7 +480,7 @@ const Leaderboard = () => {
                       >
                         <LeaderboardRank rank={group.rank} />
                       </GridItem>
-                      <GridItem fontWeight="400" mr="auto">
+                      <GridItem width="100%" fontWeight="400" mr="auto">
                         <ShadowcornRow
                           shadowcorn={shadowcorns.data?.get(
                             group.records[0].address
@@ -272,8 +491,8 @@ const Leaderboard = () => {
                       <GridItem
                         my="auto"
                         fontWeight="400"
-                        maxW={["50px", "50px", "140px", "420px"]}
-                        minW={["50px", "50px", "140px", "420px"]}
+                        maxW={["50px", "50px", "140px", "200px"]}
+                        minW={["50px", "50px", "140px", "200px"]}
                       >
                         <Flex width="100%" justifyContent="space-between">
                           {group.score}
@@ -286,7 +505,7 @@ const Leaderboard = () => {
             })}
           </Accordion>
         ) : (
-          <Spinner alignSelf="center" />
+          <Spinner alignSelf="center" color="#bfbfbf" />
         )}
       </Flex>
     </Box>

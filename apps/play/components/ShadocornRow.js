@@ -14,14 +14,14 @@ const ShadowcornRow = ({ shadowcorn, tokenId }) => {
       href={buildOpenseaLink(tokenId)}
       isExternal
     >
-      <Flex>
+      <Flex alignItems="center">
         {shadowcorn && (
           <Image
             alt="sc"
             src={shadowcorn.image}
             w={["16px", "20px", "24px"]}
             h={["16px", "20px", "24px"]}
-            borderRadius="4px"
+            borderRadius="50%"
           />
         )}
         {shadowcorn?.name && (
@@ -30,7 +30,7 @@ const ShadowcornRow = ({ shadowcorn, tokenId }) => {
               pl={["5px", "5px", "7px"]}
               textOverflow="ellipsis"
               whiteSpace="nowrap"
-            >{`${shadowcorn.name} - ${tokenId}`}</Box>
+            >{`${shadowcorn.name} (${tokenId})`}</Box>
           </>
         )}
         {!shadowcorn?.name && (
@@ -39,7 +39,12 @@ const ShadowcornRow = ({ shadowcorn, tokenId }) => {
           </Text>
         )}
 
-        <Icon as={FiExternalLink} marginInlineStart="2px" pb="5px" />
+        <Icon
+          as={FiExternalLink}
+          marginInlineStart="2px"
+          my="auto"
+          pb={["4px", "4px", "2px"]}
+        />
       </Flex>
     </Link>
   );
