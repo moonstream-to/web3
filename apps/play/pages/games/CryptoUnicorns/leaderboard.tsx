@@ -160,8 +160,6 @@ const Leaderboard = () => {
     if (Web3.utils.isAddress(web3ctx.account)) {
       setCurrentAccount(web3ctx.account);
     }
-    // setCurrentAccount("0x9f8B214bF13F62cFA5160ED135E233C9dDb95974");
-    // setCurrentAccount("0x5270Be273265f6F8ab034dF137FF82fc1E468F88");
   }, [web3ctx.account]);
 
   const stakedShadowcorns = useQuery(
@@ -401,7 +399,7 @@ const Leaderboard = () => {
                   >
                     <LeaderboardRank rank={item.rank} />
                   </GridItem>
-                  <GridItem fontWeight="400" mr="auto">
+                  <GridItem width="100%" fontWeight="400" mr="auto">
                     <ShadowcornRow
                       shadowcorn={shadowcorns.data?.get(item.address)}
                       tokenId={item.address}
@@ -482,7 +480,7 @@ const Leaderboard = () => {
                       >
                         <LeaderboardRank rank={group.rank} />
                       </GridItem>
-                      <GridItem fontWeight="400" mr="auto">
+                      <GridItem width="100%" fontWeight="400" mr="auto">
                         <ShadowcornRow
                           shadowcorn={shadowcorns.data?.get(
                             group.records[0].address
@@ -507,7 +505,7 @@ const Leaderboard = () => {
             })}
           </Accordion>
         ) : (
-          <Spinner alignSelf="center" />
+          <Spinner alignSelf="center" color="#bfbfbf" />
         )}
       </Flex>
     </Box>

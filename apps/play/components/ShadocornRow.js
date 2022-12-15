@@ -30,7 +30,7 @@ const ShadowcornRow = ({ shadowcorn, tokenId }) => {
               pl={["5px", "5px", "7px"]}
               textOverflow="ellipsis"
               whiteSpace="nowrap"
-            >{`${shadowcorn.name} - ${tokenId}`}</Box>
+            >{`${shadowcorn.name} (${tokenId})`}</Box>
           </>
         )}
         {!shadowcorn?.name && (
