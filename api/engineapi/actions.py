@@ -1,4 +1,5 @@
 from datetime import datetime
+from collections import Counter
 from typing import List, Any, Optional, Dict
 import uuid
 import logging
@@ -42,6 +43,11 @@ class DropWithNotSettedBlockDeadline(Exception):
 
 class DublicateClaimantError(Exception):
     pass
+
+
+class DuplicateLeaderboardAddressError(Exception):
+    def __init__(self, duplicates):
+        self.duplicates = duplicates
 
 
 BATCH_SIGNATURE_PAGE_SIZE = 500
@@ -1150,7 +1156,15 @@ def add_scores(
 
     normalizer_fn = Web3.toChecksumAddress
     if not normalize_addresses:
-        normalizer_fn = lambda x: x
+        normalizer_fn = lambda x: x  # type: ignore
+
+    addresses = [score.address for score in scores]
+
+    if len(addresses) != len(set(addresses)):
+
+        duplicates = [key for key, value in Counter(addresses).items() if value > 1]
+
+        raise DuplicateLeaderboardAddressError(duplicates)
 
     if overwrite:
         db_session.query(LeaderboardScores).filter(

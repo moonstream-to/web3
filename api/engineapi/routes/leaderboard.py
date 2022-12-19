@@ -218,13 +218,21 @@ async def leaderboard(
         raise EngineHTTPException(
             status_code=403, detail="You don't have access to this leaderboard."
         )
-
-    leaderboard_points = actions.add_scores(
-        db_session=db_session,
-        leaderboard_id=leaderboard_id,
-        scores=scores,
-        overwrite=overwrite,
-        normalize_addresses=normalize_addresses,
-    )
+    try:
+        leaderboard_points = actions.add_scores(
+            db_session=db_session,
+            leaderboard_id=leaderboard_id,
+            scores=scores,
+            overwrite=overwrite,
+            normalize_addresses=normalize_addresses,
+        )
+    except actions.DuplicateLeaderboardAddressError as e:
+        raise EngineHTTPException(
+            status_code=409,
+            detail=f"Duplicates in push to database is disallowed.\n List of duplicates:{e.duplicates}.\n Please handle duplicates manualy.",
+        )
+    except Exception as e:
+        logger.error(f"Score update failed with error: {e}")
+        raise EngineHTTPException(status_code=500, detail="Score update failed.")
 
     return leaderboard_points
