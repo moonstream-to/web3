@@ -46,7 +46,9 @@ class DublicateClaimantError(Exception):
 
 
 class DuplicateLeaderboardAddressError(Exception):
-    def __init__(self, duplicates):
+    def __init__(self, message, duplicates):
+        super(DuplicateLeaderboardAddressError, self).__init__(message)
+        self.message = message
         self.duplicates = duplicates
 
 
@@ -1164,7 +1166,7 @@ def add_scores(
 
         duplicates = [key for key, value in Counter(addresses).items() if value > 1]
 
-        raise DuplicateLeaderboardAddressError(duplicates)
+        raise DuplicateLeaderboardAddressError("Dublicated addresses", duplicates)
 
     if overwrite:
         db_session.query(LeaderboardScores).filter(
