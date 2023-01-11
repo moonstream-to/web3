@@ -52,6 +52,14 @@ class DuplicateLeaderboardAddressError(Exception):
         self.duplicates = duplicates
 
 
+class LeaderboardIsEmpty(Exception):
+    pass
+
+
+class LeaderboardDeleteScoresError(Exception):
+    pass
+
+
 BATCH_SIGNATURE_PAGE_SIZE = 500
 
 logger = logging.getLogger(__name__)
@@ -1028,6 +1036,9 @@ def get_qurtiles(db_session: Session, leaderboard_id):
 
     current_count = db_session.query(ranked_leaderboard).count()
 
+    if current_count == 0:
+        raise LeaderboardIsEmpty(f"Leaderboard {leaderboard_id} is empty")
+
     index_75 = int(current_count / 4)
 
     index_50 = int(current_count / 2)
@@ -1168,10 +1179,17 @@ def add_scores(
 
         raise DuplicateLeaderboardAddressError("Dublicated addresses", duplicates)
 
+    print(overwrite)
+
     if overwrite:
         db_session.query(LeaderboardScores).filter(
             LeaderboardScores.leaderboard_id == leaderboard_id
         ).delete()
+        try:
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise LeaderboardDeleteScoresError("Error deleting leaderboard scores")
 
     for score in scores:
         leaderboard_scores.append(
