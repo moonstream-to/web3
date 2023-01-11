@@ -1179,8 +1179,6 @@ def add_scores(
 
         raise DuplicateLeaderboardAddressError("Dublicated addresses", duplicates)
 
-    print(overwrite)
-
     if overwrite:
         db_session.query(LeaderboardScores).filter(
             LeaderboardScores.leaderboard_id == leaderboard_id
