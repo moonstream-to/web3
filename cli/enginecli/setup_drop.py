@@ -2,7 +2,7 @@ import argparse
 
 from brownie import network
 
-from . import Dropper
+from . import Dropper, MockTerminus
 
 
 def setup_drop(args: argparse.Namespace) -> None:
@@ -10,6 +10,20 @@ def setup_drop(args: argparse.Namespace) -> None:
     tx_config = Dropper.get_transaction_config(args)
 
     dropper = Dropper.Dropper(args.address)
+
+    if args.claim_type == 1:
+        terminus = MockTerminus.MockTerminus(args.claim_address)
+        dropper_is_approved_for_pool = terminus.is_approved_for_pool(
+            args.claim_pool_id, dropper.address
+        )
+        if not dropper_is_approved_for_pool:
+            pool_approval_check = input(
+                f"Dropper contract {dropper.address} is not approved to mint tokens from Terminus pool {args.claim_pool_id} on {terminus.address}. Approve dropper? (y/N)"
+            )
+            if pool_approval_check.strip().lower() == "y":
+                terminus.approve_for_pool(
+                    args.claim_pool_id, dropper.address, tx_config
+                )
 
     claim_id = args.claim_id
     if claim_id is None:
