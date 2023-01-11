@@ -11,19 +11,29 @@ def setup_drop(args: argparse.Namespace) -> None:
 
     dropper = Dropper.Dropper(args.address)
 
-    if args.claim_type == 1:
+    if args.claim_type == 1 or args.claim_type == 1155:
         terminus = MockTerminus.MockTerminus(args.claim_address)
-        dropper_is_approved_for_pool = terminus.is_approved_for_pool(
-            args.claim_pool_id, dropper.address
-        )
-        if not dropper_is_approved_for_pool:
-            pool_approval_check = input(
-                f"Dropper contract {dropper.address} is not approved to mint tokens from Terminus pool {args.claim_pool_id} on {terminus.address}. Approve dropper? (y/N)"
+
+        if args.claim_type == 1:
+            dropper_is_approved_for_pool = terminus.is_approved_for_pool(
+                args.claim_pool_id, dropper.address
             )
-            if pool_approval_check.strip().lower() == "y":
-                terminus.approve_for_pool(
-                    args.claim_pool_id, dropper.address, tx_config
+            if not dropper_is_approved_for_pool:
+                pool_approval_check = input(
+                    f"Dropper contract {dropper.address} is not approved to mint tokens from Terminus pool {args.claim_pool_id} on {terminus.address}. Approve dropper? (y/N)"
                 )
+                if pool_approval_check.strip().lower() == "y":
+                    terminus.approve_for_pool(
+                        args.claim_pool_id, dropper.address, tx_config
+                    )
+
+        if args.use_pool_uri:
+            if args.claim_uri is not None:
+                raise ValueError(
+                    "You cannot use --use-pool-uri and provide a --claim-uri at the same time"
+                )
+            else:
+                args.claim_uri = terminus.uri(args.claim_pool_id)
 
     claim_id = args.claim_id
     if claim_id is None:
@@ -76,6 +86,11 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     parser.add_argument("--claim-uri", help="Metadata URI for claim")
     parser.add_argument("--signer-address", help="Address for signer")
+    parser.add_argument(
+        "--use-pool-uri",
+        action="store_true",
+        help="For Terminus claim types, use the Terminus pool URI as the claim URI",
+    )
     parser.set_defaults(func=setup_drop)
     return parser
 
