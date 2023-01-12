@@ -5,9 +5,10 @@ import logging
 from uuid import UUID
 
 from web3 import Web3
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request, Depends, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.exc import NoResultFound
 from typing import List, Optional
 
 from .. import actions
@@ -66,6 +67,18 @@ async def count_addresses(
     Returns the number of addresses in the leaderboard.
     """
 
+    ### Check if leaderboard exists
+    try:
+        actions.get_leaderboard_by_id(db_session, leaderboard_id)
+    except NoResultFound as e:
+        raise EngineHTTPException(
+            status_code=404,
+            detail="Leaderboard not found.",
+        )
+    except Exception as e:
+        logger.error(f"Error while getting leaderboard: {e}")
+        raise EngineHTTPException(status_code=500, detail="Internal server error")
+
     count = actions.get_leaderboard_total_count(db_session, leaderboard_id)
 
     return data.CountAddressesResponse(count=count)
@@ -78,12 +91,28 @@ async def quartiles(
 ):
 
     """
-
     Returns the quartiles of the leaderboard.
-
     """
+    ### Check if leaderboard exists
+    try:
+        actions.get_leaderboard_by_id(db_session, leaderboard_id)
+    except NoResultFound as e:
+        raise EngineHTTPException(
+            status_code=404,
+            detail="Leaderboard not found.",
+        )
+    except Exception as e:
+        logger.error(f"Error while getting leaderboard: {e}")
+        raise EngineHTTPException(status_code=500, detail="Internal server error")
 
-    q1, q2, q3 = actions.get_qurtiles(db_session, leaderboard_id)
+    try:
+        q1, q2, q3 = actions.get_qurtiles(db_session, leaderboard_id)
+
+    except actions.LeaderboardIsEmpty:
+        return Response(status_code=204)
+    except Exception as e:
+        logger.error(f"Error while getting quartiles: {e}")
+        raise EngineHTTPException(status_code=500, detail="Internal server error")
 
     return data.QuartilesResponse(
         percentile_25={"address": q1[0], "score": q1[1], "rank": q1[2]},
@@ -108,6 +137,18 @@ async def position(
     With given window size.
     """
 
+    ### Check if leaderboard exists
+    try:
+        actions.get_leaderboard_by_id(db_session, leaderboard_id)
+    except NoResultFound as e:
+        raise EngineHTTPException(
+            status_code=404,
+            detail="Leaderboard not found.",
+        )
+    except Exception as e:
+        logger.error(f"Error while getting leaderboard: {e}")
+        raise EngineHTTPException(status_code=500, detail="Internal server error")
+
     if normalize_addresses:
         address = Web3.toChecksumAddress(address)
 
@@ -130,6 +171,18 @@ async def leaderboard(
     """
     Returns the leaderboard positions.
     """
+
+    ### Check if leaderboard exists
+    try:
+        actions.get_leaderboard_by_id(db_session, leaderboard_id)
+    except NoResultFound as e:
+        raise EngineHTTPException(
+            status_code=404,
+            detail="Leaderboard not found.",
+        )
+    except Exception as e:
+        logger.error(f"Error while getting leaderboard: {e}")
+        raise EngineHTTPException(status_code=500, detail="Internal server error")
 
     leaderboard_positions = actions.get_leaderboard_positions(
         db_session, leaderboard_id, limit, offset
@@ -159,6 +212,19 @@ async def rank(
     """
     Returns the leaderboard scores for the given rank.
     """
+
+    ### Check if leaderboard exists
+    try:
+        actions.get_leaderboard_by_id(db_session, leaderboard_id)
+    except NoResultFound as e:
+        raise EngineHTTPException(
+            status_code=404,
+            detail="Leaderboard not found.",
+        )
+    except Exception as e:
+        logger.error(f"Error while getting leaderboard: {e}")
+        raise EngineHTTPException(status_code=500, detail="Internal server error")
+
     leaderboard_rank = actions.get_rank(
         db_session, leaderboard_id, rank, limit=limit, offset=offset
     )
@@ -182,6 +248,19 @@ async def ranks(
     """
     Returns the leaderboard rank buckets overview with score and size of bucket.
     """
+
+    ### Check if leaderboard exists
+    try:
+        actions.get_leaderboard_by_id(db_session, leaderboard_id)
+    except NoResultFound as e:
+        raise EngineHTTPException(
+            status_code=404,
+            detail="Leaderboard not found.",
+        )
+    except Exception as e:
+        logger.error(f"Error while getting leaderboard: {e}")
+        raise EngineHTTPException(status_code=500, detail="Internal server error")
+
     ranks = actions.get_ranks(db_session, leaderboard_id)
     results = [
         data.RanksResponse(
@@ -218,6 +297,19 @@ async def leaderboard(
         raise EngineHTTPException(
             status_code=403, detail="You don't have access to this leaderboard."
         )
+
+    ### Check if leaderboard exists
+    try:
+        actions.get_leaderboard_by_id(db_session, leaderboard_id)
+    except NoResultFound as e:
+        raise EngineHTTPException(
+            status_code=404,
+            detail="Leaderboard not found.",
+        )
+    except Exception as e:
+        logger.error(f"Error while getting leaderboard: {e}")
+        raise EngineHTTPException(status_code=500, detail="Internal server error")
+
     try:
         leaderboard_points = actions.add_scores(
             db_session=db_session,
@@ -230,6 +322,12 @@ async def leaderboard(
         raise EngineHTTPException(
             status_code=409,
             detail=f"Duplicates in push to database is disallowed.\n List of duplicates:{e.duplicates}.\n Please handle duplicates manualy.",
+        )
+    except actions.LeaderboardDeleteScoresError as e:
+        logger.error(f"Delete scores failed with error: {e}")
+        raise EngineHTTPException(
+            status_code=500,
+            detail=f"Delete scores failed.",
         )
     except Exception as e:
         logger.error(f"Score update failed with error: {e}")
