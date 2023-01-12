@@ -5,7 +5,7 @@ import logging
 from uuid import UUID
 
 from web3 import Web3
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request, Depends, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
@@ -109,7 +109,7 @@ async def quartiles(
         q1, q2, q3 = actions.get_qurtiles(db_session, leaderboard_id)
 
     except actions.LeaderboardIsEmpty:
-        raise EngineHTTPException(status_code=204, detail="Leaderboard is empty")
+        return Response(status_code=204)
     except Exception as e:
         logger.error(f"Error while getting quartiles: {e}")
         raise EngineHTTPException(status_code=500, detail="Internal server error")
