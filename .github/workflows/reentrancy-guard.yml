@@ -1,17 +1,16 @@
-name: Lootbox system tests
+name: Diamond Reentrancy Guard tests
 
 on:
   pull_request:
     paths:
-      - "contracts/Lootbox*"
-      - "contracts/mock/**"
-      - "cli/test_lootbox.py"
-      - "cli/test_random_lootbox.py"
-      - "cli/Lootbox*.py"
-      - "cli/Mock*.py"
+      - "contracts/test/**"
+      - "contracts/diamond/security/DiamondReentrancyGuard.sol"
+      - "cli/test_reentrancy_guard.py"
+      - "cli/ExploitContract.py"
+      - "cli/ReentrancyExploitable.py"
       - "cli/Diamond*"
       - "cli/OwnershipFacet.py"
-      - ".github/workflows/lootbox.yml"
+      - ".github/workflows/reentrancy-guard.yml"
     branches:
       - main
 jobs:
@@ -38,9 +37,6 @@ jobs:
         working-directory: cli/
         run: |
           pip install -e .
-      - name: Run lootbox tests
+      - name: Run tests
         working-directory: cli/
-        run: bash test.sh enginecli.test_lootbox
-      - name: Run random lootbox tests
-        working-directory: cli/
-        run: bash test.sh enginecli.test_random_lootbox
+        run: bash test.sh enginecli.test_crafting
