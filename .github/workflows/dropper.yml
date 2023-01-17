@@ -1,16 +1,14 @@
-name: Crafting system tests
+name: Dropper system tests
 
 on:
   pull_request:
     paths:
-      - "contracts/crafting/**"
+      - "contracts/Dropper.sol"
       - "contracts/mock/**"
-      - "cli/test_crafting.py"
-      - "cli/CraftingFacet.py"
+      - "cli/test_dropper.py"
+      - "cli/Dropper.py"
       - "cli/Mock*.py"
-      - "cli/Diamond*"
-      - "cli/OwnershipFacet.py"
-      - ".github/workflows/crafting.yml"
+      - ".github/workflows/dropper.yml"
     branches:
       - main
 jobs:
@@ -39,4 +37,4 @@ jobs:
           pip install -e .
       - name: Run tests
         working-directory: cli/
-        run: bash test.sh enginecli.test_crafting
+        run: bash test.sh enginecli.test_dropper
