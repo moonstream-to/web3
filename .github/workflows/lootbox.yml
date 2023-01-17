@@ -1,0 +1,46 @@
+name: Crafting system tests
+
+on:
+  pull_request:
+    paths:
+      - "contracts/Lootbox*"
+      - "contracts/mock/**"
+      - "cli/test_lootbox.py"
+      - "cli/test_random_lootbox.py"
+      - "cli/Lootbox*.py"
+      - "cli/Mock*.py"
+      - "cli/Diamond*"
+      - "cli/OwnershipFacet.py"
+      - ".github/workflows/lootbox.yml"
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+      - name: Install ganache
+        run: npm install -g ganache-cli
+      - name: Upgrade pip
+        env:
+          BROWNIE_LIB: 1
+        run: pip install -U pip
+      - name: Install additional dev dependencies
+        run: |
+          pip install black moonworm
+      - name: Install dependencies for CLI
+        working-directory: cli/
+        run: |
+          pip install -e .
+      - name: Run lootbox tests
+        working-directory: cli/
+        run: bash test.sh enginecli.test_lootbox
+      - name: Run random lootbox tests
+        working-directory: cli/
+        run: bash test.sh enginecli.test_random_lootbox
