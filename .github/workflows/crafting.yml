@@ -1,13 +1,18 @@
-name: Test smart contracts and backend code
+name: Crafting System tests
 
 on:
   pull_request:
     paths:
-      - "contracts/**"
-      - "cli/**"
+      - "contracts/crafting/**"
+      - "contracts/mock/**"
+      - "cli/test_crafting.py"
+      - "cli/CraftingFacet.py"
+      - "cli/Mock*.py"
+      - "cli/Diamond*"
+      - "cli/OwnershipFacet.py"
+      - ".github/workflows/crafting.yml"
     branches:
       - main
-
 jobs:
   build:
     runs-on: ubuntu-20.04
@@ -34,4 +39,4 @@ jobs:
           pip install -e .
       - name: Run tests
         working-directory: cli/
-        run: bash test.sh
+        run: bash test.sh enginecli.test_crafting
