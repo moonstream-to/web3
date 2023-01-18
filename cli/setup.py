@@ -1,3 +1,4 @@
+import os
 from setuptools import find_packages, setup
 
 with open("enginecli/version.txt") as ifp:
@@ -6,6 +7,11 @@ with open("enginecli/version.txt") as ifp:
 long_description = ""
 with open("README.md") as ifp:
     long_description = ifp.read()
+
+# eth-brownie should be installed as a library so that it doesn't pin version numbers for all its dependencies
+# and wreak havoc on the install.
+# NOTE: We first implemented this here - https://github.com/G7DAO/contracts/blob/2c04437633e574ae01b45b16f33694cb4a01b7a3/game7ctl/setup.py
+os.environ["BROWNIE_LIB"] = "1"
 
 setup(
     name="enginecli",
