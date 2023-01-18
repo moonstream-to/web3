@@ -1,13 +1,19 @@
-name: Test smart contracts and backend code
+name: Lootbox system tests
 
 on:
   pull_request:
     paths:
-      - "contracts/**"
-      - "cli/**"
+      - "contracts/Lootbox*"
+      - "contracts/mock/**"
+      - "cli/test_lootbox.py"
+      - "cli/test_random_lootbox.py"
+      - "cli/Lootbox*.py"
+      - "cli/Mock*.py"
+      - "cli/Diamond*"
+      - "cli/OwnershipFacet.py"
+      - ".github/workflows/lootbox.yml"
     branches:
       - main
-
 jobs:
   build:
     runs-on: ubuntu-20.04
@@ -32,6 +38,9 @@ jobs:
         working-directory: cli/
         run: |
           pip install -e .
-      - name: Run tests
+      - name: Run lootbox tests
         working-directory: cli/
-        run: bash test.sh
+        run: bash test.sh enginecli.test_lootbox
+      - name: Run random lootbox tests
+        working-directory: cli/
+        run: bash test.sh enginecli.test_random_lootbox
