@@ -133,6 +133,8 @@ dmypy.json
 .secrets/
 .vscode/
 .engine/
+.engineapi/
+.enginecli/
 
 prod.env
 test.env
