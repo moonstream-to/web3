@@ -17,9 +17,9 @@ setup(
     name="enginecli",
     version=VERSION,
     packages=find_packages(),
-    install_requires=["boto3", "eth-brownie", "tqdm", "tabulate"],
+    install_requires=["boto3", "eth-brownie", "moonworm", "tqdm", "tabulate"],
     extras_require={
-        "dev": ["black", "moonworm >= 0.3.0"],
+        "dev": ["black", "isort"],
         "distribute": ["setuptools", "twine", "wheel"],
     },
     description="Moonstream Engine CLI for blockchain operations",
