@@ -1,4 +1,5 @@
 export type GoFPMetadata = {
+  title: string;
   imageUrl: string;
   lore: string;
 };
@@ -12,3 +13,9 @@ export type StageMetadata = GoFPMetadata & {
 export type SessionMetadata = GoFPMetadata & {
   stages: StageMetadata[];
 };
+
+export enum PathStatus {
+  correct,
+  incorrect,
+  undecided,
+}
