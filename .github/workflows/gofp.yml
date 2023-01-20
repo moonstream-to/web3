@@ -5,11 +5,11 @@ on:
     paths:
       - "contracts/mechanics/garden-of-forking-paths/**"
       - "contracts/mock/**"
-      - "cli/test_gofp.py"
-      - "cli/GOFPFacet.py"
-      - "cli/Mock*.py"
-      - "cli/Diamond*"
-      - "cli/OwnershipFacet.py"
+      - "cli/enginecli/test_gofp.py"
+      - "cli/enginecli/GOFPFacet.py"
+      - "cli/enginecli/Mock*.py"
+      - "cli/enginecli/Diamond*"
+      - "cli/enginecli/OwnershipFacet.py"
       - ".github/workflows/gofp.yml"
     branches:
       - main

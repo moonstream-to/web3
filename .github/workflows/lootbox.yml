@@ -5,12 +5,12 @@ on:
     paths:
       - "contracts/Lootbox*"
       - "contracts/mock/**"
-      - "cli/test_lootbox.py"
-      - "cli/test_random_lootbox.py"
-      - "cli/Lootbox*.py"
-      - "cli/Mock*.py"
-      - "cli/Diamond*"
-      - "cli/OwnershipFacet.py"
+      - "cli/enginecli/test_lootbox.py"
+      - "cli/enginecli/test_random_lootbox.py"
+      - "cli/enginecli/Lootbox*.py"
+      - "cli/enginecli/Mock*.py"
+      - "cli/enginecli/Diamond*"
+      - "cli/enginecli/OwnershipFacet.py"
       - ".github/workflows/lootbox.yml"
     branches:
       - main
