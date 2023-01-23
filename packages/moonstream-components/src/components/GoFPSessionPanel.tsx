@@ -12,7 +12,7 @@ const SessionPanel = ({
   sessionMetadata: SessionMetadata;
   onDrop: (item: any) => void;
 }) => {
-  const [currentStage, setCurrentStage] = useState(4);
+  const [currentStage] = useState(4);
   const [links, setLinks] = useState(new Map<string, string>());
   const [futureStages, setFutureStages] = useState<
     { sources: string[]; targets: string[] }[]
@@ -61,6 +61,7 @@ const SessionPanel = ({
           links={links}
           futureStages={futureStages}
           width={containerWidth}
+          offsets={{ top: { x: 0, y: 0.1 }, bottom: { x: 0, y: -0.1 } }}
         />
         <Text fontSize="lg" pb={20}>
           {sessionMetadata.lore}

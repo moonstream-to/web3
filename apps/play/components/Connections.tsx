@@ -5,23 +5,45 @@ interface ConnectionsProps {
   links: Map<string, string>;
   futureStages: { sources: string[]; targets: string[] }[];
   width: number;
+  offsets?: { top: { x: number; y: number }; bottom: { x: number; y: number } };
 }
 
-const getPoints = (id: string) => {
-  const card = document.getElementById(id);
-  if (!card) {
-    return;
-  }
-  const x = card.offsetLeft + card.offsetWidth / 2;
-
-  return {
-    top: { x, y: card.offsetTop },
-    bottom: { x, y: card.offsetTop + card.offsetHeight },
-  };
-};
-
-const Connections = ({ links, futureStages, width }: ConnectionsProps) => {
+const Connections = ({
+  links,
+  futureStages,
+  width,
+  offsets = { top: { x: 0, y: 0 }, bottom: { x: 0, y: 0 } },
+}: ConnectionsProps) => {
   const [connections, setConnections] = useState<React.CSSProperties[]>([]);
+
+  const getPoints = (id: string) => {
+    const card = document.getElementById(id);
+    if (!card) {
+      return;
+    }
+    const top = {
+      x:
+        card.offsetLeft +
+        card.offsetWidth / 2 +
+        card.offsetWidth * offsets.top.x,
+      y: card.offsetTop + card.offsetHeight * offsets.top.y,
+    };
+    const bottom = {
+      x:
+        card.offsetLeft +
+        card.offsetWidth / 2 +
+        card.offsetWidth * offsets.bottom.x,
+      y:
+        card.offsetTop +
+        card.offsetHeight +
+        card.offsetHeight * offsets.bottom.y,
+    };
+    console.log(top, bottom);
+    return {
+      top,
+      bottom,
+    };
+  };
 
   useEffect(() => {
     const connections: React.CSSProperties[] = [];
@@ -110,15 +132,15 @@ const Connections = ({ links, futureStages, width }: ConnectionsProps) => {
         return;
       }
 
-      const width = Math.abs(target.top.x - source.top.x) / 2;
+      const width = Math.abs(target.top.x - source.bottom.x) / 2;
       const top = source.bottom.y;
       const height = Math.ceil((target.top.y - source.bottom.y) / 2);
       const middle = source.bottom.y + height;
       const borderLeft = "solid 2px white";
-      if (target.top.x < source.top.x) {
+      if (target.top.x < source.bottom.x) {
         connections.push({
           top,
-          left: source.top.x - width + 1,
+          left: source.bottom.x - width + 1,
           width,
           height: height + 1,
           borderRight: borderLeft,
@@ -137,7 +159,7 @@ const Connections = ({ links, futureStages, width }: ConnectionsProps) => {
       } else {
         connections.push({
           top,
-          left: source.top.x,
+          left: source.bottom.x,
           width,
           height: (target.top.y - top) / 2 + 1,
           borderLeft,
@@ -146,7 +168,7 @@ const Connections = ({ links, futureStages, width }: ConnectionsProps) => {
         });
         connections.push({
           top: middle - 1,
-          left: source.top.x + width,
+          left: source.bottom.x + width,
           width,
           height: target.top.y - middle + 1,
           borderRight: borderLeft,
