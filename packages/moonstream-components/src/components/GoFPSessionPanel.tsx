@@ -26,7 +26,7 @@ const SessionPanel = ({
     newLinks.set("card-2-3", "card-3-1");
     newLinks.set("card-3-1", "card-4-1");
     setLinks(newLinks);
-
+    const lastDoor = "card-4-1";
     const extendedStages = sessionMetadata.stages
       .concat(sessionMetadata.stages)
       .concat(sessionMetadata.stages);
@@ -44,6 +44,9 @@ const SessionPanel = ({
       }
       newFutureStages.push(futureStage);
     }
+    newFutureStages[0].sources = newFutureStages[0].sources.filter(
+      (s) => s === lastDoor
+    );
     setFutureStages(newFutureStages);
   }, [sessionMetadata, currentStage]);
 
