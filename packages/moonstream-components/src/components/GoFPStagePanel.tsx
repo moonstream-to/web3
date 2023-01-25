@@ -6,34 +6,50 @@ import PathCard from "./GoFPPathCard";
 const StagePanel = ({
   stageMetadata,
   stageIdx,
+  completed,
+  correctPath,
   generatePathId,
+  setSelectedStage,
 }: {
   stageMetadata: StageMetadata;
   stageIdx: number;
+  completed: boolean;
+  correctPath: number;
   generatePathId: any;
+  setSelectedStage: React.Dispatch<React.SetStateAction<number>>;
 }) => {
-  const getPathStatus = (stageIdx: number, pathIdx: number) => {
-    if (stageIdx > 1) {
-      return PathStatus.undecided;
+  const getPathStatus = (pathIdx: number) => {
+    if (completed) {
+      if (pathIdx + 1 == correctPath) {
+        return PathStatus.correct;
+      } else {
+        return PathStatus.incorrect;
+      }
     } else {
-      if (pathIdx - stageIdx == 0) return PathStatus.correct;
-      else return PathStatus.incorrect;
+      return PathStatus.undecided;
     }
   };
 
   return (
-    <Flex flexDirection="column" pb={10} zIndex={1}>
-      <Text fontSize="md" fontWeight="bold" pb={5}>
+    <Flex
+      flexDirection="column"
+      pb={10}
+      zIndex={1}
+      onClick={() => {
+        setSelectedStage(stageIdx + 1);
+      }}
+    >
+      {/* <Text fontSize="md" fontWeight="bold" pb={5}>
         {stageMetadata.lore}
       </Text>
-      <br /> <br />
+      <br /> <br /> */}
       <Flex flexDirection="row" alignItems="center">
         {stageMetadata.paths.map((path, pathIdx) => {
           return (
             <Center key={pathIdx}>
               <PathCard
                 pathMetadata={path}
-                status={getPathStatus(stageIdx, pathIdx)}
+                status={getPathStatus(pathIdx)}
                 pathId={generatePathId(stageIdx, pathIdx)}
               ></PathCard>
             </Center>

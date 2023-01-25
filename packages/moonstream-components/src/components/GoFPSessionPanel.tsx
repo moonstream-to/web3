@@ -3,20 +3,29 @@ import { Flex, Center, Text } from "@chakra-ui/react";
 import { SessionMetadata } from "./GoFPTypes";
 import StagePanel from "./GoFPStagePanel";
 import Xarrow, { useXarrow } from "react-xarrows";
+import { UseQueryResult } from "react-query";
 
 const SessionPanel = ({
   sessionMetadata,
+  currentStage,
+  correctPaths,
   generatePathId,
+  setSelectedStage,
 }: {
   sessionMetadata: SessionMetadata;
+  currentStage: UseQueryResult<number>;
+  correctPaths: UseQueryResult<number[]>;
   generatePathId: any;
+  setSelectedStage: React.Dispatch<React.SetStateAction<number>>;
 }) => {
-  const updateXArrow = useXarrow();
+  // const updateXArrow = useXarrow();
 
-  useEffect(() => {
-    window.addEventListener("scroll", () => { console.log("scrolling"); });
-    //return () => window.removeEventListener("scroll", updateXArrow);
-  });
+  // useEffect(() => {
+  //   window.addEventListener("scroll", () => {
+  //     console.log("scrolling");
+  //   });
+  //   //return () => window.removeEventListener("scroll", updateXArrow);
+  // });
 
   return (
     <Flex
@@ -25,23 +34,35 @@ const SessionPanel = ({
         console.log("scrolling");
       }}
     >
-      <Text fontSize="lg" pb={20}>
-        {sessionMetadata.lore}
-      </Text>
+      <Center>
+        <Text fontSize="lg" pb={10}>
+          {sessionMetadata.lore}
+        </Text>
+      </Center>
       {sessionMetadata.stages.map((stage, stageIdx) => {
+        const stageNumber = stageIdx + 1;
+        const completed = currentStage.data
+          ? stageNumber < currentStage.data
+          : false;
+        const correctPath = correctPaths.data ? correctPaths.data[stageIdx] : 0;
         return (
           <Center key={stageIdx}>
             <StagePanel
               stageMetadata={stage}
               stageIdx={stageIdx}
+              completed={completed}
+              correctPath={correctPath}
               generatePathId={generatePathId}
+              setSelectedStage={setSelectedStage}
             ></StagePanel>
           </Center>
         );
       })}
-      <Xarrow
+      {/* <Xarrow
         start={generatePathId(0, 0)}
         end={generatePathId(1, 1)}
+        startAnchor="bottom"
+        endAnchor="top"
         lineColor="#3BB563"
         path="grid"
         showHead={false}
@@ -119,7 +140,7 @@ const SessionPanel = ({
         showHead={false}
         strokeWidth={2}
         zIndex={0}
-      />
+      /> */}
     </Flex>
   );
 };
