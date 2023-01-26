@@ -38,7 +38,6 @@ const Connections = ({
         card.offsetHeight +
         card.offsetHeight * offsets.bottom.y,
     };
-    console.log(top, bottom);
     return {
       top,
       bottom,
@@ -178,7 +177,7 @@ const Connections = ({
       }
     }
     setConnections(connections);
-  }, [links, futureStages, width]);
+  }, [links, futureStages, width, getPoints]);
 
   return (
     <>

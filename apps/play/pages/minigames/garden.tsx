@@ -17,6 +17,8 @@ import SessionPanel from "moonstream-components/src/components/GoFPSessionPanel"
 import { SessionMetadata } from "./GoFPTypes";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import { TouchBackend } from "react-dnd-touch-backend";
+import { usePreview } from "react-dnd-preview";
 import { default as Character } from "../../components/GoFPCharacter";
 
 const DATA_API = "https://data.moonstream.to/prod/";
@@ -249,25 +251,22 @@ const Garden = () => {
     });
   };
 
-  // const [links, setLinks] = useState(new Map<string, string[]>());
-  // useEffect(() => {
-  //   setLinks(() => {
-  //     const newLinks = new Map<string, string[]>();
-  //     newLinks.set("card-0-2", ["card-1-0"]);
-  //     newLinks.set("card-1-2", ["card-2-1", "card-2-0", "card-2-2"]);
-  //     return newLinks;
-  //   });
-  // }, []);
-
-  // const handleResize = () => {
-  //   setLinks(() => {
-  //     const newLinks = new Map<string, string[]>();
-  //     newLinks.set("card-0-1", ["card-1-0"]);
-  //     newLinks.set("card-1-0", ["card-2-1", "card-2-0", "card-2-2"]);
-  //     return newLinks;
-  //   });
-  //   return;
-  // };
+  function isTouchDevice() {
+    console.log("ontouchstart" in window || navigator.maxTouchPoints > 0);
+    return "ontouchstart" in window || navigator.maxTouchPoints > 0;
+  }
+  const MyPreview = () => {
+    const preview = usePreview();
+    if (!preview.display) {
+      return null;
+    }
+    const { itemType, item, style } = preview;
+    return (
+      <div className="item-list__item" style={style}>
+        {itemType}
+      </div>
+    );
+  };
 
   return (
     <Box
@@ -277,7 +276,8 @@ const Garden = () => {
       minH="100vh"
       bgColor="#1A1D22"
     >
-      <DndProvider backend={HTML5Backend}>
+      <DndProvider backend={isTouchDevice() ? TouchBackend : HTML5Backend}>
+        {isTouchDevice() && <MyPreview />}
         <Heading>Garden of Forking Paths</Heading>
         <Flex alignItems="center">
           <HStack my="10" alignItems="top" mr="20px">
