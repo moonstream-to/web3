@@ -5,11 +5,11 @@ on:
     paths:
       - "contracts/test/**"
       - "contracts/diamond/security/DiamondReentrancyGuard.sol"
-      - "cli/test_reentrancy_guard.py"
-      - "cli/ExploitContract.py"
-      - "cli/ReentrancyExploitable.py"
-      - "cli/Diamond*"
-      - "cli/OwnershipFacet.py"
+      - "cli/enginecli/test_reentrancy_guard.py"
+      - "cli/enginecli/ExploitContract.py"
+      - "cli/enginecli/ReentrancyExploitable.py"
+      - "cli/enginecli/Diamond*"
+      - "cli/enginecli/OwnershipFacet.py"
       - ".github/workflows/reentrancy-guard.yml"
     branches:
       - main

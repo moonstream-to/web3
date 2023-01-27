@@ -5,9 +5,9 @@ on:
     paths:
       - "contracts/Dropper.sol"
       - "contracts/mock/**"
-      - "cli/test_dropper.py"
-      - "cli/Dropper.py"
-      - "cli/Mock*.py"
+      - "cli/enginecli/test_dropper.py"
+      - "cli/enginecli/Dropper.py"
+      - "cli/enginecli/Mock*.py"
       - ".github/workflows/dropper.yml"
     branches:
       - main
