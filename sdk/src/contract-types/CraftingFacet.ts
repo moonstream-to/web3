@@ -274,8 +274,8 @@ export interface CraftingFacet extends BaseContract {
   };
 
   addRecipe(
-    recipe: RecipeStruct,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
+    recipe: RecipeStruct
+    // overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   craft(
