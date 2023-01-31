@@ -1,31 +1,22 @@
 import React from "react";
-import {
-  Flex,
-  Center,
-  Text,
-  HStack,
-  Accordion,
-  AccordionItem,
-  AccordionPanel,
-  AccordionButton,
-  AccordionIcon,
-  Image,
-  Button,
-} from "@chakra-ui/react";
-import { StageMetadata, PathStatus } from "./GoFPTypes";
+import { Flex, Text, Button } from "@chakra-ui/react";
 import { SessionMetadata } from "./GoFPTypes";
 import { UseMutationResult } from "react-query";
 
 const CharacterPanel = ({
   sessionMetadata,
+  path,
   setApproval,
   stakeTokens,
   unstakeTokens,
+  choosePath,
 }: {
   sessionMetadata: SessionMetadata;
+  path: number;
   setApproval: UseMutationResult<unknown, unknown, void, unknown>;
   stakeTokens: UseMutationResult<unknown, unknown, void, unknown>;
   unstakeTokens: UseMutationResult<unknown, unknown, void, unknown>;
+  choosePath: UseMutationResult<unknown, unknown, number, unknown>;
 }) => {
   return (
     <Flex
@@ -45,6 +36,9 @@ const CharacterPanel = ({
       </Button>
       <Button colorScheme="red" onClick={() => unstakeTokens.mutate()}>
         Unstake Tokens
+      </Button>
+      <Button colorScheme="gray" onClick={() => choosePath.mutate(path)}>
+        Choose Path {path}
       </Button>
     </Flex>
   );

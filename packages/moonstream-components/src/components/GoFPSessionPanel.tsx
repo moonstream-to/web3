@@ -12,21 +12,15 @@ const SessionPanel = ({
   correctPaths,
   generatePathId,
   setSelectedStage,
+  setSelectedPath,
 }: {
   sessionMetadata: SessionMetadata;
   currentStage: UseQueryResult<number>;
   correctPaths: UseQueryResult<number[]>;
   generatePathId: any;
   setSelectedStage: React.Dispatch<React.SetStateAction<number>>;
+  setSelectedPath: React.Dispatch<React.SetStateAction<number>>;
 }) => {
-  // const updateXArrow = useXarrow();
-
-  // useEffect(() => {
-  //   window.addEventListener("scroll", () => {
-  //     console.log("scrolling");
-  //   });
-  //   // return () => window.removeEventListener("scroll");
-  // });
   const [connectionsData, setConnectionsData] = useState({
     links: [],
     futureLinks: [],
@@ -123,93 +117,11 @@ const SessionPanel = ({
                 correctPath={correctPath}
                 generatePathId={generatePathId}
                 setSelectedStage={setSelectedStage}
+                setSelectedPath={setSelectedPath}
               ></StagePanel>
             </Center>
           );
         })}
-        {/* <Xarrow
-        start={generatePathId(0, 0)}
-        end={generatePathId(1, 1)}
-        startAnchor="bottom"
-        endAnchor="top"
-        lineColor="#3BB563"
-        path="grid"
-        showHead={false}
-        strokeWidth={3}
-        zIndex={0}
-      />
-      <Xarrow
-        start={generatePathId(1, 1)}
-        end={generatePathId(2, 0)}
-        startAnchor="bottom"
-        endAnchor="top"
-        lineColor="#BFBFBF"
-        path="grid"
-        dashness={true}
-        showHead={false}
-        strokeWidth={2}
-        zIndex={0}
-      />
-      <Xarrow
-        start={generatePathId(1, 1)}
-        end={generatePathId(2, 1)}
-        startAnchor="bottom"
-        endAnchor="top"
-        lineColor="#BFBFBF"
-        path="grid"
-        dashness={true}
-        showHead={false}
-        strokeWidth={2}
-        zIndex={0}
-      />
-      <Xarrow
-        start={generatePathId(1, 1)}
-        end={generatePathId(2, 2)}
-        startAnchor="bottom"
-        endAnchor="top"
-        lineColor="#BFBFBF"
-        path="grid"
-        dashness={true}
-        showHead={false}
-        strokeWidth={2}
-        zIndex={0}
-      />
-      <Xarrow
-        start={generatePathId(2, 0)}
-        end={generatePathId(3, 0)}
-        startAnchor="bottom"
-        endAnchor="top"
-        lineColor="#BFBFBF"
-        path="grid"
-        dashness={true}
-        showHead={false}
-        strokeWidth={2}
-        zIndex={0}
-      />
-      <Xarrow
-        start={generatePathId(2, 1)}
-        end={generatePathId(3, 0)}
-        startAnchor="bottom"
-        endAnchor="top"
-        lineColor="#BFBFBF"
-        path="grid"
-        dashness={true}
-        showHead={false}
-        strokeWidth={2}
-        zIndex={0}
-      />
-      <Xarrow
-        start={generatePathId(2, 2)}
-        end={generatePathId(3, 0)}
-        startAnchor="bottom"
-        endAnchor="top"
-        lineColor="#BFBFBF"
-        path="grid"
-        dashness={true}
-        showHead={false}
-        strokeWidth={2}
-        zIndex={0}
-      /> */}
       </Flex>
     </ResizeObserver>
   );

@@ -1,17 +1,5 @@
 import React from "react";
-import {
-  Flex,
-  Center,
-  Text,
-  HStack,
-  Accordion,
-  AccordionItem,
-  AccordionPanel,
-  AccordionButton,
-  AccordionIcon,
-  Image,
-} from "@chakra-ui/react";
-import { StageMetadata, PathStatus } from "./GoFPTypes";
+import { Flex, Center, Text, Image } from "@chakra-ui/react";
 import { SessionMetadata } from "./GoFPTypes";
 
 const MetadataPanel = ({

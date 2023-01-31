@@ -6,10 +6,12 @@ const PathCard = ({
   pathMetadata,
   status = PathStatus.undecided,
   pathId,
+  setSelectedPath,
 }: {
   pathMetadata: PathMetadata;
   status: PathStatus;
   pathId: string;
+  setSelectedPath: any;
 }) => {
   const correctPathColor = "#3BB563";
   const incorrectPathColor = "#E85858";
@@ -38,7 +40,7 @@ const PathCard = ({
   }
 
   return (
-    <Box id={pathId} px={2}>
+    <Box id={pathId} px={2} onClick={() => setSelectedPath()}>
       <Flex
         flexDirection="column"
         position="relative"
