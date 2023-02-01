@@ -42,7 +42,7 @@ export class CraftingContract {
                     return {
                         action: action,
                         item: {
-                            tokenAddrress: el.tokenAddress,
+                            tokenAddress: el.tokenAddress,
                             amount: el.amount.toString(),
                         },
                     }
@@ -51,7 +51,7 @@ export class CraftingContract {
                         action: action,
                         item: {
                             tokenId: el.tokenId.toString(),
-                            tokenAddrress: el.tokenAddress,
+                            tokenAddress: el.tokenAddress,
                             amount: el.amount.toString(),
                         },
                     }
@@ -65,7 +65,7 @@ export class CraftingContract {
                 return {
                     action: action,
                     item: {
-                        tokenAddrress: el.tokenAddress,
+                        tokenAddress: el.tokenAddress,
                         amount: el.amount.toString(),
                     },
                 }
@@ -73,7 +73,7 @@ export class CraftingContract {
                 return {
                     action: action,
                     item: {
-                        tokenAddrress: el.tokenAddress,
+                        tokenAddress: el.tokenAddress,
                         amount: el.amount.toString(),
                         tokenId: el.tokenId.toString(),
                     },
@@ -102,7 +102,7 @@ export class CraftingContract {
         const craftingInputs = recipe.craftingInputs.map(
             (el): CraftingInputItemStruct => ({
                 tokenType: "tokenId" in el.item ? 1155 : 20,
-                tokenAddress: el.item.tokenAddrress,
+                tokenAddress: el.item.tokenAddress,
                 tokenId:
                     "tokenId" in el.item ? (el.item as ERC1155Item).tokenId : 0,
                 amount: el.item.amount,
@@ -112,7 +112,7 @@ export class CraftingContract {
         const craftingOutputs = recipe.craftingOutputs.map(
             (el): CraftingOutputItemStruct => ({
                 tokenType: "tokenId" in el.item ? 1155 : 20,
-                tokenAddress: el.item.tokenAddrress,
+                tokenAddress: el.item.tokenAddress,
                 tokenId:
                     "tokenId" in el.item ? (el.item as ERC1155Item).tokenId : 0,
                 amount: el.item.amount,
