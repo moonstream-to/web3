@@ -98,10 +98,7 @@ export class CraftingContract {
         return this.contract.craft(recipeId)
     }
 
-    public async addRecipe(
-        recipe: CraftingRecipe
-        // overrides?: ethers.Overrides
-    ): Promise<ethers.BigNumber> {
+    public async addRecipe(recipe: CraftingRecipe): Promise<ethers.BigNumber> {
         const craftingInputs = recipe.craftingInputs.map(
             (el): CraftingInputItemStruct => ({
                 tokenType: "tokenId" in el.item ? 1155 : 20,

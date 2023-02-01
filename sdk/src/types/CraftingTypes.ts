@@ -1,9 +1,11 @@
 export interface ERC20Item {
+    // @ogarciarevett: fix typo here
     tokenAddrress: string
     amount: string
 }
 
 export interface ERC1155Item {
+    // TODO: fix typo here
     tokenAddrress: string
     tokenId: string
     amount: string
