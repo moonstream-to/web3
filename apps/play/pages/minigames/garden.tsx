@@ -83,7 +83,7 @@ const Garden = () => {
     }
   );
 
-  const sessionMetadata = useQuery<SessionMetadata|undefined>(
+  const sessionMetadata = useQuery<SessionMetadata | undefined>(
     ["get_metadata", sessionInfo],
     async () => {
       if (!sessionInfo || !sessionInfo.data) {
@@ -102,9 +102,14 @@ const Garden = () => {
   );
 
   const currentStage = useQuery<number>(
-    ["get_current_stage", gardenContractAddress, sessionId],
+    ["get_current_stage", gardenContractAddress, sessionId, sessionInfo],
     async () => {
-      if(gardenContractAddress == ZERO_ADDRESS || sessionId < 1) return 1;
+      if (
+        gardenContractAddress == ZERO_ADDRESS ||
+        sessionId < 1 ||
+        !sessionInfo.data
+      )
+        return 1;
 
       const gardenContract: any = new web3ctx.web3.eth.Contract(
         GardenABI
@@ -115,14 +120,13 @@ const Garden = () => {
         .getCurrentStage(sessionId)
         .call();
       const _stage = parseInt(result);
-      // const _stage = 3;
       console.log("Current stage is ", _stage);
-      setSelectedStage(_stage);
+      setSelectedStage(Math.min(_stage, sessionInfo.data[6].length));
       return _stage;
     },
     {
       ...hookCommon,
-      refetchInterval: 15 * 1000
+      refetchInterval: 15 * 1000,
     }
   );
 
@@ -135,7 +139,9 @@ const Garden = () => {
         gardenContractAddress == ZERO_ADDRESS ||
         sessionId < 1 ||
         !currentStage.data ||
-        currentStage.data <= 1) return answers;
+        currentStage.data <= 1
+      )
+        return answers;
 
       const gardenContract: any = new web3ctx.web3.eth.Contract(
         GardenABI
@@ -202,7 +208,7 @@ const Garden = () => {
   const stakedTokens = useQuery<number[]>(
     ["get_token", gardenContractAddress, sessionId],
     async () => {
-      if(gardenContractAddress == ZERO_ADDRESS || sessionId < 1) return [];
+      if (gardenContractAddress == ZERO_ADDRESS || sessionId < 1) return [];
 
       const gardenContract: any = new web3ctx.web3.eth.Contract(
         GardenABI
@@ -302,7 +308,7 @@ const Garden = () => {
         .unstakeTokensFromSession(sessionId, [18])
         .send({
           from: web3ctx.account,
-      });
+        });
     },
     {
       onSuccess: () => {
@@ -358,8 +364,22 @@ const Garden = () => {
       bgColor="#1A1D22"
     >
       <Heading>Garden of Forking Paths</Heading>
-      {sessionMetadata?.data &&
+      {sessionMetadata?.data && (
         <HStack my="10" alignItems="top">
+          <MetadataPanel
+            sessionMetadata={sessionMetadata.data}
+            selectedStage={selectedStage}
+          />
+          <Spacer />
+          <SessionPanel
+            sessionMetadata={sessionMetadata.data}
+            currentStage={currentStage}
+            correctPaths={correctPaths}
+            generatePathId={generatePathId}
+            setSelectedStage={setSelectedStage}
+            setSelectedPath={setSelectedPath}
+          />
+          <Spacer />
           <CharacterPanel
             // sessionMetadata={sessionMetadata.data}
             ownedTokens={userOwnedTokens.data || []}
@@ -370,21 +390,8 @@ const Garden = () => {
             unstakeTokens={unstakeTokens}
             choosePath={choosePath}
           ></CharacterPanel>
-          <SessionPanel
-            sessionMetadata={sessionMetadata.data}
-            currentStage={currentStage}
-            correctPaths={correctPaths}
-            generatePathId={generatePathId}
-            setSelectedStage={setSelectedStage}
-            setSelectedPath={setSelectedPath}
-          />
-          <Spacer />
-          <MetadataPanel
-            sessionMetadata={sessionMetadata.data}
-            selectedStage={selectedStage}
-          />
         </HStack>
-      }
+      )}
     </Box>
   );
 };

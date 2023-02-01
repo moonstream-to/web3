@@ -44,34 +44,36 @@ const SessionPanel = ({
         correctPathsZB[correctPathsZB.length - 1]
       );
       const newFutureStages: { sources: string[]; targets: string[] }[] = [];
-      for (
-        let i = currentStageZB - 1;
-        i < sessionMetadata.stages.length - 1;
-        i += 1
-      ) {
-        if (i === -1) {
-          continue;
-        }
-        const futureStage: { sources: string[]; targets: string[] } = {
-          sources: [],
-          targets: [],
-        };
-        for (let j = 0; j < sessionMetadata.stages[i].paths.length; j += 1) {
-          futureStage.sources.push(generatePathId(i, j));
-        }
+      if (currentStage.data <= sessionMetadata.stages.length) {
         for (
-          let j = 0;
-          j < sessionMetadata.stages[i + 1].paths.length;
-          j += 1
+          let i = currentStageZB - 1;
+          i < sessionMetadata.stages.length - 1;
+          i += 1
         ) {
-          futureStage.targets.push(generatePathId(i + 1, j));
+          if (i === -1) {
+            continue;
+          }
+          const futureStage: { sources: string[]; targets: string[] } = {
+            sources: [],
+            targets: [],
+          };
+          for (let j = 0; j < sessionMetadata.stages[i].paths.length; j += 1) {
+            futureStage.sources.push(generatePathId(i, j));
+          }
+          for (
+            let j = 0;
+            j < sessionMetadata.stages[i + 1].paths.length;
+            j += 1
+          ) {
+            futureStage.targets.push(generatePathId(i + 1, j));
+          }
+          newFutureStages.push(futureStage);
         }
-        newFutureStages.push(futureStage);
-      }
-      if (currentStageZB > 0) {
-        newFutureStages[0].sources = newFutureStages[0].sources.filter(
-          (s) => s === lastDoor
-        );
+        if (currentStageZB > 0) {
+          newFutureStages[0].sources = newFutureStages[0].sources.filter(
+            (s) => s === lastDoor
+          );
+        }
       }
       setConnectionsData({ links, futureLinks: newFutureStages });
     }

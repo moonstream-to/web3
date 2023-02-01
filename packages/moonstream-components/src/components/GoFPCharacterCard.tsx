@@ -8,12 +8,19 @@ const CharacterCard = ({ tokenId }: { tokenId: number }) => {
       w="80px"
       h="100px"
       rounded="lg"
-      borderWidth="2px"
-      borderColor="#BFBFBF"
+      borderWidth="3px"
+      borderColor="#FFFFFF"
       borderRadius="10px"
-      alignContent="center"
+      alignItems="center"
     >
-      <Center>
+      <Center
+        w="63px"
+        h="63px"
+        borderWidth="1px"
+        borderColor="#FFFFFF"
+        borderRadius="50%"
+        mt="5px"
+      >
         <Text>{tokenId}</Text>
       </Center>
     </Flex>
