@@ -21,7 +21,10 @@ const SessionPanel = ({
   setSelectedStage: React.Dispatch<React.SetStateAction<number>>;
   setSelectedPath: React.Dispatch<React.SetStateAction<number>>;
 }) => {
-  const [connectionsData, setConnectionsData] = useState({
+  const [connectionsData, setConnectionsData] = useState<{
+    links: { source: string; target: string }[];
+    futureLinks: { sources: string[]; targets: string[] }[];
+  }>({
     links: [],
     futureLinks: [],
   });

@@ -1,67 +1,54 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import { useQuery, useMutation } from "react-query";
 import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
-import {
-  Box,
-  Heading,
-  Spinner,
-  Flex,
-  HStack,
-  VStack,
-  Spacer,
-  Text,
-  Tabs,
-  TabList,
-  Tab,
-  Select,
-} from "@chakra-ui/react";
+import { Box, Heading, HStack, Spacer } from "@chakra-ui/react";
 import http from "moonstream-components/src/core/utils/http";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
 const GardenABI = require("../../games/GoFPABI.json");
 import { GOFPFacet as GardenABIType } from "../../../../types/contracts/GOFPFacet";
-const MulticallABI = require("../../games/cu/Multicall2.json");
-import { Multicall2 } from "../../games/cu/Multicall2";
+// const MulticallABI = require("../../games/cu/Multicall2.json");
+// import { Multicall2 } from "../../games/cu/Multicall2";
 const ERC721MetadataABI = require("../../../../abi/MockERC721.json");
 import { MockERC721 } from "../../../../types/contracts/MockERC721";
-import { GOFP_CONTRACT_ADDRESS, MULTICALL2_CONTRACT_ADDRESS, SHADOWCORN_CONTRACT_ADDRESS } from "moonstream-components/src/core/cu/constants";
 import SessionPanel from "moonstream-components/src/components/GoFPSessionPanel";
 import MetadataPanel from "moonstream-components/src/components/GoFPMetadataPanel";
 import CharacterPanel from "moonstream-components/src/components/GoFPCharacterPanel";
-import { SessionMetadata, StageMetadata, PathMetadata} from "moonstream-components/src/components/GoFPTypes"
-import { hookCommon, useToast } from "moonstream-components/src/core/hooks";
+import { SessionMetadata } from "moonstream-components/src/components/GoFPTypes";
 import {
-  chainByChainId,
-} from "moonstream-components/src/core/providers/Web3Provider";
-
-const DATA_API = "https://data.moonstream.to/prod/";
+  hookCommon,
+  useRouter,
+  useToast,
+} from "moonstream-components/src/core/hooks";
+// import {
+//   chainByChainId,
+// } from "moonstream-components/src/core/providers/Web3Provider";
 
 const Garden = () => {
+  const router = useRouter();
   const toast = useToast();
 
-  const MY_ADDRESS = "0x9f8B214bF13F62cFA5160ED135E233C9dDb95974";
   const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
   const web3ctx = useContext(Web3Context);
-
-  const panelBackground = "#2D2D2D";
 
   const generatePathId = (stage: number, path: number) => {
     return `stage_${stage}_path_${path}`;
   };
 
-  const [selectedStage, setSelectedStage] = React.useState<number>(1);
-  const [selectedPath, setSelectedPath] = React.useState<number>(0);
-  const [gardenContractAddress, setGardenContractAddress] = React.useState<string>(ZERO_ADDRESS);
-  const [sessionId, setSessionId] = React.useState<number>(101);
-  const [tokenContract, setTokenContract] = React.useState<any>();
+  const [selectedStage, setSelectedStage] = useState<number>(1);
+  const [selectedPath, setSelectedPath] = useState<number>(0);
+  const [gardenContractAddress] = useState<string>(
+    router.query["contractId"] || ZERO_ADDRESS
+  );
+  const [sessionId] = useState<number>(router.query["sessionId"]);
+  const [tokenContract, setTokenContract] = useState<any>();
 
-  useEffect(() => {
-    const chain: string | undefined = chainByChainId[web3ctx.chainId];
-    if (!chain) {
-      setGardenContractAddress("0x0000000000000000000000000000000000000000");
-    } else {
-      setGardenContractAddress("0x8b9493d84e70e94ff9EB1385aD0ed632FD5edE13")
-    }
-  }, [web3ctx.chainId]);
+  // Not sure if we need to do anything basedo n ChainId
+  // useEffect(() => {
+  //   const chain: string | undefined = chainByChainId[web3ctx.chainId];
+  //   if (!chain || !gardenContractAddress) {
+  //     setGardenContractAddress("0x0000000000000000000000000000000000000000");
+  //   }
+  // }, [web3ctx.chainId]);
 
   const fetchMetadataUri = async (uri: string) => {
     return http(
@@ -84,9 +71,7 @@ const Garden = () => {
       gardenContract.options.address = gardenContractAddress;
 
       console.log("Attempting to fetch session.");
-      const info = await gardenContract.methods
-                    .getSession(sessionId)
-                    .call();
+      const info = await gardenContract.methods.getSession(sessionId).call();
 
       console.log("Session Info: ");
       console.log(info);
@@ -108,7 +93,6 @@ const Garden = () => {
       const uri = sessionInfo.data[5];
 
       return fetchMetadataUri(uri).then((res) => {
-        console.log(res.data);
         return res.data as SessionMetadata;
       });
     },
@@ -128,16 +112,17 @@ const Garden = () => {
       gardenContract.options.address = gardenContractAddress;
 
       const result = await gardenContract.methods
-                      .getCurrentStage(sessionId)
-                      .call();
+        .getCurrentStage(sessionId)
+        .call();
       const _stage = parseInt(result);
+      // const _stage = 3;
       console.log("Current stage is ", _stage);
       setSelectedStage(_stage);
       return _stage;
     },
     {
       ...hookCommon,
-      refetchInterval: 30 * 1000
+      refetchInterval: 15 * 1000
     }
   );
 
@@ -146,36 +131,37 @@ const Garden = () => {
     async () => {
       const answers: number[] = [];
 
-      if(gardenContractAddress == ZERO_ADDRESS 
-          || sessionId < 1 
-          || !currentStage.data 
-          || currentStage.data <= 1) return answers;
+      if (
+        gardenContractAddress == ZERO_ADDRESS ||
+        sessionId < 1 ||
+        !currentStage.data ||
+        currentStage.data <= 1) return answers;
 
       const gardenContract: any = new web3ctx.web3.eth.Contract(
         GardenABI
       ) as any as GardenABIType;
       gardenContract.options.address = gardenContractAddress;
 
-      for(let i = 1; i < currentStage.data; i++) {
+      for (let i = 1; i < currentStage.data; i++) {
         const ans = await gardenContract.methods
-                            .getCorrectPathForStage(sessionId, i)
-                            .call();
+          .getCorrectPathForStage(sessionId, i)
+          .call();
         answers.push(parseInt(ans));
       }
-      
+
       console.log("Correct paths ", answers);
       return answers;
     },
     {
-      ...hookCommon
+      ...hookCommon,
     }
   );
 
-  const tokenIds = useQuery(
+  const userOwnedTokens = useQuery<number[]>(
     ["get_token", sessionInfo],
     async () => {
       if (!sessionInfo || !sessionInfo.data) {
-        return;
+        return [];
       }
 
       const tokenAddress = sessionInfo.data[0];
@@ -193,15 +179,54 @@ const Garden = () => {
         .balanceOf(web3ctx.account)
         .call();
 
-      console.log("Balance: ", balance);
+      console.log("Owned balance: ", balance);
 
-      const firstTokenId = await tokenContract.methods
-        .tokenOfOwnerByIndex(web3ctx.account, 0)
+      const tokens = [];
+
+      for (let i = 0; i < parseInt(balance); i++) {
+        const tok = await tokenContract.methods
+          .tokenOfOwnerByIndex(web3ctx.account, i)
+          .call();
+        tokens.push(parseInt(tok));
+      }
+
+      console.log("User owned tokens: ", tokens);
+
+      return tokens;
+    },
+    {
+      ...hookCommon,
+    }
+  );
+
+  const stakedTokens = useQuery<number[]>(
+    ["get_token", gardenContractAddress, sessionId],
+    async () => {
+      if(gardenContractAddress == ZERO_ADDRESS || sessionId < 1) return [];
+
+      const gardenContract: any = new web3ctx.web3.eth.Contract(
+        GardenABI
+      ) as any as GardenABIType;
+      gardenContract.options.address = gardenContractAddress;
+
+      const balance = await gardenContract.methods
+        .numTokensStakedIntoSession(sessionId, web3ctx.account)
         .call();
 
-      console.log("First token: ", firstTokenId);
+      console.log("Staked balance: ", balance);
 
-      return [firstTokenId];
+      const tokens = [];
+
+      for (let i = 1; i <= parseInt(balance); i++) {
+        const tok = await gardenContract.methods
+          .tokenOfStakerInSessionByIndex(sessionId, web3ctx.account, i)
+          .call();
+        tokens.push(parseInt(tok));
+      }
+
+      console.log("Staked: ", tokens);
+
+      return tokens;
     },
     {
       ...hookCommon,
@@ -210,9 +235,11 @@ const Garden = () => {
 
   const setApproval = useMutation(
     () => {
-      return tokenContract.methods.setApprovalForAll(gardenContractAddress, true).send({
-        from: web3ctx.account
-      });
+      return tokenContract.methods
+        .setApprovalForAll(gardenContractAddress, true)
+        .send({
+          from: web3ctx.account,
+        });
     },
     {
       onSuccess: () => {
@@ -226,18 +253,28 @@ const Garden = () => {
 
   const stakeTokens = useMutation(
     () => {
-      console.log("Attempting to stake ", tokenIds.data, " into session ", sessionId, ".");
+      console.log(
+        "Attempting to stake ",
+        userOwnedTokens.data,
+        " into session ",
+        sessionId,
+        "."
+      );
       const gardenContract: any = new web3ctx.web3.eth.Contract(
         GardenABI
       ) as any as GardenABIType;
       gardenContract.options.address = gardenContractAddress;
-      return gardenContract.methods.stakeTokensIntoSession(sessionId, tokenIds.data).send({
-        from: web3ctx.account
-      });
+      return gardenContract.methods
+        .stakeTokensIntoSession(sessionId, userOwnedTokens.data)
+        .send({
+          from: web3ctx.account,
+        });
     },
     {
       onSuccess: () => {
         toast("Staking successful.", "success");
+        userOwnedTokens.refetch();
+        stakedTokens.refetch();
       },
       onError: (error) => {
         toast("Staking failed.", "error");
@@ -248,18 +285,30 @@ const Garden = () => {
 
   const unstakeTokens = useMutation(
     () => {
-      console.log("Attempting to unstake ", [18], " from session ", sessionId, ".");
-      const gardenContract: any = new web3ctx.web3.eth.Contract(
+      console.log(
+        "Attempting to unstake ",
+        [18],
+        " from session ",
+        sessionId,
+        "."
+      );
+      console.log(gardenContractAddress);
+      console.log(web3ctx.account);
+      const gardenContract = new web3ctx.web3.eth.Contract(
         GardenABI
       ) as any as GardenABIType;
       gardenContract.options.address = gardenContractAddress;
-      return gardenContract.methods.unstakeTokensFromSession(sessionId, [18]).send({
-        from: web3ctx.account
+      return gardenContract.methods
+        .unstakeTokensFromSession(sessionId, [18])
+        .send({
+          from: web3ctx.account,
       });
     },
     {
       onSuccess: () => {
         toast("Unstaking successful.", "success");
+        userOwnedTokens.refetch();
+        stakedTokens.refetch();
       },
       onError: (error) => {
         toast("Unstaking failed.", "error");
@@ -268,16 +317,26 @@ const Garden = () => {
     }
   );
 
-  const choosePath = useMutation(
+  const choosePath = useMutation<unknown, unknown, number, unknown>(
     (path) => {
-      console.log("Attempting to choose path ", path, " in stage ", currentStage, "for tokens ", tokenIds.data, ".");
+      console.log(
+        "Attempting to choose path ",
+        path,
+        " in stage ",
+        currentStage,
+        "for tokens ",
+        stakedTokens.data,
+        "."
+      );
       const gardenContract: any = new web3ctx.web3.eth.Contract(
         GardenABI
       ) as any as GardenABIType;
       gardenContract.options.address = gardenContractAddress;
-      return gardenContract.methods.chooseCurrentStagePaths(sessionId, tokenIds.data, [path]).send({
-        from: web3ctx.account
-      });
+      return gardenContract.methods
+        .chooseCurrentStagePaths(sessionId, stakedTokens.data, [path])
+        .send({
+          from: web3ctx.account,
+        });
     },
     {
       onSuccess: () => {
@@ -301,10 +360,29 @@ const Garden = () => {
       <Heading>Garden of Forking Paths</Heading>
       {sessionMetadata?.data &&
         <HStack my="10" alignItems="top">
-          <CharacterPanel sessionMetadata={sessionMetadata.data} path={selectedPath} setApproval={setApproval} stakeTokens={stakeTokens} unstakeTokens={unstakeTokens} choosePath={choosePath}></CharacterPanel>
-          <SessionPanel sessionMetadata={sessionMetadata.data} currentStage={currentStage} correctPaths={correctPaths} generatePathId={generatePathId} setSelectedStage={setSelectedStage} setSelectedPath={setSelectedPath} />
+          <CharacterPanel
+            // sessionMetadata={sessionMetadata.data}
+            ownedTokens={userOwnedTokens.data || []}
+            stakedTokens={stakedTokens.data || []}
+            path={selectedPath}
+            setApproval={setApproval}
+            stakeTokens={stakeTokens}
+            unstakeTokens={unstakeTokens}
+            choosePath={choosePath}
+          ></CharacterPanel>
+          <SessionPanel
+            sessionMetadata={sessionMetadata.data}
+            currentStage={currentStage}
+            correctPaths={correctPaths}
+            generatePathId={generatePathId}
+            setSelectedStage={setSelectedStage}
+            setSelectedPath={setSelectedPath}
+          />
           <Spacer />
-          <MetadataPanel sessionMetadata={sessionMetadata.data} selectedStage={selectedStage} />
+          <MetadataPanel
+            sessionMetadata={sessionMetadata.data}
+            selectedStage={selectedStage}
+          />
         </HStack>
       }
     </Box>

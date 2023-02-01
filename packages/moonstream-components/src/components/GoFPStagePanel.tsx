@@ -1,5 +1,5 @@
 import React from "react";
-import { Flex, Center, Text, HStack } from "@chakra-ui/react";
+import { Flex, Center } from "@chakra-ui/react";
 import { StageMetadata, PathStatus } from "./GoFPTypes";
 import PathCard from "./GoFPPathCard";
 

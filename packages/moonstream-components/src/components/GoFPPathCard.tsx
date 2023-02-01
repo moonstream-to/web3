@@ -1,5 +1,5 @@
 import React from "react";
-import { Flex, Image, Button, Text, Box } from "@chakra-ui/react";
+import { Flex, Image, Text, Box } from "@chakra-ui/react";
 import { PathMetadata, PathStatus } from "./GoFPTypes";
 
 const PathCard = ({
