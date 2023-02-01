@@ -1,13 +1,10 @@
 from enum import Enum
 import unittest
 
-from brownie import accounts, network
+from brownie import accounts
 from brownie.exceptions import VirtualMachineError
-from brownie.network import web3 as web3_client
 
-from chainlink import MockChainlinkCoordinator, MockLinkToken, mock_vrf_oracle
-from . import Lootbox, MockTerminus, MockErc20
-from .core import lootbox_item_to_tuple, lootbox_gogogo
+from .core import lootbox_item_to_tuple
 from .test_lootbox import LootboxTestCase, LootboxTypes
 
 

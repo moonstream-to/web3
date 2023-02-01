@@ -30,6 +30,8 @@ library LibDropper {
         mapping(uint256 => uint256) MaxClaimable;
         // address => dropID => total amount claimed for that drop
         mapping(address => mapping(uint256 => uint256)) AmountClaimed;
+        // dropID => requestID => true if claimed and false if not
+        mapping(uint256 => mapping(uint256 => bool)) DropRequestClaimed;
     }
 
     function dropperStorage()

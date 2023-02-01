@@ -1,13 +1,18 @@
-name: Test smart contracts and backend code
+name: Diamond Reentrancy Guard tests
 
 on:
   pull_request:
     paths:
-      - "contracts/**"
-      - "cli/**"
+      - "contracts/test/**"
+      - "contracts/diamond/security/DiamondReentrancyGuard.sol"
+      - "cli/enginecli/test_reentrancy_guard.py"
+      - "cli/enginecli/ExploitContract.py"
+      - "cli/enginecli/ReentrancyExploitable.py"
+      - "cli/enginecli/Diamond*"
+      - "cli/enginecli/OwnershipFacet.py"
+      - ".github/workflows/reentrancy-guard.yml"
     branches:
       - main
-
 jobs:
   build:
     runs-on: ubuntu-20.04
@@ -34,4 +39,4 @@ jobs:
           pip install -e .
       - name: Run tests
         working-directory: cli/
-        run: bash test.sh
+        run: bash test.sh enginecli.test_crafting

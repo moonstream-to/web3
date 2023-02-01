@@ -83,7 +83,7 @@ class CraftingTestCase(unittest.TestCase):
             {"from": accounts[0]},
         )
 
-        cls.diamond_address = gogogo_result["Diamond"]
+        cls.diamond_address = gogogo_result["contracts"]["Diamond"]
 
         crafting_facet = CraftingFacet.CraftingFacet(None)
         crafting_facet.deploy({"from": accounts[0]})

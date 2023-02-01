@@ -39,7 +39,8 @@
   z-index: 1009;
 }
 .pro-sidebar > .pro-sidebar-inner {
-  background: #212990;
+  background: #1A1D22
+  ;
   height: 100%;
   position: relative;
   z-index: 101;
@@ -65,13 +66,13 @@
   z-index: 101;
 }
 .pro-sidebar > .pro-sidebar-inner > .pro-sidebar-layout .pro-sidebar-header {
-  border-bottom: 1px solid #212990;
+  border-bottom: 1px solid white;
 }
 .pro-sidebar > .pro-sidebar-inner > .pro-sidebar-layout .pro-sidebar-content {
   flex-grow: 1;
 }
 .pro-sidebar > .pro-sidebar-inner > .pro-sidebar-layout .pro-sidebar-footer {
-  border-top: 1px solid #212990;
+  border-top: 1px solid white;
 }
 .pro-sidebar > .pro-sidebar-inner > .pro-sidebar-layout ul {
   list-style-type: none;
@@ -254,6 +255,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+#sidebar-account {
+  background-color: white;
+  color: black;
 }
 
 .pro-sidebar .pro-menu {

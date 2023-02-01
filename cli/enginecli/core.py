@@ -22,6 +22,7 @@ from . import (
     OwnershipFacet,
     ReentrancyExploitable,
     CraftingFacet,
+    GOFPFacet,
 )
 
 FACETS: Dict[str, Any] = {
@@ -31,12 +32,16 @@ FACETS: Dict[str, Any] = {
     "OwnershipFacet": OwnershipFacet,
     "ReentrancyExploitable": ReentrancyExploitable,
     "CraftingFacet": CraftingFacet,
+    "GOFPFacet": GOFPFacet,
 }
 
 FACET_INIT_CALLDATA: Dict[str, str] = {
     "DropperFacet": lambda address, *args: DropperFacet.DropperFacet(
         address
-    ).contract.init.encode_input(*args)
+    ).contract.init.encode_input(*args),
+    "GOFPFacet": lambda address, *args: GOFPFacet.GOFPFacet(
+        address
+    ).contract.init.encode_input(*args),
 }
 
 DIAMOND_FACET_PRECEDENCE: List[str] = [
@@ -54,6 +59,7 @@ FACET_PRECEDENCE: List[str] = [
 
 class EngineFeatures(Enum):
     DROPPER = "dropper"
+    GOFP = "GardenOfForkingPaths"
 
 
 def feature_from_facet_name(facet_name: str) -> Optional[EngineFeatures]:
@@ -64,11 +70,13 @@ def feature_from_facet_name(facet_name: str) -> Optional[EngineFeatures]:
 
 
 FEATURE_FACETS: Dict[EngineFeatures, List[str]] = {
-    EngineFeatures.DROPPER: ["DropperFacet"]
+    EngineFeatures.DROPPER: ["DropperFacet"],
+    EngineFeatures.GOFP: ["GOFPFacet"],
 }
 
 FEATURE_IGNORES: Dict[EngineFeatures, List[str]] = {
-    EngineFeatures.DROPPER: {"methods": ["init"], "selectors": []}
+    EngineFeatures.DROPPER: {"methods": ["init"], "selectors": []},
+    EngineFeatures.GOFP: {"methods": ["init"], "selectors": []},
 }
 
 FACET_ACTIONS: Dict[str, int] = {"add": 0, "replace": 1, "remove": 2}
@@ -550,6 +558,36 @@ def dropper_gogogo(
     return deployment_info
 
 
+def gofp_gogogo(
+    admin_terminus_address: str,
+    admin_terminus_pool_id: int,
+    transaction_config: Dict[str, Any],
+) -> Dict[str, Any]:
+    deployment_info = diamond_gogogo(
+        owner_address=transaction_config["from"].address,
+        transaction_config=transaction_config,
+    )
+
+    gofp_facet = GOFPFacet.GOFPFacet(None)
+    gofp_facet.deploy(transaction_config=transaction_config)
+    deployment_info["contracts"]["GOFPFacet"] = gofp_facet.address
+
+    diamond_address = deployment_info["contracts"]["Diamond"]
+    facet_cut(
+        diamond_address,
+        "GOFPFacet",
+        gofp_facet.address,
+        "add",
+        transaction_config,
+        initializer_address=gofp_facet.address,
+        feature=EngineFeatures.GOFP,
+        initializer_args=[admin_terminus_address, admin_terminus_pool_id],
+    )
+    deployment_info["attached"].append("GOFPFacet")
+
+    return deployment_info
+
+
 def handle_facet_cut(args: argparse.Namespace) -> None:
     network.connect(args.network)
     diamond_address = args.address
@@ -595,6 +633,18 @@ def handle_dropper_gogogo(args: argparse.Namespace) -> None:
     transaction_config = MockTerminus.get_transaction_config(args)
     result = dropper_gogogo(
         args.terminus_address, args.terminus_pool_id, transaction_config
+    )
+    if args.outfile is not None:
+        with args.outfile:
+            json.dump(result, args.outfile)
+    json.dump(result, sys.stdout, indent=4)
+
+
+def handle_gofp_gogogo(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    transaction_config = MockTerminus.get_transaction_config(args)
+    result = gofp_gogogo(
+        args.admin_terminus_address, args.admin_terminus_pool_id, transaction_config
     )
     if args.outfile is not None:
         with args.outfile:
@@ -714,6 +764,32 @@ def generate_cli():
         help="(Optional) file to write deployed addresses to",
     )
     dropper_gogogo_parser.set_defaults(func=handle_dropper_gogogo)
+
+    gofp_gogogo_parser = subcommands.add_parser(
+        "gofp-gogogo",
+        help="Deploy gofp diamond contract",
+        description="Deploy gofp diamond contract",
+    )
+    Diamond.add_default_arguments(gofp_gogogo_parser, transact=True)
+    gofp_gogogo_parser.add_argument(
+        "--admin-terminus-address",
+        required=True,
+        help="Address of Terminus contract defining access control for this GardenOfForkingPaths contract",
+    )
+    gofp_gogogo_parser.add_argument(
+        "--admin-terminus-pool-id",
+        required=True,
+        type=int,
+        help="Pool ID of Terminus pool for administrators of this GardenOfForkingPaths contract",
+    )
+    gofp_gogogo_parser.add_argument(
+        "-o",
+        "--outfile",
+        type=argparse.FileType("w"),
+        default=None,
+        help="(Optional) file to write deployed addresses to",
+    )
+    gofp_gogogo_parser.set_defaults(func=handle_gofp_gogogo)
 
     lootbox_gogogo_parser = subcommands.add_parser(
         "lootbox-gogogo",

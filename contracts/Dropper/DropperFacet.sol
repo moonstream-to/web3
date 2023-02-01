@@ -254,9 +254,8 @@ contract DropperFacet is
         LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
 
         require(
-            ds.AmountClaimed[msg.sender][dropId] + amount <=
-                ds.MaxClaimable[dropId],
-            "Dropper: claim -- Claimant would exceed the maximum claimable number of tokens for this drop."
+            !ds.DropRequestClaimed[dropId][requestID],
+            "Dropper.claim: That (dropID, requestID) pair has already been claimed"
         );
 
         bytes32 hash = claimMessageHash(
@@ -280,6 +279,12 @@ contract DropperFacet is
         if (amount == 0) {
             amount = claimToken.amount;
         }
+
+        require(
+            ds.AmountClaimed[msg.sender][dropId] + amount <=
+                ds.MaxClaimable[dropId],
+            "Dropper: claim -- Claimant would exceed the maximum claimable number of tokens for this drop."
+        );
 
         if (claimToken.tokenType == ERC20_TYPE) {
             IERC20 erc20Contract = IERC20(claimToken.tokenAddress);
@@ -322,6 +327,7 @@ contract DropperFacet is
         }
 
         ds.AmountClaimed[msg.sender][dropId] += amount;
+        ds.DropRequestClaimed[dropId][requestID] = true;
 
         emit Claimed(dropId, msg.sender, requestID, amount);
     }

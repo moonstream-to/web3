@@ -1,16 +1,12 @@
 import React from "react";
 import { RedocStandalone } from "redoc";
 import { Box } from "@chakra-ui/react";
-import { getLayout } from "moonstream-components/src/layouts/RootLayout";
+import { getLayout } from "moonstream-components/src/layoutsForPlay/RootLayout";
 import { DEFAULT_METATAGS } from "../src/constants";
 
 const API =
   process.env.NEXT_PUBLIC_ENGINE_API_URL ??
   process.env.NEXT_PUBLIC_PLAY_API_URL;
-
-
-
-
 
 const Docs = () => {
   return (

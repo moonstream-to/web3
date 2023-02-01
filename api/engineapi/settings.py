@@ -2,6 +2,14 @@ import os
 
 from web3 import Web3, HTTPProvider
 from web3.middleware import geth_poa_middleware
+from bugout.app import Bugout
+
+# Bugout
+BUGOUT_BROOD_URL = os.environ.get("BUGOUT_BROOD_URL", "https://auth.bugout.dev")
+BUGOUT_SPIRE_URL = os.environ.get("BUGOUT_SPIRE_URL", "https://spire.bugout.dev")
+
+
+bugout_client = Bugout(brood_api_url=BUGOUT_BROOD_URL, spire_api_url=BUGOUT_SPIRE_URL)
 
 
 # Origin
@@ -60,6 +68,13 @@ MOONSTREAM_POLYGON_WEB3_PROVIDER_URI = os.environ.get(
     "MOONSTREAM_POLYGON_WEB3_PROVIDER_URI"
 )
 MOONSTREAM_XDAI_WEB3_PROVIDER_URI = os.environ.get("MOONSTREAM_XDAI_WEB3_PROVIDER_URI")
+
+# TODO(kompotkot): Leave a comment here explaining templated *_WEB3_PROVIDER_URI when we set
+# NODEBALANCER_ACCESS_ID
+ETHEREUM_PROVIDER_URI = MOONSTREAM_ETHEREUM_WEB3_PROVIDER_URI
+MUMBAI_PROVIDER_URI = MOONSTREAM_MUMBAI_WEB3_PROVIDER_URI
+POLYGON_PROVIDER_URI = MOONSTREAM_POLYGON_WEB3_PROVIDER_URI
+XDAI_PROVIDER_URI = MOONSTREAM_XDAI_WEB3_PROVIDER_URI
 
 NODEBALANCER_ACCESS_ID = os.environ.get("ENGINE_NODEBALANCER_ACCESS_ID")
 if NODEBALANCER_ACCESS_ID is not None:
@@ -139,3 +154,13 @@ except:
     raise ValueError(
         f"ENGINE_DB_POOL_RECYCLE_SECONDS must be an integer: {ENGINE_DB_POOL_RECYCLE_SECONDS_RAW}"
     )
+
+MOONSTREAM_APPLICATION_ID = os.environ.get("MOONSTREAM_APPLICATION_ID", "")
+if MOONSTREAM_APPLICATION_ID == "":
+    raise ValueError("MOONSTREAM_APPLICATION_ID environment variable must be set")
+
+LEADERBOARD_RESOURCE_TYPE = "leaderboard"
+
+MOONSTREAM_ADMIN_ACCESS_TOKEN = os.environ.get("MOONSTREAM_ADMIN_ACCESS_TOKEN", "")
+if MOONSTREAM_ADMIN_ACCESS_TOKEN == "":
+    raise ValueError("MOONSTREAM_ADMIN_ACCESS_TOKEN environment variable must be set")

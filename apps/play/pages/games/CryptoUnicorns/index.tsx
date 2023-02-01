@@ -1,5 +1,5 @@
 import React, { useContext, useEffect } from "react";
-import { getLayout } from "moonstream-components/src/layouts/EngineLayout";
+import { getLayout } from "moonstream-components/src/layoutsForPlay/EngineLayout";
 import {
   Flex,
   Center,
@@ -18,30 +18,30 @@ import {
   FormErrorMessage,
   Button,
   HStack,
-  Grid,
 } from "@chakra-ui/react";
-import { CloseIcon } from "@chakra-ui/icons";
-const StashABI = require("../../games/cu/StashABI.json");
-import { StashABI as StashABIType } from "../../games/cu/StashABI";
-const GameBankABI = require("../../games/cu/GameBankABI.json");
-import { GameBankABI as GameBankABIType } from "../../games/cu/GameBankABI";
-const ERC721MetadataABI = require("../../../../abi/MockERC721.json");
-import { MockERC721 } from "../../../../types/contracts/MockERC721";
+
+import { useRouter } from "../../../../../packages/moonstream-components/src/core/hooks";
+const StashABI = require("../../../games/cu/StashABI.json");
+import { StashABI as StashABIType } from "../../../games/cu/StashABI";
+const GameBankABI = require("../../../games/cu/GameBankABI.json");
+import { GameBankABI as GameBankABIType } from "../../../games/cu/GameBankABI";
+const ERC721MetadataABI = require("../../../../../abi/MockERC721.json");
+import { MockERC721 } from "../../../../../types/contracts/MockERC721";
 
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
-import { supportedChains } from "../../../../types/Moonstream";
+import { supportedChains } from "../../../../../types/Moonstream";
 import { useERC20, useToast } from "moonstream-components/src/core/hooks";
 import { useMutation, useQuery } from "react-query";
-import { DEFAULT_METATAGS } from "../../src/constants";
+import { DEFAULT_METATAGS } from "../../../src/constants";
 import {
   MAX_INT,
   chainByChainId,
 } from "moonstream-components/src/core/providers/Web3Provider";
-import LootboxCard from "../../../../packages/moonstream-components/src/components/CryptoUnicorns/LootboxCard";
-import { MockTerminus as TerminusFacet } from "../../../../types/contracts/MockTerminus";
+import LootboxCard from "../../../../../packages/moonstream-components/src/components/CryptoUnicorns/LootboxCardPlay";
+import { MockTerminus as TerminusFacet } from "../../../../../types/contracts/MockTerminus";
 import { hookCommon } from "moonstream-components/src/core/hooks";
 
-const terminusAbi = require("../../../../abi/MockTerminus.json");
+const terminusAbi = require("../../../../../abi/MockTerminus.json");
 
 const GameBankAddresses: { [key in supportedChains]: string } = {
   mumbai: "0x762aF8cbE298bbFE568BBB6709f854A01c07333D",
@@ -88,6 +88,13 @@ const UnicornsAddresses: { [key in supportedChains]: string } = {
 const LandsAddresses: { [key in supportedChains]: string } = {
   mumbai: "0x230E4e85d4549343A460F5dE0a7035130F62d74C",
   polygon: "0xA2a13cE1824F3916fC84C65e559391fc6674e6e8",
+  ethereum: "0x0000000000000000000000000000000000000000",
+  localhost: "0x0000000000000000000000000000000000000000",
+};
+
+const ShadowcornsAddresses: { [key in supportedChains]: string } = {
+  mumbai: "0x8819CFdb4Fd6Ba0464Ef2283F5F621443B7eC2F4",
+  polygon: "0xa7D50EE3D7485288107664cf758E877a0D351725",
   ethereum: "0x0000000000000000000000000000000000000000",
   localhost: "0x0000000000000000000000000000000000000000",
 };
@@ -142,7 +149,12 @@ type terminusType =
   | "communityCouncil"
   | "summerOfLoveTier1"
   | "summerOfLoveTier2"
-  | "summerOfLoveTier3";
+  | "summerOfLoveTier3"
+  | "fireShadowcornLootbox"
+  | "slimeShadowcornLootbox"
+  | "soulShadowcornLootbox"
+  | "voltShadowcornLootbox"
+  | "nebulaShadowcornLootbox";
 
 interface LootboxInfo {
   poolIdByChain: {
@@ -187,6 +199,11 @@ const terminusTypes: terminusType[] = [
   "summerOfLoveTier1",
   "summerOfLoveTier2",
   "summerOfLoveTier3",
+  "fireShadowcornLootbox",
+  "slimeShadowcornLootbox",
+  "soulShadowcornLootbox",
+  "voltShadowcornLootbox",
+  "nebulaShadowcornLootbox",
 ];
 
 const terminusInfo: { [key in terminusType]: LootboxInfo } = {
@@ -470,6 +487,46 @@ const terminusInfo: { [key in terminusType]: LootboxInfo } = {
       localhost: -1,
     },
   },
+  fireShadowcornLootbox: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 75,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  slimeShadowcornLootbox: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 77,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  soulShadowcornLootbox: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 78,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  voltShadowcornLootbox: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 79,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
+  nebulaShadowcornLootbox: {
+    poolIdByChain: {
+      mumbai: -1,
+      polygon: 76,
+      ethereum: -1,
+      localhost: -1,
+    },
+  },
 };
 
 const defaultLootboxBalances: { [key in terminusType]: number } = {
@@ -508,6 +565,11 @@ const defaultLootboxBalances: { [key in terminusType]: number } = {
   summerOfLoveTier1: 0,
   summerOfLoveTier2: 0,
   summerOfLoveTier3: 0,
+  fireShadowcornLootbox: 0,
+  slimeShadowcornLootbox: 0,
+  soulShadowcornLootbox: 0,
+  voltShadowcornLootbox: 0,
+  nebulaShadowcornLootbox: 0,
 };
 
 interface NFTMetadata {
@@ -526,6 +588,8 @@ interface NFTInfo {
 }
 
 const CryptoUnicorns = () => {
+  const router = useRouter();
+
   const [currentAccount, setCurrentAccount] = React.useState(
     "0x0000000000000000000000000000000000000000"
   );
@@ -540,15 +604,17 @@ const CryptoUnicorns = () => {
   const [RBWAddress, setRBWAddress] = React.useState("");
   const [unicornsAddress, setUnicornsAddress] = React.useState("");
   const [landsAddress, setLandsAddress] = React.useState("");
+  const [shadowcornsAddress, setShadowcornsAddress] = React.useState("");
 
-  const [lootboxBalances, setLootboxBalances] = React.useState({
-    ...defaultLootboxBalances,
-  });
+  // const [lootboxBalances, setLootboxBalances] = React.useState({
+  //   ...defaultLootboxBalances,
+  // });
 
-  const [unicorns, setUnicorns] = React.useState<NFTInfo[]>([]);
-  const [lands, setLands] = React.useState<NFTInfo[]>([]);
+  // const [unicorns, setUnicorns] = React.useState<NFTInfo[]>([]);
+  // const [lands, setLands] = React.useState<NFTInfo[]>([]);
+  // const [shadowcorns, setShadowcorns] = React.useState<NFTInfo[]>([]);
 
-  const inputField = React.useRef<HTMLInputElement | null>(null);
+  const spyAddressInput = React.useRef<HTMLInputElement | null>(null);
 
   const [spyMode, setSpyMode] = React.useState(false);
   const [displayType, setDisplayType] = React.useState(0);
@@ -571,12 +637,14 @@ const CryptoUnicorns = () => {
       setRBWAddress("");
       setUnicornsAddress("");
       setLandsAddress("");
+      setShadowcornsAddress("");
     } else {
       setTerminusAddress(TerminusAddresses[chain as supportedChains]);
       setUNIMAddress(UNIMAddresses[chain as supportedChains]);
       setRBWAddress(RBWAddresses[chain as supportedChains]);
       setUnicornsAddress(UnicornsAddresses[chain as supportedChains]);
       setLandsAddress(LandsAddresses[chain as supportedChains]);
+      setShadowcornsAddress(ShadowcornsAddresses[chain as supportedChains]);
     }
   }, [web3ctx.chainId]);
 
@@ -619,11 +687,11 @@ const CryptoUnicorns = () => {
   );
 
   // Fetch terminus balances.
-  useQuery(
-    ["cuTerminus", web3ctx.chainId, terminusAddress, currentAccount],
+  const lootboxBalances = useQuery(
+    ["cuTerminus", terminusAddress, currentAccount],
     async ({ queryKey }) => {
-      const currentChain = chainByChainId[queryKey[1] as number];
-      const currentUserAddress = queryKey[3];
+      const currentChain = chainByChainId[web3ctx.chainId as number];
+      const currentUserAddress = queryKey[2];
 
       if (!currentChain) {
         return;
@@ -665,8 +733,7 @@ const CryptoUnicorns = () => {
           `Crypto Unicorns player portal: Could not retrieve lootbox balances for the given user: ${currentUserAddress}. Lootbox pool IDs: ${poolIds}. Terminus contract address: ${terminusAddress}.`
         );
       }
-
-      setLootboxBalances(currentBalances);
+      return currentBalances;
     },
     {
       ...hookCommon,
@@ -674,11 +741,11 @@ const CryptoUnicorns = () => {
   );
 
   // Fetch unicorns.
-  useQuery(
-    ["cuUnicorns", web3ctx.chainId, unicornsAddress, currentAccount],
+  const unicorns = useQuery(
+    ["cuUnicorns", unicornsAddress, currentAccount],
     async ({ queryKey }) => {
-      const currentChain = chainByChainId[queryKey[1] as number];
-      const currentUserAddress = String(queryKey[3]);
+      const currentChain = chainByChainId[web3ctx.chainId as number];
+      const currentUserAddress = String(queryKey[2]);
 
       if (!currentChain) {
         return;
@@ -690,7 +757,7 @@ const CryptoUnicorns = () => {
       const unicornsContract = new web3ctx.web3.eth.Contract(
         ERC721MetadataABI
       ) as unknown as MockERC721;
-      unicornsContract.options.address = String(queryKey[2]);
+      unicornsContract.options.address = String(queryKey[1]);
 
       let unicornsInventory: NFTInfo[] = [];
 
@@ -745,7 +812,7 @@ const CryptoUnicorns = () => {
         console.error(e);
       }
 
-      setUnicorns(unicornsInventory);
+      return unicornsInventory;
     },
     {
       ...hookCommon,
@@ -753,11 +820,11 @@ const CryptoUnicorns = () => {
   );
 
   // Fetch lands.
-  useQuery(
-    ["cuLands", web3ctx.chainId, landsAddress, currentAccount],
+  const lands = useQuery(
+    ["cuLands", landsAddress, currentAccount],
     async ({ queryKey }) => {
-      const currentChain = chainByChainId[queryKey[1] as number];
-      const currentUserAddress = String(queryKey[3]);
+      const currentChain = chainByChainId[web3ctx.chainId as number];
+      const currentUserAddress = String(queryKey[2]);
 
       if (!currentChain) {
         return;
@@ -769,7 +836,7 @@ const CryptoUnicorns = () => {
       const landsContract = new web3ctx.web3.eth.Contract(
         ERC721MetadataABI
       ) as unknown as MockERC721;
-      landsContract.options.address = String(queryKey[2]);
+      landsContract.options.address = String(queryKey[1]);
 
       let landsInventory: NFTInfo[] = [];
 
@@ -824,7 +891,86 @@ const CryptoUnicorns = () => {
         console.error(e);
       }
 
-      setLands(landsInventory);
+      return landsInventory;
+    },
+    {
+      ...hookCommon,
+    }
+  );
+
+  // Fetch shadowcorns.
+  const shadowcorns = useQuery(
+    ["cuShadowcorns", shadowcornsAddress, currentAccount],
+    async ({ queryKey }) => {
+      const currentChain = chainByChainId[web3ctx.chainId as number];
+      const currentUserAddress = String(queryKey[2]);
+
+      if (!currentChain) {
+        return;
+      }
+      if (currentUserAddress == "0x0000000000000000000000000000000000000000") {
+        return;
+      }
+
+      const shadowcornsContract = new web3ctx.web3.eth.Contract(
+        ERC721MetadataABI
+      ) as unknown as MockERC721;
+      shadowcornsContract.options.address = String(queryKey[1]);
+
+      let shadowcornsInventory: NFTInfo[] = [];
+
+      try {
+        const numShadowcornsRaw: string = await shadowcornsContract.methods
+          .balanceOf(currentUserAddress)
+          .call();
+
+        let numShadowcorns: number = 0;
+        try {
+          numShadowcorns = parseInt(numShadowcornsRaw, 10);
+        } catch (e) {
+          console.error(
+            `Error: Could not parse number of owned shadowcorns as an integer: ${numShadowcornsRaw}`
+          );
+        }
+
+        let tokenIDPromises = [];
+        for (let i = 0; i < numShadowcorns; i++) {
+          tokenIDPromises.push(
+            shadowcornsContract.methods
+              .tokenOfOwnerByIndex(currentUserAddress, i)
+              .call()
+          );
+        }
+        const tokenIDs = await Promise.all(tokenIDPromises);
+
+        const tokenURIPromises = tokenIDs.map((tokenID) =>
+          shadowcornsContract.methods.tokenURI(tokenID).call()
+        );
+        const tokenURIs = await Promise.all(tokenURIPromises);
+
+        const tokenMetadataPromises = tokenURIs.map((tokenURI) =>
+          fetch(tokenURI).then((response) => response.json())
+        );
+        const tokenMetadata = await Promise.all(tokenMetadataPromises);
+
+        const imageURIs = tokenMetadata.map((metadata) => metadata.image);
+
+        tokenIDs.forEach((tokenID, index) => {
+          shadowcornsInventory.push({
+            tokenID,
+            tokenURI: tokenURIs[index],
+            imageURI: imageURIs[index],
+            metadata: tokenMetadata[index],
+          });
+        });
+      } catch (e) {
+        console.error(
+          "Error: There was an issue retrieving information about user's lands:"
+        );
+        console.error(e);
+      }
+
+      return shadowcornsInventory;
     },
     {
       ...hookCommon,
@@ -838,6 +984,7 @@ const CryptoUnicorns = () => {
       GameBankAddresses[
         web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
       ],
+    account: currentAccount,
   });
   const unim = useERC20({
     contractAddress: UNIMAddress,
@@ -846,6 +993,7 @@ const CryptoUnicorns = () => {
         web3ctx.targetChain?.name ? web3ctx.targetChain.name : "localhost"
       ],
     ctx: web3ctx,
+    account: currentAccount,
   });
   const contract = new web3ctx.web3.eth.Contract(
     StashABI
@@ -858,7 +1006,8 @@ const CryptoUnicorns = () => {
 
   const playAssetPath = "https://s3.amazonaws.com/static.simiotics.com/play";
   const assets = {
-    unicornMilk: `${playAssetPath}/CU_UNIM_256px.png`,
+    unimLogo: `${playAssetPath}/cu/unim-logo.png`,
+    rbwLogo: `${playAssetPath}/cu/rbw-logo.png`,
   };
 
   const toast = useToast();
@@ -931,7 +1080,7 @@ const CryptoUnicorns = () => {
     } else {
       setNotEnoughUNIM(false);
     }
-  }, [unimToStash, unim.spenderState.data, web3ctx.web3.utils]);
+  }, [unimToStash, unim.spenderState.data, web3ctx.web3.utils, currentAccount]);
 
   React.useLayoutEffect(() => {
     if (rbw.spenderState.data?.allowance && rbwToStash.length !== 0) {
@@ -968,7 +1117,7 @@ const CryptoUnicorns = () => {
     } else {
       setNotEnoughRBW(false);
     }
-  }, [rbwToStash, rbw.spenderState.data, web3ctx.web3.utils]);
+  }, [rbwToStash, rbw.spenderState.data, web3ctx.web3.utils, currentAccount]);
 
   const lootboxes = [
     {
@@ -1006,6 +1155,36 @@ const CryptoUnicorns = () => {
         "https://lh3.googleusercontent.com/u_BYIeFDCF4dC4n_Col8e1W_dNTK84uMfR6mhjLhQj7GuObvBeENqSu7L8nzDFJ9JDdpiezHpRP0PJ8ioPxOakvU3iz5lbhJy1abRWM=w600",
       displayName: "RMP Lootbox",
       balanceKey: "RMPLootbox",
+    },
+    {
+      imageUrl:
+        "https://i.seadn.io/gae/NY1AJidjM4HnDbOrBw_474MUhbp4tL8EZBRmCXFtPDcEYO_B_pF2D1fua6ggpajhJm5_4xstKg94SySs2QY4mit_XNNd4Rm8LS06?auto=format&w=1000",
+      displayName: "Fire Shadowcorn Lootbox",
+      balanceKey: "fireShadowcornLootbox",
+    },
+    {
+      imageUrl:
+        "https://i.seadn.io/gae/0RBQ7zZ0YJsoh4Ffd38olTDRZKCqlK_3FNpqYF30baO77djp_gedIiD5IRJrUArfmGmQs0VBupzaJyzKaiAHRHolWxrCDm_JvQ_4rQ?auto=format&w=1000",
+      displayName: "Slime Shadowcorn Lootbox",
+      balanceKey: "slimeShadowcornLootbox",
+    },
+    {
+      imageUrl:
+        "https://i.seadn.io/gae/J9KyCj2jbkZ93hB_ilcXBBkyhfTgObG8CjFFmFIT8_d2b6nnmpyikbGGO7_7MH45KcH1VSaqFXFeLjbWsLLj0yJxvULxbzB-1PGTETw?auto=format&w=1000",
+      displayName: "Soul Shadowcorn Lootbox",
+      balanceKey: "soulShadowcornLootbox",
+    },
+    {
+      imageUrl:
+        "https://i.seadn.io/gae/XroR84IEp89RHeEkI2ozw6h9t-hMXY8HDi1uB2nsmjpv_5-fKZrmyX8T2kF7yFRl8SArBhZOCCf6GmOBTDRLngmkdoj0moBQYt5L6sU?auto=format&w=1000",
+      displayName: "Volt Shadowcorn Lootbox",
+      balanceKey: "voltShadowcornLootbox",
+    },
+    {
+      imageUrl:
+        "https://i.seadn.io/gae/U3EE-yhtgc44g3bxUX7FWLiTmNA_q_qdCch-4jxbcd7va_LzDmMm_Mm-RL3RYszPOOu0e8DukUdyBaYo_cSyGM8Dq0l6PYbpreuwrZY?auto=format&w=1000",
+      displayName: "Nebula Shadowcorn Lootbox",
+      balanceKey: "nebulaShadowcornLootbox",
     },
   ];
 
@@ -1201,47 +1380,112 @@ const CryptoUnicorns = () => {
     }
   };
 
-  const displayCardList = (list: any, showQuantity: boolean = true) => {
+  const displayCardList = (
+    list: any,
+    displayId: number,
+    showQuantity: boolean = true
+  ) => {
     const html = (
-      <>
-        {list.map((item: any, idx: any) => {
-          const quantity = lootboxBalances[item["balanceKey"] as terminusType];
-          if (quantity == 0 && !showQuantity) {
-            return;
-          } else {
-            return (
-              <LootboxCard
-                key={idx}
-                imageUrl={item["imageUrl"]}
-                displayName={item["displayName"]}
-                lootboxBalance={quantity}
-                showQuantity={showQuantity}
-              />
-            );
-          }
-        })}
-      </>
+      <Box display={displayType == displayId ? undefined : "none"}>
+        {spyMode && (
+          <HStack alignSelf="start" pb={4}>
+            <Image ml={2} alt={"bottle"} h="24px" src={assets["unimLogo"]} />
+            <Text pr={4}>UNIM: {getUnimBalance()}</Text>
+            <Image ml={2} alt={"bottle"} h="24px" src={assets["rbwLogo"]} />
+            <Text>RBW: {getRBWBalance()}</Text>
+          </HStack>
+        )}
+        <Flex wrap="wrap" justifyContent="center" gap="20px" mt="20px">
+          {list.map((item: any, idx: any) => {
+            if (!lootboxBalances?.data) {
+              return;
+            }
+            const quantity =
+              lootboxBalances.data[item["balanceKey"] as terminusType];
+            if (quantity == 0 && !showQuantity) {
+              return;
+            } else {
+              return (
+                <LootboxCard
+                  maxW={["140px", "170px", "220px"]}
+                  key={idx}
+                  imageUrl={item["imageUrl"]}
+                  displayName={item["displayName"]}
+                  lootboxBalance={quantity}
+                  showQuantity={showQuantity}
+                />
+              );
+            }
+          })}
+        </Flex>
+      </Box>
     );
     return html;
   };
 
-  const displayERC721List = (list: any, showQuantity: boolean = true) => {
-    const html = (
-      <>
-        {list.map((item: any, idx: any) => {
-          return (
-            <LootboxCard
-              key={idx}
-              imageUrl={item["metadata"]["image"]}
-              displayName={item["metadata"]["name"]}
-              lootboxBalance={1}
-              showQuantity={showQuantity}
-            />
-          );
-        })}
-      </>
+  const displayERC721List = (
+    list: any,
+    displayId: number,
+    showQuantity: boolean = true,
+    isVideo = false
+  ) => {
+    return (
+      <Box display={displayType == displayId ? undefined : "none"}>
+        {spyMode && (
+          <HStack alignSelf="start" pb={4}>
+            <Image ml={2} alt={"bottle"} h="24px" src={assets["unimLogo"]} />
+            <Text pr={4}>UNIM: {getUnimBalance()}</Text>
+            <Image ml={2} alt={"bottle"} h="24px" src={assets["rbwLogo"]} />
+            <Text>RBW: {getRBWBalance()}</Text>
+            <Spacer />
+            <Text>{`${list.length} Item${list.length === 1 ? "" : "s"}`}</Text>
+          </HStack>
+        )}
+        {!spyMode && (
+          <HStack alignSelf="start" pb={4}>
+            <Text>{`${list.length} Item${list.length === 1 ? "" : "s"}`}</Text>
+          </HStack>
+        )}
+
+        <Flex wrap="wrap" justifyContent="center" gap="20px" mt="20px">
+          {list.map((item: any, idx: any) => {
+            return (
+              <LootboxCard
+                maxW={["140px", "170px", "220px"]}
+                key={idx}
+                imageUrl={item["metadata"]["image"]}
+                displayName={item["metadata"]["name"]}
+                lootboxBalance={1}
+                showQuantity={showQuantity}
+                isVideo={isVideo}
+              />
+            );
+          })}
+        </Flex>
+      </Box>
     );
-    return html;
+  };
+
+  const getUnimBalance = () => {
+    return unim.spenderState.data?.balance
+      ? Math.floor(
+          web3ctx.web3.utils.fromWei(
+            unim.spenderState.data?.balance,
+            "ether"
+          ) as unknown as number
+        )
+      : "0";
+  };
+
+  const getRBWBalance = () => {
+    return rbw.spenderState.data?.balance
+      ? Math.floor(
+          web3ctx.web3.utils.fromWei(
+            rbw.spenderState.data?.balance,
+            "ether"
+          ) as unknown as number
+        )
+      : "0";
   };
 
   if (
@@ -1264,15 +1508,21 @@ const CryptoUnicorns = () => {
     <Flex
       className="Games"
       borderRadius={"xl"}
-      bgColor={spyMode ? "#2D2D2D" : "blue.1000"}
+      bgColor={spyMode ? "#1A1D22" : "#1A1D22"}
     >
-      <Flex w="100%" minH="100vh" direction={"column"} px="7%" mt="100px">
+      <Flex
+        w="100%"
+        minH="100vh"
+        direction={"column"}
+        px={[0, 0, "7%"]}
+        my={["20px", "40px", "60px"]}
+      >
         <Box display={spyMode ? "none" : ""}>
           <Flex
             w="100%"
             direction={"row"}
             flexWrap="wrap"
-            mb={12}
+            mb={[3, 6, 12]}
             bgColor="pink.500"
             borderRadius={"xl"}
             boxShadow="xl"
@@ -1282,7 +1532,6 @@ const CryptoUnicorns = () => {
               <Badge
                 colorScheme={"pink"}
                 variant={"solid"}
-                fontSize={"md"}
                 borderRadius={"md"}
                 mr={2}
                 p={1}
@@ -1292,7 +1541,7 @@ const CryptoUnicorns = () => {
                     ml={2}
                     alt={"bottle"}
                     h="48px"
-                    src={assets["unicornMilk"]}
+                    src={assets["unimLogo"]}
                   />
                   <Flex direction={"column"} wrap="nowrap" w="100%">
                     <code>
@@ -1300,14 +1549,9 @@ const CryptoUnicorns = () => {
                         {unim.spenderState.isLoading ? (
                           <Spinner m={0} size={"lg"} />
                         ) : (
-                          <Flex>
+                          <Flex fontSize={["sm", "md", "lg"]}>
                             {`balance: `} <Spacer />
-                            {unim.spenderState.data?.balance
-                              ? web3ctx.web3.utils.fromWei(
-                                  unim.spenderState.data?.balance,
-                                  "ether"
-                                )
-                              : "0"}
+                            {getUnimBalance()}
                           </Flex>
                         )}
                       </Flex>
@@ -1326,64 +1570,49 @@ const CryptoUnicorns = () => {
                 mr={2}
                 p={1}
               >
-                <Flex>
-                  <Image
-                    ml={2}
-                    alt={"rbw"}
-                    h="48px"
-                    src="https://www.cryptounicorns.fun/static/media/icon_RBW.522bf8ec43ae2c866ee6.png"
-                  />
+                <HStack>
+                  <Image ml={2} alt={"rbw"} h="48px" src={assets["rbwLogo"]} />
                   <Flex direction={"column"} wrap="nowrap" w="100%">
                     <code>
-                      <Flex
-                        mx={2}
-                        mt={2}
-                        display={"inline-block"}
-                        fontSize="xl"
-                      >
+                      <Flex mx={2} display={"inline-block"} fontSize="xl">
                         {rbw.spenderState.isLoading ? (
                           <Spinner m={0} size={"lg"} />
                         ) : (
-                          <Flex>
+                          <Flex fontSize={["sm", "md", "lg"]}>
                             {`balance: `} <Spacer />
-                            {rbw.spenderState.data?.balance
-                              ? web3ctx.web3.utils.fromWei(
-                                  rbw.spenderState.data?.balance,
-                                  "ether"
-                                )
-                              : "0"}
+                            {getRBWBalance()}
                           </Flex>
                         )}
                       </Flex>
                     </code>
                   </Flex>
-                </Flex>
+                </HStack>
               </Badge>
             </Flex>
           </Flex>
-          <code style={{ alignSelf: "center" }}>
-            <Text
-              p={8}
-              textColor={"gray.600"}
-              maxW="1337px"
-              alignSelf={"center"}
-              textAlign="center"
-            >
-              {" "}
-              Use this form to stash any amount of UNIM and RBW into Crypto
-              Unicorns.
-            </Text>
-            <Text mb={4}>
-              WARNING: Only use an account with which you have already logged
-              into the game. Otherwise, the game server will not respect your
-              stash operation.
-            </Text>
-          </code>
+          <Text
+            fontSize={["sm", "md", "lg"]}
+            textColor={"gray.600"}
+            maxW="1337px"
+          >
+            Use this form to stash any amount of UNIM and RBW into Crypto
+            Unicorns.
+          </Text>
+          <Text mb={4} fontSize={["sm", "md", "lg"]}>
+            WARNING: Only use an account with which you have already logged into
+            the game. Otherwise, the game server will not respect your stash
+            operation.
+          </Text>
           <Center>
             <code>
-              <Stack p={4} bgColor={"blue.1200"} spacing={2}>
+              <Stack bgColor={"#1A1D22"} spacing={2} mx="10px">
                 <Box w="100%">
-                  <FormLabel mb="8px" wordBreak={"break-all"} w="fit-content">
+                  <FormLabel
+                    fontSize={["sm", "md", "lg"]}
+                    mb={["2px", "4px", "8px"]}
+                    wordBreak={"break-all"}
+                    w="fit-content"
+                  >
                     {"UNIM to stash"}
                   </FormLabel>
 
@@ -1394,10 +1623,15 @@ const CryptoUnicorns = () => {
                     w="100%"
                     variant={"outline"}
                   >
-                    <Flex direction={"row"} w="100%" minW="580px">
+                    <Flex
+                      direction={"row"}
+                      w="100%"
+                      minW={["100%", "480px", "580px"]}
+                    >
                       <FormControl isInvalid={notEnoughUNIM}>
                         <Input
-                          w="300px"
+                          w={["100%", "200px", "300px"]}
+                          mt="4px"
                           variant={"outline"}
                           type="search"
                           value={unimToStash}
@@ -1421,19 +1655,20 @@ const CryptoUnicorns = () => {
                       </FormControl>
                       <Spacer />
                       <Button
-                        mx={4}
                         isDisabled={
                           (!needAllowanceUNIM || unimToStash === "") &&
                           (notEnoughUNIM || unimToStash == "")
                         }
                         size="md"
-                        variant="outline"
+                        variant="cuButton"
+                        textColor="#D43F8C"
+                        borderColor="#FFFFFF"
+                        bgColor="white"
+                        fontSize={["sm", "md", "lg"]}
                         isLoading={
                           unim.setSpenderAllowance.isLoading ||
                           stashUnim.isLoading
                         }
-                        w="220px"
-                        colorScheme={"orange"}
                         onClick={() => {
                           if (needAllowanceUNIM) {
                             unim.setSpenderAllowance.mutate(MAX_INT, {
@@ -1457,7 +1692,12 @@ const CryptoUnicorns = () => {
                   </InputGroup>
                 </Box>
                 <Box w="100%">
-                  <FormLabel mb="8px" wordBreak={"break-all"} w="fit-content">
+                  <FormLabel
+                    mb={["2px", "4px", "8px"]}
+                    fontSize={["sm", "md", "lg"]}
+                    wordBreak={"break-all"}
+                    w="fit-content"
+                  >
                     {"RBW to stash"}
                   </FormLabel>
 
@@ -1468,10 +1708,15 @@ const CryptoUnicorns = () => {
                     w="100%"
                     variant={"outline"}
                   >
-                    <Flex direction={"row"} w="100%" minW="580px">
+                    <Flex
+                      direction={"row"}
+                      w="100%"
+                      minW={["95%", "480px", "580px"]}
+                    >
                       <FormControl isInvalid={notEnoughRBW}>
                         <Input
-                          w="300px"
+                          w={["100%", "200px", "300px"]}
+                          mt="4px"
                           variant={"outline"}
                           isDisabled={
                             rbw.setSpenderAllowance.isLoading ||
@@ -1481,9 +1726,6 @@ const CryptoUnicorns = () => {
                           value={rbwToStash}
                           onKeyPress={handleKeypress}
                           onChange={(event) => {
-                            console.log(
-                              event.target.value.match(/^[0-9]+$/) != null
-                            );
                             if (
                               event.target.value.match(/^[0-9]+$/) != null ||
                               event.target.value.length == 0
@@ -1498,19 +1740,20 @@ const CryptoUnicorns = () => {
                       </FormControl>
                       <Spacer />
                       <Button
-                        mx={4}
+                        variant="cuButton"
+                        textColor="#D43F8C"
+                        borderColor="#FFFFFF"
+                        bgColor="white"
+                        fontSize={["sm", "md", "lg"]}
                         isDisabled={
                           (!needAllowanceRBW || rbwToStash === "") &&
                           (notEnoughRBW || rbwToStash == "")
                         }
                         size="md"
-                        variant="outline"
                         isLoading={
                           rbw.setSpenderAllowance.isLoading ||
                           stashRBW.isLoading
                         }
-                        w="220px"
-                        colorScheme={"orange"}
                         onClick={() => {
                           if (needAllowanceRBW) {
                             rbw.setSpenderAllowance.mutate(MAX_INT, {
@@ -1548,8 +1791,18 @@ const CryptoUnicorns = () => {
           borderRadius={"xl"}
           boxShadow="xl"
           placeItems={"center"}
-          fontSize={"lg"}
+          fontSize={["md", "md", "lg"]}
+          fontWeight="700"
         >
+          {spyMode && (
+            <Image
+              src="https://s3.amazonaws.com/static.simiotics.com/play/cu/spy-icon.png"
+              alt="Spy Mode"
+              h="24px"
+              pr="2"
+              filter="invert(100%)"
+            ></Image>
+          )}
           {spyMode ? "Spy Mode" : "Inventory"}
           <Spacer />
           {spyMode && (
@@ -1558,18 +1811,26 @@ const CryptoUnicorns = () => {
               pr={6}
               onClick={() => {
                 setSpyMode(false);
+                setDisplayType(0);
+                if (spyAddressInput?.current != null) {
+                  spyAddressInput.current.value = "";
+                }
               }}
             >
-              <Text pr={2}>exit</Text>
-              <CloseIcon h="10px" />
+              <Text pr={2} cursor="pointer">
+                exit
+              </Text>
+              {/* <CloseIcon h="10px" /> */}
             </Center>
           )}
         </Flex>
         {spyMode && (
-          <Flex w="100%" pb={10}>
-            <InputGroup size="md" textColor={"blue.900"}>
+          <Flex w="100%" pb={4}>
+            <InputGroup size="md" textColor={"white"}>
               <Input
-                ref={inputField}
+                ref={spyAddressInput}
+                colorScheme="transparent"
+                bgColor="transparent"
                 variant="outline"
                 onChange={(e) => {
                   const nextValue = e.target.value;
@@ -1578,15 +1839,22 @@ const CryptoUnicorns = () => {
                   }
                 }}
                 placeholder="Type an address"
-                _placeholder={{ color: "black" }}
+                _placeholder={{ color: "white" }}
               />
               <InputRightElement width="3rem">
                 <Button
-                  h="1.75rem"
-                  size="sm"
+                  h="2rem"
+                  size="md"
+                  bg="transparent"
+                  _hover={{
+                    backgroundColor: "transparent",
+                  }}
+                  _focus={{
+                    textDecoration: "none",
+                  }}
                   onClick={() => {
-                    if (inputField?.current != null) {
-                      inputField.current.value = "";
+                    if (spyAddressInput?.current != null) {
+                      spyAddressInput.current.value = "";
                     }
                   }}
                 >
@@ -1596,115 +1864,115 @@ const CryptoUnicorns = () => {
             </InputGroup>
           </Flex>
         )}
-        <Flex pb={10} flexDirection="row">
+        <Flex pb={4} flexDirection="row" wrap="wrap">
           <Button
-            size="sm"
-            height="24px"
-            width="120px"
-            border="1px"
-            borderColor="#B6B6B6"
-            bgColor="transparent"
-            borderRadius="20px"
+            variant="whiteOutline"
+            data-selected={displayType == 0 ? true : false}
             onClick={() => {
               setDisplayType(0);
             }}
           >
-            Unicorns
+            <Text px={3}>Unicorns</Text>
           </Button>
           <Button
-            size="sm"
-            height="24px"
-            width="120px"
-            border="1px"
-            borderColor="#B6B6B6"
-            bgColor="transparent"
-            borderRadius="20px"
+            variant="whiteOutline"
+            data-selected={displayType == 6 ? true : false}
+            onClick={() => {
+              setDisplayType(6);
+            }}
+          >
+            <Text px={3}>Shadowcorns</Text>
+          </Button>
+          <Button
+            variant="whiteOutline"
+            data-selected={displayType == 1 ? true : false}
             onClick={() => {
               setDisplayType(1);
             }}
           >
-            Lands
+            <Text px={3}>Lands</Text>
           </Button>
           <Button
-            size="sm"
-            height="24px"
-            width="120px"
-            border="1px"
-            borderColor="#B6B6B6"
-            bgColor="transparent"
-            borderRadius="20px"
+            variant="whiteOutline"
+            data-selected={displayType == 2 ? true : false}
             onClick={() => {
               setDisplayType(2);
             }}
           >
-            Lootboxes
+            <Text px={3}>Lootboxes</Text>
           </Button>
           <Button
-            size="sm"
-            height="24px"
-            width="120px"
-            border="1px"
-            borderColor="#B6B6B6"
-            bgColor="transparent"
-            borderRadius="20px"
+            variant="whiteOutline"
+            data-selected={displayType == 3 ? true : false}
             onClick={() => {
               setDisplayType(3);
             }}
           >
-            Keystones
+            <Text px={3}>Keystones</Text>
           </Button>
           <Button
-            size="sm"
-            height="24px"
-            width="120px"
-            border="1px"
-            borderColor="#B6B6B6"
-            bgColor="transparent"
-            borderRadius="20px"
+            variant="whiteOutline"
+            data-selected={displayType == 4 ? true : false}
             onClick={() => {
               setDisplayType(4);
             }}
           >
-            Badges
+            <Text px={3}>Badges</Text>
           </Button>
           <Button
-            size="sm"
-            height="24px"
-            width="120px"
-            border="1px"
-            borderColor="#B6B6B6"
-            bgColor="transparent"
-            borderRadius="20px"
+            variant="whiteOutline"
+            data-selected={displayType == 5 ? true : false}
             onClick={() => {
               setDisplayType(5);
             }}
           >
-            Miscellaneous
-          </Button>
-          <Spacer />
-          <Button
-            size="sm"
-            height="24px"
-            width="120px"
-            border="1px"
-            borderColor="#B6B6B6"
-            bgColor="transparent"
-            borderRadius="20px"
-            onClick={() => {
-              setSpyMode(!spyMode);
-            }}
-          >
-            Spy Mode
+            <Text px={3}>Miscellaneous</Text>
           </Button>
         </Flex>
-        <Grid templateColumns="repeat(4, 1fr)" gap={6} mb={12} pb={10}>
-          {displayType == 0 && displayERC721List(unicorns, false)}
-          {displayType == 1 && displayERC721List(lands, false)}
-          {displayType == 2 && displayCardList(lootboxes)}
-          {displayType == 3 && displayCardList(keystones)}
-          {displayType == 4 && displayCardList(badges, false)}
-          {displayType == 5 && displayCardList(miscItems)}
-        </Grid>
+        {!spyMode && (
+          <Flex justifyContent="end">
+            <Button
+              variant="cuButton"
+              color="white"
+              bg="transparent"
+              _hover={{
+                backgroundColor: "#454545",
+              }}
+              onClick={() => {
+                router.push({
+                  pathname: "/games/CryptoUnicorns/leaderboard",
+                });
+              }}
+            >
+              Leaderboard
+            </Button>
+            <Button
+              variant="cuButton"
+              textColor="#D43F8C"
+              borderColor="#FFFFFF"
+              bgColor="white"
+              onClick={() => {
+                setSpyMode(true);
+              }}
+            >
+              <Image
+                src="https://s3.amazonaws.com/static.simiotics.com/play/cu/spy-icon.png"
+                alt="Spy Mode"
+                h={["12px", "14px", "16px"]}
+                pr="2"
+              ></Image>
+              Spy Mode
+            </Button>
+          </Flex>
+        )}
+        {unicorns?.data && displayERC721List(unicorns.data, 0, false)}
+        {lands?.data && displayERC721List(lands.data, 1, false)}
+        {lootboxBalances?.data && displayCardList(lootboxes, 2)}
+        {lootboxBalances?.data && displayCardList(keystones, 3)}
+        {lootboxBalances?.data && displayCardList(badges, 4, false)}
+        {lootboxBalances?.data && displayCardList(miscItems, 5)}
+        {shadowcorns?.data &&
+          displayERC721List(shadowcorns.data, 6, false, true)}
       </Flex>
     </Flex>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Flex,
   Image,
@@ -14,24 +14,31 @@ const _LootboxCard = ({
   imageUrl,
   lootboxBalance,
   showQuantity = true,
+  isVideo = false,
+  grayedOut = false,
   ...props
 }: {
   displayName: string;
   imageUrl: string;
   lootboxBalance: number;
   showQuantity?: boolean;
+  isVideo?: boolean;
+  grayedOut?: boolean;
 }) => {
   return (
     <Flex {...props} pb={10}>
       <VStack maxW="250" border="solid" borderColor="#373E9B" borderRadius="lg">
         <Image
           src={imageUrl}
+          as={isVideo ? "video" : undefined}
+          filter={grayedOut ? "grayscale(100%)" : undefined}
+          opacity={grayedOut ? "0.3" : undefined}
+          loading="lazy"
           w={250}
-          h={250}
-          m={"2px"}
-          alt="CU Common Lootbox"
+          borderRadius="sm"
+          alt="CU Inventory Item"
         />
-        <Box w="100%" px={2} justifyContent="left" pb={3}>
+        <Box w="100%" px={2} justifyContent="left" pb={0}>
           <Text fontSize="md">{displayName}</Text>
           {showQuantity && (
             <Flex fontSize="sm" w="100%">

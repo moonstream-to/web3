@@ -1,0 +1,10 @@
+[
+  {
+    "address": "1",
+    "score": 200000000,
+    "points_data": {
+      "something": 100000000,
+      "something_else": 100000000
+    }
+  }
+]

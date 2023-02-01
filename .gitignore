@@ -133,6 +133,8 @@ dmypy.json
 .secrets/
 .vscode/
 .engine/
+.engineapi/
+.enginecli/
 
 prod.env
 test.env
@@ -143,6 +145,9 @@ dev.test.env
 alembic.dev.ini
 alembic.prod.ini
 alembic.test.ini
+
+scratch/
+outdir/
 
 
 #Node

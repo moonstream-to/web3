@@ -1,11 +1,12 @@
 dependencies:
   - "OpenZeppelin/openzeppelin-contracts@4.3.2"
   - "bugout-dev/dao@0.0.7"
-  - "smartcontractkit/chainlink@1.0.1"
+  - "smartcontractkit/chainlink@1.10.0"
 
 compiler:
   solc:
     remappings:
-      - "@openzeppelin-contracts=OpenZeppelin/openzeppelin-contracts@4.3.2"
+      - "@openzeppelin-contracts=OpenZeppelin/openzeppelin-contracts@4.4.0"
+      - "@openzeppelin/contracts=OpenZeppelin/openzeppelin-contracts@4.4.0"
       - "@moonstream=bugout-dev/dao@0.0.7"
-      - "@chainlink=smartcontractkit/chainlink@1.0.1"
+      - "@chainlink=smartcontractkit/chainlink@1.10.0"
