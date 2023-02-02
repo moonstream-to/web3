@@ -17,6 +17,8 @@
     "@nivo/line": "^0.80.0",
     "moonstream-components": "1.0.0",
     "rc-resize-observer": "^1.2.1",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
     "yarn": "^1.22.19"
   },
   "devDependencies": {

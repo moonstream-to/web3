@@ -1,21 +1,40 @@
 import React from "react";
-import { Flex, Image, Button, Text, Box } from "@chakra-ui/react";
+import { Flex, Image, Text, Box } from "@chakra-ui/react";
 import { PathMetadata, PathStatus } from "./GoFPTypes";
+import { useDrop } from "react-dnd";
 
 const PathCard = ({
   pathMetadata,
   status = PathStatus.undecided,
   pathId,
   setSelectedPath,
+  accept,
+  handleDrop,
 }: {
   pathMetadata: PathMetadata;
   status: PathStatus;
   pathId: string;
   setSelectedPath: any;
+  accept: string;
+  handleDrop: any;
 }) => {
   const correctPathColor = "#3BB563";
   const incorrectPathColor = "#E85858";
   const undecidedPathColor = "#4C4C4C";
+
+  // const handleDrop = (item) => {
+  //   console.log(item, pathId);
+  //   setSelectedPath(item.name, pathId);
+  // };
+
+  const [{ isOver, canDrop }, drop] = useDrop({
+    accept,
+    drop: handleDrop,
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+      canDrop: monitor.canDrop(),
+    }),
+  });
 
   const trophy =
     "https://s3.amazonaws.com/static.simiotics.com/play/minigames/trophy.png";
@@ -40,7 +59,7 @@ const PathCard = ({
   }
 
   return (
-    <Box id={pathId} px={2} onClick={() => setSelectedPath()}>
+    <Box id={pathId} px={2} ref={drop}>
       <Flex
         flexDirection="column"
         position="relative"
@@ -83,7 +102,11 @@ const PathCard = ({
             position="relative"
             opacity={status == PathStatus.undecided ? 1.0 : 0.4}
           ></Image>
-          <Text fontSize="sm" color="white" align="center">
+          <Text
+            fontSize={isOver || canDrop ? "lg" : "sm"}
+            color={isOver && canDrop ? "orange.900" : "white"}
+            align="center"
+          >
             {pathMetadata.title}
           </Text>
         </Box>

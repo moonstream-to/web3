@@ -13,6 +13,7 @@ const SessionPanel = ({
   generatePathId,
   setSelectedStage,
   setSelectedPath,
+  handleDrop,
 }: {
   sessionMetadata: SessionMetadata;
   currentStage: UseQueryResult<number>;
@@ -20,6 +21,7 @@ const SessionPanel = ({
   generatePathId: any;
   setSelectedStage: React.Dispatch<React.SetStateAction<number>>;
   setSelectedPath: React.Dispatch<React.SetStateAction<number>>;
+  handleDrop: any;
 }) => {
   const [connectionsData, setConnectionsData] = useState({
     links: [],
@@ -118,6 +120,8 @@ const SessionPanel = ({
                 generatePathId={generatePathId}
                 setSelectedStage={setSelectedStage}
                 setSelectedPath={setSelectedPath}
+                isCurrentStage={stageNumber === currentStage.data}
+                handleDrop={handleDrop}
               ></StagePanel>
             </Center>
           );

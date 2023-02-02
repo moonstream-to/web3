@@ -1,5 +1,5 @@
 import React from "react";
-import { Flex, Center, Text, HStack } from "@chakra-ui/react";
+import { Flex, Center } from "@chakra-ui/react";
 import { StageMetadata, PathStatus } from "./GoFPTypes";
 import PathCard from "./GoFPPathCard";
 
@@ -11,6 +11,8 @@ const StagePanel = ({
   generatePathId,
   setSelectedStage,
   setSelectedPath,
+  isCurrentStage,
+  handleDrop,
 }: {
   stageMetadata: StageMetadata;
   stageIdx: number;
@@ -19,6 +21,8 @@ const StagePanel = ({
   generatePathId: any;
   setSelectedStage: React.Dispatch<React.SetStateAction<number>>;
   setSelectedPath: React.Dispatch<React.SetStateAction<number>>;
+  isCurrentStage: boolean;
+  handleDrop: any;
 }) => {
   const getPathStatus = (pathIdx: number) => {
     if (completed) {
@@ -57,6 +61,8 @@ const StagePanel = ({
                   console.log("Selecting path ", pathIdx + 1);
                   setSelectedPath(pathIdx + 1);
                 }}
+                accept={isCurrentStage ? "character" : "none"}
+                handleDrop={handleDrop}
               ></PathCard>
             </Center>
           );

@@ -2,6 +2,7 @@ import React from "react";
 import { Flex, Text, Button } from "@chakra-ui/react";
 import { SessionMetadata } from "./GoFPTypes";
 import { UseMutationResult } from "react-query";
+import Character from "../../../../apps/play/components/GoFPCharacter";
 
 const CharacterPanel = ({
   sessionMetadata,
@@ -10,6 +11,7 @@ const CharacterPanel = ({
   stakeTokens,
   unstakeTokens,
   choosePath,
+  tokenIds,
 }: {
   sessionMetadata: SessionMetadata;
   path: number;
@@ -17,7 +19,14 @@ const CharacterPanel = ({
   stakeTokens: UseMutationResult<unknown, unknown, void, unknown>;
   unstakeTokens: UseMutationResult<unknown, unknown, void, unknown>;
   choosePath: UseMutationResult<unknown, unknown, number, unknown>;
+  tokenIds: number[];
 }) => {
+  // const [availableCharacters, setAvailableCharacters] = useState([
+  //   "Frodo",
+  //   "Sam",
+  //   "Pippin",
+  // ]);
+  console.log(tokenIds);
   return (
     <Flex
       backgroundColor="#353535"
@@ -40,6 +49,13 @@ const CharacterPanel = ({
       <Button colorScheme="gray" onClick={() => choosePath.mutate(path)}>
         Choose Path {path}
       </Button>
+      {tokenIds && (
+        <Flex direction="column" gap="15px">
+          {tokenIds.map((id, idx) => {
+            return <Character character={id} key={idx} />;
+          })}
+        </Flex>
+      )}
     </Flex>
   );
 };
