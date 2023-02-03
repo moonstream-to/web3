@@ -1,6 +1,6 @@
 {
   "name": "@moonstream/engine",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "SDK for moonstream engine",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
