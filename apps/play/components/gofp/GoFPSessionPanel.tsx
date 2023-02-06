@@ -77,6 +77,7 @@ const SessionPanel = ({
       }
       setConnectionsData({ links, futureLinks: newFutureStages });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [correctPaths, currentStage, sessionMetadata]);
 
   const [containerWidth, setContainerWidth] = useState(0);
