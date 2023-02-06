@@ -174,6 +174,7 @@ const Connections = ({
       }
     }
     setConnections(connections);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [links, futureStages, width]);
 
   return (

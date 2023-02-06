@@ -29,7 +29,13 @@ const MetadataPanel = ({
         <Text p={2}>{stage.lore}</Text>
       </Flex>
       <Center>
-        <Image w="300px" h="300px" src={stage.imageUrl} pt={6} />
+        <Image
+          alt={"Stage " + selectedStage}
+          w="300px"
+          h="300px"
+          src={stage.imageUrl}
+          pt={6}
+        />
       </Center>
       <Flex flexDirection="column">
         {stage.paths.map((path, pathIdx) => {

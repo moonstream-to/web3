@@ -3,7 +3,7 @@ import { Flex, Center, Text } from "@chakra-ui/react";
 import { SessionMetadata } from "./GoFPTypes";
 import StagePanel from "./GoFPStagePanel";
 import { UseQueryResult } from "react-query";
-import Connections from "../../../../apps/play/components/Connections";
+import Connections from "../Connections";
 import ResizeObserver from "rc-resize-observer";
 
 const SessionPanel = ({

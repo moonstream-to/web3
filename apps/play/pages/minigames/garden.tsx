@@ -10,10 +10,10 @@ import { GOFPFacet as GardenABIType } from "../../../../types/contracts/GOFPFace
 // import { Multicall2 } from "../../games/cu/Multicall2";
 const ERC721MetadataABI = require("../../../../abi/MockERC721.json");
 import { MockERC721 } from "../../../../types/contracts/MockERC721";
-import SessionPanel from "moonstream-components/src/components/GoFPSessionPanel";
-import MetadataPanel from "moonstream-components/src/components/GoFPMetadataPanel";
-import CharacterPanel from "moonstream-components/src/components/GoFPCharacterPanel";
-import { SessionMetadata } from "moonstream-components/src/components/GoFPTypes";
+import SessionPanel from "../../components/gofp/GoFPSessionPanel";
+import MetadataPanel from "../../components/gofp/GoFPMetadataPanel";
+import CharacterPanel from "../../components/gofp/GoFPCharacterPanel";
+import { SessionMetadata } from "../../components/gofp/GoFPTypes";
 import {
   hookCommon,
   useRouter,
@@ -41,7 +41,6 @@ const Garden = () => {
   );
   const [sessionId] = useState<number>(router.query["sessionId"]);
   const [tokenContract, setTokenContract] = useState<any>();
-
   // Not sure if we need to do anything basedo n ChainId
   // useEffect(() => {
   //   const chain: string | undefined = chainByChainId[web3ctx.chainId];
@@ -206,14 +205,21 @@ const Garden = () => {
   );
 
   const stakedTokens = useQuery<number[]>(
-    ["get_token", gardenContractAddress, sessionId],
+    ["get_token", gardenContractAddress, sessionId, web3ctx.account],
     async () => {
-      if (gardenContractAddress == ZERO_ADDRESS || sessionId < 1) return [];
+      if (
+        gardenContractAddress == ZERO_ADDRESS ||
+        sessionId < 1 ||
+        !web3ctx.account
+      )
+        return [];
 
       const gardenContract: any = new web3ctx.web3.eth.Contract(
         GardenABI
       ) as any as GardenABIType;
       gardenContract.options.address = gardenContractAddress;
+
+      console.log("Fetching staked tokens...");
 
       const balance = await gardenContract.methods
         .numTokensStakedIntoSession(sessionId, web3ctx.account)
@@ -239,6 +245,63 @@ const Garden = () => {
     }
   );
 
+  const tokenMetadata = useQuery<any>(
+    ["get_token", stakedTokens, userOwnedTokens, sessionInfo],
+    async () => {
+      if (!sessionInfo.data || !stakedTokens.data || !userOwnedTokens.data) {
+        return undefined;
+      }
+
+      const tokenAddress = sessionInfo.data[0];
+      const tokenContract = new web3ctx.web3.eth.Contract(
+        ERC721MetadataABI
+      ) as unknown as MockERC721;
+      tokenContract.options.address = tokenAddress;
+
+      // Need to get Multicall2 address on Mumbai.
+      // const multicallContract = new web3ctx.polygonClient.eth.Contract(
+      //   MulticallABI,
+      //   MULTICALL2_CONTRACT_ADDRESS
+      // );
+
+      const tokenIds = stakedTokens.data.concat(userOwnedTokens.data);
+      console.log("Fetching metdata for ", tokenIds);
+      console.log("Character contract ", tokenAddress);
+
+      const tokenMetadata: any = {};
+
+      for (let i = 0; i < tokenIds.length; i++) {
+        const uri = await tokenContract.methods.tokenURI(tokenIds[i]).call();
+        const metadata = await fetchMetadataUri(uri);
+        console.log(metadata);
+        tokenMetadata[tokenIds[i]] = metadata.data;
+      }
+
+      // let tokenMetdataQueries = [];
+      // for (let i = 0; i < tokenIds.length; i++) {
+      //   tokenMetdataQueries.push({
+      //     target: tokenAddress,
+      //     callData: tokenContract.methods.tokenURI(tokenIds[i]).encodeABI(),
+      //   });
+      // }
+
+      // return multicallContract.methods
+      //   .tryAggregate(false, tokenMetdataQueries)
+      //   .call()
+      //   .then((results: any[]) => {
+      //     console.log("Metadata URIs");
+      //     console.log(results);
+      //     return {};
+      //   });
+
+      console.log(tokenMetadata);
+      return tokenMetadata;
+    },
+    {
+      ...hookCommon,
+    }
+  );
+
   const setApproval = useMutation(
     () => {
       return tokenContract.methods
@@ -258,10 +321,10 @@ const Garden = () => {
   );
 
   const stakeTokens = useMutation(
-    () => {
+    (tokenIds: number[]) => {
       console.log(
         "Attempting to stake ",
-        userOwnedTokens.data,
+        tokenIds,
         " into session ",
         sessionId,
         "."
@@ -271,7 +334,7 @@ const Garden = () => {
       ) as any as GardenABIType;
       gardenContract.options.address = gardenContractAddress;
       return gardenContract.methods
-        .stakeTokensIntoSession(sessionId, userOwnedTokens.data)
+        .stakeTokensIntoSession(sessionId, tokenIds)
         .send({
           from: web3ctx.account,
         });
@@ -290,10 +353,10 @@ const Garden = () => {
   );
 
   const unstakeTokens = useMutation(
-    () => {
+    (tokenIds: number[]) => {
       console.log(
         "Attempting to unstake ",
-        [18],
+        tokenIds,
         " from session ",
         sessionId,
         "."
@@ -304,8 +367,13 @@ const Garden = () => {
         GardenABI
       ) as any as GardenABIType;
       gardenContract.options.address = gardenContractAddress;
+
+      if (!stakedTokens.data) {
+        throw new Error("Missing staked token data.");
+      }
+
       return gardenContract.methods
-        .unstakeTokensFromSession(sessionId, [18])
+        .unstakeTokensFromSession(sessionId, tokenIds)
         .send({
           from: web3ctx.account,
         });
@@ -364,7 +432,7 @@ const Garden = () => {
       bgColor="#1A1D22"
     >
       <Heading>Garden of Forking Paths</Heading>
-      {sessionMetadata?.data && (
+      {sessionMetadata.data && (
         <HStack my="10" alignItems="top">
           <MetadataPanel
             sessionMetadata={sessionMetadata.data}
@@ -380,16 +448,19 @@ const Garden = () => {
             setSelectedPath={setSelectedPath}
           />
           <Spacer />
-          <CharacterPanel
-            // sessionMetadata={sessionMetadata.data}
-            ownedTokens={userOwnedTokens.data || []}
-            stakedTokens={stakedTokens.data || []}
-            path={selectedPath}
-            setApproval={setApproval}
-            stakeTokens={stakeTokens}
-            unstakeTokens={unstakeTokens}
-            choosePath={choosePath}
-          ></CharacterPanel>
+          {tokenMetadata.data && (
+            <CharacterPanel
+              // sessionMetadata={sessionMetadata.data}
+              ownedTokens={userOwnedTokens.data || []}
+              stakedTokens={stakedTokens.data || []}
+              tokenMetadata={tokenMetadata.data}
+              path={selectedPath}
+              setApproval={setApproval}
+              stakeTokens={stakeTokens}
+              unstakeTokens={unstakeTokens}
+              choosePath={choosePath}
+            ></CharacterPanel>
+          )}
         </HStack>
       )}
     </Box>

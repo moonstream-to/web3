@@ -65,6 +65,7 @@ const PathCard = ({
         </Box>
         <Box position="relative" h="90px" w="90px">
           <Image
+            alt={pathId}
             src={status == PathStatus.correct ? trophy : skull}
             h="40px"
             w="40px"
@@ -74,6 +75,7 @@ const PathCard = ({
             display={status == PathStatus.undecided ? "none" : ""}
           ></Image>
           <Image
+            alt={pathId}
             src={pathMetadata.imageUrl}
             h="90px"
             w="90px"
