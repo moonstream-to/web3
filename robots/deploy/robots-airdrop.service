@@ -1,0 +1,16 @@
+[Unit]
+Description=Engine robots for Airdrop event
+After=network.target
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+[Service]
+WorkingDirectory=/home/ubuntu/engine/robots
+EnvironmentFile=/home/ubuntu/engine-secrets/app.env
+Restart=on-failure
+RestartSec=15s
+ExecStart=/home/ubuntu/engine/robots/robots --network polygon --address "${MOONSTREAM_TERMINUS_POLYGON_CONTRACT_ADDRESS}" --pool-id 184 --value 1 --collection 123
+SyslogIdentifier=robots-airdrop
+
+[Install]
+WantedBy=multi-user.target
