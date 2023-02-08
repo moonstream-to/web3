@@ -55,7 +55,7 @@ func (ec *EntityClient) InitializeEntityClient(collection_id string) error {
 }
 
 // Make HTTP calls to required servers
-func caller(method, url string, reqBody io.Reader, headers map[string]string, timeout int64) (*[]byte, int, error) {
+func caller(method, url string, reqBody io.Reader, headers map[string]string, timeout int) (*[]byte, int, error) {
 	req, err := http.NewRequest(method, url, reqBody)
 	if err != nil {
 		return nil, 0, err
@@ -84,7 +84,7 @@ func caller(method, url string, reqBody io.Reader, headers map[string]string, ti
 
 // FetchPublicSearchUntouched request not touched entities, ready to airdrop
 // TODO(kompotkot): Pass with robots header unique identifier of robot
-func (ec *EntityClient) FetchPublicSearchUntouched(limit, timeout int64) (int, EntitySearchResponse, error) {
+func (ec *EntityClient) FetchPublicSearchUntouched(limit, timeout int) (int, EntitySearchResponse, error) {
 	data := EntitySearchResponse{}
 
 	url := fmt.Sprintf("%s/collections/%s/search?required_field=!touch:true&limit=%d", ec.PublicEndpoint, ec.CollectionId, limit)
@@ -105,7 +105,7 @@ func (ec *EntityClient) FetchPublicSearchUntouched(limit, timeout int64) (int, E
 }
 
 // TODO(kompotkot): Create batch endpoint for tags creation
-func (ec *EntityClient) TouchPublicEntity(entityId string, timeout int64) (int, []string, error) {
+func (ec *EntityClient) TouchPublicEntity(entityId string, timeout int) (int, []string, error) {
 	var data []string
 
 	url := fmt.Sprintf("%s/collections/%s/entities/%s", ec.PublicEndpoint, ec.CollectionId, entityId)

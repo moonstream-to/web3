@@ -95,7 +95,7 @@ func cli() {
 	log.Println("Configuration of entity client is complete")
 
 	min_sleep_time := 5
-	max_sleep_time := 10
+	max_sleep_time := 60
 	timer := min_sleep_time
 
 	var err_sum int64
@@ -106,7 +106,7 @@ func cli() {
 		empty_addresses_len, err := AirdropRun(entity_client, pool_id_flag, contract, signer, network, value_flag)
 		if err != nil {
 			log.Printf("During AirdropRun an error occurred, err: %v", err)
-			timer = int(math.Min(float64(max_sleep_time), float64(timer+10)))
+			timer = timer + 10
 			err_sum++
 			continue
 		}

@@ -5,13 +5,17 @@ import (
 	"math/big"
 )
 
+var (
+	SEARCH_BATCH_SIZE = 20
+)
+
 type Claimant struct {
 	EntityId string
 	Address  string
 }
 
 func AirdropRun(entity_client EntityClient, pool_id int64, contract ContractTerminus, signer Signer, network Network, value int64) (int64, error) {
-	status_code, search_data, err := entity_client.FetchPublicSearchUntouched(10, 10)
+	status_code, search_data, err := entity_client.FetchPublicSearchUntouched(SEARCH_BATCH_SIZE, 15)
 	if err != nil {
 		return 0, err
 	}
