@@ -9,7 +9,7 @@ WorkingDirectory=/home/ubuntu/engine/robots
 EnvironmentFile=/home/ubuntu/engine-secrets/app.env
 Restart=on-failure
 RestartSec=15s
-ExecStart=/home/ubuntu/engine/robots/robots --network polygon --address "${MOONSTREAM_TERMINUS_POLYGON_CONTRACT_ADDRESS}" --pool-id 999 --value 1 --collection 9dd56ece-256b-49db-9b3f-f78f9ae2a123
+ExecStart=/home/ubuntu/engine/robots/robots --network polygon --address "${MOONSTREAM_TERMINUS_DIAMOND_CONTRACT_POLYGON_ADDRESS}" --pool-id 999 --value 1 --collection 9dd56ece-256b-49db-9b3f-f78f9ae2a123
 SyslogIdentifier=robots-airdrop
 
 [Install]
