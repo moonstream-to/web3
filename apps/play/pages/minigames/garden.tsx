@@ -35,7 +35,7 @@ const Garden = () => {
   };
 
   const [selectedStage, setSelectedStage] = useState<number>(1);
-  const [selectedPath, setSelectedPath] = useState<number>(0);
+  const [selectedPath, setSelectedPath] = useState<number>(1);
   const [gardenContractAddress] = useState<string>(
     router.query["contractId"] || ZERO_ADDRESS
   );
@@ -448,19 +448,17 @@ const Garden = () => {
             setSelectedPath={setSelectedPath}
           />
           <Spacer />
-          {tokenMetadata.data && (
-            <CharacterPanel
-              // sessionMetadata={sessionMetadata.data}
-              ownedTokens={userOwnedTokens.data || []}
-              stakedTokens={stakedTokens.data || []}
-              tokenMetadata={tokenMetadata.data}
-              path={selectedPath}
-              setApproval={setApproval}
-              stakeTokens={stakeTokens}
-              unstakeTokens={unstakeTokens}
-              choosePath={choosePath}
-            ></CharacterPanel>
-          )}
+          <CharacterPanel
+            // sessionMetadata={sessionMetadata.data}
+            ownedTokens={userOwnedTokens.data || []}
+            stakedTokens={stakedTokens.data || []}
+            tokenMetadata={tokenMetadata.data}
+            path={selectedPath}
+            setApproval={setApproval}
+            stakeTokens={stakeTokens}
+            unstakeTokens={unstakeTokens}
+            choosePath={choosePath}
+          ></CharacterPanel>
         </HStack>
       )}
     </Box>
