@@ -26,9 +26,23 @@ func initializeSigner(secrets_dir_path string) (string, string, error) {
 	}
 
 	keyfile_name := os.Getenv("ENGINE_ROBOTS_KEYFILE_NAME")
-	if keyfile_name == "" {
-		keyfile_name = "keyfile"
+	if keyfile_name != "" {
+		var keyfiles []string
+		files, err := ioutil.ReadDir(secrets_dir)
+		if err != nil {
+			return "", "", errors.New("Files in secrets dir not found")
+		}
+		for _, file := range files {
+			if strings.HasPrefix(file.Name(), "UTC--") {
+				keyfiles = append(keyfiles, file.Name())
+			}
+		}
+		if len(keyfiles) != 1 {
+			return "", "", errors.New("Wrong number of keyfiles generated")
+		}
+		keyfile_name = keyfiles[0]
 	}
+
 	passfile_name := os.Getenv("ENGINE_ROBOTS_PASSFILE_NAME")
 	if passfile_name == "" {
 		passfile_name = "passfile"

@@ -26,6 +26,11 @@ ROBOTS_AIRDROP_SERVICE_FILE="robots-airdrop.service"
 
 set -eu
 
+if [ ! -d "$SECRETS_DIR" ]; then
+  echo -e "${PREFIX_WARN} Created new directory for environment variables"
+  mkdir "$SECRETS_DIR"
+fi
+
 echo
 echo
 echo -e "${PREFIX_INFO} Install checkenv"
@@ -34,7 +39,6 @@ HOME=/home/ubuntu /usr/local/go/bin/go install github.com/bugout-dev/checkenv@la
 echo
 echo
 echo -e "${PREFIX_INFO} Retrieving addition deployment parameters"
-mkdir -p "${SECRETS_DIR}"
 AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION}" /home/ubuntu/go/bin/checkenv show aws_ssm+robots:true > "${PARAMETERS_ENV_PATH}"
 
 echo
