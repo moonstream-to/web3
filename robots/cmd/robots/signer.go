@@ -26,7 +26,7 @@ func initializeSigner(secrets_dir_path string) (string, string, error) {
 	}
 
 	keyfile_name := os.Getenv("ENGINE_ROBOTS_KEYFILE_NAME")
-	if keyfile_name != "" {
+	if keyfile_name == "" {
 		var keyfiles []string
 		files, err := ioutil.ReadDir(secrets_dir)
 		if err != nil {
