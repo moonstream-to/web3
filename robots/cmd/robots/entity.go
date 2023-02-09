@@ -38,12 +38,12 @@ type EntityClient struct {
 }
 
 func (ec *EntityClient) InitializeEntityClient(collection_id string) error {
-	MOONSTREAM_ENTITY_URI := os.Getenv("MOONSTREAM_ENTITY_URI")
-	if MOONSTREAM_ENTITY_URI == "" {
-		return errors.New("Environment variable MOONSTREAM_ENTITY_URI should be specified")
+	MOONSTREAM_ENTITY_URL := os.Getenv("MOONSTREAM_ENTITY_URL")
+	if MOONSTREAM_ENTITY_URL == "" {
+		return errors.New("Environment variable MOONSTREAM_ENTITY_URL should be specified")
 	}
 
-	ec.PublicEndpoint = fmt.Sprintf("%s/public", MOONSTREAM_ENTITY_URI)
+	ec.PublicEndpoint = fmt.Sprintf("%s/public", MOONSTREAM_ENTITY_URL)
 	ec.CollectionId = collection_id
 
 	if ec.Headers == nil {
