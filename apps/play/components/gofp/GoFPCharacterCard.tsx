@@ -31,6 +31,8 @@ const CharacterCard = ({
       statusText = `Assigned to path ${tokenPath}`;
     } else if (played) {
       statusText = "Already played";
+    } else if (typeof tokenPath != "undefined") {
+      statusText = "Choose a path";
     }
     return (
       <Text
