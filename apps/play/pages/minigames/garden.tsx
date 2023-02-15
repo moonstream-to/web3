@@ -13,7 +13,10 @@ import { MockERC721 } from "../../../../types/contracts/MockERC721";
 import SessionPanel from "../../components/gofp/GoFPSessionPanel";
 import MetadataPanel from "../../components/gofp/GoFPMetadataPanel";
 import CharacterPanel from "../../components/gofp/GoFPCharacterPanel";
-import { SessionMetadata } from "../../components/gofp/GoFPTypes";
+import {
+  ChoosePathData,
+  SessionMetadata,
+} from "../../components/gofp/GoFPTypes";
 import {
   hookCommon,
   useRouter,
@@ -126,6 +129,7 @@ const Garden = () => {
     {
       ...hookCommon,
       refetchInterval: 15 * 1000,
+      notifyOnChangeProps: ["data"],
     }
   );
 
@@ -170,8 +174,6 @@ const Garden = () => {
       }
 
       const tokenAddress = sessionInfo.data[0];
-
-      console.log("Token address: ", tokenAddress);
 
       const tokenContract = new web3ctx.web3.eth.Contract(
         ERC721MetadataABI
@@ -245,6 +247,56 @@ const Garden = () => {
     }
   );
 
+  const tokenPaths = useQuery<Map<number, number>>(
+    [
+      "get_token_paths",
+      gardenContractAddress,
+      sessionId,
+      stakedTokens,
+      currentStage,
+    ],
+    async () => {
+      const tokenPaths = new Map<number, number>();
+
+      if (
+        gardenContractAddress == ZERO_ADDRESS ||
+        sessionId < 1 ||
+        !web3ctx.account ||
+        !stakedTokens.data ||
+        stakedTokens.data.length == 0 ||
+        !currentStage.data ||
+        currentStage.data == 0
+      ) {
+        return tokenPaths;
+      }
+
+      const gardenContract: any = new web3ctx.web3.eth.Contract(
+        GardenABI
+      ) as any as GardenABIType;
+      gardenContract.options.address = gardenContractAddress;
+
+      console.log("Fetching token paths...");
+
+      try {
+        for (let i = 0; i < stakedTokens.data.length; i++) {
+          const path = await gardenContract.methods
+            .getPathChoice(sessionId, stakedTokens.data[i], currentStage.data)
+            .call();
+          tokenPaths.set(stakedTokens.data[i], path as number);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+
+      console.log("Token paths: ", tokenPaths);
+
+      return tokenPaths;
+    },
+    {
+      ...hookCommon,
+    }
+  );
+
   const tokenMetadata = useQuery<any>(
     ["get_token", stakedTokens, userOwnedTokens, sessionInfo],
     async () => {
@@ -266,14 +318,12 @@ const Garden = () => {
 
       const tokenIds = stakedTokens.data.concat(userOwnedTokens.data);
       console.log("Fetching metdata for ", tokenIds);
-      console.log("Character contract ", tokenAddress);
 
       const tokenMetadata: any = {};
 
       for (let i = 0; i < tokenIds.length; i++) {
         const uri = await tokenContract.methods.tokenURI(tokenIds[i]).call();
         const metadata = await fetchMetadataUri(uri);
-        console.log(metadata);
         tokenMetadata[tokenIds[i]] = metadata.data;
       }
 
@@ -296,6 +346,48 @@ const Garden = () => {
 
       console.log(tokenMetadata);
       return tokenMetadata;
+    },
+    {
+      ...hookCommon,
+      notifyOnChangeProps: ["data"],
+    }
+  );
+
+  const tokenGuards = useQuery<Map<number, boolean>>(
+    ["get_token_guards", gardenContractAddress, sessionId, userOwnedTokens],
+    async () => {
+      const tokenGuards = new Map<number, boolean>();
+
+      if (
+        gardenContractAddress == ZERO_ADDRESS ||
+        sessionId < 1 ||
+        !userOwnedTokens.data ||
+        userOwnedTokens.data.length == 0
+      ) {
+        return tokenGuards;
+      }
+
+      const gardenContract: any = new web3ctx.web3.eth.Contract(
+        GardenABI
+      ) as any as GardenABIType;
+      gardenContract.options.address = gardenContractAddress;
+
+      console.log("Fetching token guards...");
+
+      try {
+        for (let i = 0; i < userOwnedTokens.data.length; i++) {
+          const guard = await gardenContract.methods
+            .getSessionTokenStakeGuard(sessionId, userOwnedTokens.data[i])
+            .call();
+          tokenGuards.set(userOwnedTokens.data[i], guard);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+
+      console.log("Token guards: ", tokenGuards);
+
+      return tokenGuards;
     },
     {
       ...hookCommon,
@@ -391,15 +483,15 @@ const Garden = () => {
     }
   );
 
-  const choosePath = useMutation<unknown, unknown, number, unknown>(
-    (path) => {
+  const choosePath = useMutation<unknown, unknown, ChoosePathData, unknown>(
+    (vars: ChoosePathData) => {
       console.log(
         "Attempting to choose path ",
-        path,
+        vars.path,
         " in stage ",
-        currentStage,
+        currentStage.data,
         "for tokens ",
-        stakedTokens.data,
+        vars.tokenIds,
         "."
       );
       const gardenContract: any = new web3ctx.web3.eth.Contract(
@@ -407,7 +499,11 @@ const Garden = () => {
       ) as any as GardenABIType;
       gardenContract.options.address = gardenContractAddress;
       return gardenContract.methods
-        .chooseCurrentStagePaths(sessionId, stakedTokens.data, [path])
+        .chooseCurrentStagePaths(
+          sessionId,
+          vars.tokenIds,
+          Array(vars.tokenIds.length).fill(vars.path)
+        )
         .send({
           from: web3ctx.account,
         });
@@ -415,6 +511,7 @@ const Garden = () => {
     {
       onSuccess: () => {
         toast("Path choice successful.", "success");
+        tokenPaths.refetch();
       },
       onError: (error) => {
         toast("Path choice failed.", "error");
@@ -453,6 +550,8 @@ const Garden = () => {
             ownedTokens={userOwnedTokens.data || []}
             stakedTokens={stakedTokens.data || []}
             tokenMetadata={tokenMetadata.data}
+            tokenPaths={tokenPaths.data}
+            tokenGuards={tokenGuards.data}
             path={selectedPath}
             setApproval={setApproval}
             stakeTokens={stakeTokens}

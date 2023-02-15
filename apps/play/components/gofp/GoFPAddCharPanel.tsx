@@ -8,12 +8,14 @@ import { BsArrowLeftShort } from "react-icons/bs";
 const AddCharPanel = ({
   ownedTokens,
   tokenMetadata,
+  tokenGuards,
   // setApproval,
   stakeTokens,
   setShowActive,
 }: {
   ownedTokens: number[];
   tokenMetadata: any;
+  tokenGuards?: Map<number, boolean>;
   setApproval: UseMutationResult<unknown, unknown, void, unknown>;
   stakeTokens: UseMutationResult<unknown, unknown, number[], unknown>;
   setShowActive: React.Dispatch<React.SetStateAction<boolean>>;
@@ -25,7 +27,6 @@ const AddCharPanel = ({
   const onSelect = (tokenId: number, selected: boolean) => {
     tokenState.set(tokenId, selected);
   };
-  console.log("I own ", ownedTokens.length);
   return (
     <Box py={6}>
       <Flex alignItems="center" onClick={() => setShowActive(true)}>
@@ -46,6 +47,7 @@ const AddCharPanel = ({
               tokenId={token}
               tokenImage={tokenMetadata[token].image}
               tokenName={tokenMetadata[token].name}
+              tokenGuard={tokenGuards?.get(token)}
               onSelect={onSelect}
             />
           );

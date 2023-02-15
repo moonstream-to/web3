@@ -19,3 +19,8 @@ export enum PathStatus {
   incorrect,
   undecided,
 }
+
+export type ChoosePathData = {
+  path: number;
+  tokenIds: number[];
+};

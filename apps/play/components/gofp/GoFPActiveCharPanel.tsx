@@ -11,10 +11,12 @@ import {
 import { UseMutationResult } from "react-query";
 import CharacterCard from "./GoFPCharacterCard";
 import { AiOutlinePlus } from "react-icons/ai";
+import { ChoosePathData } from "./GoFPTypes";
 
 const ActiveCharPanel = ({
   activeTokens,
   tokenMetadata,
+  tokenPaths,
   path,
   unstakeTokens,
   choosePath,
@@ -22,9 +24,10 @@ const ActiveCharPanel = ({
 }: {
   activeTokens: number[];
   tokenMetadata: any;
+  tokenPaths?: Map<number, number>;
   path: number;
   unstakeTokens: UseMutationResult<unknown, unknown, number[], unknown>;
-  choosePath: UseMutationResult<unknown, unknown, number, unknown>;
+  choosePath: UseMutationResult<unknown, unknown, ChoosePathData, unknown>;
   setShowActive: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   const tokenState: Map<number, boolean> = new Map<number, boolean>();
@@ -33,6 +36,9 @@ const ActiveCharPanel = ({
   });
   const onSelect = (tokenId: number, selected: boolean) => {
     tokenState.set(tokenId, selected);
+  };
+  const getActive = () => {
+    return activeTokens.filter((tokenId) => tokenState.get(tokenId) == true);
   };
   return (
     <Box py={6}>
@@ -46,7 +52,7 @@ const ActiveCharPanel = ({
           <Text fontSize="sm">Add More</Text>
         </Flex>
       </Flex>
-      <SimpleGrid columns={3} spacing={5} pt={4}>
+      <SimpleGrid columns={3} spacing={1} pt={4}>
         {activeTokens.map((token) => {
           return (
             <CharacterCard
@@ -54,6 +60,7 @@ const ActiveCharPanel = ({
               tokenId={token}
               tokenImage={tokenMetadata[token].image}
               tokenName={tokenMetadata[token].name}
+              tokenPath={tokenPaths && tokenPaths.get(token)}
               onSelect={onSelect}
             />
           );
@@ -67,7 +74,9 @@ const ActiveCharPanel = ({
           borderColor="#BFBFBF"
           borderRadius="18px"
           textColor="#BFBFBF"
-          onClick={() => choosePath.mutate(path)}
+          onClick={() =>
+            choosePath.mutate({ path: path, tokenIds: getActive() })
+          }
         >
           Choose Path {path}
         </Button>
@@ -75,13 +84,13 @@ const ActiveCharPanel = ({
           <Text>or&nbsp;</Text>
           <Text
             color="#EE8686"
-            onClick={() =>
-              unstakeTokens.mutate(
-                activeTokens.filter(
-                  (tokenId) => tokenState.get(tokenId) == true
-                )
-              )
-            }
+            onClick={() => {
+              console.log("Unstake button");
+              console.log(tokenState);
+              console.log(activeTokens[0]);
+              console.log(tokenState.get(activeTokens[0]));
+              unstakeTokens.mutate(getActive());
+            }}
           >
             remove characters from session
           </Text>
