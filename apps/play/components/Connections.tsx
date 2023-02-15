@@ -116,10 +116,15 @@ const Connections = ({
     futureStages.forEach(({ sources, targets }) => {
       const sortedSources = sources
         .map((sourceId) => getPoints(sourceId)!)
+        .filter((card) => card)
         .sort((a, b) => a.top.x - b.top.x);
       const sortedTargets = targets
         .map((targetId) => getPoints(targetId)!)
+        .filter((card) => card)
         .sort((a, b) => a.top.x - b.top.x);
+      if (!sortedSources.length || !sortedTargets.length) {
+        return;
+      }
       if (sources.length === 1 && targets.length === 1) {
         connections.push(
           ...oneToOneConnection(
