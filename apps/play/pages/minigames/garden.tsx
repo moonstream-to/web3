@@ -93,6 +93,7 @@ const Garden = () => {
       }
 
       const uri = sessionInfo.data[5];
+      console.log("Fetching session metadata.");
 
       return fetchMetadataUri(uri).then((res) => {
         return res.data as SessionMetadata;
@@ -100,6 +101,8 @@ const Garden = () => {
     },
     {
       ...hookCommon,
+      refetchInterval: 15 * 1000,
+      notifyOnChangeProps: ["data"],
     }
   );
 
