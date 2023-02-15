@@ -103,16 +103,17 @@ func cli() {
 	for true {
 		time.Sleep(time.Second * time.Duration(timer))
 
+		if err_sum >= 5 {
+			log.Println("AirdropRun accumulated too many errors")
+			break
+		}
+
 		empty_addresses_len, err := AirdropRun(entity_client, pool_id_flag, contract, signer, network, value_flag)
 		if err != nil {
 			log.Printf("During AirdropRun an error occurred, err: %v", err)
 			timer = timer + 10
 			err_sum++
 			continue
-		}
-		if err_sum >= 5 {
-			log.Println("AirdropRun accumulated too many errors")
-			break
 		}
 		if empty_addresses_len_sum >= 3 {
 			timer = int(math.Min(float64(max_sleep_time), float64(timer+1)))
