@@ -28,16 +28,18 @@ const MetadataPanel = ({
       <Flex borderWidth="2px" borderColor="#BFBFBF" borderRadius="10px" mt={6}>
         <Text p={2}>{stage.lore}</Text>
       </Flex>
-      <Center>
-        <Image
-          alt={"Stage " + selectedStage}
-          w="300px"
-          h="300px"
-          src={stage.imageUrl}
-          pt={6}
-        />
-      </Center>
-      <Flex flexDirection="column">
+      {stage.imageUrl.length > 0 && (
+        <Center>
+          <Image
+            alt={"Stage " + selectedStage}
+            w="300px"
+            h="300px"
+            src={stage.imageUrl}
+            pt={6}
+          />
+        </Center>
+      )}
+      <Flex flexDirection="column" mb={10}>
         {stage.paths.map((path, pathIdx) => {
           return (
             <Flex
