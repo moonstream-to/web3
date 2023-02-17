@@ -171,7 +171,7 @@ contract DropperFacet is
     }
 
     function getDrop(uint256 dropId)
-        external
+        public
         view
         returns (DroppableToken memory)
     {
@@ -222,7 +222,7 @@ contract DropperFacet is
         address claimant,
         uint256 blockDeadline,
         uint256 amount
-    ) public view returns (bytes32) {
+    ) public virtual view returns (bytes32) {
         bytes32 structHash = keccak256(
             abi.encode(
                 keccak256(
@@ -245,7 +245,7 @@ contract DropperFacet is
         uint256 blockDeadline,
         uint256 amount,
         bytes memory signature
-    ) external diamondNonReentrant {
+    ) public virtual diamondNonReentrant {
         require(
             block.number <= blockDeadline,
             "Dropper: claim -- Block deadline exceeded."
