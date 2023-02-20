@@ -163,3 +163,6 @@ package-lock.json
 scm/srv/
 scm/pwfile
 
+# ides
+.idea
+

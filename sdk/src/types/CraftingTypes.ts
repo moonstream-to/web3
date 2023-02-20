@@ -1,10 +1,10 @@
 export interface ERC20Item {
-    tokenAddrress: string
+    tokenAddress: string
     amount: string
 }
 
 export interface ERC1155Item {
-    tokenAddrress: string
+    tokenAddress: string
     tokenId: string
     amount: string
 }
