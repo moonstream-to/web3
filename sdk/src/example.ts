@@ -39,18 +39,18 @@ async function main() {
     craftingContract.connect(signer)
 
     const emptyBottle: CraftingItem = {
-        tokenAddrress: "0x0000000000000000000000000000000000000000",
+        tokenAddress: "0x0000000000000000000000000000000000000000",
         amount: "1",
         tokenId: "1",
     }
 
     const milk: CraftingItem = {
-        tokenAddrress: "0x0000000000000000000000000000000000000000",
+        tokenAddress: "0x0000000000000000000000000000000000000000",
         amount: "100000000000000000000", // 100 * 10^18, 100 unim
     }
 
     const fullBottle: CraftingItem = {
-        tokenAddrress: "0x0000000000000000000000000000000000000000",
+        tokenAddress: "0x0000000000000000000000000000000000000000",
         amount: "1",
         tokenId: "2",
     }
