@@ -9,9 +9,6 @@ import (
 var (
 	// Storing CLI definitions
 	stateCLI StateCLI
-
-	ENGINE_DROPPER_ADDRESS = os.Getenv("ENGINE_DROPPER_ADDRESS")
-	RPC_URI                = os.Getenv("RPC_URI")
 )
 
 // Command Line Interface state
@@ -26,11 +23,13 @@ type StateCLI struct {
 	helpFlag           bool
 
 	// Gen flags
-	claimIdFlag    int64
-	inputFlag      string
-	outputFlag     string
-	outputTypeFlag string
-	headerFlag     bool
+	claimIdFlag         int64
+	rpcURIFlag          string
+	contractAddressFlag string
+	inputFlag           string
+	outputFlag          string
+	outputTypeFlag      string
+	headerFlag          bool
 }
 
 func (s *StateCLI) usage() {
@@ -69,6 +68,20 @@ func (s *StateCLI) checkRequirements() {
 		if s.claimIdFlag == 0 {
 			fmt.Println("Flag claim-id should be specified")
 			os.Exit(1)
+		}
+		if s.rpcURIFlag == "" {
+			s.rpcURIFlag = os.Getenv("JSON_RPC_URI")
+			if s.rpcURIFlag == "" {
+				fmt.Println("Flag rpc-uri should be specified, or environment variable JSON_RPC_URI set")
+				os.Exit(1)
+			}
+		}
+		if s.contractAddressFlag == "" {
+			s.contractAddressFlag = os.Getenv("MOONSTREAM_DROPPER_CONTRACT_ADDRESS")
+			if s.contractAddressFlag == "" {
+				fmt.Println("Flag contract-address should be specified, or environment variable MOONSTREAM_DROPPER_CONTRACT_ADDRESS set")
+				os.Exit(1)
+			}
 		}
 		if s.inputFlag == "" {
 			fmt.Println("Flag input should be specified")
@@ -127,6 +140,8 @@ func (s *StateCLI) populateCLI() {
 
 	// Gen subcommand flag pointers
 	s.genCmd.Int64Var(&s.claimIdFlag, "claim-id", 0, "Dropper claim ID")
+	s.genCmd.StringVar(&s.rpcURIFlag, "rpc-uri", "", "JSON RPC URI for network, has priority over JSON_RPC_URI environment variable")
+	s.genCmd.StringVar(&s.contractAddressFlag, "contract-address", "", "Address of Dropper contract, has priority over MOONSTREAM_DROPPER_CONTRACT_ADDRESS environment variable")
 	s.genCmd.StringVar(&s.inputFlag, "input", "", "Addresses input to sign, supported types: .csv")
 	s.genCmd.StringVar(&s.outputFlag, "output", "output", "Output for generated messages, default: ./output.json")
 	s.genCmd.StringVar(&s.outputTypeFlag, "output-type", "json", "Output extension, default: json")
@@ -146,13 +161,21 @@ func cli() {
 		stateCLI.genCmd.Parse(os.Args[2:])
 		stateCLI.checkRequirements()
 
-		err := initSigner(stateCLI.passFileFlag, stateCLI.keyFileFlag, stateCLI.privateKeyFileFlag)
+		privateContainer, err := initSigner(stateCLI.passFileFlag, stateCLI.keyFileFlag, stateCLI.privateKeyFileFlag)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		err = initDropper()
+		client, err := InitializeNetworkClient(stateCLI.rpcURIFlag)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		contract := ContractDropper{}
+		contract.SetContractAddress(stateCLI.contractAddressFlag)
+		err = contract.InitializeContractInstance(client)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -165,7 +188,7 @@ func cli() {
 		}
 		var claimants []Claimant
 		for _, input := range inputs {
-			chm, err := claimMessageHash(stateCLI.claimIdFlag, input.Address, input.ClaimBlockDeadline, input.Amount)
+			chm, err := contract.claimMessageHash(stateCLI.claimIdFlag, input.Address, input.ClaimBlockDeadline, input.Amount)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)

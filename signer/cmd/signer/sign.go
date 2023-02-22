@@ -12,37 +12,48 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+
+	dropper_contract "github.com/bugout-dev/engine/signer/pkg/dropper"
 )
 
-var (
-	privateContainer PrivateContainer
-
-	dropper *Dropper
-)
+type ContractDropper struct {
+	Address  common.Address
+	Instance *dropper_contract.Dropper
+}
 
 type PrivateContainer struct {
 	publicKey  common.Address
 	privateKey *ecdsa.PrivateKey
 }
 
-func initDropper() error {
-	client, err := ethclient.Dial(RPC_URI)
+func (cd *ContractDropper) SetContractAddress(addressStr string) {
+	cd.Address = common.HexToAddress(addressStr)
+}
+
+func InitializeNetworkClient(rpcEndpointURI string) (*ethclient.Client, error) {
+	client, err := ethclient.Dial(rpcEndpointURI)
 	if err != nil {
-		return fmt.Errorf("Unable to initialize client, err: %v", err)
+		return nil, err
 	}
 
-	address := common.HexToAddress(ENGINE_DROPPER_ADDRESS)
-	dropper, err = NewDropper(address, client)
+	return client, nil
+}
+
+// InitializeContractInstance parse contract to instance
+func (cd *ContractDropper) InitializeContractInstance(client *ethclient.Client) error {
+	contract_instance, err := dropper_contract.NewDropper(cd.Address, client)
 	if err != nil {
-		return fmt.Errorf("Failed to create instance of contract, err: %v", err)
+		return err
 	}
+
+	cd.Instance = contract_instance
 
 	return nil
 }
 
-func claimMessageHash(claimId int64, addr string, blockDeadline int64, amount int64) ([32]byte, error) {
+func (cd *ContractDropper) claimMessageHash(claimId int64, addr string, blockDeadline int64, amount int64) ([32]byte, error) {
 	address := common.HexToAddress(addr)
-	cmh, err := dropper.ClaimMessageHash(nil, big.NewInt(claimId), address, big.NewInt(blockDeadline), big.NewInt(amount))
+	cmh, err := cd.Instance.ClaimMessageHash(nil, big.NewInt(claimId), address, big.NewInt(blockDeadline), big.NewInt(amount))
 	if err != nil {
 		return [32]byte{}, fmt.Errorf("Failed to generate claim message hash, err: %v", err)
 	}
@@ -72,30 +83,30 @@ func (pc *PrivateContainer) sign(data [32]byte) (string, error) {
 	return sig, nil
 }
 
-func initSigner(passFile, keyFile, privateKeyFile string) error {
+func initSigner(passFile, keyFile, privateKeyFile string) (*PrivateContainer, error) {
 	var publicKey common.Address
 	var privateKey *ecdsa.PrivateKey
 	if keyFile != "" {
 		passFileBytes, err := ioutil.ReadFile(passFile)
 		if err != nil {
-			return fmt.Errorf("Unable to read passFile, err: %v", err)
+			return nil, fmt.Errorf("Unable to read passFile, err: %v", err)
 		}
 		passFileLines := strings.Split(string(passFileBytes), "\n")
 		pass := passFileLines[0]
 
 		keyFileBytes, err := ioutil.ReadFile(keyFile)
 		if err != nil {
-			return fmt.Errorf("Unable to read keyFile, err: %v", err)
+			return nil, fmt.Errorf("Unable to read keyFile, err: %v", err)
 		}
 		key, err := keystore.DecryptKey(keyFileBytes, pass)
 		if err != nil {
-			return fmt.Errorf("Unable to decrypt key, err: %v", err)
+			return nil, fmt.Errorf("Unable to decrypt key, err: %v", err)
 		}
 		privateKey = key.PrivateKey
 		publicKey = crypto.PubkeyToAddress(privateKey.PublicKey)
 	}
 	if privateKeyFile != "" {
-		return fmt.Errorf("finish it")
+		return nil, fmt.Errorf("finish it")
 
 		//privateKeyFileBytes, err := ioutil.ReadFile(privateKeyFile)
 		//if err != nil {
@@ -108,9 +119,9 @@ func initSigner(passFile, keyFile, privateKeyFile string) error {
 		//publicKey = privateKey.PublicKey
 	}
 
-	privateContainer = PrivateContainer{
+	privateContainer := PrivateContainer{
 		publicKey:  publicKey,
 		privateKey: privateKey,
 	}
-	return nil
+	return &privateContainer, nil
 }

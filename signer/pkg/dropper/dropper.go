@@ -1,7 +1,7 @@
 // Code generated - DO NOT EDIT.
 // This file is a generated binding and any manual changes will be lost.
-// abigen --abi=abi.json --pkg=dropper --out=dropper.go
-package main
+
+package dropper
 
 import (
 	"errors"
