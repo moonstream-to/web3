@@ -1,0 +1,16 @@
+[Unit]
+Description=Engine robots for Great Wyrm Airdrop event
+After=network.target
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+[Service]
+WorkingDirectory=/home/ubuntu/engine/robots
+EnvironmentFile=/home/ubuntu/robots-secrets/app.env
+Restart=on-failure
+RestartSec=15s
+ExecStart=/home/ubuntu/engine/robots/robots --network caldera --address "${MOONSTREAM_TERMINUS_DIAMOND_CONTRACT_CALDERA_ADDRESS}" --pool-id 2 --value 1 --collection d6c763f5-167b-4b01-bf3b-0c9fc3ec6dae
+SyslogIdentifier=robots-great-wyrm-airdrop
+
+[Install]
+WantedBy=multi-user.target

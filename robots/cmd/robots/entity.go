@@ -88,7 +88,6 @@ func (ec *EntityClient) FetchPublicSearchUntouched(limit, timeout int) (int, Ent
 	data := EntitySearchResponse{}
 
 	url := fmt.Sprintf("%s/collections/%s/search?required_field=!touch:true&limit=%d", ec.PublicEndpoint, ec.CollectionId, limit)
-	// url := fmt.Sprintf("%s/collections/%s/search?limit=%d", ec.PublicEndpoint, ec.CollectionId, limit)
 	body, status_code, err := caller("GET", url, nil, ec.Headers, timeout)
 	if err != nil {
 		return status_code, data, err

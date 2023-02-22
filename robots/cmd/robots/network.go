@@ -53,6 +53,12 @@ func (n *Networks) InitializeNetworks() error {
 		ChainID:  big.NewInt(137),
 	}
 
+	// Manual Caldera network setup
+	n.Networks["caldera"] = Network{
+		Endpoint: "https://wyrm.constellationchain.xyz/http",
+		ChainID:  big.NewInt(322),
+	}
+
 	return nil
 }
 

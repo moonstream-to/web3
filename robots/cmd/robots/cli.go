@@ -98,25 +98,20 @@ func cli() {
 	max_sleep_time := 60
 	timer := min_sleep_time
 
-	var err_sum int64
 	var empty_addresses_len_sum int64
 	for true {
 		time.Sleep(time.Second * time.Duration(timer))
 
-		empty_addresses_len, err := AirdropRun(entity_client, pool_id_flag, contract, signer, network, value_flag)
+		empty_addresses_len, err := AirdropRun(entity_client, pool_id_flag, contract, signer, network, value_flag, network_flag)
 		if err != nil {
 			log.Printf("During AirdropRun an error occurred, err: %v", err)
 			timer = timer + 10
-			err_sum++
 			continue
 		}
-		if err_sum >= 5 {
-			log.Println("AirdropRun accumulated too many errors")
-			break
-		}
-		if empty_addresses_len_sum >= 3 {
+		if empty_addresses_len == 0 && empty_addresses_len_sum >= 3 {
 			timer = int(math.Min(float64(max_sleep_time), float64(timer+1)))
 			log.Printf("Sleeping for %d seconds because of no new empty addresses", timer)
+			empty_addresses_len_sum = 0
 			continue
 		}
 		if empty_addresses_len == 0 {
