@@ -98,7 +98,6 @@ func cli() {
 	max_sleep_time := 60
 	timer := min_sleep_time
 
-	var empty_addresses_len_sum int64
 	for true {
 		time.Sleep(time.Second * time.Duration(timer))
 
@@ -108,15 +107,11 @@ func cli() {
 			timer = timer + 10
 			continue
 		}
-		if empty_addresses_len == 0 && empty_addresses_len_sum >= 3 {
+		if empty_addresses_len == 0 {
 			timer = int(math.Min(float64(max_sleep_time), float64(timer+1)))
 			log.Printf("Sleeping for %d seconds because of no new empty addresses", timer)
-			empty_addresses_len_sum = 0
 			continue
 		}
-		if empty_addresses_len == 0 {
-			empty_addresses_len_sum++
-		}
-		timer = int(math.Max(float64(min_sleep_time), float64(timer-1)))
+		timer = int(math.Max(float64(min_sleep_time), float64(timer-10)))
 	}
 }
