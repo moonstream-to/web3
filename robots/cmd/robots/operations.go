@@ -14,7 +14,15 @@ type Claimant struct {
 	Address  string
 }
 
-func AirdropRun(entity_client EntityClient, pool_id int64, contract ContractTerminus, signer Signer, network Network, value int64) (int64, error) {
+func AirdropRun(
+	entity_client EntityClient,
+	pool_id int64,
+	contract ContractTerminus,
+	signer Signer,
+	network Network,
+	value int64,
+	network_flag string,
+) (int64, error) {
 	status_code, search_data, err := entity_client.FetchPublicSearchUntouched(SEARCH_BATCH_SIZE, 15)
 	if err != nil {
 		return 0, err
@@ -57,6 +65,9 @@ func AirdropRun(entity_client EntityClient, pool_id int64, contract ContractTerm
 		auth, err := signer.CreateTransactor(network)
 		if err != nil {
 			return empty_claimants_len, err
+		}
+		if network_flag == "caldera" {
+			auth.GasPrice = big.NewInt(0)
 		}
 
 		tx, err := contract.PoolMintBatch(auth, pool_id, empty_claimants, value)
