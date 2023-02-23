@@ -496,6 +496,42 @@ class DropperClaimERC20Tests(DropperTestCase):
         self.assertEqual(balance_claimant_1, balance_claimant_0)
         self.assertEqual(balance_dropper_1, balance_dropper_0)
 
+    def test_claim_erc20_fails_if_drop_is_inactive(self):
+        reward = 3
+        self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
+        claim_id = self.create_drop_and_return_drop_id(
+            20, self.erc20_contract.address, 0, reward, MAX_UINT, {"from": accounts[0]}
+        )
+        self.dropper.set_signer_for_drop(
+            claim_id, self.signer_0.address, {"from": accounts[0]}
+        )
+        
+        self.dropper.set_drop_status(claim_id, False, {"from": accounts[0]})
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        message_hash = self.dropper.claim_message_hash(
+            1, claim_id, accounts[1].address, block_deadline, 0
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        balance_claimant_0 = self.erc20_contract.balance_of(accounts[1].address)
+        balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
+
+        with self.assertRaises(VirtualMachineError) as vme_1:
+            self.dropper.claim(
+                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+            )
+        self.assertEqual(
+            vme_1.exception.revert_msg, "Dropper: claim -- cannot claim inactive drop"
+        )
+        balance_claimant_1 = self.erc20_contract.balance_of(accounts[1].address)
+        balance_dropper_1 = self.erc20_contract.balance_of(self.dropper.address)
+
+        self.assertEqual(balance_claimant_1, balance_claimant_0)
+        self.assertEqual(balance_dropper_1, balance_dropper_0)
+
     def test_claim_erc20_fails_if_wrong_claimant(self):
         reward = 6
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
@@ -801,6 +837,38 @@ class DropperClaimERC721Tests(DropperTestCase):
             self.dropper.claim(
                 1, claim_id, block_deadline, 1, signed_message, {"from": accounts[1]}
             )
+
+        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+    
+    def test_claim_erc721_fails_if_drop_is_inactive(self):
+        token_id = 108
+        self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
+        claim_id = self.create_drop_and_return_drop_id(
+            721, self.nft_contract.address, token_id, 1, MAX_UINT, {"from": accounts[0]}
+        )
+        self.dropper.set_signer_for_drop(
+            claim_id, self.signer_0.address, {"from": accounts[0]}
+        )
+        
+        self.dropper.set_drop_status(claim_id, False, {"from": accounts[0]})
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+        
+        message_hash = self.dropper.claim_message_hash(
+            1, claim_id, accounts[1].address, block_deadline, 0
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+
+        with self.assertRaises(VirtualMachineError) as vme_1:
+            self.dropper.claim(
+                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+            )
+        self.assertEqual(
+            vme_1.exception.revert_msg, "Dropper: claim -- cannot claim inactive drop"
+        )
 
         self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
 
@@ -1165,6 +1233,62 @@ class DropperClaimERC1155Tests(DropperTestCase):
         )
         self.assertEqual(balance_claimant_1, balance_claimant_0)
         self.assertEqual(balance_dropper_1, balance_dropper_0)
+
+    def test_claim_erc1155_fails_if_drop_is_inactive(self):
+        reward = 3
+        self.terminus.mint(
+            self.dropper.address,
+            self.terminus_pool_id,
+            10 * reward,
+            "",
+            {"from": accounts[0]},
+        )
+        claim_id = self.create_drop_and_return_drop_id(
+            1155,
+            self.terminus.address,
+            self.mintable_terminus_pool_id,
+            reward,
+            MAX_UINT,
+            {"from": accounts[0]},
+        )
+        self.dropper.set_signer_for_drop(
+            claim_id, self.signer_0.address, {"from": accounts[0]}
+        )
+
+        self.dropper.set_drop_status(claim_id, False, {"from": accounts[0]})
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        message_hash = self.dropper.claim_message_hash(
+            1, claim_id, accounts[1].address, block_deadline, 0
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        balance_claimant_0 = self.terminus.balance_of(
+            accounts[1].address, self.mintable_terminus_pool_id
+        )
+
+        pool_supply_0 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
+
+        with self.assertRaises(VirtualMachineError) as vme_1:
+            self.dropper.claim(
+                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+            )
+        self.assertEqual(
+            vme_1.exception.revert_msg, "Dropper: claim -- cannot claim inactive drop"
+        )
+        pool_supply_1 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
+
+        balance_claimant_1 = self.terminus.balance_of(
+            accounts[1].address, self.mintable_terminus_pool_id
+        )
+        self.assertEqual(balance_claimant_1, balance_claimant_0)
+        self.assertEqual(pool_supply_1, pool_supply_0)
 
     def test_claim_erc1155_fails_if_wrong_claimant(self):
         reward = 6
@@ -1711,6 +1835,55 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id
         )
 
+        self.assertEqual(balance_claimant_1, balance_claimant_0)
+        self.assertEqual(pool_supply_1, pool_supply_0)
+
+    def test_claim_erc1155_fails_if_drop_is_inactive(self):
+        reward = 3
+        claim_id = self.create_drop_and_return_drop_id(
+            self.TERMINUS_MINTABLE_TYPE,
+            self.terminus.address,
+            self.mintable_terminus_pool_id,
+            reward,
+            MAX_UINT,
+            {"from": accounts[0]},
+        )
+        self.dropper.set_signer_for_drop(
+            claim_id, self.signer_0.address, {"from": accounts[0]}
+        )
+
+        self.dropper.set_drop_status(claim_id, False, {"from": accounts[0]})
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        message_hash = self.dropper.claim_message_hash(
+            1, claim_id, accounts[1].address, block_deadline, 0
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        balance_claimant_0 = self.terminus.balance_of(
+            accounts[1].address, self.mintable_terminus_pool_id
+        )
+
+        pool_supply_0 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
+
+        with self.assertRaises(VirtualMachineError) as vme_1:
+            self.dropper.claim(
+                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+            )
+        self.assertEqual(
+            vme_1.exception.revert_msg, "Dropper: claim -- cannot claim inactive drop"
+        )
+        pool_supply_1 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
+
+        balance_claimant_1 = self.terminus.balance_of(
+            accounts[1].address, self.mintable_terminus_pool_id
+        )
         self.assertEqual(balance_claimant_1, balance_claimant_0)
         self.assertEqual(pool_supply_1, pool_supply_0)
 

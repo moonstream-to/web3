@@ -222,7 +222,7 @@ contract DropperFacet is
         address claimant,
         uint256 blockDeadline,
         uint256 amount
-    ) public virtual view returns (bytes32) {
+    ) public view virtual returns (bytes32) {
         bytes32 structHash = keccak256(
             abi.encode(
                 keccak256(
@@ -252,6 +252,11 @@ contract DropperFacet is
         );
 
         LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
+
+        require(
+            ds.IsDropActive[dropId],
+            "Dropper: claim -- cannot claim inactive drop"
+        );
 
         require(
             !ds.DropRequestClaimed[dropId][requestID],
