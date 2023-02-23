@@ -1,5 +1,5 @@
 [Unit]
-Description=Engine robots for ETH Denver Airdrop event
+Description=Engine robots for Metagov Airdrop event
 After=network.target
 StartLimitIntervalSec=300
 StartLimitBurst=3
