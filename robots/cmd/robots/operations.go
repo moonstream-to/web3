@@ -17,7 +17,7 @@ type Claimant struct {
 func AirdropRun(
 	entity_client EntityClient,
 	pool_id int64,
-	contract ContractTerminus,
+	contract NetworkContractClient,
 	signer Signer,
 	network Network,
 	value int64,

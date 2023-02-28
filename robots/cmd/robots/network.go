@@ -7,13 +7,19 @@ import (
 	"math/big"
 	"os"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+
+	terminus_contract "github.com/bugout-dev/engine/robots/pkg/terminus"
 )
 
-type NetworkClient struct {
+type NetworkContractClient struct {
 	Client *ethclient.Client
 
 	GasPrice *big.Int
+
+	ContractAddress  common.Address
+	ContractInstance *terminus_contract.Terminus
 }
 
 type Network struct {
@@ -62,20 +68,18 @@ func (n *Networks) InitializeNetworks() error {
 	return nil
 }
 
-// SetDialRpcClient parse PRC endpoint to dial client
-func (c *NetworkClient) SetDialRpcClient(rpc_endpoint_uri string) error {
+// GenDialRpcClient parse PRC endpoint to dial client
+func GenDialRpcClient(rpc_endpoint_uri string) (*ethclient.Client, error) {
 	client, err := ethclient.Dial(rpc_endpoint_uri)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	c.Client = client
-
-	return nil
+	return client, nil
 }
 
 // FetchSuggestedGasPrice fetch network for suggested gas price
-func (c *NetworkClient) FetchSuggestedGasPrice(ctx context.Context) error {
+func (c *NetworkContractClient) FetchSuggestedGasPrice(ctx context.Context) error {
 	gas_price, err := c.Client.SuggestGasPrice(ctx)
 	if err != nil {
 		return err
