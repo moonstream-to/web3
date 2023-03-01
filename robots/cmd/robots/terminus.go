@@ -80,7 +80,6 @@ func (cti *ContractTerminusInstance) PoolMintBatch(auth *bind.TransactOpts, clai
 }
 
 func (cti *ContractTerminusInstance) BalanceOfBatch(auth *bind.CallOpts, claimants []Claimant, id_int int64) ([]*big.Int, error) {
-	fmt.Println(0, cti.Instance)
 	addresses := []common.Address{}
 	ids := []*big.Int{}
 	for _, claimant := range claimants {

@@ -160,7 +160,7 @@ func AirdropRun(
 	if err != nil {
 		return 0, err
 	}
-	log.Printf("Received response %d from entities API with %d results", status_code, search_data.TotalResults)
+	log.Printf("Received response %d from entities API for collection %s with %d results", status_code, entity.CollectionId, search_data.TotalResults)
 
 	var claimants_len int64
 	var claimants []Claimant
@@ -207,7 +207,7 @@ func AirdropRun(
 		if err != nil {
 			return empty_claimants_len, err
 		}
-		log.Printf("Pending tx for PoolMintBatch: 0x%x", tx.Hash())
+		log.Printf("Pending tx for PoolMintBatch at blockchain %s and pool ID %d: 0x%x", network.Blockchain, contract.TerminusPoolId, tx.Hash())
 	}
 
 	var touched_entities int64
