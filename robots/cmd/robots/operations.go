@@ -16,6 +16,8 @@ type RobotInstance struct {
 	EntityInstance           EntityInstance
 	NetworkInstance          NetworkInstance
 	SignerInstance           SignerInstance
+
+	MintCounter int64
 }
 
 func Run(configs *[]RobotsConfig) {
@@ -30,7 +32,10 @@ func Run(configs *[]RobotsConfig) {
 
 	ctx := context.Background()
 	for _, config := range *configs {
-		robot := RobotInstance{}
+		robot := RobotInstance{
+			ValueToClaim: config.ValueToClaim,
+			MintCounter:  0, // TODO(kompotkot): Fetch minted number from blockchain
+		}
 
 		// Configure network client
 		network := networks[config.Blockchain]
@@ -119,13 +124,7 @@ func robotRun(
 	for {
 		select {
 		case <-ticker.C:
-			empty_addresses_len, err := AirdropRun(
-				robot.NetworkInstance,
-				robot.ContractTerminusInstance,
-				robot.EntityInstance,
-				robot.SignerInstance,
-				robot.ValueToClaim,
-			)
+			empty_addresses_len, err := AirdropRun(&robot)
 			if err != nil {
 				log.Printf("During AirdropRun an error occurred, err: %v", err)
 				timer = timer + 10
@@ -144,23 +143,21 @@ func robotRun(
 	}
 }
 
+func (ri *RobotInstance) IncreaseMintCounter(num int64) {
+
+}
+
 type Claimant struct {
 	EntityId string
 	Address  string
 }
 
-func AirdropRun(
-	network NetworkInstance,
-	contract ContractTerminusInstance,
-	entity EntityInstance,
-	signer SignerInstance,
-	valueToClaim int64,
-) (int64, error) {
-	status_code, search_data, err := entity.FetchPublicSearchUntouched(JOURNAL_SEARCH_BATCH_SIZE)
+func AirdropRun(robot *RobotInstance) (int64, error) {
+	status_code, search_data, err := robot.EntityInstance.FetchPublicSearchUntouched(JOURNAL_SEARCH_BATCH_SIZE)
 	if err != nil {
 		return 0, err
 	}
-	log.Printf("Received response %d from entities API for collection %s with %d results", status_code, entity.CollectionId, search_data.TotalResults)
+	log.Printf("Received response %d from entities API for collection %s with %d results", status_code, robot.EntityInstance.CollectionId, search_data.TotalResults)
 
 	var claimants_len int64
 	var claimants []Claimant
@@ -177,42 +174,45 @@ func AirdropRun(
 	}
 
 	// Fetch balances for addresses and update list
-	balances, err := contract.BalanceOfBatch(nil, claimants, contract.TerminusPoolId)
+	balances, err := robot.ContractTerminusInstance.BalanceOfBatch(nil, claimants, robot.ContractTerminusInstance.TerminusPoolId)
 	if err != nil {
 		return 0, err
 	}
 
-	zeroBigInt := big.NewInt(0)
-	var empty_claimants_len int64
-	var empty_claimants []Claimant
+	zeroBigInt := big.NewInt(1)
+	var emptyClaimantsLen int64
+	var emptyClaimants []Claimant
 	for i, balance := range balances {
-		if balance.Cmp(zeroBigInt) == 0 {
-			empty_claimants = append(empty_claimants, claimants[i])
-			empty_claimants_len++
+		// If less then 1
+		if balance.Cmp(zeroBigInt) == -1 {
+			emptyClaimants = append(emptyClaimants, claimants[i])
+			emptyClaimantsLen++
 		}
 	}
 
-	if empty_claimants_len > 0 {
-		log.Printf("Ready to send tokens for %d addresses", empty_claimants_len)
+	if emptyClaimantsLen > 0 {
+		log.Printf("Ready to send tokens for %d addresses", emptyClaimantsLen)
 
-		auth, err := signer.CreateTransactor(network)
+		auth, err := robot.SignerInstance.CreateTransactor(robot.NetworkInstance)
 		if err != nil {
-			return empty_claimants_len, err
+			return emptyClaimantsLen, err
 		}
-		if network.Blockchain == "caldera" {
+		if robot.NetworkInstance.Blockchain == "caldera" {
 			auth.GasPrice = big.NewInt(0)
 		}
 
-		tx, err := contract.PoolMintBatch(auth, empty_claimants, valueToClaim)
+		tx, err := robot.ContractTerminusInstance.PoolMintBatch(auth, emptyClaimants, robot.ValueToClaim)
 		if err != nil {
-			return empty_claimants_len, err
+			return emptyClaimantsLen, err
 		}
-		log.Printf("Pending tx for PoolMintBatch at blockchain %s and pool ID %d: 0x%x", network.Blockchain, contract.TerminusPoolId, tx.Hash())
+		currentCounter := robot.MintCounter
+		robot.MintCounter = currentCounter + emptyClaimantsLen
+		log.Printf("Pending tx for PoolMintBatch on blockchain %s at pool ID %d: 0x%x", robot.NetworkInstance.Blockchain, robot.ContractTerminusInstance.TerminusPoolId, tx.Hash())
 	}
 
 	var touched_entities int64
 	for _, claimant := range claimants {
-		_, _, err := entity.TouchPublicEntity(claimant.EntityId, 10)
+		_, _, err := robot.EntityInstance.TouchPublicEntity(claimant.EntityId, 10)
 		if err != nil {
 			log.Printf("Unable to touch entity with ID: %s for claimant: %s, err: %v", claimant.EntityId, claimant.Address, err)
 			continue
@@ -221,5 +221,5 @@ func AirdropRun(
 	}
 	log.Printf("Marked %d entities from %d claimants total", touched_entities, claimants_len)
 
-	return empty_claimants_len, nil
+	return emptyClaimantsLen, nil
 }
