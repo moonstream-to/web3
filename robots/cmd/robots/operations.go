@@ -5,18 +5,24 @@ import (
 	"log"
 	"math"
 	"math/big"
+	"sync"
 	"time"
 )
 
-type Claimant struct {
-	EntityId string
-	Address  string
+type RobotInstance struct {
+	ValueToClaim int64
+
+	ContractTerminusInstance ContractTerminusInstance
+	EntityInstance           EntityInstance
+	NetworkInstance          NetworkInstance
+	SignerInstance           SignerInstance
 }
 
 func Run(configs *[]RobotsConfig) {
+	var robots []RobotInstance
+
 	// Configure networks
-	networks := Networks{}
-	err := networks.InitializeNetworks()
+	networks, err := InitializeNetworks()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -24,79 +30,87 @@ func Run(configs *[]RobotsConfig) {
 
 	ctx := context.Background()
 	for _, config := range *configs {
-		if nc, ok := networks.NetworkContractClients[config.Blockchain]; ok {
-			continue
-		} else {
-			// Configure network client
-			network := networks.NetworkContractClients[config.Blockchain]
-			client, err := GenDialRpcClient(network.Endpoint)
-			if err != nil {
-				log.Fatal(err)
-			}
-			nc.Client = client
+		robot := RobotInstance{}
 
-			log.Printf("Initialized configuration of JSON RPC network client for %s blockchain", config.Blockchain)
-
-			// Fetch required opts
-			err = nc.FetchSuggestedGasPrice(ctx)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			// Define contract instance
-			contractAddress, err := GetTerminusContractAddress(config.Blockchain)
-			if err != nil {
-				log.Fatal(err)
-			}
-			contractTerminus, err := InitializeTerminusContractInstance(nc.Client, *contractAddress)
-			if err != nil {
-				log.Fatal(err)
-			}
-			nc.ContractAddress = *contractAddress
-			nc.ContractInstance = contractTerminus
-
-			log.Printf("Initialized configuration of terminus contract instance for %s blockchain", config.Blockchain)
-
-			networks.NetworkContractClients[config.Blockchain] = nc
-		}
-	}
-
-	for _, config := range *configs {
-		// Configure entity client
-		entityClient, err := InitializeEntityClient(config.CollectionId)
+		// Configure network client
+		network := networks[config.Blockchain]
+		client, err := GenDialRpcClient(network.Endpoint)
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Printf("Initialized configuration of entity client for '%s' collection with ID %s", entityClient.CollectionName, entityClient.CollectionId)
+		robot.NetworkInstance = NetworkInstance{
+			Blockchain: config.Blockchain,
+			Endpoint:   network.Endpoint,
+			ChainID:    network.ChainID,
+
+			Client: client,
+		}
+		log.Printf("Initialized configuration of JSON RPC network client for %s blockchain", config.Blockchain)
+
+		// Fetch required opts
+		err = robot.NetworkInstance.FetchSuggestedGasPrice(ctx)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Define contract instance
+		contractAddress, err := GetTerminusContractAddress(config.Blockchain)
+		if err != nil {
+			log.Fatal(err)
+		}
+		contractTerminusInstance, err := InitializeTerminusContractInstance(client, *contractAddress)
+		if err != nil {
+			log.Fatal(err)
+		}
+		robot.ContractTerminusInstance = ContractTerminusInstance{
+			Address:        *contractAddress,
+			Instance:       contractTerminusInstance,
+			TerminusPoolId: config.TerminusPoolId,
+		}
+		log.Printf("Initialized configuration of terminus contract instance for %s blockchain", config.Blockchain)
+
+		// Configure entity client
+		entityInstance, err := InitializeEntityInstance(config.CollectionId)
+		if err != nil {
+			log.Fatal(err)
+		}
+		robot.EntityInstance = *entityInstance
+		log.Printf("Initialized configuration of entity client for '%s' collection", robot.EntityInstance.CollectionId)
 
 		// Configure signer
 		signer, err := initializeSigner(config.SignerKeyfileName, config.SignerPasswordFileName)
 		if err != nil {
 			log.Fatal(err)
 		}
+		robot.SignerInstance = *signer
+		log.Printf("Initialized configuration of signer %s", robot.SignerInstance.Address.String())
 
-		log.Printf("Configuration of signer %s is complete", signer.Address.String())
+		robots = append(robots, robot)
+	}
 
-		go robot(
-			networks.NetworkContractClients[config.Blockchain],
-			entityClient,
-			signer,
-			config.TerminusPoolId,
-			config.ValueToClaim,
-			config.Blockchain,
+	var wg sync.WaitGroup
+	for _, robot := range robots {
+		wg.Add(1)
+		go robotRun(
+			&wg,
+			robot,
 		)
 	}
+	wg.Wait()
 }
 
-// robot represents of each robot instance for specific airdrop
-func robot(
-	networkContractCLient NetworkContractClient,
-	entityClient *EntityClient,
-	signer *Signer,
-	terminusPoolId int64,
-	valueToClaim int64,
-	blockchain string,
+// robotRun represents of each robot instance for specific airdrop
+func robotRun(
+	wg *sync.WaitGroup,
+	robot RobotInstance,
 ) {
+	log.Printf(
+		"Spawned robot for blockchain %s, signer %s, entity collection %s, pool %d",
+		robot.NetworkInstance.Blockchain,
+		robot.SignerInstance.Address.String(),
+		robot.EntityInstance.CollectionId,
+		robot.ContractTerminusInstance.TerminusPoolId,
+	)
 	minSleepTime := 5
 	maxSleepTime := 60
 	timer := minSleepTime
@@ -106,12 +120,11 @@ func robot(
 		select {
 		case <-ticker.C:
 			empty_addresses_len, err := AirdropRun(
-				networkContractCLient,
-				entityClient,
-				signer,
-				terminusPoolId,
-				valueToClaim,
-				blockchain,
+				robot.NetworkInstance,
+				robot.ContractTerminusInstance,
+				robot.EntityInstance,
+				robot.SignerInstance,
+				robot.ValueToClaim,
 			)
 			if err != nil {
 				log.Printf("During AirdropRun an error occurred, err: %v", err)
@@ -131,15 +144,19 @@ func robot(
 	}
 }
 
+type Claimant struct {
+	EntityId string
+	Address  string
+}
+
 func AirdropRun(
-	networkContractCLient NetworkContractClient,
-	entityClient *EntityClient,
-	signer *Signer,
-	terminusPoolId int64,
+	network NetworkInstance,
+	contract ContractTerminusInstance,
+	entity EntityInstance,
+	signer SignerInstance,
 	valueToClaim int64,
-	blockchain string,
 ) (int64, error) {
-	status_code, search_data, err := entityClient.FetchPublicSearchUntouched(JOURNAL_SEARCH_BATCH_SIZE)
+	status_code, search_data, err := entity.FetchPublicSearchUntouched(JOURNAL_SEARCH_BATCH_SIZE)
 	if err != nil {
 		return 0, err
 	}
@@ -160,7 +177,7 @@ func AirdropRun(
 	}
 
 	// Fetch balances for addresses and update list
-	balances, err := networkContractCLient.BalanceOfBatch(nil, claimants, terminusPoolId)
+	balances, err := contract.BalanceOfBatch(nil, claimants, contract.TerminusPoolId)
 	if err != nil {
 		return 0, err
 	}
@@ -178,15 +195,15 @@ func AirdropRun(
 	if empty_claimants_len > 0 {
 		log.Printf("Ready to send tokens for %d addresses", empty_claimants_len)
 
-		auth, err := signer.CreateTransactor(networkContractCLient)
+		auth, err := signer.CreateTransactor(network)
 		if err != nil {
 			return empty_claimants_len, err
 		}
-		if blockchain == "caldera" {
+		if network.Blockchain == "caldera" {
 			auth.GasPrice = big.NewInt(0)
 		}
 
-		tx, err := networkContractCLient.PoolMintBatch(auth, terminusPoolId, empty_claimants, valueToClaim)
+		tx, err := contract.PoolMintBatch(auth, empty_claimants, valueToClaim)
 		if err != nil {
 			return empty_claimants_len, err
 		}
@@ -195,7 +212,7 @@ func AirdropRun(
 
 	var touched_entities int64
 	for _, claimant := range claimants {
-		_, _, err := entityClient.TouchPublicEntity(claimant.EntityId, 10)
+		_, _, err := entity.TouchPublicEntity(claimant.EntityId, 10)
 		if err != nil {
 			log.Printf("Unable to touch entity with ID: %s for claimant: %s, err: %v", claimant.EntityId, claimant.Address, err)
 			continue

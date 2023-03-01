@@ -11,14 +11,14 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-type Signer struct {
+type SignerInstance struct {
 	Address    common.Address
 	PrivateKey *keystore.Key
 }
 
 // initializeSigner parse secrets directory with keyfile and passfile,
 // then opens keyfile with password to privateKey
-func initializeSigner(keyfileName, passfileName string) (*Signer, error) {
+func initializeSigner(keyfileName, passfileName string) (*SignerInstance, error) {
 	if ROBOTS_SIGNER_SECRETS_DIR_PATH == "" {
 		return nil, errors.New("Directory with signer secrets not set")
 	}
@@ -43,15 +43,15 @@ func initializeSigner(keyfileName, passfileName string) (*Signer, error) {
 		return nil, err
 	}
 
-	signer := &Signer{
+	signer := SignerInstance{
 		Address:    privateKey.Address,
 		PrivateKey: privateKey,
 	}
 
-	return signer, nil
+	return &signer, nil
 }
 
-func (s *Signer) CreateTransactor(network NetworkContractClient) (*bind.TransactOpts, error) {
+func (s *SignerInstance) CreateTransactor(network NetworkInstance) (*bind.TransactOpts, error) {
 	auth, err := bind.NewKeyedTransactorWithChainID(s.PrivateKey.PrivateKey, network.ChainID)
 	if err != nil {
 		return nil, err
