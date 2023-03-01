@@ -30,28 +30,46 @@ type EntitySearchResponse struct {
 	Entities     []EntityResponse `json:"entities"`
 }
 
+type EntityCollectionResponse struct {
+	CollectionId string `json:"collection_id"`
+	Name         string `json:"name"`
+}
+
 type EntityClient struct {
 	PublicEndpoint string
 	CollectionId   string
+	CollectionName string
 
 	Headers map[string]string
 }
 
-func (ec *EntityClient) InitializeEntityClient(collection_id string) error {
+func InitializeEntityClient(collection_id string) (*EntityClient, error) {
 	MOONSTREAM_ENTITY_URL := os.Getenv("MOONSTREAM_ENTITY_URL")
 	if MOONSTREAM_ENTITY_URL == "" {
-		return errors.New("Environment variable MOONSTREAM_ENTITY_URL should be specified")
+		return nil, errors.New("Environment variable MOONSTREAM_ENTITY_URL should be specified")
 	}
 
-	ec.PublicEndpoint = fmt.Sprintf("%s/public", MOONSTREAM_ENTITY_URL)
-	ec.CollectionId = collection_id
-
-	if ec.Headers == nil {
-		ec.Headers = make(map[string]string)
+	entityClient := &EntityClient{
+		PublicEndpoint: fmt.Sprintf("%s/public", MOONSTREAM_ENTITY_URL),
+		CollectionId:   collection_id,
+		Headers:        make(map[string]string),
 	}
-	ec.Headers["X-Moonstream-Robots"] = "airdrop-robot"
+	entityClient.Headers["X-Moonstream-Robots"] = "airdrop-robot"
 
-	return nil
+	url := fmt.Sprintf("%s/collections/%s", entityClient.PublicEndpoint, entityClient.CollectionId)
+	body, _, err := caller("GET", url, nil, entityClient.Headers, 15)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp EntityCollectionResponse
+	err = json.Unmarshal(*body, &resp)
+	if err != nil {
+		return nil, err
+	}
+	entityClient.CollectionName = resp.Name
+
+	return entityClient, nil
 }
 
 // Make HTTP calls to required servers
@@ -84,11 +102,11 @@ func caller(method, url string, reqBody io.Reader, headers map[string]string, ti
 
 // FetchPublicSearchUntouched request not touched entities, ready to airdrop
 // TODO(kompotkot): Pass with robots header unique identifier of robot
-func (ec *EntityClient) FetchPublicSearchUntouched(limit, timeout int) (int, EntitySearchResponse, error) {
+func (ec *EntityClient) FetchPublicSearchUntouched(limit int) (int, EntitySearchResponse, error) {
 	data := EntitySearchResponse{}
 
 	url := fmt.Sprintf("%s/collections/%s/search?required_field=!touch:true&limit=%d", ec.PublicEndpoint, ec.CollectionId, limit)
-	body, status_code, err := caller("GET", url, nil, ec.Headers, timeout)
+	body, status_code, err := caller("GET", url, nil, ec.Headers, 15)
 	if err != nil {
 		return status_code, data, err
 	}

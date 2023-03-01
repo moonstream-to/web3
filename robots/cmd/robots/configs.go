@@ -14,17 +14,26 @@ import (
 )
 
 var (
+	NODEBALANCER_ACCESS_ID    = os.Getenv("ENGINE_NODEBALANCER_ACCESS_ID")
+	MUMBAI_WEB3_PROVIDER_URI  = os.Getenv("MOONSTREAM_MUMBAI_WEB3_PROVIDER_URI")
+	POLYGON_WEB3_PROVIDER_URI = os.Getenv("MOONSTREAM_POLYGON_WEB3_PROVIDER_URI")
+	CALDERA_WEB3_PROVIDER_URI = os.Getenv("MOONSTREAM_CALDERA_WEB3_PROVIDER_URI")
+
 	TERMINUS_CONTRACT_POLYGON_ADDRESS = os.Getenv("MOONSTREAM_TERMINUS_DIAMOND_CONTRACT_POLYGON_ADDRESS")
 	TERMINUS_CONTRACT_MUMBAI_ADDRESS  = os.Getenv("MOONSTREAM_TERMINUS_DIAMOND_CONTRACT_MUMBAI_ADDRESS")
 	TERMINUS_CONTRACT_CALDERA_ADDRESS = os.Getenv("MOONSTREAM_TERMINUS_DIAMOND_CONTRACT_CALDERA_ADDRESS")
+
+	JOURNAL_SEARCH_BATCH_SIZE = 20
+
+	ROBOTS_SIGNER_SECRETS_DIR_PATH = os.Getenv("ENGINE_ROBOTS_SECRETS_DIR")
 )
 
 type RobotsConfig struct {
 	CollectionId           string `json:"collection_id"`
 	SignerKeyfileName      string `json:"signer_keyfile_name"`
 	SignerPasswordFileName string `json:"signer_password_file_name"`
-	TerminusPoolId         int    `json:"terminus_pool_id"`
-	ValueToClaim           int    `json:"value_to_claim"`
+	TerminusPoolId         int64  `json:"terminus_pool_id"`
+	ValueToClaim           int64  `json:"value_to_claim"`
 	Blockchain             string `json:"blockchain"`
 }
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/big"
@@ -12,6 +13,79 @@ import (
 
 	terminus_contract "github.com/bugout-dev/engine/robots/pkg/terminus"
 )
+
+type NetworkContractClient struct {
+	Endpoint string
+	ChainID  *big.Int
+
+	Client *ethclient.Client
+
+	GasPrice *big.Int
+
+	ContractAddress  common.Address
+	ContractInstance *terminus_contract.Terminus
+}
+
+type Networks struct {
+	NetworkContractClients map[string]NetworkContractClient
+}
+
+func (n *Networks) InitializeNetworks() error {
+	if n.NetworkContractClients == nil {
+		n.NetworkContractClients = make(map[string]NetworkContractClient)
+	}
+
+	if NODEBALANCER_ACCESS_ID == "" {
+		return errors.New("Environment variable ENGINE_NODEBALANCER_ACCESS_ID should be specified")
+	}
+
+	if MUMBAI_WEB3_PROVIDER_URI == "" {
+		return errors.New("Environment variable MUMBAI_WEB3_PROVIDER_URI should be specified")
+	}
+	if POLYGON_WEB3_PROVIDER_URI == "" {
+		return errors.New("Environment variable POLYGON_WEB3_PROVIDER_URI should be specified")
+	}
+	if CALDERA_WEB3_PROVIDER_URI == "" {
+		return errors.New("Environment variable MOONSTREAM_CALDERA_WEB3_PROVIDER_URI should be specified")
+	}
+
+	n.NetworkContractClients["mumbai"] = NetworkContractClient{
+		Endpoint: fmt.Sprintf("%s?access_id=%s&data_source=blockchain", MUMBAI_WEB3_PROVIDER_URI, NODEBALANCER_ACCESS_ID),
+		ChainID:  big.NewInt(80001),
+	}
+	n.NetworkContractClients["polygon"] = NetworkContractClient{
+		Endpoint: fmt.Sprintf("%s?access_id=%s&data_source=blockchain", POLYGON_WEB3_PROVIDER_URI, NODEBALANCER_ACCESS_ID),
+		ChainID:  big.NewInt(137),
+	}
+	n.NetworkContractClients["caldera"] = NetworkContractClient{
+		Endpoint: CALDERA_WEB3_PROVIDER_URI,
+		ChainID:  big.NewInt(322),
+	}
+
+	return nil
+}
+
+// GenDialRpcClient parse PRC endpoint to dial client
+func GenDialRpcClient(rpc_endpoint_uri string) (*ethclient.Client, error) {
+	client, err := ethclient.Dial(rpc_endpoint_uri)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+// FetchSuggestedGasPrice fetch network for suggested gas price
+func (c *NetworkContractClient) FetchSuggestedGasPrice(ctx context.Context) error {
+	gas_price, err := c.Client.SuggestGasPrice(ctx)
+	if err != nil {
+		return err
+	}
+
+	c.GasPrice = gas_price
+
+	return nil
+}
 
 func GetTerminusContractAddress(blockchain string) (*common.Address, error) {
 	switch blockchain {

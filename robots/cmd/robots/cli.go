@@ -1,14 +1,10 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
-	"log"
-	"math"
 	"os"
 	"strings"
-	"time"
 )
 
 var (
@@ -121,7 +117,14 @@ func cli() {
 		stateCLI.runCmd.Parse(os.Args[2:])
 		stateCLI.checkRequirements()
 
-		run()
+		// Load configuration
+		configs, err := LoadConfig(stateCLI.configPathFlag)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		Run(configs)
 	case "version":
 		stateCLI.versionCmd.Parse(os.Args[2:])
 
@@ -129,114 +132,5 @@ func cli() {
 	default:
 		stateCLI.usage()
 		os.Exit(1)
-	}
-}
-
-func run() {
-	// Load configuration
-	configs, err := LoadConfig(stateCLI.configPathFlag)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Configure networks
-	networks := Networks{}
-	err = networks.InitializeNetworks()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	ctx := context.Background()
-	networkContractClient := make(map[string]NetworkContractClient)
-	for _, config := range *configs {
-		if nc, ok := networkContractClient[config.Blockchain]; ok {
-			continue
-		} else {
-			// Configure network client
-			network := networks.Networks[config.Blockchain]
-			client, err := GenDialRpcClient(network.Endpoint)
-			if err != nil {
-				log.Fatal(err)
-			}
-			nc.Client = client
-
-			// Fetch required opts
-			err = nc.FetchSuggestedGasPrice(ctx)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			log.Printf("Configuration of JSON RPC network for %s blockchain is complete", config.Blockchain)
-
-			// Define contract instance
-			contractAddress, err := GetTerminusContractAddress(config.Blockchain)
-			if err != nil {
-				log.Fatal(err)
-			}
-			contractTerminus, err := InitializeTerminusContractInstance(nc.Client, *contractAddress)
-			if err != nil {
-				log.Fatal(err)
-			}
-			nc.ContractAddress = *contractAddress
-			nc.ContractInstance = contractTerminus
-
-			log.Println("Configuration of terminus contract instance is complete")
-
-			networkContractClient[config.Blockchain] = nc
-		}
-	}
-
-	for _, config := range *configs {
-		// Configure entity client
-		entityClient := EntityClient{}
-		err = entityClient.InitializeEntityClient(config.CollectionId)
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Println("Configuration of entity client is complete")
-
-		// Configure signer
-		keyfilePath, keyfilePasswordPath, err := initializeSigner(config.SignerKeyfileName, config.SignerPasswordFileName)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		signer := Signer{}
-		err = signer.SetPrivateKey(keyfilePath, keyfilePasswordPath)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		log.Printf("Configuration of signer %s is complete", signer.PrivateKey.Address.String())
-
-		go worker(networkContractClient[config.Blockchain], &config, entityClient, signer, networks.Networks[config.Blockchain])
-	}
-
-}
-
-func worker(networkCLient NetworkContractClient, config *RobotsConfig, entityClient EntityClient, signer Signer, network Network) {
-	min_sleep_time := 5
-	max_sleep_time := 60
-	timer := min_sleep_time
-
-	for true {
-		time.Sleep(time.Second * time.Duration(timer))
-
-		empty_addresses_len, err := AirdropRun(
-			entityClient,
-			int64(config.TerminusPoolId),
-			networkCLient,
-			signer, network, int64(config.ValueToClaim), config.Blockchain)
-		if err != nil {
-			log.Printf("During AirdropRun an error occurred, err: %v", err)
-			timer = timer + 10
-			continue
-		}
-		if empty_addresses_len == 0 {
-			timer = int(math.Min(float64(max_sleep_time), float64(timer+1)))
-			log.Printf("Sleeping for %d seconds because of no new empty addresses", timer)
-			continue
-		}
-		timer = int(math.Max(float64(min_sleep_time), float64(timer-10)))
 	}
 }
