@@ -9,7 +9,7 @@ WorkingDirectory=/home/ubuntu/engine/robots
 EnvironmentFile=/home/ubuntu/robots-secrets/app.env
 Restart=on-failure
 RestartSec=15s
-ExecStart=/home/ubuntu/engine/robots/robots
+ExecStart=/home/ubuntu/engine/robots/robots airdrop
 SyslogIdentifier=robots-airdrop
 
 [Install]

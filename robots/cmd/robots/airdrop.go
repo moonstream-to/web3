@@ -27,7 +27,7 @@ type RobotInstance struct {
 	MintCounter int64
 }
 
-func Run(configs *[]RobotsConfig) {
+func Airdrop(configs *[]RobotsConfig) {
 	sessionID := uuid.New().String()
 	consent := humbug.CreateHumbugConsent(humbug.True)
 	reporter, err := humbug.CreateHumbugReporter(consent, "moonstream-robots", sessionID, HUMBUG_REPORTER_ROBOTS_HEARTBEAT_TOKEN)
@@ -192,7 +192,7 @@ func robotRun(
 		case <-ticker.C:
 			heartBeat(robot, reporter, idx)
 
-			empty_addresses_len, err := AirdropRun(&robot, idx)
+			empty_addresses_len, err := airdropRun(&robot, idx)
 			if err != nil {
 				log.Printf("Robot %d - During AirdropRun an error occurred, err: %v", idx, err)
 				timer = timer + 10
@@ -216,7 +216,7 @@ type Claimant struct {
 	Address  string
 }
 
-func AirdropRun(robot *RobotInstance, idx int) (int64, error) {
+func airdropRun(robot *RobotInstance, idx int) (int64, error) {
 	status_code, search_data, err := robot.EntityInstance.FetchPublicSearchUntouched(JOURNAL_SEARCH_BATCH_SIZE)
 	if err != nil {
 		return 0, err

@@ -15,16 +15,15 @@ var (
 // Command Line Interface state
 type StateCLI struct {
 	generateConfigCmd *flag.FlagSet
-	runCmd            *flag.FlagSet
+	airdropCmd            *flag.FlagSet
 	versionCmd        *flag.FlagSet
 
 	// Common flags
 	configPathFlag string
 	helpFlag       bool
 
-	// Run flags
+	// Airdrop flags
 	reportMapDuration    int
-	reportMapHumbugToken string
 }
 
 type flagSlice []string
@@ -47,7 +46,7 @@ optional arguments:
 
 subcommands:
     {%[1]s,%[2]s,%[3]s}
-`, s.generateConfigCmd.Name(), s.runCmd.Name(), s.versionCmd.Name())
+`, s.generateConfigCmd.Name(), s.airdropCmd.Name(), s.versionCmd.Name())
 }
 
 // Check if required flags are set
@@ -58,9 +57,9 @@ func (s *StateCLI) checkRequirements() {
 			fmt.Printf("Generate new configuration\n\n")
 			s.generateConfigCmd.PrintDefaults()
 			os.Exit(0)
-		case s.runCmd.Parsed():
-			fmt.Printf("Run robots operations\n\n")
-			s.runCmd.PrintDefaults()
+		case s.airdropCmd.Parsed():
+			fmt.Printf("Run Airdrop robots\n\n")
+			s.airdropCmd.PrintDefaults()
 			os.Exit(0)
 		case s.versionCmd.Parsed():
 			fmt.Printf("Show version\n\n")
@@ -76,18 +75,17 @@ func (s *StateCLI) checkRequirements() {
 func (s *StateCLI) populateCLI() {
 	// Subcommands setup
 	s.generateConfigCmd = flag.NewFlagSet("generate-config", flag.ExitOnError)
-	s.runCmd = flag.NewFlagSet("run", flag.ExitOnError)
+	s.airdropCmd = flag.NewFlagSet("airdrop", flag.ExitOnError)
 	s.versionCmd = flag.NewFlagSet("version", flag.ExitOnError)
 
 	// Common flag pointers
-	for _, fs := range []*flag.FlagSet{s.generateConfigCmd, s.runCmd, s.versionCmd} {
+	for _, fs := range []*flag.FlagSet{s.generateConfigCmd, s.airdropCmd, s.versionCmd} {
 		fs.BoolVar(&s.helpFlag, "help", false, "Show help message")
 		fs.StringVar(&s.configPathFlag, "config", "", "Path to configuration file (default: ~/.robots/config.json)")
 	}
 
-	// Run list subcommand flag pointers
-	s.runCmd.IntVar(&s.reportMapDuration, "report-map-duration", 60, "How often to push report map in Humbug journal in seconds, default: 60")
-	s.runCmd.StringVar(&s.reportMapHumbugToken, "report-map-humbug-token", "", "Humbug report token to push report map")
+	// Airdrop list subcommand flag pointers
+	s.airdropCmd.IntVar(&s.reportMapDuration, "report-map-duration", 60, "How often to push report map in Humbug journal in seconds, default: 60")
 }
 
 func cli() {
@@ -113,8 +111,8 @@ func cli() {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-	case "run":
-		stateCLI.runCmd.Parse(os.Args[2:])
+	case "airdrop":
+		stateCLI.airdropCmd.Parse(os.Args[2:])
 		stateCLI.checkRequirements()
 
 		// Load configuration
@@ -129,7 +127,7 @@ func cli() {
 			os.Exit(1)
 		}
 
-		Run(configs)
+		Airdrop(configs)
 	case "version":
 		stateCLI.versionCmd.Parse(os.Args[2:])
 
