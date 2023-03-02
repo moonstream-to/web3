@@ -118,7 +118,12 @@ func cli() {
 		stateCLI.checkRequirements()
 
 		// Load configuration
-		configs, err := LoadConfig(stateCLI.configPathFlag)
+		configPlacement, err := PrepareConfigPlacement(stateCLI.configPathFlag)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		configs, err := LoadConfig(configPlacement.ConfigPath)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)

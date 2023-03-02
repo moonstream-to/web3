@@ -99,7 +99,7 @@ func PrepareConfigPlacement(providedPath string) (*ConfigPlacement, error) {
 		return nil, err
 	}
 
-	config := &ConfigPlacement{
+	configPlacement := &ConfigPlacement{
 		ConfigDirPath:   configDirPath,
 		ConfigDirExists: configDirPathExists,
 
@@ -107,7 +107,7 @@ func PrepareConfigPlacement(providedPath string) (*ConfigPlacement, error) {
 		ConfigExists: configPathExists,
 	}
 
-	return config, nil
+	return configPlacement, nil
 }
 
 // Generates empty list of robots configuration
