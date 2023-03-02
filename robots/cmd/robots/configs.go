@@ -26,6 +26,8 @@ var (
 	JOURNAL_SEARCH_BATCH_SIZE = 20
 
 	ROBOTS_SIGNER_SECRETS_DIR_PATH = os.Getenv("ENGINE_ROBOTS_SECRETS_DIR")
+
+	HUMBUG_REPORTER_ROBOTS_HEARTBEAT_TOKEN = os.Getenv("HUMBUG_REPORTER_ROBOTS_HEARTBEAT_TOKEN")
 )
 
 type RobotsConfig struct {
@@ -33,8 +35,9 @@ type RobotsConfig struct {
 	SignerKeyfileName      string `json:"signer_keyfile_name"`
 	SignerPasswordFileName string `json:"signer_password_file_name"`
 	TerminusPoolId         int64  `json:"terminus_pool_id"`
-	ValueToClaim           int64  `json:"value_to_claim"`
 	Blockchain             string `json:"blockchain"`
+	ValueToClaim           int64  `json:"value_to_claim"`
+	MaxValueToClaim        int64  `json:"max_value_to_claim"`
 }
 
 func LoadConfig(configPath string) (*[]RobotsConfig, error) {

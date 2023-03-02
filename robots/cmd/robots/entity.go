@@ -68,7 +68,7 @@ func InitializeEntityInstance(collectionId string) (*EntityInstance, error) {
 	entityInstance := EntityInstance{
 		PublicEndpoint: publicEndpoint,
 		CollectionId:   collectionId,
-		CollectionName: collectionId,
+		CollectionName: resp.Name,
 		Headers:        headers,
 	}
 
