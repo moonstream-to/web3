@@ -11,6 +11,14 @@ import (
 	"time"
 )
 
+type EntityInstance struct {
+	PublicEndpoint string
+	CollectionId   string
+	CollectionName string
+
+	Headers map[string]string
+}
+
 type EntityResponse struct {
 	EntityId       string              `json:"entity_id"`
 	CollectionId   string              `json:"collection_id"`
@@ -30,28 +38,41 @@ type EntitySearchResponse struct {
 	Entities     []EntityResponse `json:"entities"`
 }
 
-type EntityClient struct {
-	PublicEndpoint string
-	CollectionId   string
-
-	Headers map[string]string
+type EntityCollectionResponse struct {
+	CollectionId string `json:"collection_id"`
+	Name         string `json:"name"`
 }
 
-func (ec *EntityClient) InitializeEntityClient(collection_id string) error {
+func InitializeEntityInstance(collectionId string) (*EntityInstance, error) {
 	MOONSTREAM_ENTITY_URL := os.Getenv("MOONSTREAM_ENTITY_URL")
 	if MOONSTREAM_ENTITY_URL == "" {
-		return errors.New("Environment variable MOONSTREAM_ENTITY_URL should be specified")
+		return nil, errors.New("Environment variable MOONSTREAM_ENTITY_URL should be specified")
 	}
 
-	ec.PublicEndpoint = fmt.Sprintf("%s/public", MOONSTREAM_ENTITY_URL)
-	ec.CollectionId = collection_id
+	publicEndpoint := fmt.Sprintf("%s/public", MOONSTREAM_ENTITY_URL)
+	headers := make(map[string]string)
+	headers["X-Moonstream-Robots"] = "airdrop-robot"
 
-	if ec.Headers == nil {
-		ec.Headers = make(map[string]string)
+	url := fmt.Sprintf("%s/collections/%s", publicEndpoint, collectionId)
+	body, _, err := caller("GET", url, nil, headers, 15)
+	if err != nil {
+		return nil, err
 	}
-	ec.Headers["X-Moonstream-Robots"] = "airdrop-robot"
 
-	return nil
+	var resp EntityCollectionResponse
+	err = json.Unmarshal(*body, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	entityInstance := EntityInstance{
+		PublicEndpoint: publicEndpoint,
+		CollectionId:   collectionId,
+		CollectionName: resp.Name,
+		Headers:        headers,
+	}
+
+	return &entityInstance, nil
 }
 
 // Make HTTP calls to required servers
@@ -84,11 +105,11 @@ func caller(method, url string, reqBody io.Reader, headers map[string]string, ti
 
 // FetchPublicSearchUntouched request not touched entities, ready to airdrop
 // TODO(kompotkot): Pass with robots header unique identifier of robot
-func (ec *EntityClient) FetchPublicSearchUntouched(limit, timeout int) (int, EntitySearchResponse, error) {
+func (ec *EntityInstance) FetchPublicSearchUntouched(limit int) (int, EntitySearchResponse, error) {
 	data := EntitySearchResponse{}
 
 	url := fmt.Sprintf("%s/collections/%s/search?required_field=!touch:true&limit=%d", ec.PublicEndpoint, ec.CollectionId, limit)
-	body, status_code, err := caller("GET", url, nil, ec.Headers, timeout)
+	body, status_code, err := caller("GET", url, nil, ec.Headers, 15)
 	if err != nil {
 		return status_code, data, err
 	}
@@ -104,7 +125,7 @@ func (ec *EntityClient) FetchPublicSearchUntouched(limit, timeout int) (int, Ent
 }
 
 // TODO(kompotkot): Create batch endpoint for tags creation
-func (ec *EntityClient) TouchPublicEntity(entityId string, timeout int) (int, []string, error) {
+func (ec *EntityInstance) TouchPublicEntity(entityId string, timeout int) (int, []string, error) {
 	var data []string
 
 	url := fmt.Sprintf("%s/collections/%s/entities/%s", ec.PublicEndpoint, ec.CollectionId, entityId)

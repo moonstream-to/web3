@@ -1,13 +1,30 @@
 package main
 
 import (
-	"context"
 	"flag"
-	"log"
-	"math"
+	"fmt"
+	"os"
 	"strings"
-	"time"
 )
+
+var (
+	// Storing CLI definitions at server startup
+	stateCLI StateCLI
+)
+
+// Command Line Interface state
+type StateCLI struct {
+	generateConfigCmd *flag.FlagSet
+	airdropCmd            *flag.FlagSet
+	versionCmd        *flag.FlagSet
+
+	// Common flags
+	configPathFlag string
+	helpFlag       bool
+
+	// Airdrop flags
+	reportMapDuration    int
+}
 
 type flagSlice []string
 
@@ -20,98 +37,103 @@ func (i *flagSlice) Set(value string) error {
 	return nil
 }
 
+func (s *StateCLI) usage() {
+	fmt.Printf(`usage: robots [-h] {%[1]s,%[2]s,%[3]s} ...
+
+Moonstream robots CLI
+optional arguments:
+    -h, --help         show this help message and exit
+
+subcommands:
+    {%[1]s,%[2]s,%[3]s}
+`, s.generateConfigCmd.Name(), s.airdropCmd.Name(), s.versionCmd.Name())
+}
+
+// Check if required flags are set
+func (s *StateCLI) checkRequirements() {
+	if s.helpFlag {
+		switch {
+		case s.generateConfigCmd.Parsed():
+			fmt.Printf("Generate new configuration\n\n")
+			s.generateConfigCmd.PrintDefaults()
+			os.Exit(0)
+		case s.airdropCmd.Parsed():
+			fmt.Printf("Run Airdrop robots\n\n")
+			s.airdropCmd.PrintDefaults()
+			os.Exit(0)
+		case s.versionCmd.Parsed():
+			fmt.Printf("Show version\n\n")
+			s.versionCmd.PrintDefaults()
+			os.Exit(0)
+		default:
+			s.usage()
+			os.Exit(0)
+		}
+	}
+}
+
+func (s *StateCLI) populateCLI() {
+	// Subcommands setup
+	s.generateConfigCmd = flag.NewFlagSet("generate-config", flag.ExitOnError)
+	s.airdropCmd = flag.NewFlagSet("airdrop", flag.ExitOnError)
+	s.versionCmd = flag.NewFlagSet("version", flag.ExitOnError)
+
+	// Common flag pointers
+	for _, fs := range []*flag.FlagSet{s.generateConfigCmd, s.airdropCmd, s.versionCmd} {
+		fs.BoolVar(&s.helpFlag, "help", false, "Show help message")
+		fs.StringVar(&s.configPathFlag, "config", "", "Path to configuration file (default: ~/.robots/config.json)")
+	}
+
+	// Airdrop list subcommand flag pointers
+	s.airdropCmd.IntVar(&s.reportMapDuration, "report-map-duration", 60, "How often to push report map in Humbug journal in seconds, default: 60")
+}
+
 func cli() {
-	var contract_address_flag string
-	var network_flag string
-	var secrets_dir_path_flag string
-
-	var collection_flag string
-	var pool_id_flag int64
-	var to_addresses_flag flagSlice
-	var value_flag int64
-
-	flag.StringVar(&contract_address_flag, "address", "", "Contract address")
-	flag.StringVar(&network_flag, "network", "polygon", "JSON RPC network")
-	flag.StringVar(&secrets_dir_path_flag, "secrets-dir", "", "Path to directory with keyfile and password file")
-
-	flag.StringVar(&collection_flag, "collection", "", "Airdrop collection ID")
-	flag.Int64Var(&pool_id_flag, "pool-id", 0, "Pool ID run operations to")
-	flag.Var(&to_addresses_flag, "to-addresses", "List of addresses for claim")
-	flag.Int64Var(&value_flag, "value", 0, "Value to claim")
-	flag.Parse()
-
-	// Configure network with client
-	networks := Networks{}
-	err := networks.InitializeNetworks()
-	if err != nil {
-		log.Fatal(err)
+	stateCLI.populateCLI()
+	if len(os.Args) < 2 {
+		stateCLI.usage()
+		os.Exit(1)
 	}
 
-	network := networks.Networks[network_flag]
+	// Parse subcommands and appropriate FlagSet
+	switch os.Args[1] {
+	case "generate-config":
+		stateCLI.generateConfigCmd.Parse(os.Args[2:])
+		stateCLI.checkRequirements()
 
-	network_client := NetworkClient{}
-	err = network_client.SetDialRpcClient(network.Endpoint)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("Configuration of JSON RPC network is complete")
-
-	// Configure signer
-	keyfile_path, keyfile_password_path, err := initializeSigner(secrets_dir_path_flag)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	signer := Signer{}
-	err = signer.SetPrivateKey(keyfile_path, keyfile_password_path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("Configuration of signer is complete")
-
-	// Fetch required opts
-	ctx := context.Background()
-
-	err = network_client.FetchSuggestedGasPrice(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Define contract instance
-	contract := ContractTerminus{}
-	contract.SetContractAddress(contract_address_flag)
-	err = contract.InitializeContractInstance(network_client.Client)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("Configuration of terminus contract instance is complete")
-
-	// Configure entity client
-	entity_client := EntityClient{}
-	err = entity_client.InitializeEntityClient(collection_flag)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("Configuration of entity client is complete")
-
-	min_sleep_time := 5
-	max_sleep_time := 60
-	timer := min_sleep_time
-
-	for true {
-		time.Sleep(time.Second * time.Duration(timer))
-
-		empty_addresses_len, err := AirdropRun(entity_client, pool_id_flag, contract, signer, network, value_flag, network_flag)
+		configPlacement, err := PrepareConfigPlacement(stateCLI.configPathFlag)
 		if err != nil {
-			log.Printf("During AirdropRun an error occurred, err: %v", err)
-			timer = timer + 10
-			continue
+			fmt.Println(err)
+			os.Exit(1)
 		}
-		if empty_addresses_len == 0 {
-			timer = int(math.Min(float64(max_sleep_time), float64(timer+1)))
-			log.Printf("Sleeping for %d seconds because of no new empty addresses", timer)
-			continue
+
+		if err := GenerateDefaultConfig(configPlacement); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
 		}
-		timer = int(math.Max(float64(min_sleep_time), float64(timer-10)))
+	case "airdrop":
+		stateCLI.airdropCmd.Parse(os.Args[2:])
+		stateCLI.checkRequirements()
+
+		// Load configuration
+		configPlacement, err := PrepareConfigPlacement(stateCLI.configPathFlag)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		configs, err := LoadConfig(configPlacement.ConfigPath)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		Airdrop(configs)
+	case "version":
+		stateCLI.versionCmd.Parse(os.Args[2:])
+
+		fmt.Printf("v%s\n", ROBOTS_VERSION)
+	default:
+		stateCLI.usage()
+		os.Exit(1)
 	}
 }

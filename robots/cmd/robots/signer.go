@@ -4,81 +4,54 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
+	"github.com/ethereum/go-ethereum/common"
 )
 
-type Signer struct {
+type SignerInstance struct {
+	Address    common.Address
 	PrivateKey *keystore.Key
 }
 
-// initializeSigner parse secrets directory with keyfile and passfile
-func initializeSigner(secrets_dir_path string) (string, string, error) {
-	secrets_dir := os.Getenv("ENGINE_ROBOTS_SECRETS_DIR")
-	if secrets_dir == "" {
-		secrets_dir = secrets_dir_path
-	}
-	if secrets_dir == "" {
-		return "", "", errors.New("Directory with secrets not specified")
+// initializeSigner parse secrets directory with keyfile and passfile,
+// then opens keyfile with password to privateKey
+func initializeSigner(keyfileName, passfileName string) (*SignerInstance, error) {
+	if ROBOTS_SIGNER_SECRETS_DIR_PATH == "" {
+		return nil, errors.New("Directory with signer secrets not set")
 	}
 
-	keyfile_name := os.Getenv("ENGINE_ROBOTS_KEYFILE_NAME")
-	if keyfile_name == "" {
-		var keyfiles []string
-		files, err := ioutil.ReadDir(secrets_dir)
-		if err != nil {
-			return "", "", errors.New("Files in secrets dir not found")
-		}
-		for _, file := range files {
-			if strings.HasPrefix(file.Name(), "UTC--") {
-				keyfiles = append(keyfiles, file.Name())
-			}
-		}
-		if len(keyfiles) != 1 {
-			return "", "", errors.New("Wrong number of keyfiles generated")
-		}
-		keyfile_name = keyfiles[0]
-	}
+	keyfilePath := fmt.Sprintf("%s/%s", ROBOTS_SIGNER_SECRETS_DIR_PATH, keyfileName)
+	keyfilePasswordPath := fmt.Sprintf("%s/%s", ROBOTS_SIGNER_SECRETS_DIR_PATH, passfileName)
 
-	passfile_name := os.Getenv("ENGINE_ROBOTS_PASSFILE_NAME")
-	if passfile_name == "" {
-		passfile_name = "passfile"
-	}
-
-	keyfile_path := fmt.Sprintf("%s/%s", secrets_dir, keyfile_name)
-	keyfile_password_path := fmt.Sprintf("%s/%s", secrets_dir, passfile_name)
-
-	return keyfile_path, keyfile_password_path, nil
-}
-
-// SetPrivateKey opens keyfile with password to privateKey
-func (s *Signer) SetPrivateKey(keyfile_path, keyfile_password_path string) error {
-	passfile, err := ioutil.ReadFile(keyfile_password_path)
+	passfile, err := ioutil.ReadFile(keyfilePasswordPath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	passfile_lines := strings.Split(string(passfile), "\n")
 	password := passfile_lines[0]
 
-	keyfile, err := ioutil.ReadFile(keyfile_path)
+	keyfile, err := ioutil.ReadFile(keyfilePath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	private_key, err := keystore.DecryptKey(keyfile, password)
+	privateKey, err := keystore.DecryptKey(keyfile, password)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	s.PrivateKey = private_key
+	signer := SignerInstance{
+		Address:    privateKey.Address,
+		PrivateKey: privateKey,
+	}
 
-	return nil
+	return &signer, nil
 }
 
-func (s *Signer) CreateTransactor(network Network) (*bind.TransactOpts, error) {
+func (s *SignerInstance) CreateTransactor(network NetworkInstance) (*bind.TransactOpts, error) {
 	auth, err := bind.NewKeyedTransactorWithChainID(s.PrivateKey.PrivateKey, network.ChainID)
 	if err != nil {
 		return nil, err

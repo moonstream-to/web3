@@ -21,8 +21,7 @@ SECRETS_DIR="${SECRETS_DIR:-/home/ubuntu/robots-secrets}"
 PARAMETERS_ENV_PATH="${SECRETS_DIR}/app.env"
 
 # Airdrop service
-ROBOTS_METAGOV_AIRDROP_SERVICE_FILE="robots-metagov-airdrop.service"
-ROBOTS_GREAT_WYRM_AIRDROP_SERVICE_FILE="robots-great-wyrm-airdrop.service"
+ROBOTS_AIRDROP_SERVICE_FILE="robots-airdrop.service"
 
 set -eu
 
@@ -51,16 +50,8 @@ cd "${EXEC_DIR}"
 
 echo
 echo
-echo -e "${PREFIX_INFO} Replacing existing ETH Denver airdrop service definition with ${ROBOTS_METAGOV_AIRDROP_SERVICE_FILE}"
-chmod 644 "${SCRIPT_DIR}/${ROBOTS_METAGOV_AIRDROP_SERVICE_FILE}"
-cp "${SCRIPT_DIR}/${ROBOTS_METAGOV_AIRDROP_SERVICE_FILE}" "/home/ubuntu/.config/systemd/user/${ROBOTS_METAGOV_AIRDROP_SERVICE_FILE}"
+echo -e "${PREFIX_INFO} Replacing existing Airdrop robots service definition with ${ROBOTS_AIRDROP_SERVICE_FILE}"
+chmod 644 "${SCRIPT_DIR}/${ROBOTS_AIRDROP_SERVICE_FILE}"
+cp "${SCRIPT_DIR}/${ROBOTS_AIRDROP_SERVICE_FILE}" "/home/ubuntu/.config/systemd/user/${ROBOTS_AIRDROP_SERVICE_FILE}"
 XDG_RUNTIME_DIR="/run/user/1000" systemctl --user daemon-reload
-XDG_RUNTIME_DIR="/run/user/1000" systemctl --user restart "${ROBOTS_METAGOV_AIRDROP_SERVICE_FILE}"
-
-echo
-echo
-echo -e "${PREFIX_INFO} Replacing existing Great Wyrm airdrop service definition with ${ROBOTS_GREAT_WYRM_AIRDROP_SERVICE_FILE}"
-chmod 644 "${SCRIPT_DIR}/${ROBOTS_GREAT_WYRM_AIRDROP_SERVICE_FILE}"
-cp "${SCRIPT_DIR}/${ROBOTS_GREAT_WYRM_AIRDROP_SERVICE_FILE}" "/home/ubuntu/.config/systemd/user/${ROBOTS_GREAT_WYRM_AIRDROP_SERVICE_FILE}"
-XDG_RUNTIME_DIR="/run/user/1000" systemctl --user daemon-reload
-XDG_RUNTIME_DIR="/run/user/1000" systemctl --user restart "${ROBOTS_GREAT_WYRM_AIRDROP_SERVICE_FILE}"
+XDG_RUNTIME_DIR="/run/user/1000" systemctl --user restart "${ROBOTS_AIRDROP_SERVICE_FILE}"
