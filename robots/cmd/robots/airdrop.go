@@ -76,16 +76,13 @@ func Airdrop(configs *[]RobotsConfig) {
 		}
 
 		// Define contract instance
-		contractAddress, err := GetTerminusContractAddress(config.Blockchain)
-		if err != nil {
-			log.Fatal(err)
-		}
-		contractTerminusInstance, err := InitializeTerminusContractInstance(client, *contractAddress)
+		contractAddress := GetTerminusContractAddress(config.TerminusAddress)
+		contractTerminusInstance, err := InitializeTerminusContractInstance(client, contractAddress)
 		if err != nil {
 			log.Fatal(err)
 		}
 		robot.ContractTerminusInstance = ContractTerminusInstance{
-			Address:        *contractAddress,
+			Address:        contractAddress,
 			Instance:       contractTerminusInstance,
 			TerminusPoolId: config.TerminusPoolId,
 		}
