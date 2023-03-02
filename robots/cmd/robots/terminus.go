@@ -1,8 +1,6 @@
 package main
 
 import (
-	"errors"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -19,28 +17,8 @@ type ContractTerminusInstance struct {
 	TerminusPoolId int64
 }
 
-func GetTerminusContractAddress(blockchain string) (*common.Address, error) {
-	switch blockchain {
-	case "polygon":
-		if TERMINUS_CONTRACT_POLYGON_ADDRESS == "" {
-			return nil, errors.New("Terminus polygon contract address should be specified")
-		}
-		address := common.HexToAddress(TERMINUS_CONTRACT_POLYGON_ADDRESS)
-		return &address, nil
-	case "mumbai":
-		if TERMINUS_CONTRACT_MUMBAI_ADDRESS == "" {
-			return nil, errors.New("Terminus mumbai contract address should be specified")
-		}
-		address := common.HexToAddress(TERMINUS_CONTRACT_MUMBAI_ADDRESS)
-		return &address, nil
-	case "caldera":
-		if TERMINUS_CONTRACT_CALDERA_ADDRESS == "" {
-			return nil, errors.New("Terminus caldera contract address should be specified")
-		}
-		address := common.HexToAddress(TERMINUS_CONTRACT_CALDERA_ADDRESS)
-		return &address, nil
-	}
-	return nil, errors.New(fmt.Sprintf("Not supported blockchain by Terminus contract found: %s", blockchain))
+func GetTerminusContractAddress(terminusAddress string) common.Address {
+	return common.HexToAddress(terminusAddress)
 }
 
 // InitializeContractInstance parse contract to instance

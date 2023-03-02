@@ -15,7 +15,7 @@ var (
 // Command Line Interface state
 type StateCLI struct {
 	generateConfigCmd *flag.FlagSet
-	airdropCmd            *flag.FlagSet
+	airdropCmd        *flag.FlagSet
 	versionCmd        *flag.FlagSet
 
 	// Common flags
@@ -23,7 +23,7 @@ type StateCLI struct {
 	helpFlag       bool
 
 	// Airdrop flags
-	reportMapDuration    int
+	reportMapDuration int
 }
 
 type flagSlice []string
