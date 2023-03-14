@@ -37,8 +37,8 @@ func InitializeNetworks() (map[string]NetworkClient, error) {
 	if POLYGON_WEB3_PROVIDER_URI == "" {
 		return nil, errors.New("Environment variable POLYGON_WEB3_PROVIDER_URI should be specified")
 	}
-	if CALDERA_WEB3_PROVIDER_URI == "" {
-		return nil, errors.New("Environment variable MOONSTREAM_CALDERA_WEB3_PROVIDER_URI should be specified")
+	if WYRM_WEB3_PROVIDER_URI == "" {
+		return nil, errors.New("Environment variable MOONSTREAM_WYRM_WEB3_PROVIDER_URI should be specified")
 	}
 
 	networks["mumbai"] = NetworkClient{
@@ -49,8 +49,8 @@ func InitializeNetworks() (map[string]NetworkClient, error) {
 		Endpoint: fmt.Sprintf("%s?access_id=%s&data_source=blockchain", POLYGON_WEB3_PROVIDER_URI, NODEBALANCER_ACCESS_ID),
 		ChainID:  big.NewInt(137),
 	}
-	networks["caldera"] = NetworkClient{
-		Endpoint: CALDERA_WEB3_PROVIDER_URI,
+	networks["wyrm"] = NetworkClient{
+		Endpoint: WYRM_WEB3_PROVIDER_URI,
 		ChainID:  big.NewInt(322),
 	}
 

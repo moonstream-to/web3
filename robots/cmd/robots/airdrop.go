@@ -258,7 +258,7 @@ func airdropRun(robot *RobotInstance, idx int) (int64, error) {
 		if err != nil {
 			return emptyClaimantsLen, err
 		}
-		if robot.NetworkInstance.Blockchain == "caldera" {
+		if robot.NetworkInstance.Blockchain == "wyrm" {
 			auth.GasPrice = big.NewInt(0)
 		}
 
