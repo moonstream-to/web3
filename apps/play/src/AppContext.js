@@ -16,7 +16,8 @@ import {
   DEFAULT_METATAGS,
   SUPPORT_EMAIL,
   TIME_RANGE_SECONDS,
-  WHITE_LOGO_W_TEXT_URL,
+  PRIMARY_MOON_LOGO_URL,
+  BACKGROUND_COLOR,
 } from "./constants";
 
 const AppContext = (props) => {
@@ -41,8 +42,9 @@ const AppContext = (props) => {
             COPYRIGHT_NAME: COPYRIGHT_NAME,
             SUPPORT_EMAIL: SUPPORT_EMAIL,
             APP_NAME: APP_NAME,
-            WHITE_LOGO_W_TEXT_URL: WHITE_LOGO_W_TEXT_URL,
+            PRIMARY_MOON_LOGO_URL: PRIMARY_MOON_LOGO_URL,
             AWS_ASSETS_PATH: AWS_ASSETS_PATH,
+            BACKGROUND_COLOR: BACKGROUND_COLOR,
           }}
         >
           <UIProvider>

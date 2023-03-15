@@ -9,6 +9,11 @@ import {
   TokenInterface,
 } from "../../../../../../types/Moonstream";
 import router from "next/router";
+const REQUEST_SIGNATURE = process.env.NEXT_PUBLIC_REQUEST_SIGNATURE;
+
+if (typeof REQUEST_SIGNATURE == "undefined") {
+  console.error("REQUEST_SIGNATURE env var is not set!");
+}
 
 export const MAX_INT =
   "115792089237316195423570985008687907853269984665640564039457584007913129639935";
@@ -104,6 +109,13 @@ export const chains: { [key in supportedChains]: ChainInterface } = {
   },
 };
 
+export const chainByChainId: { [key: number]: string } = {
+  1: "ethereum",
+  1337: "localhost",
+  80001: "mumbai",
+  137: "polygon",
+};
+
 const isKnownChain = (_chainId: number) => {
   return Object.keys(chains).some((key) => {
     return chains[key as any as supportedChains].chainId == _chainId;
@@ -112,6 +124,9 @@ const isKnownChain = (_chainId: number) => {
 
 const Web3Provider = ({ children }: { children: JSX.Element }) => {
   const [web3] = React.useState<Web3>(new Web3(null));
+  const [polygonClient] = React.useState<Web3>(
+    new Web3(new Web3.providers.HttpProvider("https://polygon-rpc.com"))
+  );
 
   const _signAccessToken = async (account: string) => {
     if (web3.currentProvider) {
@@ -303,6 +318,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
   }, []);
 
   React.useEffect(() => {
+    if (REQUEST_SIGNATURE == "false") return;
     const token = localStorage.getItem("APP_ACCESS_TOKEN") ?? "";
     const stringToken = Buffer.from(token, "base64").toString("ascii");
     const objectToken: TokenInterface =
@@ -327,6 +343,7 @@ const Web3Provider = ({ children }: { children: JSX.Element }) => {
     <Web3Context.Provider
       value={{
         web3: web3,
+        polygonClient: polygonClient,
         onConnectWalletClick,
         buttonText,
         WALLET_STATES,

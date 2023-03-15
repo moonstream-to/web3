@@ -15,14 +15,14 @@ const AppContext = dynamic(() => import("../src/AppContext"), {
   ssr: false,
 });
 const DefaultLayout = dynamic(
-  () => import("moonstream-components/src/layouts"),
+  () => import("moonstream-components/src/layoutsForPlay"),
   {
     ssr: false,
   }
 );
 import { useRouter } from "next/router";
 import NProgress from "nprogress";
-import { WHITE_LOGO_W_TEXT_URL } from "../src/constants";
+import { PRIMARY_MOON_LOGO_URL } from "../src/constants";
 
 export default function CachingApp({ Component, pageProps }) {
   const [queryClient] = useState(new QueryClient());
@@ -61,7 +61,7 @@ export default function CachingApp({ Component, pageProps }) {
     Component.getLayout || ((page) => <DefaultLayout>{page}</DefaultLayout>);
 
   const headLinks = [
-    { rel: "preload", as: "image", href: WHITE_LOGO_W_TEXT_URL },
+    { rel: "preload", as: "image", href: PRIMARY_MOON_LOGO_URL },
   ];
   pageProps.preloads && headLinks.push(...pageProps.preloads);
   return (

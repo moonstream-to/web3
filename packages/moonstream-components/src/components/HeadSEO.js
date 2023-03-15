@@ -4,10 +4,10 @@ import propTypes from "prop-types";
 
 const METATAGS = {
   title: propTypes.string.isRequired,
-  keywords: propTypes.string.isRequired,
+  keywords: propTypes.string,
   description: propTypes.string.isRequired,
-  url: propTypes.string.isRequired,
-  image: propTypes.string.isRequired,
+  url: propTypes.string,
+  image: propTypes.string,
 
   ogType: propTypes.string,
   ogURL: propTypes.string,

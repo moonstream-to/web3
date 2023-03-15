@@ -1,0 +1,42 @@
+name: Garden of Forking Paths system tests
+
+on:
+  pull_request:
+    paths:
+      - "contracts/mechanics/garden-of-forking-paths/**"
+      - "contracts/mock/**"
+      - "cli/enginecli/test_gofp.py"
+      - "cli/enginecli/GOFPFacet.py"
+      - "cli/enginecli/Mock*.py"
+      - "cli/enginecli/Diamond*"
+      - "cli/enginecli/OwnershipFacet.py"
+      - ".github/workflows/gofp.yml"
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+      - name: Install ganache
+        run: npm install -g ganache-cli
+      - name: Upgrade pip
+        env:
+          BROWNIE_LIB: 1
+        run: pip install -U pip
+      - name: Install additional dev dependencies
+        run: |
+          pip install black moonworm
+      - name: Install dependencies for CLI
+        working-directory: cli/
+        run: |
+          pip install -e .
+      - name: Run tests
+        working-directory: cli/
+        run: bash test.sh enginecli.test_gofp

@@ -5,9 +5,9 @@ const API =
   process.env.NEXT_PUBLIC_PLAY_API_URL;
 process.env.NODE_ENV !== "production" && enableMockupRequests(axios);
 
-const http = (config) => {
+const http = (config, noAuth = false) => {
   const token = localStorage.getItem("APP_ACCESS_TOKEN");
-  const authorization = token ? { Authorization: `Moonstream ${token}` } : {};
+  const authorization = token && !noAuth ? { Authorization: `Moonstream ${token}` } : {};
   const defaultHeaders = config.headers ?? {};
   const options = {
     ...config,
@@ -38,6 +38,14 @@ export const queryHttp = (query) => {
     method: "GET",
     url: `${API}${query.queryKey[0]}`,
     params: { ..._query },
+  });
+};
+
+export const patchHttp = (endpoint, data) => {
+  return http({
+    method: "PATCH",
+    url: `${API}${endpoint}`,
+    data: data,
   });
 };
 

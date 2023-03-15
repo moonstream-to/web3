@@ -1,0 +1,33 @@
+{
+  "name": "@moonstream/engine",
+  "version": "0.1.0",
+  "description": "SDK for moonstream engine",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "example": "ts-node ./src/example.ts"
+  },
+  "author": "moonstream",
+  "license": "ISC",
+  "devDependencies": {
+    "@typechain/ethers-v5": "^10.1.0",
+    "ts-node": "^10.9.1",
+    "typechain": "^8.1.0",
+    "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "ethers": "^5.7.0"
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bugout-dev/engine.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bugout-dev/engine/issues"
+  },
+  "homepage": "https://github.com/bugout-dev/engine#readme"
+}

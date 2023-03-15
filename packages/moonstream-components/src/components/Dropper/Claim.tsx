@@ -31,6 +31,7 @@ import { useToast } from "../../core/hooks";
 import { UpdateClaim } from "../../../../../types/Moonstream";
 import Metadata from "../Metadata";
 import dynamic from "next/dynamic";
+import { useQueryClient } from "react-query";
 const ReactJson = dynamic(() => import("react-json-view"), {
   ssr: false,
 });
@@ -55,6 +56,7 @@ const _Claim = ({
     claimId: claimId,
     dropperAddress: dropperAddress,
   });
+  const querClient = useQueryClient();
 
   const { claimState, setClaimSigner, setClaimURI, claimUri } =
     useDropperContract({
@@ -118,6 +120,9 @@ const _Claim = ({
   };
 
   const onDrop = (file: any) => {
+    if (!file.length) {
+      return;
+    }
     parserLineNumber = 0;
     setIsUploading(true);
     Papa.parse(file[0], {
@@ -135,6 +140,7 @@ const _Claim = ({
           {
             onSettled: () => {
               setIsUploading(false);
+              querClient.refetchQueries(["claimants", "claimId", claimId]);
             },
           }
         );
@@ -142,15 +148,6 @@ const _Claim = ({
       error: (err: Error) => handleParsingError(err.message),
     });
   };
-
-  const { onClose, isOpen } = useDisclosure();
-
-  React.useEffect(() => {
-    if (isOpen && update.isSuccess) {
-      onClose();
-      update.reset();
-    }
-  }, [isOpen, update, onClose]);
 
   const onSubmit = (data: UpdateClaim) =>
     update.mutate(

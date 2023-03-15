@@ -33,6 +33,15 @@ export default class MyDocument extends Document {
 
           <link rel="preconnect" href="https://s3.amazonaws.com" />
           <link rel="preload" as="font" href="/Virgil.woff2" crossOrigin="" />
+          <link
+            rel="preload"
+            as="style"
+            href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800;900&display=swap"
+          />
+          <link
+            href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800;900&display=swap"
+            rel="stylesheet"
+          />
           {/* <link
             rel="preload"
             as="font"

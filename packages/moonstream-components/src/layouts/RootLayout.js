@@ -17,7 +17,7 @@ const RootLayout = (props) => {
       w="100%"
       h="100%"
       maxH="100%"
-      bgColor={"blue.1200"}
+      bgColor="#1A1D22"
     >
       <Suspense fallback="">
         <Sidebar />

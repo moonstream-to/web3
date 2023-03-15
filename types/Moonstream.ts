@@ -30,6 +30,7 @@ export interface TokenInterface {
 declare function ChangeChain(chainName: supportedChains): void;
 export interface MoonstreamWeb3ProviderInterface {
   web3: Web3;
+  polygonClient: Web3;
   onConnectWalletClick: Function;
   buttonText: String;
   WALLET_STATES: WalletStatesInterface;
@@ -56,7 +57,7 @@ export interface UpdateClaim {
 export interface ClaimInterface {
   active: boolean;
   claim_block_deadline: number;
-  claim_id: number;
+  drop_number: number;
   description: string;
   dropper_contract_address: string;
   id: string;

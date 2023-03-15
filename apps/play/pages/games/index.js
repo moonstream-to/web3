@@ -1,24 +1,23 @@
 import React from "react";
-import { getLayout } from "../../../../packages/moonstream-components/src/layouts/EngineLayout";
+import { getLayout } from "../../../../packages/moonstream-components/src/layoutsForPlay/EngineLayout";
 import { Flex, Center } from "@chakra-ui/react";
-import FeatureCard from "moonstream-components/src/components/FeatureCard";
+import FeatureCard from "moonstream-components/src/components/FeatureCardPlay";
 const Games = () => {
   return (
     <Flex className="Games">
       <Flex
         w="100%"
         minH="100vh"
-        bgColor={"blue.1200"}
+        bgColor={"#1A1D22"}
         direction={"column"}
-        px="7%"
         mt="100px"
       >
         <Center>
-          <Flex>
+          <Flex wrap="wrap" justifyContent="center">
             <FeatureCard
               w="300px"
               imgH="140px"
-              link="games/cryptoUnicorns"
+              link="games/CryptoUnicorns"
               text="A digital pet collecting and farming game, built on blockchain"
               //   heading="Crypto Unicorns"
               imageUrl={
@@ -48,6 +47,20 @@ const Games = () => {
               h="450px"
             />
             {/* <video src="https://www.champions.io/static/karkadon-desktop-ee6012464e76b83dc149bd896368048a.mp4"></video> */}
+            <FeatureCard
+              w="300px"
+              imgH="140px"
+              link="/games/OpenGamingCollective/"
+              text="View your Open Gaming Collective badges."
+              imageUrl={
+                "https://s3.amazonaws.com/static.simiotics.com/play/games/ogc-logo.png"
+              }
+              alt="Open Gaming Collective"
+              textColor={"white.100"}
+              level="h2"
+              imgPading={24}
+              h="450px"
+            />
             <FeatureCard
               w="300px"
               imgH="140px"

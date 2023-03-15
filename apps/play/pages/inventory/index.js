@@ -2,8 +2,8 @@ import React, { useContext } from "react";
 import { Flex, Button, Image, Center, Spinner } from "@chakra-ui/react";
 import { DEFAULT_METATAGS, AWS_ASSETS_PATH } from "../../src/constants";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
-import { getLayout } from "../../../../packages/moonstream-components/src/layouts/EngineLayout";
-import LootboxCard from "moonstream-components/src/components/lootbox/LootboxCard";
+import { getLayout } from "../../../../packages/moonstream-components/src/layoutsForPlay/EngineLayout";
+import LootboxCard from "moonstream-components/src/components/lootbox/LootboxCardPlay";
 import useLootbox from "moonstream-components/src/core/hooks/useLootbox";
 
 const assets = {
@@ -35,7 +35,7 @@ const Lootboxes = () => {
     <Flex
       w="100%"
       minH="100vh"
-      bgColor={"blue.1200"}
+      bgColor={"#1A1D22"}
       direction={"column"}
       px="7%"
     >
@@ -43,6 +43,7 @@ const Lootboxes = () => {
         state?.data?.lootboxIds?.map((lootboxId) => {
           return (
             <LootboxCard
+              mt="10px"
               key={`contract-card-${lootboxId}}`}
               contractAddress={contractAddress}
               hasActiveOpening={

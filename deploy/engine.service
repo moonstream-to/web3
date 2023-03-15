@@ -7,7 +7,7 @@ StartLimitBurst=3
 [Service]
 User=ubuntu
 Group=www-data
-WorkingDirectory=/home/ubuntu/engine
+WorkingDirectory=/home/ubuntu/engine/api
 EnvironmentFile=/home/ubuntu/engine-secrets/app.env
 Restart=on-failure
 RestartSec=15s

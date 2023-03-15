@@ -23,7 +23,6 @@ const FeatureCard = ({
   link,
   imageUrl,
   textColor,
-  videoUrl,
   imgH,
   alt,
   level,
@@ -46,7 +45,7 @@ const FeatureCard = ({
         {...props}
         transition={"1s"}
         spacing={1}
-        px={1}
+        px={5}
         alignItems="center"
         borderRadius="12px"
         borderColor="gray.100"
@@ -63,11 +62,7 @@ const FeatureCard = ({
             maxH={imgH}
             minH={imgH}
             objectFit="contain"
-            as={videoUrl ? "video" : undefined}
-            src={imageUrl ?? videoUrl}
-            autoplay
-            loop
-            playsinline
+            src={imageUrl}
             alt={alt}
             mb={12}
           />

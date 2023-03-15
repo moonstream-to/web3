@@ -1,5 +1,6 @@
 import React, { useContext, useState } from "react";
 import { chakra, Button, Flex, Heading, Image } from "@chakra-ui/react";
+import { targetChain } from "../../core/providers/Web3Provider";
 import Web3Context from "../../core/providers/Web3Provider/context";
 import useLootboxToken from "../../core/hooks/useLootboxToken";
 
@@ -16,6 +17,7 @@ const LootboxCard = ({
   const { state, openLootbox, completeLootboxOpening } = useLootboxToken({
     contractAddress: contractAddress,
     lootboxId: lootboxId,
+    targetChain: targetChain,
     ctx: web3ctx,
   });
 

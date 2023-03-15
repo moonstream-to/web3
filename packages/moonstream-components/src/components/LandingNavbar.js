@@ -25,9 +25,10 @@ import MoonstreamContext from "../core/providers/MoonstreamProvider/context";
 import ChainSelector from "./ChainSelector";
 
 const LandingNavbar = () => {
-  const { SITEMAP, WHITE_LOGO_W_TEXT_URL } = useContext(MoonstreamContext);
+  const { SITEMAP, PRIMARY_MOON_LOGO_URL } = useContext(MoonstreamContext);
   const ui = useContext(UIContext);
   const web3Provider = useContext(Web3Context);
+
   return (
     <>
       {ui.isMobileView && (
@@ -44,10 +45,8 @@ const LandingNavbar = () => {
       <Flex
         pl={ui.isMobileView ? 2 : 8}
         justifySelf="flex-start"
-        h="100%"
         py={1}
-        w="200px"
-        minW="200px"
+        w="160px"
         // flexGrow={1}
         id="Logo Container"
       >
@@ -57,7 +56,7 @@ const LandingNavbar = () => {
             w="fit-content"
             h="auto"
             justifyContent="left"
-            src={WHITE_LOGO_W_TEXT_URL}
+            src={PRIMARY_MOON_LOGO_URL}
             alt="Logo"
           />
         </RouterLink>
@@ -134,7 +133,7 @@ const LandingNavbar = () => {
               <Image
                 pl={2}
                 h="24px"
-                src="https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg"
+                src="https://s3.amazonaws.com/static.simiotics.com/metamask/metamask-fox.svg"
               />
             </Button>
           )}

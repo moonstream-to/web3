@@ -1,10 +1,16 @@
 {
   "private": true,
+  "engines": {
+    "node": "16"
+  },
   "scripts": {
     "generate_classes": "typechain --target=web3-v1 --out-dir types/contracts 'build/contracts/*.json'"
   },
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "typescript": "^4.7.4"
+  }
 }

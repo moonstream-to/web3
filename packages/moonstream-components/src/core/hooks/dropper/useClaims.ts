@@ -19,7 +19,7 @@ const usePlayerClaims = ({
 
   const claimsList = useQuery(
     [
-      "/drops/claims",
+      "/play/drops",
       {
         dropper_contract_address: contractAddress,
         blockchain: ctx.targetChain?.name ?? "",
@@ -39,7 +39,7 @@ const usePlayerClaims = ({
 
   const playerClaims = useQuery(
     [
-      "/drops/batch",
+      "/play/claims/batch",
       {
         blockchain: ctx.targetChain?.name ?? "",
         address: playerAddress ?? ctx.account,
