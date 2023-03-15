@@ -125,3 +125,26 @@ func initSigner(passFile, keyFile, privateKeyFile string) (*PrivateContainer, er
 	}
 	return &privateContainer, nil
 }
+
+func initSigner2(password, keyFilePath string) (*PrivateContainer, error) {
+	var publicKey common.Address
+	var privateKey *ecdsa.PrivateKey
+	if keyFilePath != "" {
+		keyFileBytes, err := ioutil.ReadFile(keyFilePath)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to read keyFile, err: %v", err)
+		}
+		key, err := keystore.DecryptKey(keyFileBytes, password)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to decrypt key, err: %v", err)
+		}
+		privateKey = key.PrivateKey
+		publicKey = crypto.PubkeyToAddress(privateKey.PublicKey)
+	}
+
+	privateContainer := PrivateContainer{
+		publicKey:  publicKey,
+		privateKey: privateKey,
+	}
+	return &privateContainer, nil
+}

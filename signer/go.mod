@@ -2,7 +2,10 @@ module github.com/bugout-dev/engine/signer
 
 go 1.19
 
-require github.com/ethereum/go-ethereum v1.10.20
+require (
+	github.com/ethereum/go-ethereum v1.10.20
+	github.com/gotk3/gotk3 v0.6.1
+)
 
 require (
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
