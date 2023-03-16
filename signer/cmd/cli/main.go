@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+
+	signer "github.com/bugout-dev/engine/signer/pkg/signer"
 )
 
 var (
@@ -95,7 +97,7 @@ func (s *StateCLI) checkRequirements() {
 	}
 
 	if s.passFileFlag != "" {
-		passFileExists, err := CheckPathExists(s.passFileFlag)
+		passFileExists, err := signer.CheckPathExists(s.passFileFlag)
 		if err != nil || !passFileExists {
 			fmt.Printf("File with password at %s not found, err: %v", s.passFileFlag, err)
 			os.Exit(1)
@@ -110,14 +112,14 @@ func (s *StateCLI) checkRequirements() {
 		os.Exit(1)
 	}
 	if s.keyFileFlag != "" {
-		keyFileExists, err := CheckPathExists(s.keyFileFlag)
+		keyFileExists, err := signer.CheckPathExists(s.keyFileFlag)
 		if err != nil || !keyFileExists {
 			fmt.Printf("Keyfile at %s not found, err: %v", s.keyFileFlag, err)
 			os.Exit(1)
 		}
 	}
 	if s.privateKeyFileFlag != "" {
-		privateKeyFileExists, err := CheckPathExists(s.privateKeyFileFlag)
+		privateKeyFileExists, err := signer.CheckPathExists(s.privateKeyFileFlag)
 		if err != nil || !privateKeyFileExists {
 			fmt.Printf("Privatekey file at %s not found, err: %v", s.privateKeyFileFlag, err)
 			os.Exit(1)
@@ -148,7 +150,7 @@ func (s *StateCLI) populateCLI() {
 	s.genCmd.BoolVar(&s.headerFlag, "header", true, "Specify this flag if input csv file contains header")
 }
 
-func cli() {
+func main() {
 	stateCLI.populateCLI()
 	if len(os.Args) < 2 {
 		stateCLI.usage()
@@ -161,19 +163,19 @@ func cli() {
 		stateCLI.genCmd.Parse(os.Args[2:])
 		stateCLI.checkRequirements()
 
-		privateContainer, err := initializeSigner(stateCLI.passFileFlag, stateCLI.keyFileFlag, stateCLI.privateKeyFileFlag)
+		privateContainer, err := signer.InitializeSigner(stateCLI.passFileFlag, stateCLI.keyFileFlag, stateCLI.privateKeyFileFlag)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		client, err := InitializeNetworkClient(stateCLI.rpcURIFlag)
+		client, err := signer.InitializeNetworkClient(stateCLI.rpcURIFlag)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		dropperContracts := InitializeDropperContracts()
+		dropperContracts := signer.InitializeDropperContracts()
 		dropperContract := dropperContracts["polygon"]
 		err = dropperContract.InitializeContractInstance(client)
 		if err != nil {
@@ -181,24 +183,24 @@ func cli() {
 			os.Exit(1)
 		}
 
-		inputs, err := ParseInput(stateCLI.inputFlag, stateCLI.headerFlag)
+		inputs, err := signer.ParseInput(stateCLI.inputFlag, stateCLI.headerFlag)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		var claimants []Claimant
+		var claimants []signer.Claimant
 		for _, input := range inputs {
-			chm, err := dropperContract.claimMessageHash(stateCLI.claimIdFlag, input.Address, input.ClaimBlockDeadline, input.Amount)
+			chm, err := dropperContract.ClaimMessageHash(stateCLI.claimIdFlag, input.Address, input.ClaimBlockDeadline, input.Amount)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			sig, err := privateContainer.sign(chm)
+			sig, err := privateContainer.Sign(chm)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			claimants = append(claimants, Claimant{
+			claimants = append(claimants, signer.Claimant{
 				ClaimantAddress:    input.Address,
 				Amount:             input.Amount,
 				Signature:          sig,
@@ -206,18 +208,18 @@ func cli() {
 				ClaimId:            stateCLI.claimIdFlag,
 			})
 		}
-		fullPath, err := ProcessOutput(claimants, stateCLI.outputFlag, stateCLI.outputTypeFlag)
+		fullPath, err := signer.ProcessOutput(claimants, stateCLI.outputFlag, stateCLI.outputTypeFlag)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		fmt.Printf("Output saved at: %s\nSigner address: %s\n", fullPath, privateContainer.publicKey.String())
+		fmt.Printf("Output saved at: %s\nSigner address: %s\n", fullPath, privateContainer.PublicKey.String())
 
 	case "version":
 		stateCLI.versionCmd.Parse(os.Args[2:])
 		stateCLI.checkRequirements()
 
-		fmt.Printf("v%s\n", SIGNER_VERSION)
+		fmt.Printf("v%s\n", signer.SIGNER_VERSION)
 
 	default:
 		stateCLI.usage()

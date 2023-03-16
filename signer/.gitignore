@@ -32,3 +32,5 @@ dev.env
 prod.env
 test.env
 signer_dev
+signer-cli_dev
+signer-ui_dev

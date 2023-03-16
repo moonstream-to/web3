@@ -1,4 +1,4 @@
-package main
+package signer
 
 import (
 	"fmt"
@@ -46,7 +46,7 @@ func (dc *DropperContract) InitializeContractInstance(client *ethclient.Client) 
 	return nil
 }
 
-func (dc *DropperContract) claimMessageHash(claimId int64, addr string, blockDeadline int64, amount int64) ([32]byte, error) {
+func (dc *DropperContract) ClaimMessageHash(claimId int64, addr string, blockDeadline int64, amount int64) ([32]byte, error) {
 	address := common.HexToAddress(addr)
 	cmh, err := dc.Instance.ClaimMessageHash(nil, big.NewInt(claimId), address, big.NewInt(blockDeadline), big.NewInt(amount))
 	if err != nil {

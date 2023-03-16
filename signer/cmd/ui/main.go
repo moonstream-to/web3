@@ -9,10 +9,12 @@ import (
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
+
+	signer "github.com/bugout-dev/engine/signer/pkg/signer"
 )
 
-func getMsg(msgChan chan string, fileInputPath string, dropperContract DropperContract, claimId int64, keyFilePath, privateKey, password, rpcUri, fileOutputPath string) {
-	client, err := InitializeNetworkClient(rpcUri)
+func getMsg(msgChan chan string, fileInputPath string, dropperContract signer.DropperContract, claimId int64, keyFilePath, privateKey, password, rpcUri, fileOutputPath string) {
+	client, err := signer.InitializeNetworkClient(rpcUri)
 	if err != nil {
 		msgChan <- fmt.Sprintf("%v", err)
 	}
@@ -22,27 +24,27 @@ func getMsg(msgChan chan string, fileInputPath string, dropperContract DropperCo
 		msgChan <- fmt.Sprintf("%v", err)
 	}
 
-	fileInput, err := ParseInput(fileInputPath, false)
+	fileInput, err := signer.ParseInput(fileInputPath, false)
 	if err != nil {
 		msgChan <- fmt.Sprintf("%v", err)
 	}
 
-	privateContainer, err := initializeSigner(password, keyFilePath, privateKey)
+	privateContainer, err := signer.InitializeSigner(password, keyFilePath, privateKey)
 	if err != nil {
 		msgChan <- fmt.Sprintf("%v", err)
 	}
 
-	var claimants []Claimant
+	var claimants []signer.Claimant
 	for _, input := range fileInput {
-		chm, err := dropperContract.claimMessageHash(claimId, input.Address, input.ClaimBlockDeadline, input.Amount)
+		chm, err := dropperContract.ClaimMessageHash(claimId, input.Address, input.ClaimBlockDeadline, input.Amount)
 		if err != nil {
 			msgChan <- fmt.Sprintf("%v", err)
 		}
-		sig, err := privateContainer.sign(chm)
+		sig, err := privateContainer.Sign(chm)
 		if err != nil {
 			msgChan <- fmt.Sprintf("%v", err)
 		}
-		claimants = append(claimants, Claimant{
+		claimants = append(claimants, signer.Claimant{
 			ClaimantAddress:    input.Address,
 			Amount:             input.Amount,
 			Signature:          sig,
@@ -51,22 +53,22 @@ func getMsg(msgChan chan string, fileInputPath string, dropperContract DropperCo
 		})
 	}
 
-	_, err = ProcessOutput(claimants, fileOutputPath, "csv")
+	_, err = signer.ProcessOutput(claimants, fileOutputPath, "csv")
 	if err != nil {
 		msgChan <- fmt.Sprintf("%v", err)
 	}
 
-	msgChan <- fmt.Sprintf("Signed by: %s and output saved at: %s\n\n", privateContainer.publicKey.String(), fileOutputPath)
+	msgChan <- fmt.Sprintf("Signed by: %s and output saved at: %s\n", privateContainer.PublicKey.String(), fileOutputPath)
 }
 
-func ui() {
+func main() {
 	var workingDir string
 	workingDir, err := os.Getwd()
 	if err != nil {
 		log.Printf("Unable to get working directory, %v", err)
 	}
 
-	dropperContracts := InitializeDropperContracts()
+	dropperContracts := signer.InitializeDropperContracts()
 
 	var fileInputPath string
 	var claimId int64
@@ -114,8 +116,8 @@ func ui() {
 		log.Fatal("Unable to create r1InputPathEnt:", err)
 	}
 	r1InputPathEnt.SetPlaceholderText("string")
-	if MOONSTREAM_DROPPER_CLAIMANTS_INPUT != "" {
-		r1InputPathEnt.SetText(MOONSTREAM_DROPPER_CLAIMANTS_INPUT)
+	if signer.MOONSTREAM_DROPPER_CLAIMANTS_INPUT != "" {
+		r1InputPathEnt.SetText(signer.MOONSTREAM_DROPPER_CLAIMANTS_INPUT)
 	}
 	r1SearchBtn, err := gtk.ButtonNew()
 	if err != nil {
@@ -211,9 +213,9 @@ func ui() {
 	if err != nil {
 		log.Fatal("Unable to create r3ClaimIdEnt:", err)
 	}
-	r3ClaimIdEnt.SetPlaceholderText("uuid")
-	if MOONSTREAM_DROPPER_CLAIM_ID != "" {
-		r3ClaimIdEnt.SetText(MOONSTREAM_DROPPER_CLAIM_ID)
+	r3ClaimIdEnt.SetPlaceholderText("int")
+	if signer.MOONSTREAM_DROPPER_CLAIM_ID != "" {
+		r3ClaimIdEnt.SetText(signer.MOONSTREAM_DROPPER_CLAIM_ID)
 	}
 
 	// ROW 3 - Packaging
@@ -262,8 +264,8 @@ func ui() {
 		log.Fatal("Unable to create r5KeyfilePathEnt:", err)
 	}
 	r5KeyfilePathEnt.SetPlaceholderText("string")
-	if KEYFILE_PATH != "" {
-		r5KeyfilePathEnt.SetText(KEYFILE_PATH)
+	if signer.KEYFILE_PATH != "" {
+		r5KeyfilePathEnt.SetText(signer.KEYFILE_PATH)
 	}
 
 	// If keyfile specified then deactivate private key input
@@ -316,10 +318,10 @@ func ui() {
 	}
 	r6PrivateKeyEnt.SetPlaceholderText("string")
 	r6PrivateKeyEnt.SetVisibility(false)
-	if PRIVATE_KEY != "" {
+	if signer.PRIVATE_KEY != "" {
 		r5KeyfilePathEntContent, _ := r5KeyfilePathEnt.GetText()
 		if r5KeyfilePathEntContent == "" {
-			r6PrivateKeyEnt.SetText(PRIVATE_KEY)
+			r6PrivateKeyEnt.SetText(signer.PRIVATE_KEY)
 		}
 	}
 
@@ -356,8 +358,8 @@ func ui() {
 	}
 	r7PasswordEnt.SetPlaceholderText("string")
 	r7PasswordEnt.SetVisibility(false)
-	if KEYFILE_PASSWORD != "" {
-		r7PasswordEnt.SetText(KEYFILE_PASSWORD)
+	if signer.KEYFILE_PASSWORD != "" {
+		r7PasswordEnt.SetText(signer.KEYFILE_PASSWORD)
 	}
 
 	// ROW 7 - Packaging
@@ -396,8 +398,8 @@ func ui() {
 		log.Fatal("Unable to create r9RpcUriEnt:", err)
 	}
 	r9RpcUriEnt.SetPlaceholderText("string")
-	if JSON_RPC_URI != "" {
-		r9RpcUriEnt.SetText(JSON_RPC_URI)
+	if signer.JSON_RPC_URI != "" {
+		r9RpcUriEnt.SetText(signer.JSON_RPC_URI)
 	}
 
 	// ROW 9 - Packaging
@@ -427,8 +429,8 @@ func ui() {
 		log.Fatal("Unable to create r10OutputPathEnt:", err)
 	}
 	r10OutputPathEnt.SetPlaceholderText("string")
-	if MOONSTREAM_DROPPER_CLAIMANTS_OUTPUT != "" {
-		r10OutputPathEnt.SetText(MOONSTREAM_DROPPER_CLAIMANTS_OUTPUT)
+	if signer.MOONSTREAM_DROPPER_CLAIMANTS_OUTPUT != "" {
+		r10OutputPathEnt.SetText(signer.MOONSTREAM_DROPPER_CLAIMANTS_OUTPUT)
 	} else {
 		r10OutputPathEnt.SetText(fmt.Sprintf("%s/output.csv", workingDir))
 	}

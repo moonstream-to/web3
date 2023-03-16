@@ -1,4 +1,4 @@
-package main
+package signer
 
 import (
 	"crypto/ecdsa"
@@ -13,8 +13,8 @@ import (
 )
 
 type PrivateContainer struct {
-	publicKey  common.Address
-	privateKey *ecdsa.PrivateKey
+	PublicKey  common.Address
+	PrivateKey *ecdsa.PrivateKey
 }
 
 func InitializeNetworkClient(rpcEndpointURI string) (*ethclient.Client, error) {
@@ -26,7 +26,7 @@ func InitializeNetworkClient(rpcEndpointURI string) (*ethclient.Client, error) {
 	return client, nil
 }
 
-func initializeSigner(password, keyFilePath, privateKeyStr string) (PrivateContainer, error) {
+func InitializeSigner(password, keyFilePath, privateKeyStr string) (PrivateContainer, error) {
 	privateContainer := PrivateContainer{}
 
 	var publicKey common.Address
@@ -53,16 +53,16 @@ func initializeSigner(password, keyFilePath, privateKeyStr string) (PrivateConta
 	}
 
 	privateContainer = PrivateContainer{
-		publicKey:  publicKey,
-		privateKey: privateKey,
+		PublicKey:  publicKey,
+		PrivateKey: privateKey,
 	}
 	return privateContainer, nil
 }
 
 // Sign message with private key
-func (pc *PrivateContainer) sign(data [32]byte) (string, error) {
+func (pc *PrivateContainer) Sign(data [32]byte) (string, error) {
 	dataSlice := data[:]
-	signature, err := crypto.Sign(dataSlice, pc.privateKey)
+	signature, err := crypto.Sign(dataSlice, pc.PrivateKey)
 	if err != nil {
 		return "", fmt.Errorf("an error occurred while signing with private key, err: %v", err)
 	}
