@@ -161,7 +161,7 @@ func cli() {
 		stateCLI.genCmd.Parse(os.Args[2:])
 		stateCLI.checkRequirements()
 
-		privateContainer, err := initSigner(stateCLI.passFileFlag, stateCLI.keyFileFlag, stateCLI.privateKeyFileFlag)
+		privateContainer, err := initializeSigner(stateCLI.passFileFlag, stateCLI.keyFileFlag, stateCLI.privateKeyFileFlag)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -173,9 +173,9 @@ func cli() {
 			os.Exit(1)
 		}
 
-		contract := ContractDropper{}
-		contract.SetContractAddress(stateCLI.contractAddressFlag)
-		err = contract.InitializeContractInstance(client)
+		dropperContracts := InitializeDropperContracts()
+		dropperContract := dropperContracts["polygon"]
+		err = dropperContract.InitializeContractInstance(client)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -188,7 +188,7 @@ func cli() {
 		}
 		var claimants []Claimant
 		for _, input := range inputs {
-			chm, err := contract.claimMessageHash(stateCLI.claimIdFlag, input.Address, input.ClaimBlockDeadline, input.Amount)
+			chm, err := dropperContract.claimMessageHash(stateCLI.claimIdFlag, input.Address, input.ClaimBlockDeadline, input.Amount)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)

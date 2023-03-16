@@ -84,7 +84,7 @@ func ProcessOutput(claimants []Claimant, outputPath, outputFileType string) (str
 	if outputFileType == "json" {
 		outputBytes, err = json.Marshal(claimants)
 		if err != nil {
-			return "", fmt.Errorf("Unable to marshal output, err: %v", err)
+			return "", fmt.Errorf("unable to marshal output, err: %v", err)
 		}
 	}
 	if outputFileType == "csv" {
@@ -97,9 +97,9 @@ func ProcessOutput(claimants []Claimant, outputPath, outputFileType string) (str
 		}
 	}
 
-	err = ioutil.WriteFile(fmt.Sprintf("%s.%s", outputPath, outputFileType), outputBytes, 0600)
+	err = ioutil.WriteFile(outputPath, outputBytes, 0600)
 	if err != nil {
-		return "", fmt.Errorf("Unable to write to file, err: %v", err)
+		return "", fmt.Errorf("unable to write to file, err: %v", err)
 	}
 
 	return fmt.Sprintf("%s.%s", outputPath, outputFileType), nil
