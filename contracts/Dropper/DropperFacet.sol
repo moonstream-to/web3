@@ -170,18 +170,16 @@ contract DropperFacet is
         return LibDropper.dropperStorage().NumDrops;
     }
 
-    function getDrop(uint256 dropId)
-        public
-        view
-        returns (DroppableToken memory)
-    {
+    function getDrop(
+        uint256 dropId
+    ) public view returns (DroppableToken memory) {
         return LibDropper.dropperStorage().DropToken[dropId];
     }
 
-    function setDropStatus(uint256 dropId, bool status)
-        external
-        onlyTerminusAdmin
-    {
+    function setDropStatus(
+        uint256 dropId,
+        bool status
+    ) external onlyTerminusAdmin {
         LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
         ds.IsDropActive[dropId] = status;
         emit DropStatusChanged(dropId, status);
@@ -191,10 +189,10 @@ contract DropperFacet is
         return LibDropper.dropperStorage().IsDropActive[dropId];
     }
 
-    function setSignerForDrop(uint256 dropId, address signer)
-        public
-        onlyTerminusAdmin
-    {
+    function setSignerForDrop(
+        uint256 dropId,
+        address signer
+    ) public onlyTerminusAdmin {
         LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
         ds.DropSigner[dropId] = signer;
         emit DropSignerChanged(dropId, signer);
@@ -208,17 +206,16 @@ contract DropperFacet is
         return LibDropper.dropperStorage().MaxClaimable[dropId];
     }
 
-    function getAmountClaimed(address claimant, uint256 dropId)
-        external
-        view
-        returns (uint256)
-    {
+    function getAmountClaimed(
+        address claimant,
+        uint256 dropId
+    ) external view returns (uint256) {
         return LibDropper.dropperStorage().AmountClaimed[claimant][dropId];
     }
 
     function claimMessageHash(
-        uint256 requestID,
         uint256 dropId,
+        uint256 requestID,
         address claimant,
         uint256 blockDeadline,
         uint256 amount
@@ -226,10 +223,10 @@ contract DropperFacet is
         bytes32 structHash = keccak256(
             abi.encode(
                 keccak256(
-                    "ClaimPayload(uint256 requestID,uint256 dropId,address claimant,uint256 blockDeadline,uint256 amount)"
+                    "ClaimPayload(uint256 dropId,uint256 requestID,address claimant,uint256 blockDeadline,uint256 amount)"
                 ),
-                requestID,
                 dropId,
+                requestID,
                 claimant,
                 blockDeadline,
                 amount
@@ -240,8 +237,8 @@ contract DropperFacet is
     }
 
     function claim(
-        uint256 requestID,
         uint256 dropId,
+        uint256 requestID,
         uint256 blockDeadline,
         uint256 amount,
         bytes memory signature
@@ -264,8 +261,8 @@ contract DropperFacet is
         );
 
         bytes32 hash = claimMessageHash(
-            requestID,
             dropId,
+            requestID,
             msg.sender,
             blockDeadline,
             amount
@@ -337,19 +334,27 @@ contract DropperFacet is
         emit Claimed(dropId, msg.sender, requestID, amount);
     }
 
-    function withdrawERC20(address tokenAddress, uint256 amount)
-        public
-        onlyTerminusAdmin
-    {
+    function claimStatus(
+        uint256 dropId,
+        uint256 requestId
+    ) external view returns (bool) {
+        return
+            LibDropper.dropperStorage().DropRequestClaimed[dropId][requestId];
+    }
+
+    function withdrawERC20(
+        address tokenAddress,
+        uint256 amount
+    ) public onlyTerminusAdmin {
         IERC20 erc20Contract = IERC20(tokenAddress);
         erc20Contract.transfer(msg.sender, amount);
         emit Withdrawal(msg.sender, ERC20_TYPE, tokenAddress, 0, amount);
     }
 
-    function withdrawERC721(address tokenAddress, uint256 tokenId)
-        public
-        onlyTerminusAdmin
-    {
+    function withdrawERC721(
+        address tokenAddress,
+        uint256 tokenId
+    ) public onlyTerminusAdmin {
         IERC721 erc721Contract = IERC721(tokenAddress);
         erc721Contract.safeTransferFrom(address(this), msg.sender, tokenId, "");
         emit Withdrawal(msg.sender, ERC721_TYPE, tokenAddress, tokenId, 1);
@@ -390,10 +395,10 @@ contract DropperFacet is
         return LibDropper.dropperStorage().DropURI[dropId];
     }
 
-    function setDropUri(uint256 dropId, string memory uri)
-        external
-        onlyTerminusAdmin
-    {
+    function setDropUri(
+        uint256 dropId,
+        string memory uri
+    ) external onlyTerminusAdmin {
         LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
 
         ds.DropURI[dropId] = uri;
