@@ -378,6 +378,8 @@ class DropperClaimERC20Tests(DropperTestCase):
         balance_claimant_0 = self.erc20_contract.balance_of(accounts[1].address)
         balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
         self.dropper.claim(
             claim_id,
             request_id,
@@ -391,6 +393,8 @@ class DropperClaimERC20Tests(DropperTestCase):
 
         self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
         self.assertEqual(balance_dropper_1, balance_dropper_0 - reward)
+
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc20_with_custom_amount(self):
         default_reward = 3
@@ -420,6 +424,8 @@ class DropperClaimERC20Tests(DropperTestCase):
         balance_claimant_0 = self.erc20_contract.balance_of(accounts[1].address)
         balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
         self.dropper.claim(
             claim_id,
             request_id,
@@ -433,6 +439,8 @@ class DropperClaimERC20Tests(DropperTestCase):
 
         self.assertEqual(balance_claimant_1, balance_claimant_0 + custom_reward)
         self.assertEqual(balance_dropper_1, balance_dropper_0 - custom_reward)
+
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc20_fails_if_block_deadline_exceeded(self):
         reward = 5
@@ -471,6 +479,8 @@ class DropperClaimERC20Tests(DropperTestCase):
 
         self.assertEqual(balance_claimant_1, balance_claimant_0)
         self.assertEqual(balance_dropper_1, balance_dropper_0)
+
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc20_fails_if_incorrect_amount(self):
         reward = 5
@@ -514,6 +524,8 @@ class DropperClaimERC20Tests(DropperTestCase):
         self.assertEqual(balance_claimant_1, balance_claimant_0)
         self.assertEqual(balance_dropper_1, balance_dropper_0)
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
     def test_claim_erc20_fails_if_drop_is_inactive(self):
         reward = 3
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
@@ -556,6 +568,8 @@ class DropperClaimERC20Tests(DropperTestCase):
         self.assertEqual(balance_claimant_1, balance_claimant_0)
         self.assertEqual(balance_dropper_1, balance_dropper_0)
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
     def test_claim_erc20_fails_if_wrong_claimant(self):
         reward = 6
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
@@ -597,6 +611,8 @@ class DropperClaimERC20Tests(DropperTestCase):
         self.assertEqual(balance_claimant_1, balance_claimant_0)
         self.assertEqual(balance_dropper_1, balance_dropper_0)
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
     def test_claim_erc20_fails_if_wrong_signer(self):
         reward = 7
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
@@ -635,6 +651,8 @@ class DropperClaimERC20Tests(DropperTestCase):
         self.assertEqual(balance_claimant_1, balance_claimant_0)
         self.assertEqual(balance_dropper_1, balance_dropper_0)
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
     def test_claim_erc20_fails_on_repeated_attempts_with_same_signed_message(self):
         reward = 9
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
@@ -657,6 +675,8 @@ class DropperClaimERC20Tests(DropperTestCase):
         balance_claimant_0 = self.erc20_contract.balance_of(accounts[1].address)
         balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
         self.dropper.claim(
             claim_id,
             request_id,
@@ -670,6 +690,8 @@ class DropperClaimERC20Tests(DropperTestCase):
 
         self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
         self.assertEqual(balance_dropper_1, balance_dropper_0 - reward)
+
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
         with self.assertRaises(VirtualMachineError) as vm_error:
             self.dropper.claim(
@@ -690,6 +712,8 @@ class DropperClaimERC20Tests(DropperTestCase):
 
         self.assertEqual(balance_claimant_2, balance_claimant_1)
         self.assertEqual(balance_dropper_2, balance_dropper_1)
+
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc20_fails_on_repeated_attempts_with_different_signed_messages(
         self,
@@ -715,6 +739,8 @@ class DropperClaimERC20Tests(DropperTestCase):
         balance_claimant_0 = self.erc20_contract.balance_of(accounts[1].address)
         balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
         self.dropper.claim(
             claim_id,
             request_id,
@@ -728,6 +754,8 @@ class DropperClaimERC20Tests(DropperTestCase):
 
         self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
         self.assertEqual(balance_dropper_1, balance_dropper_0 - reward)
+
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
         current_block = len(chain)
         block_deadline = current_block
@@ -784,6 +812,8 @@ class DropperClaimERC20Tests(DropperTestCase):
         balance_claimant_0 = self.erc20_contract.balance_of(accounts[1].address)
         balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
                 claim_id,
@@ -799,6 +829,8 @@ class DropperClaimERC20Tests(DropperTestCase):
 
         self.assertEqual(balance_claimant_1, balance_claimant_0)
         self.assertEqual(balance_dropper_1, balance_dropper_0)
+
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
 
 class DropperClaimERC721Tests(DropperTestCase):
