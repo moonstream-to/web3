@@ -1857,6 +1857,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
         self.assertEqual(balance_dropper_1, balance_dropper_0)
         self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
+
 class DropperClaimERC1155MintableTests(DropperTestCase):
     def test_claim_erc1155(self):
         reward = 3
@@ -1889,6 +1890,8 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id
         )
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
         self.dropper.claim(
             claim_id,
             request_id,
@@ -1907,6 +1910,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         )
         self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
         self.assertEqual(pool_supply_1, pool_supply_0 + reward)
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc1155_with_custom_amount(self):
         default_reward = 3
@@ -1940,6 +1944,8 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id
         )
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
         self.dropper.claim(
             claim_id,
             request_id,
@@ -1958,6 +1964,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         )
         self.assertEqual(balance_claimant_1, balance_claimant_0 + custom_reward)
         self.assertEqual(pool_supply_1, pool_supply_0 + custom_reward)
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc1155_fails_if_dropper_does_not_have_pool_control(self):
         reward = 33
@@ -2005,6 +2012,8 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             terminus_pool_which_is_owned_by_dropper_id
         )
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
         self.dropper.claim(
             claim_id,
             request_id,
@@ -2024,6 +2033,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
         self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
         self.assertEqual(pool_supply_1, pool_supply_0 + reward)
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
         self.dropper.surrender_pool_control(
             terminus_pool_which_is_owned_by_dropper_id,
@@ -2046,6 +2056,8 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id + 1))
+
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
                 claim_id,
@@ -2065,6 +2077,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
         self.assertEqual(balance_second_claimant_2, balance_second_claimant_0)
         self.assertEqual(pool_supply_2, pool_supply_1)
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id + 1))
 
     def test_claim_erc1155_fails_if_block_deadline_exceeded(self):
         reward = 5
@@ -2098,6 +2111,8 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id
         )
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
                 claim_id,
@@ -2118,6 +2133,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
         self.assertEqual(balance_claimant_1, balance_claimant_0)
         self.assertEqual(pool_supply_1, pool_supply_0)
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc1155_fails_if_incorrect_amount(self):
         reward = 5
@@ -2151,6 +2167,8 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id
         )
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
         with self.assertRaises(VirtualMachineError) as vm_error:
             self.dropper.claim(
                 claim_id,
@@ -2175,6 +2193,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
         self.assertEqual(balance_claimant_1, balance_claimant_0)
         self.assertEqual(pool_supply_1, pool_supply_0)
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc1155_fails_if_drop_is_inactive(self):
         reward = 3
@@ -2209,6 +2228,8 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id
         )
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
         with self.assertRaises(VirtualMachineError) as vme_1:
             self.dropper.claim(
                 claim_id,
@@ -2230,6 +2251,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         )
         self.assertEqual(balance_claimant_1, balance_claimant_0)
         self.assertEqual(pool_supply_1, pool_supply_0)
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc1155_fails_if_wrong_claimant(self):
         reward = 6
@@ -2266,6 +2288,8 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id
         )
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
                 claim_id,
@@ -2289,6 +2313,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         self.assertEqual(balance_attacker_1, balance_attacker_0)
         self.assertEqual(balance_claimant_1, balance_claimant_0)
         self.assertEqual(pool_supply_1, pool_supply_0)
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc1155_fails_if_wrong_signer(self):
         reward = 7
@@ -2320,6 +2345,8 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id
         )
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
                 claim_id,
@@ -2340,6 +2367,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
         self.assertEqual(balance_claimant_1, balance_claimant_0)
         self.assertEqual(pool_supply_1, pool_supply_0)
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc1155_fails_on_repeated_attempts_with_same_signed_message(self):
         reward = 9
@@ -2370,6 +2398,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         pool_supply_0 = self.terminus.terminus_pool_supply(
             self.mintable_terminus_pool_id
         )
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
         self.dropper.claim(
             claim_id,
@@ -2390,6 +2419,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
         self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
         self.assertEqual(pool_supply_1, pool_supply_0 + reward)
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
         with self.assertRaises(VirtualMachineError) as vm_error:
             self.dropper.claim(
@@ -2415,6 +2445,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
         self.assertEqual(balance_claimant_2, balance_claimant_1)
         self.assertEqual(pool_supply_2, pool_supply_1)
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc1155_fails_on_repeated_attempts_with_different_signed_messages(
         self,
@@ -2449,6 +2480,8 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id
         )
 
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
         self.dropper.claim(
             claim_id,
             request_id,
@@ -2468,6 +2501,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
         self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
         self.assertEqual(pool_supply_1, pool_supply_0 + reward)
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
         current_block = len(chain)
         block_deadline = current_block
@@ -2500,6 +2534,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
         self.assertEqual(balance_claimant_2, balance_claimant_1)
         self.assertEqual(pool_supply_2, pool_supply_1)
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
 
 class DropperPoolControllerTest(DropperTestCase):
