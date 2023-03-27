@@ -369,8 +369,9 @@ class DropperClaimERC20Tests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
 
+        request_id = 90284359
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -378,7 +379,12 @@ class DropperClaimERC20Tests(DropperTestCase):
         balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
 
         self.dropper.claim(
-            1, claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+            claim_id,
+            request_id,
+            block_deadline,
+            0,
+            signed_message,
+            {"from": accounts[1]},
         )
         balance_claimant_1 = self.erc20_contract.balance_of(accounts[1].address)
         balance_dropper_1 = self.erc20_contract.balance_of(self.dropper.address)
@@ -405,8 +411,9 @@ class DropperClaimERC20Tests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
 
+        request_id = 3984590845
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, custom_reward
+            claim_id, request_id, accounts[1].address, block_deadline, custom_reward
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -414,8 +421,8 @@ class DropperClaimERC20Tests(DropperTestCase):
         balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
 
         self.dropper.claim(
-            1,
             claim_id,
+            request_id,
             block_deadline,
             custom_reward,
             signed_message,
@@ -440,8 +447,9 @@ class DropperClaimERC20Tests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block - 1
 
+        request_id = 984359084
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -450,7 +458,12 @@ class DropperClaimERC20Tests(DropperTestCase):
 
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
-                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+                claim_id,
+                request_id,
+                block_deadline,
+                0,
+                signed_message,
+                {"from": accounts[1]},
             )
 
         balance_claimant_1 = self.erc20_contract.balance_of(accounts[1].address)
@@ -472,23 +485,28 @@ class DropperClaimERC20Tests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block
 
+        request_id = 298342384
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
         balance_claimant_0 = self.erc20_contract.balance_of(accounts[1].address)
         balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
 
-        with self.assertRaises(VirtualMachineError):
+        with self.assertRaises(VirtualMachineError) as vm_error:
             self.dropper.claim(
-                1,
                 claim_id,
+                request_id,
                 block_deadline,
                 reward + 1,
                 signed_message,
                 {"from": accounts[1]},
             )
+        self.assertEqual(
+            vm_error.exception.revert_msg,
+            "Dropper: claim -- Invalid signer for claim.",
+        )
 
         balance_claimant_1 = self.erc20_contract.balance_of(accounts[1].address)
         balance_dropper_1 = self.erc20_contract.balance_of(self.dropper.address)
@@ -551,8 +569,9 @@ class DropperClaimERC20Tests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
 
+        request_id = 92839842
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -562,7 +581,12 @@ class DropperClaimERC20Tests(DropperTestCase):
 
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
-                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[2]}
+                claim_id,
+                request_id,
+                block_deadline,
+                0,
+                signed_message,
+                {"from": accounts[2]},
             )
 
         balance_attacker_1 = self.erc20_contract.balance_of(accounts[2].address)
@@ -586,8 +610,9 @@ class DropperClaimERC20Tests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
 
+        request_id = 2384738924
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_1)
 
@@ -596,7 +621,12 @@ class DropperClaimERC20Tests(DropperTestCase):
 
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
-                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[2]}
+                claim_id,
+                request_id,
+                block_deadline,
+                0,
+                signed_message,
+                {"from": accounts[2]},
             )
 
         balance_claimant_1 = self.erc20_contract.balance_of(accounts[1].address)
@@ -745,8 +775,9 @@ class DropperClaimERC20Tests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
 
+        request_id = 293423
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -755,7 +786,12 @@ class DropperClaimERC20Tests(DropperTestCase):
 
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
-                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+                claim_id,
+                request_id,
+                block_deadline,
+                0,
+                signed_message,
+                {"from": accounts[1]},
             )
 
         balance_claimant_1 = self.erc20_contract.balance_of(accounts[1].address)
@@ -779,15 +815,21 @@ class DropperClaimERC721Tests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
 
+        request_id = 9892348234
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
         self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
 
         self.dropper.claim(
-            1, claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+            claim_id,
+            request_id,
+            block_deadline,
+            0,
+            signed_message,
+            {"from": accounts[1]},
         )
         self.assertEqual(self.nft_contract.owner_of(token_id), accounts[1].address)
 
@@ -836,8 +878,9 @@ class DropperClaimERC721Tests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block - 1
 
+        request_id = 97842358
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -845,7 +888,12 @@ class DropperClaimERC721Tests(DropperTestCase):
 
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
-                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+                claim_id,
+                request_id,
+                block_deadline,
+                0,
+                signed_message,
+                {"from": accounts[1]},
             )
 
         self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
@@ -863,17 +911,27 @@ class DropperClaimERC721Tests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block
 
+        request_id = 2983432
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
         self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
 
-        with self.assertRaises(VirtualMachineError):
+        with self.assertRaises(VirtualMachineError) as vm_error:
             self.dropper.claim(
-                1, claim_id, block_deadline, 1, signed_message, {"from": accounts[1]}
+                claim_id,
+                request_id,
+                block_deadline,
+                1,
+                signed_message,
+                {"from": accounts[1]},
             )
+        self.assertEqual(
+            vm_error.exception.revert_msg,
+            "Dropper: claim -- Invalid signer for claim.",
+        )
 
         self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
 
@@ -930,8 +988,9 @@ class DropperClaimERC721Tests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
 
+        request_id = 73842743
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -939,7 +998,12 @@ class DropperClaimERC721Tests(DropperTestCase):
 
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
-                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[2]}
+                claim_id,
+                request_id,
+                block_deadline,
+                0,
+                signed_message,
+                {"from": accounts[2]},
             )
 
         self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
@@ -957,8 +1021,9 @@ class DropperClaimERC721Tests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
 
+        request_id = 7283743
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_1)
 
@@ -966,7 +1031,12 @@ class DropperClaimERC721Tests(DropperTestCase):
 
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
-                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[2]}
+                claim_id,
+                request_id,
+                block_deadline,
+                0,
+                signed_message,
+                {"from": accounts[2]},
             )
 
         self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
@@ -1071,7 +1141,7 @@ class DropperClaimERC721Tests(DropperTestCase):
         block_deadline = current_block
 
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -1105,14 +1175,20 @@ class DropperClaimERC721Tests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
 
+        request_id = 7823743
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
-                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+                claim_id,
+                request_id,
+                block_deadline,
+                0,
+                signed_message,
+                {"from": accounts[1]},
             )
 
         self.assertNotEqual(self.nft_contract.owner_of(token_id), accounts[1].address)
@@ -1142,8 +1218,9 @@ class DropperClaimERC1155Tests(DropperTestCase):
         )
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
+        request_id = 7823743
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
         balance_claimant_0 = self.terminus.balance_of(
@@ -1153,7 +1230,12 @@ class DropperClaimERC1155Tests(DropperTestCase):
             self.dropper.address, self.terminus_pool_id
         )
         self.dropper.claim(
-            1, claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+            claim_id,
+            request_id,
+            block_deadline,
+            0,
+            signed_message,
+            {"from": accounts[1]},
         )
         balance_claimant_1 = self.terminus.balance_of(
             accounts[1].address, self.terminus_pool_id
@@ -1187,8 +1269,9 @@ class DropperClaimERC1155Tests(DropperTestCase):
         )
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
+        request_id = 239084239
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, custom_reward
+            claim_id, request_id, accounts[1].address, block_deadline, custom_reward
         )
         signed_message = sign_message(message_hash, self.signer_0)
         balance_claimant_0 = self.terminus.balance_of(
@@ -1198,8 +1281,8 @@ class DropperClaimERC1155Tests(DropperTestCase):
             self.dropper.address, self.terminus_pool_id
         )
         self.dropper.claim(
-            1,
             claim_id,
+            request_id,
             block_deadline,
             custom_reward,
             signed_message,
@@ -1236,8 +1319,9 @@ class DropperClaimERC1155Tests(DropperTestCase):
         )
         current_block = len(chain)
         block_deadline = current_block - 1
+        request_id = 87234
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
         balance_claimant_0 = self.terminus.balance_of(
@@ -1248,7 +1332,12 @@ class DropperClaimERC1155Tests(DropperTestCase):
         )
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
-                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+                claim_id,
+                request_id,
+                block_deadline,
+                0,
+                signed_message,
+                {"from": accounts[1]},
             )
         balance_claimant_1 = self.terminus.balance_of(
             accounts[1].address, self.terminus_pool_id
@@ -1281,8 +1370,9 @@ class DropperClaimERC1155Tests(DropperTestCase):
         )
         current_block = len(chain)
         block_deadline = current_block
+        request_id = 6723647236
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
         balance_claimant_0 = self.terminus.balance_of(
@@ -1293,8 +1383,8 @@ class DropperClaimERC1155Tests(DropperTestCase):
         )
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
-                1,
                 claim_id,
+                request_id,
                 block_deadline,
                 reward,
                 signed_message,
@@ -1396,8 +1486,9 @@ class DropperClaimERC1155Tests(DropperTestCase):
         )
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
+        request_id = 8723487342
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
         balance_attacker_0 = self.terminus.balance_of(
@@ -1411,7 +1502,12 @@ class DropperClaimERC1155Tests(DropperTestCase):
         )
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
-                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[2]}
+                claim_id,
+                request_id,
+                block_deadline,
+                0,
+                signed_message,
+                {"from": accounts[2]},
             )
         balance_attacker_1 = self.terminus.balance_of(
             accounts[2].address, self.terminus_pool_id
@@ -1448,8 +1544,9 @@ class DropperClaimERC1155Tests(DropperTestCase):
         )
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
+        request_id = 782343
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_1)
         balance_claimant_0 = self.terminus.balance_of(
@@ -1460,7 +1557,12 @@ class DropperClaimERC1155Tests(DropperTestCase):
         )
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
-                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[2]}
+                claim_id,
+                request_id,
+                block_deadline,
+                0,
+                signed_message,
+                {"from": accounts[2]},
             )
         balance_claimant_1 = self.terminus.balance_of(
             accounts[1].address, self.terminus_pool_id
@@ -1646,8 +1748,9 @@ class DropperClaimERC1155Tests(DropperTestCase):
         )
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
+        request_id = 7283473
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
         balance_claimant_0 = self.terminus.balance_of(
@@ -1658,7 +1761,12 @@ class DropperClaimERC1155Tests(DropperTestCase):
         )
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
-                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+                claim_id,
+                request_id,
+                block_deadline,
+                0,
+                signed_message,
+                {"from": accounts[1]},
             )
         balance_claimant_1 = self.terminus.balance_of(
             accounts[1].address, self.terminus_pool_id
@@ -1688,8 +1796,9 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
 
+        request_id = 56253423
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -1702,7 +1811,12 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         )
 
         self.dropper.claim(
-            1, claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+            claim_id,
+            request_id,
+            block_deadline,
+            0,
+            signed_message,
+            {"from": accounts[1]},
         )
 
         pool_supply_1 = self.terminus.terminus_pool_supply(
@@ -1733,8 +1847,9 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
 
+        request_id = 87343
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, custom_reward
+            claim_id, request_id, accounts[1].address, block_deadline, custom_reward
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -1747,8 +1862,8 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         )
 
         self.dropper.claim(
-            1,
             claim_id,
+            request_id,
             block_deadline,
             custom_reward,
             signed_message,
@@ -1890,8 +2005,9 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block - 1
 
+        request_id = 782343
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -1905,7 +2021,12 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
-                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[1]}
+                claim_id,
+                request_id,
+                block_deadline,
+                0,
+                signed_message,
+                {"from": accounts[1]},
             )
 
         balance_claimant_1 = self.terminus.balance_of(
@@ -1937,8 +2058,9 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block
 
+        request_id = 7623432
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -1950,10 +2072,19 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id
         )
 
-        with self.assertRaises(VirtualMachineError):
+        with self.assertRaises(VirtualMachineError) as vm_error:
             self.dropper.claim(
-                1, claim_id, block_deadline, 1, signed_message, {"from": accounts[1]}
+                claim_id,
+                request_id,
+                block_deadline,
+                1,
+                signed_message,
+                {"from": accounts[1]},
             )
+        self.assertEqual(
+            vm_error.exception.revert_msg,
+            "Dropper: claim -- Invalid signer for claim.",
+        )
 
         balance_claimant_1 = self.terminus.balance_of(
             accounts[1].address, self.mintable_terminus_pool_id
@@ -2039,8 +2170,9 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
 
+        request_id = 23444
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -2057,7 +2189,12 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
-                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[2]}
+                claim_id,
+                request_id,
+                block_deadline,
+                0,
+                signed_message,
+                {"from": accounts[2]},
             )
 
         balance_attacker_1 = self.terminus.balance_of(
@@ -2091,8 +2228,9 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
 
+        request_id = 344324
         message_hash = self.dropper.claim_message_hash(
-            1, claim_id, accounts[1].address, block_deadline, 0
+            claim_id, request_id, accounts[1].address, block_deadline, 0
         )
         signed_message = sign_message(message_hash, self.signer_1)
 
@@ -2105,7 +2243,12 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
 
         with self.assertRaises(VirtualMachineError):
             self.dropper.claim(
-                1, claim_id, block_deadline, 0, signed_message, {"from": accounts[2]}
+                claim_id,
+                request_id,
+                block_deadline,
+                0,
+                signed_message,
+                {"from": accounts[2]},
             )
 
         balance_claimant_1 = self.terminus.balance_of(
