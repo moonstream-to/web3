@@ -34,6 +34,31 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "dropId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "terminusAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "poolId",
+        "type": "uint256"
+      }
+    ],
+    "name": "DropAuthorizationChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": false,
         "internalType": "uint256",
         "name": "dropId",
@@ -78,12 +103,12 @@
       },
       {
         "indexed": false,
-        "internalType": "address",
-        "name": "signer",
-        "type": "address"
+        "internalType": "bool",
+        "name": "status",
+        "type": "bool"
       }
     ],
-    "name": "DropSignerChanged",
+    "name": "DropStatusChanged",
     "type": "event"
   },
   {
@@ -97,12 +122,12 @@
       },
       {
         "indexed": false,
-        "internalType": "bool",
-        "name": "status",
-        "type": "bool"
+        "internalType": "string",
+        "name": "uri",
+        "type": "string"
       }
     ],
-    "name": "DropStatusChanged",
+    "name": "DropURIChanged",
     "type": "event"
   },
   {
@@ -146,12 +171,12 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "requestID",
+        "name": "dropId",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "dropId",
+        "name": "requestID",
         "type": "uint256"
       },
       {
@@ -163,6 +188,11 @@
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "signer",
+        "type": "address"
       },
       {
         "internalType": "bytes",
@@ -179,12 +209,12 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "requestID",
+        "name": "dropId",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "dropId",
+        "name": "requestID",
         "type": "uint256"
       },
       {
@@ -218,6 +248,30 @@
     "inputs": [
       {
         "internalType": "uint256",
+        "name": "dropId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "requestId",
+        "type": "uint256"
+      }
+    ],
+    "name": "claimStatus",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
         "name": "tokenType",
         "type": "uint256"
       },
@@ -237,9 +291,19 @@
         "type": "uint256"
       },
       {
+        "internalType": "address",
+        "name": "authorizationTokenAddress",
+        "type": "address"
+      },
+      {
         "internalType": "uint256",
-        "name": "_maxClaimable",
+        "name": "authorizationPoolId",
         "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "uri",
+        "type": "string"
       }
     ],
     "name": "createDrop",
@@ -310,19 +374,34 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "claimant",
-        "type": "address"
-      },
+    "inputs": [],
+    "name": "erc1155_type",
+    "outputs": [
       {
         "internalType": "uint256",
-        "name": "dropId",
+        "name": "",
         "type": "uint256"
       }
     ],
-    "name": "getAmountClaimed",
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "erc20_type",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "erc721_type",
     "outputs": [
       {
         "internalType": "uint256",
@@ -382,12 +461,24 @@
         "type": "uint256"
       }
     ],
-    "name": "getSignerForDrop",
+    "name": "getDropAuthorization",
     "outputs": [
       {
-        "internalType": "address",
+        "components": [
+          {
+            "internalType": "address",
+            "name": "terminusAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "poolId",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct TerminusAuthorization",
         "name": "",
-        "type": "address"
+        "type": "tuple"
       }
     ],
     "stateMutability": "view",
@@ -409,25 +500,6 @@
     "name": "init",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "dropId",
-        "type": "uint256"
-      }
-    ],
-    "name": "maxClaimable",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -563,6 +635,29 @@
         "type": "uint256"
       },
       {
+        "internalType": "address",
+        "name": "terminusAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "poolId",
+        "type": "uint256"
+      }
+    ],
+    "name": "setDropAuthorization",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "dropId",
+        "type": "uint256"
+      },
+      {
         "internalType": "bool",
         "name": "status",
         "type": "bool"
@@ -587,24 +682,6 @@
       }
     ],
     "name": "setDropUri",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "dropId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "signer",
-        "type": "address"
-      }
-    ],
-    "name": "setSignerForDrop",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -649,6 +726,19 @@
     "name": "surrenderPoolControl",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "terminus_mintable_type",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
