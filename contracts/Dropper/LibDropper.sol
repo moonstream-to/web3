@@ -17,7 +17,6 @@ uint256 constant ERC20_TYPE = 20;
 uint256 constant ERC721_TYPE = 721;
 uint256 constant ERC1155_TYPE = 1155;
 uint256 constant TERMINUS_MINTABLE_TYPE = 1;
-uint256 constant ERC721_MINTABLE_TYPE = 2;
 
 library LibDropper {
     bytes32 constant DROPPERV2_STORAGE_POSITION =

@@ -7,7 +7,7 @@
 
 pragma solidity ^0.8.9;
 
-import "@moonstream/contracts/terminus/TerminusPermissions.sol";
+import {TerminusPermissions} from "@moonstream/contracts/terminus/TerminusPermissions.sol";
 import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol";
@@ -19,6 +19,7 @@ import "./LibDropper.sol";
 import "../interfaces/IERC721Mint.sol";
 import "../interfaces/ITerminus.sol";
 import "../diamond/security/DiamondReentrancyGuard.sol";
+import "../diamond/libraries/LibDiamond.sol";
 import "../diamond/libraries/LibSignatures.sol";
 
 /**
@@ -78,10 +79,6 @@ contract DropperFacet is
         return TERMINUS_MINTABLE_TYPE;
     }
 
-    function erc721_mintable_type() external view returns (uint256) {
-        return ERC721_MINTABLE_TYPE;
-    }
-
     modifier onlyTerminusAdmin() {
         LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
         require(
@@ -101,6 +98,8 @@ contract DropperFacet is
         address terminusAdminContractAddress,
         uint256 terminusAdminPoolID
     ) external {
+        LibDiamond.enforceIsContractOwner();
+
         // Set up server side signing parameters for EIP712
         LibSignatures._setEIP712Parameters("Moonstream Dropper", "0.2.0");
 
@@ -143,8 +142,7 @@ contract DropperFacet is
             tokenType == ERC20_TYPE ||
                 tokenType == ERC721_TYPE ||
                 tokenType == ERC1155_TYPE ||
-                tokenType == TERMINUS_MINTABLE_TYPE ||
-                tokenType == ERC721_MINTABLE_TYPE,
+                tokenType == TERMINUS_MINTABLE_TYPE,
             "Dropper: createDrop -- Unknown token type"
         );
 
@@ -333,12 +331,6 @@ contract DropperFacet is
                 amount,
                 ""
             );
-        } else if (claimToken.tokenType == ERC721_MINTABLE_TYPE) {
-            IERC721Mint erc721MintableContract = IERC721Mint(
-                claimToken.tokenAddress
-            );
-            uint256 numTokens = erc721MintableContract.totalSupply();
-            erc721MintableContract.mint(msg.sender, numTokens + 1);
         } else {
             revert("Dropper -- claim: Unknown token type in claim");
         }
