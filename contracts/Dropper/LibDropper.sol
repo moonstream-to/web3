@@ -31,10 +31,6 @@ library LibDropper {
         mapping(uint256 => TerminusAuthorization) DropAuthorizations;
         mapping(uint256 => DroppableToken) DropToken;
         mapping(uint256 => string) DropURI;
-        // dropID => maximum number of tokens a user can claim as part of this drop
-        mapping(uint256 => uint256) MaxClaimable;
-        // address => dropID => total amount claimed for that drop
-        mapping(address => mapping(uint256 => uint256)) AmountClaimed;
         // dropID => requestID => true if claimed and false if not
         mapping(uint256 => mapping(uint256 => bool)) DropRequestClaimed;
     }

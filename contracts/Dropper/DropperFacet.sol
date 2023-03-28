@@ -135,7 +135,6 @@ contract DropperFacet is
         address tokenAddress,
         uint256 tokenId,
         uint256 amount,
-        uint256 _maxClaimable,
         address authorizationTokenAddress,
         uint256 authorizationPoolId,
         string memory uri
@@ -168,8 +167,6 @@ contract DropperFacet is
 
         ds.IsDropActive[ds.NumDrops] = true;
         emit DropStatusChanged(ds.NumDrops, true);
-
-        ds.MaxClaimable[ds.NumDrops] = _maxClaimable;
 
         ds.DropAuthorizations[ds.NumDrops] = TerminusAuthorization({
             terminusAddress: authorizationTokenAddress,
@@ -227,17 +224,6 @@ contract DropperFacet is
         uint256 dropId
     ) external view returns (TerminusAuthorization memory) {
         return LibDropper.dropperStorage().DropAuthorizations[dropId];
-    }
-
-    function maxClaimable(uint256 dropId) external view returns (uint256) {
-        return LibDropper.dropperStorage().MaxClaimable[dropId];
-    }
-
-    function getAmountClaimed(
-        address claimant,
-        uint256 dropId
-    ) external view returns (uint256) {
-        return LibDropper.dropperStorage().AmountClaimed[claimant][dropId];
     }
 
     function claimMessageHash(
@@ -317,12 +303,6 @@ contract DropperFacet is
             amount = claimToken.amount;
         }
 
-        require(
-            ds.AmountClaimed[msg.sender][dropId] + amount <=
-                ds.MaxClaimable[dropId],
-            "Dropper: claim -- Claimant would exceed the maximum claimable number of tokens for this drop."
-        );
-
         if (claimToken.tokenType == ERC20_TYPE) {
             IERC20 erc20Contract = IERC20(claimToken.tokenAddress);
             erc20Contract.transfer(msg.sender, amount);
@@ -363,7 +343,6 @@ contract DropperFacet is
             revert("Dropper -- claim: Unknown token type in claim");
         }
 
-        ds.AmountClaimed[msg.sender][dropId] += amount;
         ds.DropRequestClaimed[dropId][requestID] = true;
 
         emit Claimed(dropId, msg.sender, requestID, amount);

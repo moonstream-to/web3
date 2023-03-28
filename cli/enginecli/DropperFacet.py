@@ -153,7 +153,6 @@ class DropperFacet:
         token_address: ChecksumAddress,
         token_id: int,
         amount: int,
-        _max_claimable: int,
         authorization_token_address: ChecksumAddress,
         authorization_pool_id: int,
         uri: str,
@@ -165,7 +164,6 @@ class DropperFacet:
             token_address,
             token_id,
             amount,
-            _max_claimable,
             authorization_token_address,
             authorization_pool_id,
             uri,
@@ -208,17 +206,6 @@ class DropperFacet:
         self.assert_contract_is_instantiated()
         return self.contract.erc721_type.call(block_identifier=block_number)
 
-    def get_amount_claimed(
-        self,
-        claimant: ChecksumAddress,
-        drop_id: int,
-        block_number: Optional[Union[str, int]] = "latest",
-    ) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.getAmountClaimed.call(
-            claimant, drop_id, block_identifier=block_number
-        )
-
     def get_drop(
         self, drop_id: int, block_number: Optional[Union[str, int]] = "latest"
     ) -> Any:
@@ -243,12 +230,6 @@ class DropperFacet:
         return self.contract.init(
             terminus_admin_contract_address, terminus_admin_pool_id, transaction_config
         )
-
-    def max_claimable(
-        self, drop_id: int, block_number: Optional[Union[str, int]] = "latest"
-    ) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.maxClaimable.call(drop_id, block_identifier=block_number)
 
     def num_drops(self, block_number: Optional[Union[str, int]] = "latest") -> Any:
         self.assert_contract_is_instantiated()
@@ -500,7 +481,6 @@ def handle_create_drop(args: argparse.Namespace) -> None:
         token_address=args.token_address,
         token_id=args.token_id,
         amount=args.amount,
-        _max_claimable=args.max_claimable_arg,
         authorization_token_address=args.authorization_token_address,
         authorization_pool_id=args.authorization_pool_id,
         uri=args.uri,
@@ -560,15 +540,6 @@ def handle_erc721_type(args: argparse.Namespace) -> None:
     print(result)
 
 
-def handle_get_amount_claimed(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = DropperFacet(args.address)
-    result = contract.get_amount_claimed(
-        claimant=args.claimant, drop_id=args.drop_id, block_number=args.block_number
-    )
-    print(result)
-
-
 def handle_get_drop(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = DropperFacet(args.address)
@@ -597,15 +568,6 @@ def handle_init(args: argparse.Namespace) -> None:
     print(result)
     if args.verbose:
         print(result.info())
-
-
-def handle_max_claimable(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = DropperFacet(args.address)
-    result = contract.max_claimable(
-        drop_id=args.drop_id, block_number=args.block_number
-    )
-    print(result)
 
 
 def handle_num_drops(args: argparse.Namespace) -> None:
@@ -853,9 +815,6 @@ def generate_cli() -> argparse.ArgumentParser:
         "--amount", required=True, help="Type: uint256", type=int
     )
     create_drop_parser.add_argument(
-        "--max-claimable-arg", required=True, help="Type: uint256", type=int
-    )
-    create_drop_parser.add_argument(
         "--authorization-token-address", required=True, help="Type: address"
     )
     create_drop_parser.add_argument(
@@ -900,16 +859,6 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(erc721_type_parser, False)
     erc721_type_parser.set_defaults(func=handle_erc721_type)
 
-    get_amount_claimed_parser = subcommands.add_parser("get-amount-claimed")
-    add_default_arguments(get_amount_claimed_parser, False)
-    get_amount_claimed_parser.add_argument(
-        "--claimant", required=True, help="Type: address"
-    )
-    get_amount_claimed_parser.add_argument(
-        "--drop-id", required=True, help="Type: uint256", type=int
-    )
-    get_amount_claimed_parser.set_defaults(func=handle_get_amount_claimed)
-
     get_drop_parser = subcommands.add_parser("get-drop")
     add_default_arguments(get_drop_parser, False)
     get_drop_parser.add_argument(
@@ -933,13 +882,6 @@ def generate_cli() -> argparse.ArgumentParser:
         "--terminus-admin-pool-id", required=True, help="Type: uint256", type=int
     )
     init_parser.set_defaults(func=handle_init)
-
-    max_claimable_parser = subcommands.add_parser("max-claimable")
-    add_default_arguments(max_claimable_parser, False)
-    max_claimable_parser.add_argument(
-        "--drop-id", required=True, help="Type: uint256", type=int
-    )
-    max_claimable_parser.set_defaults(func=handle_max_claimable)
 
     num_drops_parser = subcommands.add_parser("num-drops")
     add_default_arguments(num_drops_parser, False)
