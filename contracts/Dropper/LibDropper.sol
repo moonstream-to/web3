@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
 struct DroppableToken {
@@ -6,6 +6,11 @@ struct DroppableToken {
     address tokenAddress; // address of the token
     uint256 tokenId;
     uint256 amount;
+}
+
+struct TerminusAuthorization {
+    address terminusAddress;
+    uint256 poolId;
 }
 
 uint256 constant ERC20_TYPE = 20;
@@ -23,7 +28,7 @@ library LibDropper {
         uint256 TerminusAdminPoolID;
         uint256 NumDrops;
         mapping(uint256 => bool) IsDropActive;
-        mapping(uint256 => address) DropSigner;
+        mapping(uint256 => TerminusAuthorization) DropAuthorizations;
         mapping(uint256 => DroppableToken) DropToken;
         mapping(uint256 => string) DropURI;
         // dropID => maximum number of tokens a user can claim as part of this drop

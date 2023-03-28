@@ -102,12 +102,19 @@ class DropperFacet:
         request_id: int,
         block_deadline: int,
         amount: int,
+        signer: ChecksumAddress,
         signature: bytes,
         transaction_config,
     ) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.claim(
-            drop_id, request_id, block_deadline, amount, signature, transaction_config
+            drop_id,
+            request_id,
+            block_deadline,
+            amount,
+            signer,
+            signature,
+            transaction_config,
         )
 
     def claim_message_hash(
@@ -147,6 +154,9 @@ class DropperFacet:
         token_id: int,
         amount: int,
         _max_claimable: int,
+        authorization_token_address: ChecksumAddress,
+        authorization_pool_id: int,
+        uri: str,
         transaction_config,
     ) -> Any:
         self.assert_contract_is_instantiated()
@@ -156,6 +166,9 @@ class DropperFacet:
             token_id,
             amount,
             _max_claimable,
+            authorization_token_address,
+            authorization_pool_id,
+            uri,
             transaction_config,
         )
 
@@ -212,11 +225,11 @@ class DropperFacet:
         self.assert_contract_is_instantiated()
         return self.contract.getDrop.call(drop_id, block_identifier=block_number)
 
-    def get_signer_for_drop(
+    def get_drop_authorization(
         self, drop_id: int, block_number: Optional[Union[str, int]] = "latest"
     ) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.getSignerForDrop.call(
+        return self.contract.getDropAuthorization.call(
             drop_id, block_identifier=block_number
         )
 
@@ -282,6 +295,18 @@ class DropperFacet:
             operator, from_, token_id, data, transaction_config
         )
 
+    def set_drop_authorization(
+        self,
+        drop_id: int,
+        terminus_address: ChecksumAddress,
+        pool_id: int,
+        transaction_config,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.setDropAuthorization(
+            drop_id, terminus_address, pool_id, transaction_config
+        )
+
     def set_drop_status(self, drop_id: int, status: bool, transaction_config) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.setDropStatus(drop_id, status, transaction_config)
@@ -289,12 +314,6 @@ class DropperFacet:
     def set_drop_uri(self, drop_id: int, uri: str, transaction_config) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.setDropUri(drop_id, uri, transaction_config)
-
-    def set_signer_for_drop(
-        self, drop_id: int, signer: ChecksumAddress, transaction_config
-    ) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.setSignerForDrop(drop_id, signer, transaction_config)
 
     def supports_interface(
         self, interface_id: bytes, block_number: Optional[Union[str, int]] = "latest"
@@ -440,6 +459,7 @@ def handle_claim(args: argparse.Namespace) -> None:
         request_id=args.request_id,
         block_deadline=args.block_deadline,
         amount=args.amount,
+        signer=args.signer_arg,
         signature=args.signature,
         transaction_config=transaction_config,
     )
@@ -481,6 +501,9 @@ def handle_create_drop(args: argparse.Namespace) -> None:
         token_id=args.token_id,
         amount=args.amount,
         _max_claimable=args.max_claimable_arg,
+        authorization_token_address=args.authorization_token_address,
+        authorization_pool_id=args.authorization_pool_id,
+        uri=args.uri,
         transaction_config=transaction_config,
     )
     print(result)
@@ -553,10 +576,10 @@ def handle_get_drop(args: argparse.Namespace) -> None:
     print(result)
 
 
-def handle_get_signer_for_drop(args: argparse.Namespace) -> None:
+def handle_get_drop_authorization(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = DropperFacet(args.address)
-    result = contract.get_signer_for_drop(
+    result = contract.get_drop_authorization(
         drop_id=args.drop_id, block_number=args.block_number
     )
     print(result)
@@ -642,6 +665,21 @@ def handle_on_erc721_received(args: argparse.Namespace) -> None:
         print(result.info())
 
 
+def handle_set_drop_authorization(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = DropperFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.set_drop_authorization(
+        drop_id=args.drop_id,
+        terminus_address=args.terminus_address,
+        pool_id=args.pool_id,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
 def handle_set_drop_status(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = DropperFacet(args.address)
@@ -660,20 +698,6 @@ def handle_set_drop_uri(args: argparse.Namespace) -> None:
     transaction_config = get_transaction_config(args)
     result = contract.set_drop_uri(
         drop_id=args.drop_id, uri=args.uri, transaction_config=transaction_config
-    )
-    print(result)
-    if args.verbose:
-        print(result.info())
-
-
-def handle_set_signer_for_drop(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = DropperFacet(args.address)
-    transaction_config = get_transaction_config(args)
-    result = contract.set_signer_for_drop(
-        drop_id=args.drop_id,
-        signer=args.signer_arg,
-        transaction_config=transaction_config,
     )
     print(result)
     if args.verbose:
@@ -779,6 +803,7 @@ def generate_cli() -> argparse.ArgumentParser:
         "--block-deadline", required=True, help="Type: uint256", type=int
     )
     claim_parser.add_argument("--amount", required=True, help="Type: uint256", type=int)
+    claim_parser.add_argument("--signer-arg", required=True, help="Type: address")
     claim_parser.add_argument(
         "--signature", required=True, help="Type: bytes", type=bytes_argument_type
     )
@@ -829,6 +854,15 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     create_drop_parser.add_argument(
         "--max-claimable-arg", required=True, help="Type: uint256", type=int
+    )
+    create_drop_parser.add_argument(
+        "--authorization-token-address", required=True, help="Type: address"
+    )
+    create_drop_parser.add_argument(
+        "--authorization-pool-id", required=True, help="Type: uint256", type=int
+    )
+    create_drop_parser.add_argument(
+        "--uri", required=True, help="Type: string", type=str
     )
     create_drop_parser.set_defaults(func=handle_create_drop)
 
@@ -883,12 +917,12 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     get_drop_parser.set_defaults(func=handle_get_drop)
 
-    get_signer_for_drop_parser = subcommands.add_parser("get-signer-for-drop")
-    add_default_arguments(get_signer_for_drop_parser, False)
-    get_signer_for_drop_parser.add_argument(
+    get_drop_authorization_parser = subcommands.add_parser("get-drop-authorization")
+    add_default_arguments(get_drop_authorization_parser, False)
+    get_drop_authorization_parser.add_argument(
         "--drop-id", required=True, help="Type: uint256", type=int
     )
-    get_signer_for_drop_parser.set_defaults(func=handle_get_signer_for_drop)
+    get_drop_authorization_parser.set_defaults(func=handle_get_drop_authorization)
 
     init_parser = subcommands.add_parser("init")
     add_default_arguments(init_parser, True)
@@ -967,6 +1001,19 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     on_erc721_received_parser.set_defaults(func=handle_on_erc721_received)
 
+    set_drop_authorization_parser = subcommands.add_parser("set-drop-authorization")
+    add_default_arguments(set_drop_authorization_parser, True)
+    set_drop_authorization_parser.add_argument(
+        "--drop-id", required=True, help="Type: uint256", type=int
+    )
+    set_drop_authorization_parser.add_argument(
+        "--terminus-address", required=True, help="Type: address"
+    )
+    set_drop_authorization_parser.add_argument(
+        "--pool-id", required=True, help="Type: uint256", type=int
+    )
+    set_drop_authorization_parser.set_defaults(func=handle_set_drop_authorization)
+
     set_drop_status_parser = subcommands.add_parser("set-drop-status")
     add_default_arguments(set_drop_status_parser, True)
     set_drop_status_parser.add_argument(
@@ -986,16 +1033,6 @@ def generate_cli() -> argparse.ArgumentParser:
         "--uri", required=True, help="Type: string", type=str
     )
     set_drop_uri_parser.set_defaults(func=handle_set_drop_uri)
-
-    set_signer_for_drop_parser = subcommands.add_parser("set-signer-for-drop")
-    add_default_arguments(set_signer_for_drop_parser, True)
-    set_signer_for_drop_parser.add_argument(
-        "--drop-id", required=True, help="Type: uint256", type=int
-    )
-    set_signer_for_drop_parser.add_argument(
-        "--signer-arg", required=True, help="Type: address"
-    )
-    set_signer_for_drop_parser.set_defaults(func=handle_set_signer_for_drop)
 
     supports_interface_parser = subcommands.add_parser("supports-interface")
     add_default_arguments(supports_interface_parser, False)

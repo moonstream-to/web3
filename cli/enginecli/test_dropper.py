@@ -66,6 +66,9 @@ class DropperTestCase(unittest.TestCase):
             {"from": accounts[0]},
         )
 
+        cls.terminus.create_pool_v1(2**256 - 1, False, True, {"from": accounts[0]})
+        cls.signer_terminus_pool_id = cls.terminus.total_pools()
+
         cls.terminus.create_pool_v1(2**256 - 1, True, True, {"from": accounts[0]})
         cls.terminus_pool_id = cls.terminus.total_pools()
 
@@ -91,6 +94,15 @@ class DropperTestCase(unittest.TestCase):
         cls.signer_0 = accounts.add()
         cls.signer_1 = accounts.add()
 
+        # signer_0 is authorized, but signer_1 is not
+        cls.terminus.mint(
+            cls.signer_0.address,
+            cls.signer_terminus_pool_id,
+            1,
+            b"",
+            {"from": accounts[0]},
+        )
+
     def create_drop_and_return_drop_id(self, *args, **kwargs) -> int:
         tx_receipt = self.dropper.create_drop(*args, **kwargs)
         drop_created_event_abi = None
@@ -112,7 +124,15 @@ class DropperDropSetupTests(DropperTestCase):
     def test_drop_creation(self):
         num_drops_0 = self.dropper.num_drops()
         drop_id = self.create_drop_and_return_drop_id(
-            20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
+            20,
+            self.erc20_contract.address,
+            0,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
         num_drops_1 = self.dropper.num_drops()
         self.assertEqual(num_drops_1, num_drops_0 + 1)
@@ -121,34 +141,82 @@ class DropperDropSetupTests(DropperTestCase):
         drop_info = self.dropper.get_drop(drop_id)
         self.assertEqual(drop_info, (20, self.erc20_contract.address, 0, 1))
 
+        drop_authorization = self.dropper.get_drop_authorization(drop_id)
+        self.assertEqual(
+            drop_authorization, (self.terminus.address, self.signer_terminus_pool_id)
+        )
+
+        drop_uri = self.dropper.drop_uri(drop_id)
+        self.assertEqual(drop_uri, "https://example.com")
+
     def test_drop_creation_fails_if_unknown_token_type(self):
         UNKNOWN_TOKEN_TYPE = 43
         num_drops_0 = self.dropper.num_drops()
-        with self.assertRaises(VirtualMachineError):
+        with self.assertRaises(VirtualMachineError) as vm_error:
             self.dropper.create_drop(
-                43, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
+                UNKNOWN_TOKEN_TYPE,
+                self.erc20_contract.address,
+                0,
+                1,
+                MAX_UINT,
+                self.terminus.address,
+                self.signer_terminus_pool_id,
+                "https://example.com",
+                {"from": accounts[0]},
             )
+        self.assertEqual(
+            vm_error.exception.revert_msg,
+            "Dropper: createDrop -- Unknown token type",
+        )
         num_drops_1 = self.dropper.num_drops()
         self.assertEqual(num_drops_1, num_drops_0)
 
     def test_drop_creation_fails_from_non_owner(self):
         num_drops_0 = self.dropper.num_drops()
-        with self.assertRaises(VirtualMachineError):
+        with self.assertRaises(VirtualMachineError) as vm_error:
             self.dropper.create_drop(
-                20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[1]}
+                20,
+                self.erc20_contract.address,
+                0,
+                1,
+                MAX_UINT,
+                self.terminus.address,
+                self.signer_terminus_pool_id,
+                "https://example.com",
+                {"from": accounts[1]},
             )
+        self.assertEqual(
+            vm_error.exception.revert_msg,
+            "DropperFacet.onlyTerminusAdmin: Sender does not hold administrator token",
+        )
         num_drops_1 = self.dropper.num_drops()
         self.assertEqual(num_drops_1, num_drops_0)
 
     def test_drop_status_for_new_drop(self):
         drop_id = self.create_drop_and_return_drop_id(
-            20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
+            20,
+            self.erc20_contract.address,
+            0,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
         self.assertTrue(self.dropper.drop_status(drop_id))
 
     def test_drop_status_can_be_changed_by_owner(self):
         drop_id = self.create_drop_and_return_drop_id(
-            20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
+            20,
+            self.erc20_contract.address,
+            0,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
         self.assertTrue(self.dropper.drop_status(drop_id))
 
@@ -157,7 +225,15 @@ class DropperDropSetupTests(DropperTestCase):
 
     def test_drop_status_cannot_be_changed_by_non_owner(self):
         drop_id = self.create_drop_and_return_drop_id(
-            20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
+            20,
+            self.erc20_contract.address,
+            0,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
         self.assertTrue(self.dropper.drop_status(drop_id))
 
@@ -166,49 +242,102 @@ class DropperDropSetupTests(DropperTestCase):
 
         self.assertTrue(self.dropper.drop_status(drop_id))
 
-    def test_owner_can_set_signer(self):
+    def test_owner_can_set_authorization(self):
         drop_id = self.create_drop_and_return_drop_id(
-            20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
-        )
-        self.assertEqual(self.dropper.get_signer_for_drop(drop_id), ZERO_ADDRESS)
-
-        self.dropper.set_signer_for_drop(
-            drop_id, self.signer_0.address, {"from": accounts[0]}
+            20,
+            self.erc20_contract.address,
+            0,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
         self.assertEqual(
-            self.dropper.get_signer_for_drop(drop_id), self.signer_0.address
+            self.dropper.get_drop_authorization(drop_id),
+            (self.terminus.address, self.signer_terminus_pool_id),
         )
 
-    def test_non_owner_cannot_set_signer(self):
+        self.dropper.set_drop_authorization(
+            drop_id, ZERO_ADDRESS, 0, {"from": accounts[0]}
+        )
+        self.assertEqual(
+            self.dropper.get_drop_authorization(drop_id), (ZERO_ADDRESS, 0)
+        )
+
+    def test_non_owner_cannot_set_authorization(self):
         drop_id = self.create_drop_and_return_drop_id(
-            20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
+            20,
+            self.erc20_contract.address,
+            0,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
-        self.assertEqual(self.dropper.get_signer_for_drop(drop_id), ZERO_ADDRESS)
+        self.assertEqual(
+            self.dropper.get_drop_authorization(drop_id),
+            (self.terminus.address, self.signer_terminus_pool_id),
+        )
 
-        with self.assertRaises(VirtualMachineError):
-            self.dropper.set_signer_for_drop(
-                drop_id, self.signer_0.address, {"from": accounts[1]}
+        with self.assertRaises(VirtualMachineError) as vm_error:
+            self.dropper.set_drop_authorization(
+                drop_id,
+                self.terminus.address,
+                self.signer_terminus_pool_id,
+                {"from": accounts[1]},
             )
-        self.assertEqual(self.dropper.get_signer_for_drop(drop_id), ZERO_ADDRESS)
+        self.assertEqual(
+            vm_error.exception.revert_msg,
+            "DropperFacet.onlyTerminusAdmin: Sender does not hold administrator token",
+        )
+
+        self.assertEqual(
+            self.dropper.get_drop_authorization(drop_id),
+            (self.terminus.address, self.signer_terminus_pool_id),
+        )
 
     def test_owner_can_set_drop_uri(self):
         drop_id = self.create_drop_and_return_drop_id(
-            20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
+            20,
+            self.erc20_contract.address,
+            0,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
-        self.assertEqual(self.dropper.drop_uri(drop_id), "")
-        self.dropper.set_drop_uri(drop_id, "https://example.com", {"from": accounts[0]})
+
         self.assertEqual(self.dropper.drop_uri(drop_id), "https://example.com")
+        self.dropper.set_drop_uri(
+            drop_id, "https://otherexample.com", {"from": accounts[0]}
+        )
+        self.assertEqual(self.dropper.drop_uri(drop_id), "https://otherexample.com")
 
     def test_non_owner_cannot_set_drop_uri(self):
         drop_id = self.create_drop_and_return_drop_id(
-            20, self.erc20_contract.address, 0, 1, MAX_UINT, {"from": accounts[0]}
+            20,
+            self.erc20_contract.address,
+            0,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
-        self.assertEqual(self.dropper.drop_uri(drop_id), "")
+
+        self.assertEqual(self.dropper.drop_uri(drop_id), "https://example.com")
         with self.assertRaises(VirtualMachineError):
             self.dropper.set_drop_uri(
-                drop_id, "https://example.com", {"from": accounts[1]}
+                drop_id, "https://otherexample.com", {"from": accounts[1]}
             )
-        self.assertEqual(self.dropper.drop_uri(drop_id), "")
+        self.assertEqual(self.dropper.drop_uri(drop_id), "https://example.com")
 
 
 class DropperWithdrawalTests(DropperTestCase):
@@ -360,10 +489,15 @@ class DropperClaimERC20Tests(DropperTestCase):
         reward = 3
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
         claim_id = self.create_drop_and_return_drop_id(
-            20, self.erc20_contract.address, 0, reward, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            20,
+            self.erc20_contract.address,
+            0,
+            reward,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         current_block = len(chain)
@@ -385,6 +519,7 @@ class DropperClaimERC20Tests(DropperTestCase):
             request_id,
             block_deadline,
             0,
+            self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
@@ -406,10 +541,10 @@ class DropperClaimERC20Tests(DropperTestCase):
             0,
             default_reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
         )
 
         current_block = len(chain)
@@ -431,6 +566,7 @@ class DropperClaimERC20Tests(DropperTestCase):
             request_id,
             block_deadline,
             custom_reward,
+            self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
@@ -446,10 +582,15 @@ class DropperClaimERC20Tests(DropperTestCase):
         reward = 5
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
         claim_id = self.create_drop_and_return_drop_id(
-            20, self.erc20_contract.address, 0, reward, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            20,
+            self.erc20_contract.address,
+            0,
+            reward,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         current_block = len(chain)
@@ -470,6 +611,7 @@ class DropperClaimERC20Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -486,10 +628,15 @@ class DropperClaimERC20Tests(DropperTestCase):
         reward = 5
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
         claim_id = self.create_drop_and_return_drop_id(
-            20, self.erc20_contract.address, 0, reward, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            20,
+            self.erc20_contract.address,
+            0,
+            reward,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         current_block = len(chain)
@@ -510,6 +657,7 @@ class DropperClaimERC20Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 reward + 1,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -530,10 +678,15 @@ class DropperClaimERC20Tests(DropperTestCase):
         reward = 3
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
         claim_id = self.create_drop_and_return_drop_id(
-            20, self.erc20_contract.address, 0, reward, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            20,
+            self.erc20_contract.address,
+            0,
+            reward,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         self.dropper.set_drop_status(claim_id, False, {"from": accounts[0]})
@@ -556,6 +709,7 @@ class DropperClaimERC20Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -574,10 +728,15 @@ class DropperClaimERC20Tests(DropperTestCase):
         reward = 6
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
         claim_id = self.create_drop_and_return_drop_id(
-            20, self.erc20_contract.address, 0, reward, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            20,
+            self.erc20_contract.address,
+            0,
+            reward,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         current_block = len(chain)
@@ -599,6 +758,7 @@ class DropperClaimERC20Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[2]},
             )
@@ -617,10 +777,15 @@ class DropperClaimERC20Tests(DropperTestCase):
         reward = 7
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
         claim_id = self.create_drop_and_return_drop_id(
-            20, self.erc20_contract.address, 0, reward, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            20,
+            self.erc20_contract.address,
+            0,
+            reward,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         current_block = len(chain)
@@ -641,6 +806,7 @@ class DropperClaimERC20Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_1,
                 signed_message,
                 {"from": accounts[2]},
             )
@@ -657,10 +823,15 @@ class DropperClaimERC20Tests(DropperTestCase):
         reward = 9
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
         claim_id = self.create_drop_and_return_drop_id(
-            20, self.erc20_contract.address, 0, reward, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            20,
+            self.erc20_contract.address,
+            0,
+            reward,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         current_block = len(chain)
@@ -682,6 +853,7 @@ class DropperClaimERC20Tests(DropperTestCase):
             request_id,
             block_deadline,
             0,
+            self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
@@ -699,6 +871,7 @@ class DropperClaimERC20Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -721,10 +894,15 @@ class DropperClaimERC20Tests(DropperTestCase):
         reward = 9
         self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
         claim_id = self.create_drop_and_return_drop_id(
-            20, self.erc20_contract.address, 0, reward, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            20,
+            self.erc20_contract.address,
+            0,
+            reward,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         current_block = len(chain)
@@ -746,6 +924,7 @@ class DropperClaimERC20Tests(DropperTestCase):
             request_id,
             block_deadline,
             0,
+            self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
@@ -771,6 +950,7 @@ class DropperClaimERC20Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -794,10 +974,15 @@ class DropperClaimERC20Tests(DropperTestCase):
             {"from": accounts[0]},
         )
         claim_id = self.create_drop_and_return_drop_id(
-            20, self.erc20_contract.address, 0, reward, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            20,
+            self.erc20_contract.address,
+            0,
+            reward,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         current_block = len(chain)
@@ -820,6 +1005,7 @@ class DropperClaimERC20Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -838,10 +1024,15 @@ class DropperClaimERC721Tests(DropperTestCase):
         token_id = 103
         self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
         claim_id = self.create_drop_and_return_drop_id(
-            721, self.nft_contract.address, token_id, 1, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            721,
+            self.nft_contract.address,
+            token_id,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         current_block = len(chain)
@@ -861,6 +1052,7 @@ class DropperClaimERC721Tests(DropperTestCase):
             request_id,
             block_deadline,
             0,
+            self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
@@ -872,10 +1064,15 @@ class DropperClaimERC721Tests(DropperTestCase):
         custom_amount = 79
         self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
         claim_id = self.create_drop_and_return_drop_id(
-            721, self.nft_contract.address, token_id, 1, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            721,
+            self.nft_contract.address,
+            token_id,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         current_block = len(chain)
@@ -895,6 +1092,7 @@ class DropperClaimERC721Tests(DropperTestCase):
             request_id,
             block_deadline,
             custom_amount,
+            self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
@@ -905,10 +1103,15 @@ class DropperClaimERC721Tests(DropperTestCase):
         token_id = 105
         self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
         claim_id = self.create_drop_and_return_drop_id(
-            721, self.nft_contract.address, token_id, 1, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            721,
+            self.nft_contract.address,
+            token_id,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         current_block = len(chain)
@@ -929,6 +1132,7 @@ class DropperClaimERC721Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -940,10 +1144,15 @@ class DropperClaimERC721Tests(DropperTestCase):
         token_id = 1005
         self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
         claim_id = self.create_drop_and_return_drop_id(
-            721, self.nft_contract.address, token_id, 1, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            721,
+            self.nft_contract.address,
+            token_id,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         current_block = len(chain)
@@ -964,6 +1173,7 @@ class DropperClaimERC721Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 1,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -979,10 +1189,15 @@ class DropperClaimERC721Tests(DropperTestCase):
         token_id = 108
         self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
         claim_id = self.create_drop_and_return_drop_id(
-            721, self.nft_contract.address, token_id, 1, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            721,
+            self.nft_contract.address,
+            token_id,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         self.dropper.set_drop_status(claim_id, False, {"from": accounts[0]})
@@ -1006,6 +1221,7 @@ class DropperClaimERC721Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -1021,10 +1237,15 @@ class DropperClaimERC721Tests(DropperTestCase):
         token_id = 106
         self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
         claim_id = self.create_drop_and_return_drop_id(
-            721, self.nft_contract.address, token_id, 1, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            721,
+            self.nft_contract.address,
+            token_id,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         current_block = len(chain)
@@ -1045,6 +1266,7 @@ class DropperClaimERC721Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[2]},
             )
@@ -1056,10 +1278,15 @@ class DropperClaimERC721Tests(DropperTestCase):
         token_id = 107
         self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
         claim_id = self.create_drop_and_return_drop_id(
-            721, self.nft_contract.address, token_id, 1, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            721,
+            self.nft_contract.address,
+            token_id,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         current_block = len(chain)
@@ -1080,6 +1307,7 @@ class DropperClaimERC721Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_1,
                 signed_message,
                 {"from": accounts[2]},
             )
@@ -1091,10 +1319,15 @@ class DropperClaimERC721Tests(DropperTestCase):
         token_id = 109
         self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
         claim_id = self.create_drop_and_return_drop_id(
-            721, self.nft_contract.address, token_id, 1, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            721,
+            self.nft_contract.address,
+            token_id,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         current_block = len(chain)
@@ -1114,6 +1347,7 @@ class DropperClaimERC721Tests(DropperTestCase):
             request_id,
             block_deadline,
             0,
+            self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
@@ -1137,6 +1371,7 @@ class DropperClaimERC721Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -1154,10 +1389,15 @@ class DropperClaimERC721Tests(DropperTestCase):
         token_id = 110
         self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
         claim_id = self.create_drop_and_return_drop_id(
-            721, self.nft_contract.address, token_id, 1, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            721,
+            self.nft_contract.address,
+            token_id,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         current_block = len(chain)
@@ -1176,6 +1416,7 @@ class DropperClaimERC721Tests(DropperTestCase):
             request_id,
             block_deadline,
             0,
+            self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
@@ -1204,6 +1445,7 @@ class DropperClaimERC721Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -1220,10 +1462,15 @@ class DropperClaimERC721Tests(DropperTestCase):
         self.nft_contract.mint(accounts[0].address, token_id, {"from": accounts[0]})
         self.assertNotEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
         claim_id = self.create_drop_and_return_drop_id(
-            721, self.nft_contract.address, token_id, 1, MAX_UINT, {"from": accounts[0]}
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
+            721,
+            self.nft_contract.address,
+            token_id,
+            1,
+            MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
         )
 
         current_block = len(chain)
@@ -1243,6 +1490,7 @@ class DropperClaimERC721Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -1268,11 +1516,12 @@ class DropperClaimERC1155Tests(DropperTestCase):
             self.terminus_pool_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
         )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
-        )
+
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
         request_id = 7823743
@@ -1292,6 +1541,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
             request_id,
             block_deadline,
             0,
+            self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
@@ -1321,11 +1571,12 @@ class DropperClaimERC1155Tests(DropperTestCase):
             self.terminus_pool_id,
             default_reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
         )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
-        )
+
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
         request_id = 239084239
@@ -1345,6 +1596,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
             request_id,
             block_deadline,
             custom_reward,
+            self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
@@ -1373,11 +1625,12 @@ class DropperClaimERC1155Tests(DropperTestCase):
             self.terminus_pool_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
         )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
-        )
+
         current_block = len(chain)
         block_deadline = current_block - 1
         request_id = 87234
@@ -1398,6 +1651,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -1426,11 +1680,12 @@ class DropperClaimERC1155Tests(DropperTestCase):
             self.terminus_pool_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
         )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
-        )
+
         current_block = len(chain)
         block_deadline = current_block
         request_id = 6723647236
@@ -1451,6 +1706,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 reward,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -1479,10 +1735,10 @@ class DropperClaimERC1155Tests(DropperTestCase):
             self.mintable_terminus_pool_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
         )
 
         self.dropper.set_drop_status(claim_id, False, {"from": accounts[0]})
@@ -1513,6 +1769,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -1547,11 +1804,12 @@ class DropperClaimERC1155Tests(DropperTestCase):
             self.terminus_pool_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
         )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
-        )
+
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
         request_id = 8723487342
@@ -1575,6 +1833,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[2]},
             )
@@ -1607,11 +1866,12 @@ class DropperClaimERC1155Tests(DropperTestCase):
             self.terminus_pool_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
         )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
-        )
+
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
         request_id = 782343
@@ -1632,6 +1892,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_1,
                 signed_message,
                 {"from": accounts[2]},
             )
@@ -1660,11 +1921,12 @@ class DropperClaimERC1155Tests(DropperTestCase):
             self.terminus_pool_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
         )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
-        )
+
         current_block = len(chain)
         block_deadline = current_block + 1000
 
@@ -1685,6 +1947,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
             request_id,
             block_deadline,
             0,
+            self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
@@ -1703,6 +1966,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -1738,11 +2002,12 @@ class DropperClaimERC1155Tests(DropperTestCase):
             self.terminus_pool_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
         )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
-        )
+
         current_block = len(chain)
         block_deadline = current_block
         request_id = 9890384590
@@ -1762,6 +2027,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
             request_id,
             block_deadline,
             0,
+            self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
@@ -1786,6 +2052,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -1819,11 +2086,12 @@ class DropperClaimERC1155Tests(DropperTestCase):
             self.terminus_pool_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
         )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
-        )
+
         current_block = len(chain)
         block_deadline = current_block  # since blocks are 0-indexed
         request_id = 7283473
@@ -1844,6 +2112,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -1867,10 +2136,10 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
         )
 
         current_block = len(chain)
@@ -1897,6 +2166,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             request_id,
             block_deadline,
             0,
+            self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
@@ -1921,10 +2191,10 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id,
             default_reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
         )
 
         current_block = len(chain)
@@ -1951,6 +2221,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             request_id,
             block_deadline,
             custom_reward,
+            self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
@@ -1985,10 +2256,10 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             terminus_pool_which_is_owned_by_dropper_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
         )
 
         current_block = len(chain)
@@ -2019,6 +2290,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             request_id,
             block_deadline,
             0,
+            self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
@@ -2064,6 +2336,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
                 request_id + 1,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[2]},
             )
@@ -2087,11 +2360,10 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
-        )
-
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
         )
 
         current_block = len(chain)
@@ -2119,6 +2391,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -2143,11 +2416,10 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
-        )
-
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
         )
 
         current_block = len(chain)
@@ -2175,6 +2447,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
                 request_id,
                 block_deadline,
                 1,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -2203,10 +2476,10 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
         )
 
         self.dropper.set_drop_status(claim_id, False, {"from": accounts[0]})
@@ -2236,6 +2509,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -2262,10 +2536,10 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
         )
 
         current_block = len(chain)
@@ -2296,6 +2570,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[2]},
             )
@@ -2323,10 +2598,10 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
         )
 
         current_block = len(chain)
@@ -2353,6 +2628,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_1,
                 signed_message,
                 {"from": accounts[2]},
             )
@@ -2377,10 +2653,10 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
         )
 
         current_block = len(chain)
@@ -2405,6 +2681,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             request_id,
             block_deadline,
             0,
+            self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
@@ -2427,6 +2704,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
@@ -2457,10 +2735,10 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             self.mintable_terminus_pool_id,
             reward,
             MAX_UINT,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
             {"from": accounts[0]},
-        )
-        self.dropper.set_signer_for_drop(
-            claim_id, self.signer_0.address, {"from": accounts[0]}
         )
 
         current_block = len(chain)
@@ -2487,6 +2765,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
             request_id,
             block_deadline,
             0,
+            self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
@@ -2517,6 +2796,7 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
                 request_id,
                 block_deadline,
                 0,
+                self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )

@@ -7,7 +7,6 @@
 
 pragma solidity ^0.8.9;
 
-import "@moonstream/contracts/terminus/TerminusFacet.sol";
 import "@moonstream/contracts/terminus/TerminusPermissions.sol";
 import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
@@ -18,6 +17,7 @@ import "@openzeppelin-contracts/contracts/utils/cryptography/SignatureChecker.so
 
 import "./LibDropper.sol";
 import "../interfaces/IERC721Mint.sol";
+import "../interfaces/ITerminus.sol";
 import "../diamond/security/DiamondReentrancyGuard.sol";
 import "../diamond/libraries/LibSignatures.sol";
 
@@ -46,7 +46,12 @@ contract DropperFacet is
         uint256 amount
     );
     event DropStatusChanged(uint256 indexed dropId, bool status);
-    event DropSignerChanged(uint256 indexed dropId, address signer);
+    event DropURIChanged(uint256 indexed dropId, string uri);
+    event DropAuthorizationChanged(
+        uint256 indexed dropId,
+        address terminusAddress,
+        uint256 poolId
+    );
     event Withdrawal(
         address recipient,
         uint256 indexed tokenType,
@@ -130,7 +135,10 @@ contract DropperFacet is
         address tokenAddress,
         uint256 tokenId,
         uint256 amount,
-        uint256 _maxClaimable
+        uint256 _maxClaimable,
+        address authorizationTokenAddress,
+        uint256 authorizationPoolId,
+        string memory uri
     ) external onlyTerminusAdmin returns (uint256) {
         require(
             tokenType == ERC20_TYPE ||
@@ -163,6 +171,19 @@ contract DropperFacet is
 
         ds.MaxClaimable[ds.NumDrops] = _maxClaimable;
 
+        ds.DropAuthorizations[ds.NumDrops] = TerminusAuthorization({
+            terminusAddress: authorizationTokenAddress,
+            poolId: authorizationPoolId
+        });
+        emit DropAuthorizationChanged(
+            ds.NumDrops,
+            authorizationTokenAddress,
+            authorizationPoolId
+        );
+
+        ds.DropURI[ds.NumDrops] = uri;
+        emit DropURIChanged(ds.NumDrops, uri);
+
         return ds.NumDrops;
     }
 
@@ -189,17 +210,23 @@ contract DropperFacet is
         return LibDropper.dropperStorage().IsDropActive[dropId];
     }
 
-    function setSignerForDrop(
+    function setDropAuthorization(
         uint256 dropId,
-        address signer
+        address terminusAddress,
+        uint256 poolId
     ) public onlyTerminusAdmin {
         LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
-        ds.DropSigner[dropId] = signer;
-        emit DropSignerChanged(dropId, signer);
+        ds.DropAuthorizations[dropId] = TerminusAuthorization({
+            terminusAddress: terminusAddress,
+            poolId: poolId
+        });
+        emit DropAuthorizationChanged(dropId, terminusAddress, poolId);
     }
 
-    function getSignerForDrop(uint256 dropId) external view returns (address) {
-        return LibDropper.dropperStorage().DropSigner[dropId];
+    function getDropAuthorization(
+        uint256 dropId
+    ) external view returns (TerminusAuthorization memory) {
+        return LibDropper.dropperStorage().DropAuthorizations[dropId];
     }
 
     function maxClaimable(uint256 dropId) external view returns (uint256) {
@@ -241,6 +268,7 @@ contract DropperFacet is
         uint256 requestID,
         uint256 blockDeadline,
         uint256 amount,
+        address signer,
         bytes memory signature
     ) public virtual diamondNonReentrant {
         require(
@@ -249,6 +277,17 @@ contract DropperFacet is
         );
 
         LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
+
+        ITerminus authorizationTerminus = ITerminus(
+            ds.DropAuthorizations[dropId].terminusAddress
+        );
+        require(
+            authorizationTerminus.balanceOf(
+                signer,
+                ds.DropAuthorizations[dropId].poolId
+            ) > 0,
+            "Dropper.claim: Unauthorized signer for drop"
+        );
 
         require(
             ds.IsDropActive[dropId],
@@ -268,11 +307,7 @@ contract DropperFacet is
             amount
         );
         require(
-            SignatureChecker.isValidSignatureNow(
-                ds.DropSigner[dropId],
-                hash,
-                signature
-            ),
+            SignatureChecker.isValidSignatureNow(signer, hash, signature),
             "Dropper: claim -- Invalid signer for claim."
         );
 
@@ -309,7 +344,7 @@ contract DropperFacet is
                 ""
             );
         } else if (claimToken.tokenType == TERMINUS_MINTABLE_TYPE) {
-            TerminusFacet terminusFacetContract = TerminusFacet(
+            ITerminus terminusFacetContract = ITerminus(
                 claimToken.tokenAddress
             );
             terminusFacetContract.mint(
@@ -387,7 +422,7 @@ contract DropperFacet is
         address terminusAddress,
         address newPoolController
     ) public onlyTerminusAdmin {
-        TerminusFacet terminusFacetContract = TerminusFacet(terminusAddress);
+        ITerminus terminusFacetContract = ITerminus(terminusAddress);
         terminusFacetContract.setPoolController(poolId, newPoolController);
     }
 
@@ -400,7 +435,7 @@ contract DropperFacet is
         string memory uri
     ) external onlyTerminusAdmin {
         LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
-
         ds.DropURI[dropId] = uri;
+        emit DropURIChanged(dropId, uri);
     }
 }
