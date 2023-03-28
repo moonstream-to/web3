@@ -36,6 +36,7 @@ contract DropperFacet is
     event Claimed(
         uint256 indexed dropId,
         address indexed claimant,
+        address indexed signer,
         uint256 requestID,
         uint256 amount
     );
@@ -337,7 +338,7 @@ contract DropperFacet is
 
         ds.DropRequestClaimed[dropId][requestID] = true;
 
-        emit Claimed(dropId, msg.sender, requestID, amount);
+        emit Claimed(dropId, msg.sender, signer, requestID, amount);
     }
 
     function claimStatus(

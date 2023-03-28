@@ -20,6 +20,7 @@ interface IDropper {
     event Claimed(
         uint256 dropId,
         address claimant,
+        address signer,
         uint256 requestID,
         uint256 amount
     );
