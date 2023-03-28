@@ -1,4 +1,3 @@
-
 module.exports = {
     env: {
         browser: false,
@@ -6,10 +5,6 @@ module.exports = {
         node: true,
     },
     parser: "@typescript-eslint/parser",
-    parserOptions: {
-        project: `${__dirname}/tsconfig.json`,
-        sourceType: "module",
-    },
     rules: {
         "prettier/prettier": "error",
     },

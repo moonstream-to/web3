@@ -11,9 +11,7 @@ import {
     CraftingRecipe,
     CraftingInputActions,
     CraftingOutputActions,
-    ERC20Item,
     ERC1155Item,
-    CraftingItem,
     CraftingInput,
     CraftingOutput,
 } from "./types/CraftingTypes"
@@ -44,7 +42,7 @@ export class CraftingContract {
                     return {
                         action: action,
                         item: {
-                            tokenAddrress: el.tokenAddress,
+                            tokenAddress: el.tokenAddress,
                             amount: el.amount.toString(),
                         },
                     }
@@ -53,7 +51,7 @@ export class CraftingContract {
                         action: action,
                         item: {
                             tokenId: el.tokenId.toString(),
-                            tokenAddrress: el.tokenAddress,
+                            tokenAddress: el.tokenAddress,
                             amount: el.amount.toString(),
                         },
                     }
@@ -67,7 +65,7 @@ export class CraftingContract {
                 return {
                     action: action,
                     item: {
-                        tokenAddrress: el.tokenAddress,
+                        tokenAddress: el.tokenAddress,
                         amount: el.amount.toString(),
                     },
                 }
@@ -75,7 +73,7 @@ export class CraftingContract {
                 return {
                     action: action,
                     item: {
-                        tokenAddrress: el.tokenAddress,
+                        tokenAddress: el.tokenAddress,
                         amount: el.amount.toString(),
                         tokenId: el.tokenId.toString(),
                     },
@@ -100,44 +98,34 @@ export class CraftingContract {
         return this.contract.craft(recipeId)
     }
 
-    public async addRecipe(
-        recipe: CraftingRecipe,
-        overrides?: ethers.Overrides
-    ): Promise<ethers.BigNumber> {
-        let craftingInputs = recipe.craftingInputs.map(
-            (el): CraftingInputItemStruct => {
-                return {
-                    tokenType: "tokenId" in el.item ? 1155 : 20,
-                    tokenAddress: el.item.tokenAddrress,
-                    tokenId:
-                        "tokenId" in el.item
-                            ? (el.item as ERC1155Item).tokenId
-                            : 0,
-                    amount: el.item.amount,
-                    tokenAction: el.action,
-                }
-            }
+    public async addRecipe(recipe: CraftingRecipe): Promise<ethers.BigNumber> {
+        const craftingInputs = recipe.craftingInputs.map(
+            (el): CraftingInputItemStruct => ({
+                tokenType: "tokenId" in el.item ? 1155 : 20,
+                tokenAddress: el.item.tokenAddress,
+                tokenId:
+                    "tokenId" in el.item ? (el.item as ERC1155Item).tokenId : 0,
+                amount: el.item.amount,
+                tokenAction: el.action,
+            })
         )
-        let craftingOutputs = recipe.craftingOutputs.map(
-            (el): CraftingOutputItemStruct => {
-                return {
-                    tokenType: "tokenId" in el.item ? 1155 : 20,
-                    tokenAddress: el.item.tokenAddrress,
-                    tokenId:
-                        "tokenId" in el.item
-                            ? (el.item as ERC1155Item).tokenId
-                            : 0,
-                    amount: el.item.amount,
-                    tokenAction: el.action,
-                }
-            }
+        const craftingOutputs = recipe.craftingOutputs.map(
+            (el): CraftingOutputItemStruct => ({
+                tokenType: "tokenId" in el.item ? 1155 : 20,
+                tokenAddress: el.item.tokenAddress,
+                tokenId:
+                    "tokenId" in el.item ? (el.item as ERC1155Item).tokenId : 0,
+                amount: el.item.amount,
+                tokenAction: el.action,
+            })
         )
-        let recipeStruct: RecipeStruct = {
+        const recipeStruct: RecipeStruct = {
             inputs: craftingInputs,
             outputs: craftingOutputs,
             isActive: recipe.isActive,
         }
-        await (await this.contract.addRecipe(recipeStruct, overrides)).wait(1)
+        const tx = await this.contract.addRecipe(recipeStruct)
+        await tx.wait(1)
         return this.numRecipes()
     }
     public connect(_signer: ethers.Signer) {
