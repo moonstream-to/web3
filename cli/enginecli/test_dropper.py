@@ -3086,6 +3086,200 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         self.assertTrue(self.dropper.claim_status(claim_id, request_id_1))
 
 
+class DropperSignatureAuthorizationTest(DropperTestCase):
+    """
+    Tests which check that signer authorizations with Terminus tokens work as expected.
+
+    TODO:
+    - Add tests for ERC721 claims
+    - Add tests for ERC1155 transfer claims
+    - Add tests for Terminus mint claims
+    """
+    def tearDown(self):
+        """
+        Return permissions to how they are at the beginning of the general test case setup (DropperTestCase).
+        """
+        if (
+            self.terminus.balance_of(
+                self.signer_0.address, self.signer_terminus_pool_id
+            )
+            == 0
+        ):
+            self.terminus.mint(
+                self.signer_0.address,
+                self.signer_terminus_pool_id,
+                1,
+                "",
+                {"from": accounts[0]},
+            )
+
+        signer_1_balance = self.terminus.balance_of(
+            self.signer_1.address, self.signer_terminus_pool_id
+        )
+        if signer_1_balance > 0:
+            self.terminus.burn(
+                self.signer_1.address,
+                self.signer_terminus_pool_id,
+                signer_1_balance,
+                {"from": accounts[0]},
+            )
+
+    def burn_signer_authorization(self, address):
+        """
+        Totally revoke authorization from a given address.
+        """
+        address_balance = self.terminus.balance_of(
+            address, self.signer_terminus_pool_id
+        )
+        if address_balance > 0:
+            self.terminus.burn(
+                address,
+                self.signer_terminus_pool_id,
+                address_balance,
+                {"from": accounts[0]},
+            )
+
+    def grant_signer_authorization(self, address):
+        """
+        Grant signer authorization to a given address.
+        """
+        self.terminus.mint(
+            address, self.signer_terminus_pool_id, 1, "", {"from": accounts[0]}
+        )
+
+    def test_claim_erc20_fails_if_signer_permission_revoked_after_signature(self):
+        """
+        Tests that a signed ERC20 claim cannot succeed on chain if the signer's authorization was revoked
+        after signing the claim.
+        """
+        reward = 3
+        self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
+        claim_id = self.create_drop_and_return_drop_id(
+            20,
+            self.erc20_contract.address,
+            0,
+            reward,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
+        )
+
+        current_block = len(chain)
+        block_deadline = current_block + 100  # Burn baby burn - gives us wiggle room
+
+        self.assertGreater(
+            self.terminus.balance_of(
+                self.signer_0.address, self.signer_terminus_pool_id
+            ),
+            0,
+        )
+        request_id = 634534
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, request_id, accounts[1].address, block_deadline, 0
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        balance_claimant_0 = self.erc20_contract.balance_of(accounts[1].address)
+        balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
+
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
+        self.burn_signer_authorization(self.signer_0.address)
+        self.assertEqual(
+            self.terminus.balance_of(
+                self.signer_0.address, self.signer_terminus_pool_id
+            ),
+            0,
+        )
+
+        with self.assertRaises(VirtualMachineError) as vm_error:
+            self.dropper.claim(
+                claim_id,
+                request_id,
+                block_deadline,
+                0,
+                self.signer_0,
+                signed_message,
+                {"from": accounts[1]},
+            )
+        self.assertEqual(
+            vm_error.exception.revert_msg, "Dropper.claim: Unauthorized signer for drop"
+        )
+        balance_claimant_1 = self.erc20_contract.balance_of(accounts[1].address)
+        balance_dropper_1 = self.erc20_contract.balance_of(self.dropper.address)
+
+        self.assertEqual(balance_claimant_1, balance_claimant_0)
+        self.assertEqual(balance_dropper_1, balance_dropper_0)
+
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
+    def test_claim_erc20_succeeds_if_signer_permission_granted_after_signature(self):
+        """
+        Checks that if a signer signed an ERC20 claim message before they had signer authorization but then
+        they received authorization before the tokens were claimed, then the claim will still succeed
+        on chain. The only thing that matters is if the signer has authorization at the time of execution
+        of the claim.
+        """
+        reward = 33
+        self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
+        claim_id = self.create_drop_and_return_drop_id(
+            20,
+            self.erc20_contract.address,
+            0,
+            reward,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
+        )
+
+        current_block = len(chain)
+        block_deadline = current_block + 100  # Gives us wiggle room
+
+        self.assertEqual(
+            self.terminus.balance_of(
+                self.signer_1.address, self.signer_terminus_pool_id
+            ),
+            0,
+        )
+        request_id = 4857384754
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, request_id, accounts[1].address, block_deadline, 0
+        )
+        signed_message = sign_message(message_hash, self.signer_1)
+
+        balance_claimant_0 = self.erc20_contract.balance_of(accounts[1].address)
+        balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
+
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
+        self.grant_signer_authorization(self.signer_1.address)
+        self.assertEqual(
+            self.terminus.balance_of(
+                self.signer_1.address, self.signer_terminus_pool_id
+            ),
+            1,
+        )
+
+        self.dropper.claim(
+            claim_id,
+            request_id,
+            block_deadline,
+            0,
+            self.signer_1,
+            signed_message,
+            {"from": accounts[1]},
+        )
+        balance_claimant_1 = self.erc20_contract.balance_of(accounts[1].address)
+        balance_dropper_1 = self.erc20_contract.balance_of(self.dropper.address)
+
+        self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
+        self.assertEqual(balance_dropper_1, balance_dropper_0 - reward)
+
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
+
+
 class DropperPoolControllerTest(DropperTestCase):
     def test_move_pool_controller_fails_on_invalid_pool_id(self):
         # create pool wich is not owned by the dropper

@@ -196,12 +196,6 @@ class DropperFacet:
         self.assert_contract_is_instantiated()
         return self.contract.erc20_type.call(block_identifier=block_number)
 
-    def erc721_mintable_type(
-        self, block_number: Optional[Union[str, int]] = "latest"
-    ) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.erc721_mintable_type.call(block_identifier=block_number)
-
     def erc721_type(self, block_number: Optional[Union[str, int]] = "latest") -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.erc721_type.call(block_identifier=block_number)
@@ -526,13 +520,6 @@ def handle_erc20_type(args: argparse.Namespace) -> None:
     print(result)
 
 
-def handle_erc721_mintable_type(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = DropperFacet(args.address)
-    result = contract.erc721_mintable_type(block_number=args.block_number)
-    print(result)
-
-
 def handle_erc721_type(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = DropperFacet(args.address)
@@ -850,10 +837,6 @@ def generate_cli() -> argparse.ArgumentParser:
     erc20_type_parser = subcommands.add_parser("erc20-type")
     add_default_arguments(erc20_type_parser, False)
     erc20_type_parser.set_defaults(func=handle_erc20_type)
-
-    erc721_mintable_type_parser = subcommands.add_parser("erc721-mintable-type")
-    add_default_arguments(erc721_mintable_type_parser, False)
-    erc721_mintable_type_parser.set_defaults(func=handle_erc721_mintable_type)
 
     erc721_type_parser = subcommands.add_parser("erc721-type")
     add_default_arguments(erc721_type_parser, False)
