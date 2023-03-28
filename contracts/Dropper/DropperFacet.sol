@@ -2,7 +2,7 @@
 
 /**
  * Authors: Moonstream Engineering (engineering@moonstream.to)
- * GitHub: https://github.com/bugout-dev/dao
+ * GitHub: https://github.com/bugout-dev/engine
  */
 
 pragma solidity ^0.8.9;
