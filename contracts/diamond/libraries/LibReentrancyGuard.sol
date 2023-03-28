@@ -7,8 +7,6 @@
 
 pragma solidity ^0.8.0;
 
-import {IDiamondCut} from "../../diamond/interfaces/IDiamondCut.sol";
-
 library LibReentrancyGuard {
     bytes32 constant REENTRANCY_GUARD_STORAGE_POSITION =
         keccak256("moonstreamdao.eth.storage.reentrancy");

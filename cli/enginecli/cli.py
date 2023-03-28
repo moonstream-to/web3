@@ -4,6 +4,7 @@ import logging
 from . import (
     core,
     drop,
+    DropperFacet,
     Dropper,
     Lootbox,
     MockErc20,
@@ -27,14 +28,17 @@ def main() -> None:
     parser.set_defaults(func=lambda _: parser.print_help())
     subparsers = parser.add_subparsers()
 
-    lootbox_parser = Lootbox.generate_cli()
-    subparsers.add_parser("lootbox", parents=[lootbox_parser], add_help=False)
-
-    dropper_parser = Dropper.generate_cli()
-    subparsers.add_parser("dropper", parents=[dropper_parser], add_help=False)
-
     core_parser = core.generate_cli()
     subparsers.add_parser("core", parents=[core_parser], add_help=False)
+
+    dropper_parser = Dropper.generate_cli()
+    subparsers.add_parser("dropper-v1", parents=[dropper_parser], add_help=False)
+
+    dropper_facet_parser = DropperFacet.generate_cli()
+    subparsers.add_parser("dropper", parents=[dropper_facet_parser], add_help=False)
+
+    lootbox_parser = Lootbox.generate_cli()
+    subparsers.add_parser("lootbox", parents=[lootbox_parser], add_help=False)
 
     erc20_parser = MockErc20.generate_cli()
     subparsers.add_parser("erc20", parents=[erc20_parser], add_help=False)
