@@ -1,20 +1,15 @@
 [
   {
-    "inputs": [],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
         "name": "account",
         "type": "address"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
         "name": "operator",
         "type": "address"
@@ -33,13 +28,13 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "uint256",
         "name": "id",
         "type": "uint256"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
         "name": "operator",
         "type": "address"
@@ -70,19 +65,19 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
         "name": "operator",
         "type": "address"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
         "name": "from",
         "type": "address"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
         "name": "to",
         "type": "address"
@@ -107,19 +102,19 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
         "name": "operator",
         "type": "address"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
         "name": "from",
         "type": "address"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
         "name": "to",
         "type": "address"
@@ -150,7 +145,7 @@
         "type": "string"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "uint256",
         "name": "id",
         "type": "uint256"
@@ -443,44 +438,6 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "poolID",
-        "type": "uint256"
-      }
-    ],
-    "name": "poolIsBurnable",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "poolID",
-        "type": "uint256"
-      }
-    ],
-    "name": "poolIsTransferable",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
         "name": "id",
         "type": "uint256"
       },
@@ -644,48 +601,12 @@
         "type": "uint256"
       },
       {
-        "internalType": "bool",
-        "name": "burnable",
-        "type": "bool"
-      }
-    ],
-    "name": "setPoolBurnable",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "poolID",
-        "type": "uint256"
-      },
-      {
         "internalType": "address",
         "name": "newController",
         "type": "address"
       }
     ],
     "name": "setPoolController",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "poolID",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "transferable",
-        "type": "bool"
-      }
-    ],
-    "name": "setPoolTransferable",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
