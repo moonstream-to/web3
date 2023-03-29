@@ -27,10 +27,8 @@ from .settings import (
 
 logger = logging.getLogger(__name__)
 
-if AWS_DEFAULT_REGION is None:
-    aws_client = boto3.client("ec2")
-else:
-    aws_client = boto3.client("ec2", region_name=AWS_DEFAULT_REGION)
+aws_client = boto3.client("ec2", region_name=AWS_DEFAULT_REGION)
+
 
 class AWSDescribeInstancesFail(Exception):
     """

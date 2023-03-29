@@ -40,7 +40,10 @@ if AWS_DEFAULT_REGION is None:
     if not ENGINE_DEV:
         raise ValueError("AWS_DEFAULT_REGION environment variable must be set")
     else:
-        warnings.warn("AWS_DEFAULT_REGION environment variable is not set.")
+        warnings.warn(
+            "AWS_DEFAULT_REGION environment variable is not set. Using \"us-east-1\"."
+        )
+        AWS_DEFAULT_REGION = "us-east-1"
 
 MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID = os.environ.get(
     "MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID"
