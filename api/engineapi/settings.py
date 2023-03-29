@@ -23,6 +23,9 @@ if RAW_ORIGINS is None:
     )
 ORIGINS = RAW_ORIGINS.split(",")
 
+# Open API documentation path
+DOCS_TARGET_PATH = os.environ.get("DOCS_TARGET_PATH", "docs")
+
 
 # If SIGNER_KEYSTORE and SIGNER_PASSWORD are set, then we use the local signer.
 # Otherwise, we use the AWS signer.
@@ -31,12 +34,7 @@ SIGNER_PASSWORD = os.environ.get("SIGNER_PASSWORD")
 
 MOONSTREAM_SIGNING_SERVER_IP = os.environ.get("MOONSTREAM_SIGNING_SERVER_IP", None)
 
-
-# Open API documentation path
-DOCS_TARGET_PATH = os.environ.get("DOCS_TARGET_PATH", "docs")
-
-
-# AWS signer
+# Settings related to the AWS signer
 AWS_DEFAULT_REGION = os.environ.get("AWS_DEFAULT_REGION")
 if AWS_DEFAULT_REGION is None:
     if not ENGINE_DEV:
