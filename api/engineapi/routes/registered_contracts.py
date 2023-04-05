@@ -6,16 +6,15 @@ as part of their chain-adjacent activities (like performing signature-based toke
 Dropper contract).
 """
 import logging
+from typing import Dict, List, Optional
 from uuid import UUID
 
-from fastapi import FastAPI, Depends, Query, Request
+from fastapi import Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from typing import Dict, List, Optional
 
+from .. import data, db
 from .. import registered_contracts as registered_contracts_actions
-from .. import data
-from .. import db
 from ..middleware import BroodAuthMiddleware, EngineHTTPException
 from ..settings import DOCS_TARGET_PATH, ORIGINS
 from ..version import VERSION

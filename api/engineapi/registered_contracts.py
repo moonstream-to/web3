@@ -1,19 +1,16 @@
 import argparse
-from enum import Enum
 import json
 import logging
 import uuid
+from enum import Enum
 from typing import Any, Dict, Optional
 
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 from web3 import Web3
 
-from . import db
-from . import data
-from .models import (
-    RegisteredContract,
-)
+from . import data, db
+from .models import RegisteredContract
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
