@@ -36,7 +36,11 @@ tags_metadata = [
 ]
 
 
-whitelist_paths = {"/contracts/types": "GET"}
+whitelist_paths = {
+    "/contracts/openapi.json": "GET",
+    f"/contracts/{DOCS_TARGET_PATH}": "GET",
+    "/contracts/types": "GET",
+}
 
 app = FastAPI(
     title=TITLE,
