@@ -12,6 +12,7 @@ from . import db
 from . import signatures
 from . import data
 from . import auth
+from . import registered_contracts
 
 # from .settings import BLOCKCHAINS_TO_BROWNIE_NETWORKS
 from .models import DropperClaim, DropperContract
@@ -950,6 +951,9 @@ def main() -> None:
         "-c", "--dropper-claim-id", type=str, required=True, help="Dropper claim id"
     )
     parser_dropper_list_claimants.set_defaults(func=list_claimants_handler)
+
+    registered_contracts_parser = registered_contracts.generate_cli()
+    subparsers_engine_database.add_parser("contracts", parents=[registered_contracts_parser], add_help=False)
 
     # parser_dropper_claimant_signature_refetch = subparsers_dropper.add_parser(
     #     "signature-refetch", description="Refetch signature for claimant"
