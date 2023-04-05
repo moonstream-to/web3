@@ -62,6 +62,9 @@ app.add_middleware(
 
 @app.get("/types")
 async def contract_types() -> Dict[str, str]:
+    """
+    Describes the contract_types that users can register contracts as against this API.
+    """
     return {
         registered_contracts_actions.ContractType.raw.value: "A generic smart contract. You can ask users to submit arbitrary calldata to this contract.",
         registered_contracts_actions.ContractType.dropper.value: "A Dropper contract. You can authorize users to submit claims against this contract.",
@@ -78,6 +81,9 @@ async def list_registered_contracts(
     offset: Optional[int] = Query(None),
     db_session: Session = Depends(db.yield_db_session),
 ) -> List[data.RegisteredContract]:
+    """
+    Users can use this endpoint to look up the contracts they have registered against this API.
+    """
     contracts = registered_contracts_actions.lookup_registered_contracts(
         db_session=db_session,
         moonstream_user_id=request.state.user.id,
@@ -99,6 +105,9 @@ async def register_contract(
     contract: data.RegisterContractRequest,
     db_session: Session = Depends(db.yield_db_session),
 ) -> data.RegisteredContract:
+    """
+    Allows users to register contracts.
+    """
     try:
         registered_contract = registered_contracts_actions.register_contract(
             db_session=db_session,
@@ -126,6 +135,9 @@ async def delete_contract(
     contract_id: UUID,
     db_session: Session = Depends(db.yield_db_session),
 ) -> data.RegisteredContract:
+    """
+    Allows users to delete contracts that they have registered.
+    """
     try:
         deleted_contract = registered_contracts_actions.delete_registered_contract(
             db_session=db_session,
