@@ -11,8 +11,7 @@ from uuid import UUID
 from fastapi import FastAPI, Depends, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from sqlalchemy.orm.exc import NoResultFound
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from .. import registered_contracts as registered_contracts_actions
 from .. import data
