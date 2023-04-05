@@ -2,6 +2,7 @@ import argparse
 from enum import Enum
 import json
 import logging
+import uuid
 
 from .actions import (
     register_contract,
@@ -20,7 +21,7 @@ class ContractType(Enum):
     dropper = "dropper-v0.2.0"
 
 
-def handle_register_contract(args: argparse.Namespace) -> None:
+def handle_register(args: argparse.Namespace) -> None:
     """
     Handles the register command.
     """
@@ -62,6 +63,23 @@ def handle_list(args: argparse.Namespace) -> None:
         return
 
     print(json.dumps([render_registered_contract(contract) for contract in contracts]))
+
+
+def handle_delete(args: argparse.Namespace) -> None:
+    """
+    Handles the delete command.
+    """
+    try:
+        with db.yield_db_session_ctx() as db_session:
+            deleted_contract = delete_registered_contract(
+                db_session=db_session,
+                registered_contract_id=args.id,
+            )
+    except Exception as err:
+        logger.error(err)
+        return
+
+    print(render_registered_contract(deleted_contract))
 
 
 def generate_cli() -> argparse.ArgumentParser:
@@ -123,7 +141,7 @@ def generate_cli() -> argparse.ArgumentParser:
         default=None,
         help="The image URI of the contract",
     )
-    register_parser.set_defaults(func=handle_register_contract)
+    register_parser.set_defaults(func=handle_register)
 
     list_usage = "List all contracts matching certain criteria"
     list_parser = subparsers.add_parser("list", help=list_usage, description=list_usage)
@@ -169,6 +187,18 @@ def generate_cli() -> argparse.ArgumentParser:
         help="The offset to start returning contracts from",
     )
     list_parser.set_defaults(func=handle_list)
+
+    delete_usage = "Delete a registered contract from an Engine instance"
+    delete_parser = subparsers.add_parser(
+        "delete", help=delete_usage, description=delete_usage
+    )
+    delete_parser.add_argument(
+        "--id",
+        type=uuid.UUID,
+        required=True,
+        help="The ID of the contract to delete",
+    )
+    delete_parser.set_defaults(func=handle_delete)
 
     return parser
 
