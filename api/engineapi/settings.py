@@ -41,7 +41,7 @@ if AWS_DEFAULT_REGION is None:
         raise ValueError("AWS_DEFAULT_REGION environment variable must be set")
     else:
         warnings.warn(
-            "AWS_DEFAULT_REGION environment variable is not set. Using \"us-east-1\"."
+            'AWS_DEFAULT_REGION environment variable is not set. Using "us-east-1".'
         )
         AWS_DEFAULT_REGION = "us-east-1"
 
