@@ -6,6 +6,7 @@ import uuid
 from typing import Any, Dict, Optional
 
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from web3 import Web3
 
 from . import db
@@ -16,6 +17,10 @@ from .models import (
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+class ContractAlreadyRegistered(Exception):
+    pass
 
 
 class ContractType(Enum):
@@ -32,23 +37,31 @@ def register_contract(
     title: Optional[str],
     description: Optional[str],
     image_uri: Optional[str],
-) -> uuid.UUID:
+) -> data.RegisteredContract:
     """
     Register a contract against the Engine instance
     """
 
-    contract = RegisteredContract(
-        blockchain=blockchain,
-        address=Web3.toChecksumAddress(address),
-        contract_type=contract_type,
-        moonstream_user_id=moonstream_user_id,
-        title=title,
-        description=description,
-        image_uri=image_uri,
-    )
-    db_session.add(contract)
-    db_session.commit()
-    return contract.id
+    try:
+        contract = RegisteredContract(
+            blockchain=blockchain,
+            address=Web3.toChecksumAddress(address),
+            contract_type=contract_type,
+            moonstream_user_id=moonstream_user_id,
+            title=title,
+            description=description,
+            image_uri=image_uri,
+        )
+        db_session.add(contract)
+        db_session.commit()
+    except IntegrityError as err:
+        db_session.rollback()
+        raise ContractAlreadyRegistered()
+    except Exception:
+        db_session.rollback()
+        logger.error(err)
+
+    return render_registered_contract(contract)
 
 
 def lookup_registered_contracts(
@@ -94,15 +107,20 @@ def delete_registered_contract(
     """
     Delete a registered contract
     """
-    registered_contract = (
-        db_session.query(RegisteredContract)
-        .filter(RegisteredContract.moonstream_user_id == moonstream_user_id)
-        .filter(RegisteredContract.id == registered_contract_id)
-        .one()
-    )
+    try:
+        registered_contract = (
+            db_session.query(RegisteredContract)
+            .filter(RegisteredContract.moonstream_user_id == moonstream_user_id)
+            .filter(RegisteredContract.id == registered_contract_id)
+            .one()
+        )
 
-    db_session.delete(registered_contract)
-    db_session.commit()
+        db_session.delete(registered_contract)
+        db_session.commit()
+    except Exception as err:
+        db_session.rollback()
+        logger.error(err)
+        raise
 
     return registered_contract
 
@@ -139,7 +157,7 @@ def handle_register(args: argparse.Namespace) -> None:
     except Exception as err:
         logger.error(err)
         return
-    print(contract)
+    print(contract.json())
 
 
 def handle_list(args: argparse.Namespace) -> None:
@@ -185,7 +203,7 @@ def handle_delete(args: argparse.Namespace) -> None:
         logger.error(err)
         return
 
-    print(render_registered_contract(deleted_contract))
+    print(render_registered_contract(deleted_contract).json())
 
 
 def generate_cli() -> argparse.ArgumentParser:

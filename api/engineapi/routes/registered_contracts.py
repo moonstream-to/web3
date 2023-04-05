@@ -83,3 +83,28 @@ async def list_registered_contracts(
         registered_contracts_actions.render_registered_contract(contract)
         for contract in contracts
     ]
+
+
+@app.post("/register", response_model=data.RegisteredContract)
+async def register_contract(
+    request: Request,
+    contract: data.RegisterContractRequest,
+    db_session: Session = Depends(db.yield_db_session),
+) -> data.RegisteredContract:
+    try:
+        registered_contract = registered_contracts_actions.register_contract(
+            db_session=db_session,
+            moonstream_user_id=request.state.user.id,
+            blockchain=contract.blockchain,
+            address=contract.address,
+            contract_type=contract.contract_type,
+            title=contract.title,
+            description=contract.description,
+            image_uri=contract.image_uri,
+        )
+    except registered_contracts_actions.ContractAlreadyRegistered:
+        raise EngineHTTPException(
+            status_code=409,
+            detail="Contract already registered",
+        )
+    return registered_contracts_actions.render_registered_contract(registered_contract)

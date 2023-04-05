@@ -176,6 +176,15 @@ class DropUpdatedResponse(BaseModel):
     active: bool = True
 
 
+class RegisterContractRequest(BaseModel):
+    blockchain: str
+    address: str
+    contract_type: str
+    title: Optional[str] = None
+    description: Optional[str] = None
+    image_uri: Optional[str] = None
+
+
 class RegisteredContract(BaseModel):
     id: UUID
     blockchain: str
