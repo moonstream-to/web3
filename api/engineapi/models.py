@@ -177,6 +177,8 @@ class RegisteredContract(Base):  # type: ignore
     title = Column(VARCHAR(128), nullable=True)
     description = Column(String, nullable=True)
     image_uri = Column(String, nullable=True)
+    # User ID of the Moonstream user who registered this contract.
+    moonstream_user_id = Column(UUID(as_uuid=True), nullable=False, index=True)
 
     created_at = Column(
         DateTime(timezone=True), server_default=utcnow(), nullable=False
@@ -207,7 +209,7 @@ class CallRequest(Base):
     )
     caller = Column(VARCHAR(256), nullable=False, index=True)
     # User ID of the Moonstream user who requested this call.
-    requester = Column(UUID(as_uuid=True), nullable=False, index=True)
+    moonstream_user_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     method = Column(String, nullable=False, index=True)
     parameters = Column(JSONB, nullable=False)
 
