@@ -59,7 +59,7 @@ def register_contract(
         raise ContractAlreadyRegistered()
     except Exception:
         db_session.rollback()
-        logger.error(err)
+        logger.error(repr(err))
 
     return render_registered_contract(contract)
 
@@ -119,7 +119,7 @@ def delete_registered_contract(
         db_session.commit()
     except Exception as err:
         db_session.rollback()
-        logger.error(err)
+        logger.error(repr(err))
         raise
 
     return registered_contract
