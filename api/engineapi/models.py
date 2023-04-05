@@ -155,6 +155,63 @@ class DropperClaimant(Base):  # type: ignore
     )
 
 
+class RegisteredContract(Base):  # type: ignore
+    __tablename__ = "registered_contracts"
+    __table_args__ = (
+        UniqueConstraint(
+            "blockchain",
+            "address",
+            "contract_type",
+        ),
+    )
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+    )
+    blockchain = Column(VARCHAR(128), nullable=False, index=True)
+    address = Column(VARCHAR(256), nullable=False, index=True)
+    contract_type = Column(VARCHAR(128), nullable=False, index=True)
+    title = Column(VARCHAR(128), nullable=True)
+    description = Column(String, nullable=True)
+    image_uri = Column(String, nullable=True)
+
+    created_at = Column(
+        DateTime(timezone=True), server_default=utcnow(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=utcnow(),
+        onupdate=utcnow(),
+        nullable=False,
+    )
+
+
+class CallRequest(Base):
+    __tablename__ = "call_requests"
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+
+    registered_contract_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registered_contracts.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    caller = Column(VARCHAR(256), nullable=False, index=True)
+    # User ID of the Moonstream user who requested this call.
+    requester = Column(UUID(as_uuid=True), nullable=False, index=True)
+    method = Column(String, nullable=False, index=True)
+    parameters = Column(JSONB, nullable=False)
+
+
 class Leaderboard(Base):  # type: ignore
     __tablename__ = "leaderboards"
     # __table_args__ = (UniqueConstraint("dropper_contract_id", "address"),)
