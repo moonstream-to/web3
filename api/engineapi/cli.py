@@ -444,6 +444,15 @@ def delete_user_handler(args: argparse.Namespace) -> None:
     pass
 
 
+def sign_handler(args: argparse.Namespace) -> None:
+    # Prompt user to enter the password for their signing account
+    password_raw = input(f"Enter password for signing account ({args.signer}): ")
+    password = password_raw.strip()
+    signer = signatures.create_account_signer(args.signer, password)
+    signed_message = signer.sign_message(args.message)
+    print(signed_message)
+
+
 def main() -> None:
 
     parser = argparse.ArgumentParser(
@@ -452,9 +461,22 @@ def main() -> None:
     parser.set_defaults(func=lambda _: parser.print_help())
     subparsers = parser.add_subparsers()
 
+    parser_sign = subparsers.add_parser("sign", description="Manually sign a message")
+    parser_sign.add_argument(
+        "-m", "--message", required=True, type=str, help="Message to sign (hex bytes)"
+    )
+    parser_sign.add_argument(
+        "-s",
+        "--signer",
+        required=True,
+        type=str,
+        help="Path to keystore file for signer",
+    )
+    parser_sign.set_defaults(func=sign_handler)
+
     # Signing server parser
     parser_signing_server = subparsers.add_parser(
-        "signing", description="Signing server commands"
+        "signing-server", description="Signing server commands"
     )
     parser_signing_server.set_defaults(
         func=lambda _: parser_signing_server.print_help()
