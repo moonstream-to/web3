@@ -32,7 +32,7 @@ def register_contract(
     db_session: Session,
     blockchain: str,
     address: str,
-    contract_type: str,
+    contract_type: ContractType,
     moonstream_user_id: uuid.UUID,
     title: Optional[str],
     description: Optional[str],
@@ -46,7 +46,7 @@ def register_contract(
         contract = RegisteredContract(
             blockchain=blockchain,
             address=Web3.toChecksumAddress(address),
-            contract_type=contract_type,
+            contract_type=contract_type.value,
             moonstream_user_id=moonstream_user_id,
             title=title,
             description=description,
@@ -57,9 +57,10 @@ def register_contract(
     except IntegrityError as err:
         db_session.rollback()
         raise ContractAlreadyRegistered()
-    except Exception:
+    except Exception as err:
         db_session.rollback()
         logger.error(repr(err))
+        raise
 
     return render_registered_contract(contract)
 
@@ -69,7 +70,7 @@ def lookup_registered_contracts(
     moonstream_user_id: uuid.UUID,
     blockchain: Optional[str] = None,
     address: Optional[str] = None,
-    contract_type: Optional[str] = None,
+    contract_type: Optional[ContractType] = None,
     limit: int = 10,
     offset: Optional[int] = None,
 ) -> RegisteredContract:
@@ -89,7 +90,7 @@ def lookup_registered_contracts(
         )
 
     if contract_type is not None:
-        query = query.filter(RegisteredContract.contract_type == contract_type)
+        query = query.filter(RegisteredContract.contract_type == contract_type.value)
 
     if offset is not None:
         query = query.offset(offset)
@@ -148,7 +149,7 @@ def handle_register(args: argparse.Namespace) -> None:
                 db_session=db_session,
                 blockchain=args.blockchain,
                 address=args.address,
-                contract_type=args.contract_type.value,
+                contract_type=args.contract_type,
                 moonstream_user_id=args.user_id,
                 title=args.title,
                 description=args.description,
@@ -171,9 +172,7 @@ def handle_list(args: argparse.Namespace) -> None:
                 moonstream_user_id=args.user_id,
                 blockchain=args.blockchain,
                 address=args.address,
-                contract_type=(
-                    args.contract_type.value if args.contract_type is not None else None
-                ),
+                contract_type=args.contract_type,
                 limit=args.limit,
                 offset=args.offset,
             )

@@ -36,7 +36,7 @@ tags_metadata = [
 ]
 
 
-whitelist_paths = {}
+whitelist_paths = {"/contracts/types": "GET"}
 
 app = FastAPI(
     title=TITLE,
@@ -60,12 +60,20 @@ app.add_middleware(
 )
 
 
+@app.get("/types")
+async def contract_types() -> Dict[str, str]:
+    return {
+        registered_contracts_actions.ContractType.raw.value: "A generic smart contract. You can ask users to submit arbitrary calldata to this contract.",
+        registered_contracts_actions.ContractType.dropper.value: "A Dropper contract. You can authorize users to submit claims against this contract.",
+    }
+
+
 @app.get("/")
 async def list_registered_contracts(
     request: Request,
     blockchain: Optional[str] = Query(None),
     address: Optional[str] = Query(None),
-    contract_type: Optional[str] = Query(None),
+    contract_type: Optional[registered_contracts_actions.ContractType] = Query(None),
     limit: int = Query(10),
     offset: Optional[int] = Query(None),
     db_session: Session = Depends(db.yield_db_session),
@@ -97,7 +105,9 @@ async def register_contract(
             moonstream_user_id=request.state.user.id,
             blockchain=contract.blockchain,
             address=contract.address,
-            contract_type=contract.contract_type,
+            contract_type=registered_contracts_actions.ContractType(
+                contract.contract_type
+            ),
             title=contract.title,
             description=contract.description,
             image_uri=contract.image_uri,
