@@ -108,3 +108,22 @@ async def register_contract(
             detail="Contract already registered",
         )
     return registered_contracts_actions.render_registered_contract(registered_contract)
+
+
+@app.delete("/{contract_id}", response_model=data.RegisteredContract)
+async def delete_contract(
+    request: Request,
+    contract_id: UUID,
+    db_session: Session = Depends(db.yield_db_session),
+) -> data.RegisteredContract:
+    try:
+        deleted_contract = registered_contracts_actions.delete_registered_contract(
+            db_session=db_session,
+            moonstream_user_id=request.state.user.id,
+            registered_contract_id=contract_id,
+        )
+    except Exception as err:
+        logger.error(repr(err))
+        raise EngineHTTPException(status_code=500)
+
+    return registered_contracts_actions.render_registered_contract(deleted_contract)
