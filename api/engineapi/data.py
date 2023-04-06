@@ -207,6 +207,12 @@ class RegisteredContract(BaseModel):
         return v.isoformat()
 
 
+class CallSpecification(BaseModel):
+    caller: str
+    method: str
+    parameters: Dict[str, Any]
+
+
 class CallRequest(BaseModel):
     id: UUID
     registered_contract_id: UUID

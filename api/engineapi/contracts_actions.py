@@ -158,9 +158,7 @@ def request_calls(
     db_session: Session,
     moonstream_user_id: uuid.UUID,
     registered_contract_id: uuid.UUID,
-    call_specs: List[
-        Tuple[str, str, Dict[str, Any]]
-    ],  # Each item is a tuple: (caller, method, parameters)
+    call_specs: List[data.CallSpecification],
     ttl_days: Optional[int] = None,
 ) -> None:
     """
@@ -185,11 +183,13 @@ def request_calls(
 
     # Normalize the caller argument using Web3.toChecksumAddress
     contract_type = ContractType(registered_contract.contract_type)
-    for caller, method, parameters in call_specs:
-        normalized_caller = Web3.toChecksumAddress(caller)
+    for specification in call_specs:
+        normalized_caller = Web3.toChecksumAddress(specification.caller)
 
         # Validate the method and parameters for the contract_type
-        validate_method_and_params(contract_type, method, parameters)
+        validate_method_and_params(
+            contract_type, specification.method, specification.parameters
+        )
 
         # Calculate the expiration time (if ttl_days is specified)
         expires_at_sql = None
@@ -200,8 +200,8 @@ def request_calls(
             registered_contract_id=registered_contract.id,
             caller=normalized_caller,
             moonstream_user_id=moonstream_user_id,
-            method=method,
-            parameters=parameters,
+            method=specification.method,
+            parameters=specification.parameters,
             expires_at=expires_at_sql,
         )
 
@@ -320,14 +320,16 @@ def handle_request_calls(args: argparse.Namespace) -> None:
     """
     with args.call_specs as ifp:
         try:
-            call_specs = json.load(ifp)
+            call_specs_raw = json.load(ifp)
         except Exception as e:
             logger.error(f"Failed to load call specs: {e}")
             return
 
+        call_specs = [data.CallSpecification(**spec) for spec in call_specs_raw]
+
     try:
         with db.yield_db_session_ctx() as db_session:
-            requests = request_calls(
+            request_calls(
                 db_session=db_session,
                 moonstream_user_id=args.moonstream_user_id,
                 registered_contract_id=args.registered_contract_id,
