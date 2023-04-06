@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .. import data, db
-from .. import contracts as contracts_actions
+from .. import contracts_actions
 from ..middleware import BroodAuthMiddleware, EngineHTTPException
 from ..settings import DOCS_TARGET_PATH, ORIGINS
 from ..version import VERSION
