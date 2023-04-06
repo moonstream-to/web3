@@ -12,7 +12,7 @@ from . import db
 from . import signatures
 from . import data
 from . import auth
-from . import contracts
+from . import contracts_actions
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -927,7 +927,7 @@ def main() -> None:
     )
     parser_dropper_list_claimants.set_defaults(func=list_claimants_handler)
 
-    contracts_parser = contracts.generate_cli()
+    contracts_parser = contracts_actions.generate_cli()
     subparsers_engine_database.add_parser(
         "contracts", parents=[contracts_parser], add_help=False
     )
