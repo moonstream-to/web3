@@ -215,6 +215,7 @@ class CallRequest(Base):
     # who made each call request.
     moonstream_user_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     method = Column(String, nullable=False, index=True)
+    # TODO(zomglings): Should we conditional indices on parameters depending on the contract type?
     parameters = Column(JSONB, nullable=False)
 
     expires_at = Column(DateTime(timezone=True), nullable=True, index=True)
