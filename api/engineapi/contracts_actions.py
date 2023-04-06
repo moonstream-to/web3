@@ -5,7 +5,7 @@ import uuid
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy import insert, text
+from sqlalchemy import func, text
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.orm import Session
 from web3 import Web3
@@ -214,6 +214,36 @@ def request_calls(
         raise e
 
 
+def list_call_requests(
+    db_session: Session,
+    registered_contract_id: uuid.UUID,
+    caller: str,
+    limit: int = 10,
+    offset: Optional[int] = None,
+    show_expired: bool = False,
+) -> List[data.CallRequest]:
+    """
+    List call requests for the given moonstream_user_id
+    """
+    # If show_expired is False, filter out expired requests using current time on database server
+    query = db_session.query(CallRequest).filter(
+        CallRequest.registered_contract_id == registered_contract_id,
+        CallRequest.caller == Web3.toChecksumAddress(caller),
+    )
+
+    if not show_expired:
+        query = query.filter(
+            CallRequest.expires_at > func.now(),
+        )
+
+    if offset is not None:
+        query = query.offset(offset)
+
+    query = query.limit(limit)
+    results = query.all()
+    return [render_call_request(call_request) for call_request in results]
+
+
 def render_registered_contract(contract: RegisteredContract) -> data.RegisteredContract:
     return data.RegisteredContract(
         id=contract.id,
@@ -236,7 +266,7 @@ def render_call_request(call_request: CallRequest) -> data.CallRequest:
         moonstream_user_id=call_request.moonstream_user_id,
         caller=call_request.caller,
         method=call_request.method,
-        params=call_request.params,
+        parameters=call_request.parameters,
         expires_at=call_request.expires_at,
         created_at=call_request.created_at,
         updated_at=call_request.updated_at,
@@ -341,6 +371,29 @@ def handle_request_calls(args: argparse.Namespace) -> None:
         return
 
 
+def handle_list_requests(args: argparse.Namespace) -> None:
+    """
+    Handles the requests command.
+
+    :param args: The arguments passed to the CLI command.
+    """
+    try:
+        with db.yield_db_session_ctx() as db_session:
+            call_requests = list_call_requests(
+                db_session=db_session,
+                registered_contract_id=args.registered_contract_id,
+                caller=args.caller,
+                limit=args.limit,
+                offset=args.offset,
+                show_expired=args.show_expired,
+            )
+    except Exception as e:
+        logger.error(f"Failed to list call requests: {e}")
+        return
+
+    print(json.dumps([request.dict() for request in call_requests]))
+
+
 def generate_cli() -> argparse.ArgumentParser:
     """
     Generates a CLI which can be used to manage registered contracts on an Engine instance.
@@ -408,9 +461,11 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     register_parser.set_defaults(func=handle_register)
 
-    list_usage = "List all contracts matching certain criteria"
-    list_parser = subparsers.add_parser("list", help=list_usage, description=list_usage)
-    list_parser.add_argument(
+    list_contracts_usage = "List all contracts matching certain criteria"
+    list_contracts_parser = subparsers.add_parser(
+        "list", help=list_contracts_usage, description=list_contracts_usage
+    )
+    list_contracts_parser.add_argument(
         "-b",
         "--blockchain",
         type=str,
@@ -418,7 +473,7 @@ def generate_cli() -> argparse.ArgumentParser:
         default=None,
         help="The blockchain the contract is deployed on",
     )
-    list_parser.add_argument(
+    list_contracts_parser.add_argument(
         "-a",
         "--address",
         type=str,
@@ -426,7 +481,7 @@ def generate_cli() -> argparse.ArgumentParser:
         default=None,
         help="The address of the contract",
     )
-    list_parser.add_argument(
+    list_contracts_parser.add_argument(
         "-c",
         "--contract-type",
         type=ContractType,
@@ -435,30 +490,30 @@ def generate_cli() -> argparse.ArgumentParser:
         default=None,
         help="The type of the contract",
     )
-    list_parser.add_argument(
+    list_contracts_parser.add_argument(
         "-u",
         "--user-id",
         type=uuid.UUID,
         required=True,
         help="The ID of the Moonstream user whose contracts to list",
     )
-    list_parser.add_argument(
+    list_contracts_parser.add_argument(
         "-N",
         "--limit",
         type=int,
         required=False,
-        default=1,
+        default=10,
         help="The number of contracts to return",
     )
-    list_parser.add_argument(
-        "-o",
+    list_contracts_parser.add_argument(
+        "-n",
         "--offset",
         type=int,
         required=False,
         default=0,
         help="The offset to start returning contracts from",
     )
-    list_parser.set_defaults(func=handle_list)
+    list_contracts_parser.set_defaults(func=handle_list)
 
     delete_usage = "Delete a registered contract from an Engine instance"
     delete_parser = subparsers.add_parser(
@@ -484,7 +539,7 @@ def generate_cli() -> argparse.ArgumentParser:
         "request-calls", help=request_calls_usage, description=request_calls_usage
     )
     request_calls_parser.add_argument(
-        "-r",
+        "-i",
         "--registered-contract-id",
         type=uuid.UUID,
         required=True,
@@ -499,7 +554,7 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     request_calls_parser.add_argument(
         "-c",
-        "--call-specs",
+        "--calls",
         type=argparse.FileType("r"),
         required=True,
         help="Path to the JSON file with call specifications",
@@ -513,6 +568,47 @@ def generate_cli() -> argparse.ArgumentParser:
         help="The number of days until the call requests expire",
     )
     request_calls_parser.set_defaults(func=handle_request_calls)
+
+    list_requests_usage = "List requests for calls on a registered contract"
+    list_requests_parser = subparsers.add_parser(
+        "requests", help=list_requests_usage, description=list_requests_usage
+    )
+    list_requests_parser.add_argument(
+        "-i",
+        "--registered-contract-id",
+        type=uuid.UUID,
+        required=True,
+        help="The ID of the registered contract to list call requests for",
+    )
+    list_requests_parser.add_argument(
+        "-c",
+        "--caller",
+        type=Web3.toChecksumAddress,
+        required=True,
+        help="Caller's address",
+    )
+    list_requests_parser.add_argument(
+        "-N",
+        "--limit",
+        type=int,
+        required=False,
+        default=10,
+        help="The number of call requests to return",
+    )
+    list_requests_parser.add_argument(
+        "-n",
+        "--offset",
+        type=int,
+        required=False,
+        default=0,
+        help="The offset to start returning contracts from",
+    )
+    list_requests_parser.add_argument(
+        "--show-expired",
+        action="store_true",
+        help="Set this flag to also show expired requests. Default behavior is to hide these.",
+    )
+    list_requests_parser.set_defaults(func=handle_list_requests)
 
     return parser
 

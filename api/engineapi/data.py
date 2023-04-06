@@ -219,7 +219,7 @@ class CallRequest(BaseModel):
     moonstream_user_id: UUID
     caller: str
     method: str
-    params: Dict[str, Any]
+    parameters: Dict[str, Any]
     expires_at: datetime
     created_at: datetime
     updated_at: datetime
