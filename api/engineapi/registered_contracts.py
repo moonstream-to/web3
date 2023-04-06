@@ -214,7 +214,6 @@ def generate_cli() -> argparse.ArgumentParser:
     register_parser = subparsers.add_parser(
         "register", help=register_usage, description=register_usage
     )
-    # Copilot, generate register_parser all the way, please.
     register_parser.add_argument(
         "-b",
         "--blockchain",
