@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .. import data, db
-from .. import registered_contracts as registered_contracts_actions
+from .. import contracts as contracts_actions
 from ..middleware import BroodAuthMiddleware, EngineHTTPException
 from ..settings import DOCS_TARGET_PATH, ORIGINS
 from ..version import VERSION
@@ -68,8 +68,8 @@ async def contract_types() -> Dict[str, str]:
     Describes the contract_types that users can register contracts as against this API.
     """
     return {
-        registered_contracts_actions.ContractType.raw.value: "A generic smart contract. You can ask users to submit arbitrary calldata to this contract.",
-        registered_contracts_actions.ContractType.dropper.value: "A Dropper contract. You can authorize users to submit claims against this contract.",
+        contracts_actions.ContractType.raw.value: "A generic smart contract. You can ask users to submit arbitrary calldata to this contract.",
+        contracts_actions.ContractType.dropper.value: "A Dropper contract. You can authorize users to submit claims against this contract.",
     }
 
 
@@ -78,7 +78,7 @@ async def list_registered_contracts(
     request: Request,
     blockchain: Optional[str] = Query(None),
     address: Optional[str] = Query(None),
-    contract_type: Optional[registered_contracts_actions.ContractType] = Query(None),
+    contract_type: Optional[contracts_actions.ContractType] = Query(None),
     limit: int = Query(10),
     offset: Optional[int] = Query(None),
     db_session: Session = Depends(db.yield_db_session),
@@ -86,7 +86,7 @@ async def list_registered_contracts(
     """
     Users can use this endpoint to look up the contracts they have registered against this API.
     """
-    contracts = registered_contracts_actions.lookup_registered_contracts(
+    contracts = contracts_actions.lookup_registered_contracts(
         db_session=db_session,
         moonstream_user_id=request.state.user.id,
         blockchain=blockchain,
@@ -96,8 +96,7 @@ async def list_registered_contracts(
         offset=offset,
     )
     return [
-        registered_contracts_actions.render_registered_contract(contract)
-        for contract in contracts
+        contracts_actions.render_registered_contract(contract) for contract in contracts
     ]
 
 
@@ -111,24 +110,22 @@ async def register_contract(
     Allows users to register contracts.
     """
     try:
-        registered_contract = registered_contracts_actions.register_contract(
+        registered_contract = contracts_actions.register_contract(
             db_session=db_session,
             moonstream_user_id=request.state.user.id,
             blockchain=contract.blockchain,
             address=contract.address,
-            contract_type=registered_contracts_actions.ContractType(
-                contract.contract_type
-            ),
+            contract_type=contracts_actions.ContractType(contract.contract_type),
             title=contract.title,
             description=contract.description,
             image_uri=contract.image_uri,
         )
-    except registered_contracts_actions.ContractAlreadyRegistered:
+    except contracts_actions.ContractAlreadyRegistered:
         raise EngineHTTPException(
             status_code=409,
             detail="Contract already registered",
         )
-    return registered_contracts_actions.render_registered_contract(registered_contract)
+    return contracts_actions.render_registered_contract(registered_contract)
 
 
 @app.delete("/{contract_id}", response_model=data.RegisteredContract)
@@ -141,7 +138,7 @@ async def delete_contract(
     Allows users to delete contracts that they have registered.
     """
     try:
-        deleted_contract = registered_contracts_actions.delete_registered_contract(
+        deleted_contract = contracts_actions.delete_registered_contract(
             db_session=db_session,
             moonstream_user_id=request.state.user.id,
             registered_contract_id=contract_id,
@@ -150,4 +147,4 @@ async def delete_contract(
         logger.error(repr(err))
         raise EngineHTTPException(status_code=500)
 
-    return registered_contracts_actions.render_registered_contract(deleted_contract)
+    return contracts_actions.render_registered_contract(deleted_contract)

@@ -12,11 +12,7 @@ from . import db
 from . import signatures
 from . import data
 from . import auth
-from . import registered_contracts
-
-# from .settings import BLOCKCHAINS_TO_BROWNIE_NETWORKS
-from .models import DropperClaim, DropperContract
-
+from . import contracts
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -367,27 +363,6 @@ def create_leaderboard_handler(args: argparse.Namespace) -> None:
         )
 
         print(Leaderboard)
-
-
-# def claimant_signature_refetch_handler(args: argparse.Namespace) -> None:
-
-#     with db.yield_db_session_ctx() as db_session:
-
-#         blockchain = (
-#             db_session.query(DropperContract.blockchain)
-#             .join(DropperClaim, DropperClaim.dropper_contract_id == DropperContract.id)
-#             .filter(DropperClaim.id == UUID(args.dropper_claim_id))
-#         ).one()
-
-#         network.connect(BLOCKCHAINS_TO_BROWNIE_NETWORKS[blockchain.blockchain])
-
-#         claimant_signature = actions.refetch_drop_signatures(
-#             db_session=db_session,
-#             dropper_claim_id=args.dropper_claim_id,
-#             added_by="cli",
-#         )
-
-#         print(f"Amount of updated claimants: {len(claimant_signature)}")
 
 
 def assign_resource_handler(args: argparse.Namespace) -> None:
@@ -952,19 +927,10 @@ def main() -> None:
     )
     parser_dropper_list_claimants.set_defaults(func=list_claimants_handler)
 
-    registered_contracts_parser = registered_contracts.generate_cli()
-    subparsers_engine_database.add_parser("contracts", parents=[registered_contracts_parser], add_help=False)
-
-    # parser_dropper_claimant_signature_refetch = subparsers_dropper.add_parser(
-    #     "signature-refetch", description="Refetch signature for claimant"
-    # )
-    # parser_dropper_claimant_signature_refetch.add_argument(
-    #     "--dropper-claim-id", type=str, required=True
-    # )
-
-    # parser_dropper_claimant_signature_refetch.set_defaults(
-    #     func=claimant_signature_refetch_handler
-    # )
+    contracts_parser = contracts.generate_cli()
+    subparsers_engine_database.add_parser(
+        "contracts", parents=[contracts_parser], add_help=False
+    )
 
     args = parser.parse_args()
     args.func(args)
