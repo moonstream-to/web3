@@ -209,9 +209,25 @@ class CallRequest(Base):
     )
     caller = Column(VARCHAR(256), nullable=False, index=True)
     # User ID of the Moonstream user who requested this call.
+    # For now, this duplicates the moonstream_user_id in the registered_contracts table. Nevertheless,
+    # we keep this column here for auditing purposes. In the future, we will add a group_id column to
+    # the registered_contracts table, and this column will be used to track the user from that group
+    # who made each call request.
     moonstream_user_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     method = Column(String, nullable=False, index=True)
     parameters = Column(JSONB, nullable=False)
+
+    expires_at = Column(DateTime(timezone=True), nullable=True, index=True)
+
+    created_at = Column(
+        DateTime(timezone=True), server_default=utcnow(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=utcnow(),
+        onupdate=utcnow(),
+        nullable=False,
+    )
 
 
 class Leaderboard(Base):  # type: ignore

@@ -1,8 +1,8 @@
 """registered_contracts and call_requests
 
-Revision ID: f510b3ea4bac
+Revision ID: 946394702d67
 Revises: 782ac8fe23c8
-Create Date: 2023-04-05 10:38:07.213257
+Create Date: 2023-04-06 03:44:02.046491
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "f510b3ea4bac"
+revision = "946394702d67"
 down_revision = "782ac8fe23c8"
 branch_labels = None
 depends_on = None
@@ -85,6 +85,19 @@ def upgrade():
         sa.Column(
             "parameters", postgresql.JSONB(astext_type=sa.Text()), nullable=False
         ),
+        sa.Column("expires_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("TIMEZONE('utc', statement_timestamp())"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("TIMEZONE('utc', statement_timestamp())"),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(
             ["registered_contract_id"],
             ["registered_contracts.id"],
@@ -96,6 +109,12 @@ def upgrade():
     )
     op.create_index(
         op.f("ix_call_requests_caller"), "call_requests", ["caller"], unique=False
+    )
+    op.create_index(
+        op.f("ix_call_requests_expires_at"),
+        "call_requests",
+        ["expires_at"],
+        unique=False,
     )
     op.create_index(
         op.f("ix_call_requests_method"), "call_requests", ["method"], unique=False
@@ -115,6 +134,7 @@ def downgrade():
         op.f("ix_call_requests_moonstream_user_id"), table_name="call_requests"
     )
     op.drop_index(op.f("ix_call_requests_method"), table_name="call_requests")
+    op.drop_index(op.f("ix_call_requests_expires_at"), table_name="call_requests")
     op.drop_index(op.f("ix_call_requests_caller"), table_name="call_requests")
     op.drop_table("call_requests")
     op.drop_index(
