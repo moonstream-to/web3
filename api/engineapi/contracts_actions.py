@@ -3,14 +3,15 @@ import json
 import logging
 import uuid
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import insert, text
+from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.orm import Session
 from web3 import Web3
 
 from . import data, db
-from .models import RegisteredContract
+from .models import RegisteredContract, CallRequest
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,6 +24,36 @@ class ContractAlreadyRegistered(Exception):
 class ContractType(Enum):
     raw = "raw"
     dropper = "dropper-v0.2.0"
+
+
+def validate_method_and_params(
+    contract_type: ContractType, method: str, parameters: Dict[str, Any]
+) -> None:
+    """
+    Validate the given method and parameters for the specified contract_type.
+    """
+    if contract_type == ContractType.raw:
+        if method != "":
+            raise ValueError("Method must be empty string for raw contract type")
+        if set(parameters.keys()) != {"calldata"}:
+            raise ValueError(
+                "Parameters must have only 'calldata' key for raw contract type"
+            )
+    elif contract_type == ContractType.dropper:
+        if method != "claim":
+            raise ValueError("Method must be 'claim' for dropper contract type")
+        required_params = {
+            "dropId",
+            "requestID",
+            "blockDeadline",
+            "amount",
+            "signer",
+            "signature",
+        }
+        if set(parameters.keys()) != required_params:
+            raise ValueError(
+                f"Parameters must have {required_params} keys for dropper contract type"
+            )
 
 
 def register_contract(
@@ -123,6 +154,66 @@ def delete_registered_contract(
     return registered_contract
 
 
+def request_calls(
+    db_session: Session,
+    moonstream_user_id: uuid.UUID,
+    registered_contract_id: uuid.UUID,
+    call_specs: List[
+        Tuple[str, str, Dict[str, Any]]
+    ],  # Each item is a tuple: (caller, method, parameters)
+    ttl_days: Optional[int] = None,
+) -> None:
+    """
+    Batch creates call requests for the given registered contract.
+    """
+    # Check that ttl_days is positive (if specified)
+    if ttl_days is not None and ttl_days <= 0:
+        raise ValueError("ttl_days must be positive")
+
+    # Check that the moonstream_user_id matches the RegisteredContract
+    try:
+        registered_contract = (
+            db_session.query(RegisteredContract)
+            .filter(
+                RegisteredContract.id == registered_contract_id,
+                RegisteredContract.moonstream_user_id == moonstream_user_id,
+            )
+            .one()
+        )
+    except NoResultFound:
+        raise ValueError("Invalid registered_contract_id or moonstream_user_id")
+
+    # Normalize the caller argument using Web3.toChecksumAddress
+    contract_type = ContractType(registered_contract.contract_type)
+    for caller, method, parameters in call_specs:
+        normalized_caller = Web3.toChecksumAddress(caller)
+
+        # Validate the method and parameters for the contract_type
+        validate_method_and_params(contract_type, method, parameters)
+
+        # Calculate the expiration time (if ttl_days is specified)
+        expires_at_sql = None
+        if ttl_days is not None:
+            expires_at_sql = text(f"(NOW() + INTERVAL '{ttl_days} days')")
+
+        request = CallRequest(
+            registered_contract_id=registered_contract.id,
+            caller=normalized_caller,
+            moonstream_user_id=moonstream_user_id,
+            method=method,
+            parameters=parameters,
+            expires_at=expires_at_sql,
+        )
+
+        db_session.add(request)
+    # Insert the new rows into the database in a single transaction
+    try:
+        db_session.commit()
+    except Exception as e:
+        db_session.rollback()
+        raise e
+
+
 def render_registered_contract(contract: RegisteredContract) -> data.RegisteredContract:
     return data.RegisteredContract(
         id=contract.id,
@@ -133,6 +224,22 @@ def render_registered_contract(contract: RegisteredContract) -> data.RegisteredC
         title=contract.title,
         description=contract.description,
         image_uri=contract.image_uri,
+        created_at=contract.created_at,
+        updated_at=contract.updated_at,
+    )
+
+
+def render_call_request(call_request: CallRequest) -> data.CallRequest:
+    return data.CallRequest(
+        id=call_request.id,
+        registered_contract_id=call_request.registered_contract_id,
+        moonstream_user_id=call_request.moonstream_user_id,
+        caller=call_request.caller,
+        method=call_request.method,
+        params=call_request.params,
+        expires_at=call_request.expires_at,
+        created_at=call_request.created_at,
+        updated_at=call_request.updated_at,
     )
 
 
@@ -200,6 +307,36 @@ def handle_delete(args: argparse.Namespace) -> None:
         return
 
     print(render_registered_contract(deleted_contract).json())
+
+
+def handle_request_calls(args: argparse.Namespace) -> None:
+    """
+    Handles the request-calls command.
+
+    Reads a file of JSON-formatted call specifications from `args.call_specs`,
+    validates them, and adds them to the call_requests table in the Engine database.
+
+    :param args: The arguments passed to the CLI command.
+    """
+    with args.call_specs as ifp:
+        try:
+            call_specs = json.load(ifp)
+        except Exception as e:
+            logger.error(f"Failed to load call specs: {e}")
+            return
+
+    try:
+        with db.yield_db_session_ctx() as db_session:
+            requests = request_calls(
+                db_session=db_session,
+                moonstream_user_id=args.moonstream_user_id,
+                registered_contract_id=args.registered_contract_id,
+                call_specs=call_specs,
+                ttl_days=args.ttl_days,
+            )
+    except Exception as e:
+        logger.error(f"Failed to request calls: {e}")
+        return
 
 
 def generate_cli() -> argparse.ArgumentParser:
@@ -339,6 +476,41 @@ def generate_cli() -> argparse.ArgumentParser:
         help="The ID of the Moonstream user whose contract to delete",
     )
     delete_parser.set_defaults(func=handle_delete)
+
+    request_calls_usage = "Create call requests for a registered contract"
+    request_calls_parser = subparsers.add_parser(
+        "request-calls", help=request_calls_usage, description=request_calls_usage
+    )
+    request_calls_parser.add_argument(
+        "-r",
+        "--registered-contract-id",
+        type=uuid.UUID,
+        required=True,
+        help="The ID of the registered contract to create call requests for",
+    )
+    request_calls_parser.add_argument(
+        "-u",
+        "--moonstream-user-id",
+        type=uuid.UUID,
+        required=True,
+        help="The ID of the Moonstream user who owns the contract",
+    )
+    request_calls_parser.add_argument(
+        "-c",
+        "--call-specs",
+        type=argparse.FileType("r"),
+        required=True,
+        help="Path to the JSON file with call specifications",
+    )
+    request_calls_parser.add_argument(
+        "-t",
+        "--ttl-days",
+        type=int,
+        required=False,
+        default=None,
+        help="The number of days until the call requests expire",
+    )
+    request_calls_parser.set_defaults(func=handle_request_calls)
 
     return parser
 

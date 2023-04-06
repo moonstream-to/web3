@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, validator
@@ -194,10 +195,36 @@ class RegisteredContract(BaseModel):
     title: Optional[str]
     description: Optional[str]
     image_uri: Optional[str]
+    created_at: datetime
+    updated_at: datetime
 
     @validator("id", "moonstream_user_id")
     def validate_uuids(cls, v):
         return str(v)
+
+    @validator("created_at", "updated_at")
+    def validate_datetimes(cls, v):
+        return v.isoformat()
+
+
+class CallRequest(BaseModel):
+    id: UUID
+    registered_contract_id: UUID
+    moonstream_user_id: UUID
+    caller: str
+    method: str
+    params: Dict[str, Any]
+    expires_at: datetime
+    created_at: datetime
+    updated_at: datetime
+
+    @validator("id", "registered_contract_id", "moonstream_user_id")
+    def validate_uuids(cls, v):
+        return str(v)
+
+    @validator("created_at", "updated_at", "expires_at")
+    def validate_datetimes(cls, v):
+        return v.isoformat()
 
 
 class QuartilesResponse(BaseModel):
