@@ -213,6 +213,11 @@ class CallSpecification(BaseModel):
     parameters: Dict[str, Any]
 
 
+class CreateCallRequestsAPIRequest(BaseModel):
+    specifications: List[CallSpecification] = Field(default_factory=list)
+    ttl_days: Optional[int] = None
+
+
 class CallRequest(BaseModel):
     id: UUID
     registered_contract_id: UUID
