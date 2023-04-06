@@ -244,6 +244,16 @@ def list_call_requests(
     return [render_call_request(call_request) for call_request in results]
 
 
+# TODO(zomglings): What should the delete functionality for call requests look like?
+# - Delete expired requests for a given caller?
+# - Delete all requests for a given caller?
+# - Delete all requests for a given contract?
+# - Delete request by ID?
+# Should we implement these all using a single delete method, or a different method for each
+# use case?
+# Will come back to this once API is live.
+
+
 def render_registered_contract(contract: RegisteredContract) -> data.RegisteredContract:
     return data.RegisteredContract(
         id=contract.id,
