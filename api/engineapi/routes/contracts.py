@@ -188,12 +188,12 @@ async def create_requests(
     contract_id: UUID,
     data: data.CreateCallRequestsAPIRequest = Body(...),
     db_session: Session = Depends(db.yield_db_session),
-) -> None:
+) -> int:
     """
     Allows API user to register call requests from given call specifications.
     """
     try:
-        call_request = contracts_actions.request_calls(
+        num_requests = contracts_actions.request_calls(
             db_session=db_session,
             moonstream_user_id=request.state.user.id,
             registered_contract_id=contract_id,
@@ -204,4 +204,4 @@ async def create_requests(
         logger.error(repr(e))
         raise EngineHTTPException(status_code=500)
 
-    return call_request
+    return num_requests

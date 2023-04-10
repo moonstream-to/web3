@@ -162,7 +162,7 @@ def request_calls(
     registered_contract_id: uuid.UUID,
     call_specs: List[data.CallSpecification],
     ttl_days: Optional[int] = None,
-) -> None:
+) -> int:
     """
     Batch creates call requests for the given registered contract.
     """
@@ -218,6 +218,8 @@ def request_calls(
     except Exception as e:
         db_session.rollback()
         raise e
+
+    return len(call_specs)
 
 
 def list_call_requests(
