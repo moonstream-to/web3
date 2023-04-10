@@ -174,7 +174,7 @@ class RegisteredContract(Base):  # type: ignore
     blockchain = Column(VARCHAR(128), nullable=False, index=True)
     address = Column(VARCHAR(256), nullable=False, index=True)
     contract_type = Column(VARCHAR(128), nullable=False, index=True)
-    title = Column(VARCHAR(128), nullable=True)
+    title = Column(VARCHAR(128), nullable=False)
     description = Column(String, nullable=True)
     image_uri = Column(String, nullable=True)
     # User ID of the Moonstream user who registered this contract.

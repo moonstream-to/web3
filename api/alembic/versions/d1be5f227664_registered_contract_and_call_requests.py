@@ -1,8 +1,8 @@
 """registered_contracts and call_requests
 
-Revision ID: 946394702d67
+Revision ID: d1be5f227664
 Revises: 782ac8fe23c8
-Create Date: 2023-04-06 03:44:02.046491
+Create Date: 2023-04-10 06:37:44.812202
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "946394702d67"
+revision = "d1be5f227664"
 down_revision = "782ac8fe23c8"
 branch_labels = None
 depends_on = None
@@ -24,7 +24,7 @@ def upgrade():
         sa.Column("blockchain", sa.VARCHAR(length=128), nullable=False),
         sa.Column("address", sa.VARCHAR(length=256), nullable=False),
         sa.Column("contract_type", sa.VARCHAR(length=128), nullable=False),
-        sa.Column("title", sa.VARCHAR(length=128), nullable=True),
+        sa.Column("title", sa.VARCHAR(length=128), nullable=False),
         sa.Column("description", sa.String(), nullable=True),
         sa.Column("image_uri", sa.String(), nullable=True),
         sa.Column("moonstream_user_id", postgresql.UUID(as_uuid=True), nullable=False),

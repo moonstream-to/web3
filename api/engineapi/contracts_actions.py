@@ -54,6 +54,8 @@ def validate_method_and_params(
             raise ValueError(
                 f"Parameters must have {required_params} keys for dropper contract type"
             )
+    else:
+        raise ValueError(f"Unknown contract type {contract_type}")
 
 
 def register_contract(
