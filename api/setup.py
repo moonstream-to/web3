@@ -14,7 +14,7 @@ setup(
     install_requires=[
         "boto3",
         "bugout>=0.2.2",
-        "eip712",
+        "eip712==0.1.0",
         "eth-typing>=2.3.0",
         "fastapi",
         "psycopg2-binary",
@@ -26,7 +26,7 @@ setup(
         "tabulate",
     ],
     extras_require={
-        "dev": ["alembic", "brownie", "black", "mypy", "isort"],
+        "dev": ["alembic", "black", "mypy", "isort"],
         "distribute": ["setuptools", "twine", "wheel"],
     },
     description="Command line interface for Moonstream Engine API",
