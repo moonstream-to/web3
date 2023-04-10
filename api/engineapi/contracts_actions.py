@@ -72,6 +72,11 @@ def register_contract(
     Register a contract against the Engine instance
     """
 
+    # TODO(zomglings): Make it so that contract_type is passed as a string. Convert to
+    # ContractType here. That will mean there is a single point at which the validation is
+    # performed rather than relying on each entrypoint to register_contract having to implement
+    # their own validation.
+
     try:
         contract = RegisteredContract(
             blockchain=blockchain,
