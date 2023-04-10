@@ -22,7 +22,7 @@ setup(
         "sqlalchemy",
         "tqdm",
         "uvicorn",
-        "web3>=5.30.0",
+        "web3>=5.30.0, <6",
         "tabulate",
     ],
     extras_require={
