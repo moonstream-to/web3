@@ -4,12 +4,13 @@ Signing and signature verification functionality and interfaces.
 import abc
 import logging
 import json
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 import boto3
 from web3 import Web3
 
 from eth_account import Account
+from eth_account.messages import encode_defunct
 from eth_account._utils.signing import sign_message_hash
 import eth_keys
 import requests
@@ -111,8 +112,12 @@ class AccountSigner(Signer):
         return signed_messages_list
 
 
-def get_signing_account(raw_message: str, signature: str) -> str:
-    return Web3.eth.account.recover_message(raw_message, signature=signature)
+def create_account_signer(keystore: str, password: str) -> AccountSigner:
+    with open(keystore) as keystore_file:
+        keystore_data = json.load(keystore_file)
+    private_key = Account.decrypt(keystore_data, password)
+    signer = AccountSigner(private_key)
+    return signer
 
 
 class InstanceSigner(Signer):
@@ -217,10 +222,7 @@ class InstanceSigner(Signer):
 
 DROP_SIGNER: Optional[Signer] = None
 if SIGNER_KEYSTORE is not None and SIGNER_PASSWORD is not None:
-    with open(SIGNER_KEYSTORE) as keystore_file:
-        keystore_data = json.load(keystore_file)
-    private_key = Account.decrypt(keystore_data, SIGNER_PASSWORD)
-    DROP_SIGNER = AccountSigner(private_key)
+    DROP_SIGNER = create_account_signer(SIGNER_KEYSTORE, SIGNER_PASSWORD)
 if DROP_SIGNER is None:
     DROP_SIGNER = InstanceSigner(MOONSTREAM_SIGNING_SERVER_IP)
 

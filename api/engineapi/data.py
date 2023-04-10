@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from uuid import UUID
 
 
@@ -174,6 +175,67 @@ class DropUpdatedResponse(BaseModel):
     terminus_pool_id: Optional[int] = None
     claim_id: Optional[int] = None
     active: bool = True
+
+
+class RegisterContractRequest(BaseModel):
+    blockchain: str
+    address: str
+    contract_type: str
+    title: Optional[str] = None
+    description: Optional[str] = None
+    image_uri: Optional[str] = None
+
+
+class RegisteredContract(BaseModel):
+    id: UUID
+    blockchain: str
+    address: str
+    contract_type: str
+    moonstream_user_id: UUID
+    title: Optional[str]
+    description: Optional[str]
+    image_uri: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+
+    @validator("id", "moonstream_user_id")
+    def validate_uuids(cls, v):
+        return str(v)
+
+    @validator("created_at", "updated_at")
+    def validate_datetimes(cls, v):
+        return v.isoformat()
+
+
+class CallSpecification(BaseModel):
+    caller: str
+    method: str
+    parameters: Dict[str, Any]
+
+
+class CreateCallRequestsAPIRequest(BaseModel):
+    specifications: List[CallSpecification] = Field(default_factory=list)
+    ttl_days: Optional[int] = None
+
+
+class CallRequest(BaseModel):
+    id: UUID
+    registered_contract_id: UUID
+    moonstream_user_id: UUID
+    caller: str
+    method: str
+    parameters: Dict[str, Any]
+    expires_at: datetime
+    created_at: datetime
+    updated_at: datetime
+
+    @validator("id", "registered_contract_id", "moonstream_user_id")
+    def validate_uuids(cls, v):
+        return str(v)
+
+    @validator("created_at", "updated_at", "expires_at")
+    def validate_datetimes(cls, v):
+        return v.isoformat()
 
 
 class QuartilesResponse(BaseModel):

@@ -12,10 +12,10 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import expression, and_
+from sqlalchemy.sql import and_, expression
 
 """
 Naming conventions doc
@@ -143,6 +143,82 @@ class DropperClaimant(Base):  # type: ignore
     raw_amount = Column(String, nullable=True)
     added_by = Column(VARCHAR(256), nullable=False, index=True)
     signature = Column(String, nullable=True, index=True)
+
+    created_at = Column(
+        DateTime(timezone=True), server_default=utcnow(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=utcnow(),
+        onupdate=utcnow(),
+        nullable=False,
+    )
+
+
+class RegisteredContract(Base):  # type: ignore
+    __tablename__ = "registered_contracts"
+    __table_args__ = (
+        UniqueConstraint(
+            "blockchain",
+            "address",
+            "contract_type",
+        ),
+    )
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+    )
+    blockchain = Column(VARCHAR(128), nullable=False, index=True)
+    address = Column(VARCHAR(256), nullable=False, index=True)
+    contract_type = Column(VARCHAR(128), nullable=False, index=True)
+    title = Column(VARCHAR(128), nullable=False)
+    description = Column(String, nullable=True)
+    image_uri = Column(String, nullable=True)
+    # User ID of the Moonstream user who registered this contract.
+    moonstream_user_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+
+    created_at = Column(
+        DateTime(timezone=True), server_default=utcnow(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=utcnow(),
+        onupdate=utcnow(),
+        nullable=False,
+    )
+
+
+class CallRequest(Base):
+    __tablename__ = "call_requests"
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
+
+    registered_contract_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registered_contracts.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    caller = Column(VARCHAR(256), nullable=False, index=True)
+    # User ID of the Moonstream user who requested this call.
+    # For now, this duplicates the moonstream_user_id in the registered_contracts table. Nevertheless,
+    # we keep this column here for auditing purposes. In the future, we will add a group_id column to
+    # the registered_contracts table, and this column will be used to track the user from that group
+    # who made each call request.
+    moonstream_user_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    method = Column(String, nullable=False, index=True)
+    # TODO(zomglings): Should we conditional indices on parameters depending on the contract type?
+    parameters = Column(JSONB, nullable=False)
+
+    expires_at = Column(DateTime(timezone=True), nullable=True, index=True)
 
     created_at = Column(
         DateTime(timezone=True), server_default=utcnow(), nullable=False
