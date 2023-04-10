@@ -215,7 +215,6 @@ def dropper_delete_drop_handler(args: argparse.Namespace) -> None:
 
 
 def add_claimants_handler(args: argparse.Namespace) -> None:
-
     """
     Load list of claimats from csv file and add them to the database.
     """
@@ -223,11 +222,9 @@ def add_claimants_handler(args: argparse.Namespace) -> None:
     claimants = []
 
     with open(args.claimants_file, "r") as f:
-
         reader = csv.DictReader(f)
 
         for row in reader:
-
             if len(row) != 2:
                 logger.error(f"Invalid row: {row}")
                 raise Exception("Invalid row")
@@ -240,7 +237,6 @@ def add_claimants_handler(args: argparse.Namespace) -> None:
     )
 
     with db.yield_db_session_ctx() as db_session:
-
         try:
             claimants = actions.add_claimants(
                 db_session=db_session,
@@ -264,11 +260,9 @@ def delete_claimants_handler(args: argparse.Namespace) -> None:
     addresses = []
 
     with open(args.claimants_file, "r") as f:
-
         reader = csv.DictReader(f)
 
         for row in reader:
-
             if len(row) != 1:
                 logger.error(f"Invalid row: {row}")
                 raise Exception("Invalid row")
@@ -281,7 +275,6 @@ def delete_claimants_handler(args: argparse.Namespace) -> None:
     )
 
     with db.yield_db_session_ctx() as db_session:
-
         try:
             addresses = actions.delete_claimants(
                 db_session=db_session,
@@ -300,7 +293,6 @@ def list_claimants_handler(args: argparse.Namespace) -> None:
     """
 
     with db.yield_db_session_ctx() as db_session:
-
         try:
             claimants = actions.get_claimants(
                 db_session=db_session, dropper_claim_id=args.dropper_claim_id
@@ -312,12 +304,10 @@ def list_claimants_handler(args: argparse.Namespace) -> None:
 
 
 def add_scores_handler(args: argparse.Namespace) -> None:
-
     """
     Adding scores to leaderboard
     """
     with open(args.input_file, "r") as f:
-
         json_input = json.load(f)
 
         try:
@@ -328,7 +318,6 @@ def add_scores_handler(args: argparse.Namespace) -> None:
             return
 
     with db.yield_db_session_ctx() as db_session:
-
         try:
             scores = actions.add_scores(
                 db_session=db_session,
@@ -342,7 +331,6 @@ def add_scores_handler(args: argparse.Namespace) -> None:
 
 
 def list_leaderboards_handler(args: argparse.Namespace) -> None:
-
     with db.yield_db_session_ctx() as db_session:
         Leaderboards = actions.list_leaderboards(
             db_session=db_session,
@@ -354,7 +342,6 @@ def list_leaderboards_handler(args: argparse.Namespace) -> None:
 
 
 def create_leaderboard_handler(args: argparse.Namespace) -> None:
-
     with db.yield_db_session_ctx() as db_session:
         Leaderboard = actions.create_leaderboard(
             db_session=db_session,
@@ -366,9 +353,7 @@ def create_leaderboard_handler(args: argparse.Namespace) -> None:
 
 
 def assign_resource_handler(args: argparse.Namespace) -> None:
-
     with db.yield_db_session_ctx() as db_session:
-
         try:
             resource_id = actions.assign_resource(
                 db_session=db_session,
@@ -384,7 +369,6 @@ def assign_resource_handler(args: argparse.Namespace) -> None:
 
 
 def list_resources_handler(args: argparse.Namespace) -> None:
-
     with db.yield_db_session_ctx() as db_session:
         resources = actions.list_leaderboards_resources(db_session=db_session)
 
@@ -432,9 +416,8 @@ def sign_handler(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
-
     parser = argparse.ArgumentParser(
-        description="dao: The command line interface to Moonstream DAO"
+        description="engineapi: The command line interface to Moonstream Engine API"
     )
     parser.set_defaults(func=lambda _: parser.print_help())
     subparsers = parser.add_subparsers()

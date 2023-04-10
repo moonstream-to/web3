@@ -137,10 +137,7 @@ if ENGINE_DB_URI is None:
 
 ENGINE_DB_URI_READ_ONLY = os.environ.get("ENGINE_DB_URI_READ_ONLY")
 if ENGINE_DB_URI_READ_ONLY is None:
-    if not ENGINE_DEV:
-        raise ValueError("ENGINE_DB_URI_READ_ONLY environment variable must be set")
-    else:
-        ENGINE_DB_URI_READ_ONLY = ENGINE_DB_URI
+    raise ValueError("ENGINE_DB_URI_READ_ONLY environment variable must be set")
 
 ENGINE_POOL_SIZE_RAW = os.environ.get("ENGINE_POOL_SIZE")
 ENGINE_POOL_SIZE = 0
