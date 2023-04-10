@@ -1,6 +1,6 @@
 import argparse
-from ast import arg
 import csv
+import getpass
 import json
 import logging
 from uuid import UUID
@@ -422,7 +422,9 @@ def delete_user_handler(args: argparse.Namespace) -> None:
 
 def sign_handler(args: argparse.Namespace) -> None:
     # Prompt user to enter the password for their signing account
-    password_raw = input(f"Enter password for signing account ({args.signer}): ")
+    password_raw = getpass.getpass(
+        prompt=f"Enter password for signing account ({args.signer}): "
+    )
     password = password_raw.strip()
     signer = signatures.create_account_signer(args.signer, password)
     signed_message = signer.sign_message(args.message)

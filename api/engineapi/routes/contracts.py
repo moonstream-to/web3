@@ -82,7 +82,7 @@ async def list_registered_contracts(
     contract_type: Optional[contracts_actions.ContractType] = Query(None),
     limit: int = Query(10),
     offset: Optional[int] = Query(None),
-    db_session: Session = Depends(db.yield_db_session),
+    db_session: Session = Depends(db.yield_db_read_only_session),
 ) -> List[data.RegisteredContract]:
     """
     Users can use this endpoint to look up the contracts they have registered against this API.
@@ -111,12 +111,16 @@ async def register_contract(
     Allows users to register contracts.
     """
     try:
+        contract_type = contracts_actions.ContractType(contract.contract_type)
+    except ValueError:
+        raise EngineHTTPException(status_code=404, detail="Invalid contract type")
+    try:
         registered_contract = contracts_actions.register_contract(
             db_session=db_session,
             moonstream_user_id=request.state.user.id,
             blockchain=contract.blockchain,
             address=contract.address,
-            contract_type=contracts_actions.ContractType(contract.contract_type),
+            contract_type=contract_type,
             title=contract.title,
             description=contract.description,
             image_uri=contract.image_uri,
@@ -126,7 +130,7 @@ async def register_contract(
             status_code=409,
             detail="Contract already registered",
         )
-    return contracts_actions.render_registered_contract(registered_contract)
+    return registered_contract
 
 
 @app.delete("/{contract_id}", response_model=data.RegisteredContract)
@@ -157,7 +161,7 @@ async def list_requests(
     caller: str = Query(...),
     limit: int = Query(100),
     offset: Optional[int] = Query(None),
-    db_session: Session = Depends(db.yield_db_session),
+    db_session: Session = Depends(db.yield_db_read_only_session),
 ) -> List[data.CallRequest]:
     """
     Allows API user to see all unexpired call requests for a given caller against a given contract.

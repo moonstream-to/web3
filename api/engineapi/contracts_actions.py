@@ -3,7 +3,7 @@ import json
 import logging
 import uuid
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy import func, text
 from sqlalchemy.exc import IntegrityError, NoResultFound
@@ -103,7 +103,7 @@ def lookup_registered_contracts(
     contract_type: Optional[ContractType] = None,
     limit: int = 10,
     offset: Optional[int] = None,
-) -> RegisteredContract:
+) -> List[RegisteredContract]:
     """
     Lookup a registered contract
     """
@@ -166,9 +166,13 @@ def request_calls(
     """
     Batch creates call requests for the given registered contract.
     """
-    # Check that ttl_days is positive (if specified)
-    if ttl_days is not None and ttl_days <= 0:
-        raise ValueError("ttl_days must be positive")
+    # TODO(zomglings): Do not pass raw ttl_days into SQL query - could be subject to SQL injection
+    # For now, in the interest of speed, let us just be super cautious with ttl_days.
+    # Check that the ttl_days is indeed an integer
+    if ttl_days is not None:
+        assert ttl_days == int(ttl_days), "ttl_days must be an integer"
+        if ttl_days <= 0:
+            raise ValueError("ttl_days must be positive")
 
     # Check that the moonstream_user_id matches the RegisteredContract
     try:
