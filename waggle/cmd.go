@@ -28,7 +28,8 @@ func CreateRootCommand() *cobra.Command {
 	versionCmd := CreateVersionCommand()
 	signCmd := CreateSignCommand()
 	accountsCmd := CreateAccountsCommand()
-	rootCmd.AddCommand(versionCmd, signCmd, accountsCmd)
+	moonstreamCommand := CreateMoonstreamCommand()
+	rootCmd.AddCommand(versionCmd, signCmd, accountsCmd, moonstreamCommand)
 
 	completionCmd := CreateCompletionCommand(rootCmd)
 	rootCmd.AddCommand(completionCmd)
@@ -286,4 +287,116 @@ func CreateSignCommand() *cobra.Command {
 	signCommand.AddCommand(rawSubcommand, dropperSubcommand)
 
 	return signCommand
+}
+
+func CreateMoonstreamCommand() *cobra.Command {
+	moonstreamCommand := &cobra.Command{
+		Use:   "moonstream",
+		Short: "Interact with the Moonstream Engine API",
+		Long:  "Commands that help you interact with the Moonstream Engine API from your command-line.",
+	}
+
+	var blockchain, address, contractType, contractId, infile string
+	var limit, offset int
+
+	contractsSubcommand := &cobra.Command{
+		Use:   "contracts",
+		Short: "List all your registered contracts.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, clientErr := ClientFromEnv()
+			if clientErr != nil {
+				return clientErr
+			}
+
+			contracts, err := client.ListRegisteredContracts(blockchain, address, contractType, limit, offset)
+			if err != nil {
+				return err
+			}
+
+			encodeErr := json.NewEncoder(cmd.OutOrStdout()).Encode(contracts)
+			return encodeErr
+		},
+	}
+	contractsSubcommand.Flags().StringVar(&blockchain, "blockchain", "", "Blockchain")
+	contractsSubcommand.Flags().StringVar(&address, "address", "", "Contract address")
+	contractsSubcommand.Flags().StringVar(&contractType, "contract-type", "", "Contract type (valid types: \"raw\", \"dropper-v0.2.0\")")
+	contractsSubcommand.Flags().IntVar(&limit, "limit", 100, "Limit")
+	contractsSubcommand.Flags().IntVar(&offset, "offset", 0, "Offset")
+
+	callRequestsSubcommand := &cobra.Command{
+		Use:   "call-requests",
+		Short: "List call requests for a given caller.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, clientErr := ClientFromEnv()
+			if clientErr != nil {
+				return clientErr
+			}
+
+			callRequests, err := client.ListCallRequests(contractId, address, limit, offset)
+			if err != nil {
+				return err
+			}
+
+			encodeErr := json.NewEncoder(cmd.OutOrStdout()).Encode(callRequests)
+			return encodeErr
+		},
+	}
+	callRequestsSubcommand.Flags().StringVar(&contractId, "contract-id", "", "Moonstream Engine ID of the registered contract")
+	callRequestsSubcommand.Flags().StringVar(&address, "caller", "", "Address of caller")
+	callRequestsSubcommand.Flags().IntVar(&limit, "limit", 100, "Limit")
+	callRequestsSubcommand.Flags().IntVar(&offset, "offset", 0, "Offset")
+
+	createCallRequestsSubcommand := &cobra.Command{
+		Use:   "drop",
+		Short: "Submit Dropper call requests to the Moonstream Engine API.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, clientErr := ClientFromEnv()
+			if clientErr != nil {
+				return clientErr
+			}
+
+			var messagesRaw []byte
+			var readErr error
+			if infile != "" {
+				messagesRaw, readErr = os.ReadFile(infile)
+			} else {
+				messagesRaw, readErr = io.ReadAll(os.Stdin)
+			}
+			if readErr != nil {
+				return readErr
+			}
+
+			var messages []*DropperClaimMessage
+			parseErr := json.Unmarshal(messagesRaw, &messages)
+			if parseErr != nil {
+				return parseErr
+			}
+
+			callRequests := make([]CallRequestSpecification, len(messages))
+			for i, message := range messages {
+				callRequests[i] = CallRequestSpecification{
+					Caller: message.Claimant,
+					Method: "claim",
+					Parameters: DropperCallRequestParameters{
+						DropId:        message.DropId,
+						RequestID:     message.RequestID,
+						BlockDeadline: message.BlockDeadline,
+						Amount:        message.Amount,
+						Signer:        message.Signer,
+						Signature:     message.Signature,
+					},
+				}
+			}
+
+			err := client.CreateCallRequests(contractId, limit, callRequests)
+			return err
+		},
+	}
+	createCallRequestsSubcommand.Flags().StringVar(&contractId, "contract-id", "", "Moonstream Engine ID of the registered contract")
+	createCallRequestsSubcommand.Flags().IntVar(&limit, "ttl-days", 30, "Number of days for which request will remain active")
+	createCallRequestsSubcommand.Flags().StringVar(&infile, "infile", "", "Input file. If not specified, input will be expected from stdin.")
+
+	moonstreamCommand.AddCommand(contractsSubcommand, callRequestsSubcommand, createCallRequestsSubcommand)
+
+	return moonstreamCommand
 }
