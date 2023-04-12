@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/hex"
-	"fmt"
 
 	"github.com/spf13/cobra"
 )
@@ -142,7 +141,7 @@ func CreateSignDropperCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Println(hex.EncodeToString(messageHash))
+			cmd.Println(hex.EncodeToString(messageHash))
 			return nil
 		},
 	}
