@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/hex"
-	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -25,7 +24,8 @@ func CreateRootCommand() *cobra.Command {
 
 	versionCmd := CreateVersionCommand()
 	signCmd := CreateSignCommand()
-	rootCmd.AddCommand(versionCmd, signCmd)
+	accountsCmd := CreateAccountsCommand()
+	rootCmd.AddCommand(versionCmd, signCmd, accountsCmd)
 
 	completionCmd := CreateCompletionCommand(rootCmd)
 	rootCmd.AddCommand(completionCmd)
@@ -99,6 +99,30 @@ func CreateVersionCommand() *cobra.Command {
 	return versionCmd
 }
 
+func CreateAccountsCommand() *cobra.Command {
+	accountsCommand := &cobra.Command{
+		Use:   "accounts",
+		Short: "Set up signing accounts",
+	}
+
+	var keyfile string
+
+	accountsCommand.PersistentFlags().StringVarP(&keyfile, "keystore", "k", "", "Path to keystore file.")
+
+	importCommand := &cobra.Command{
+		Use:   "import",
+		Short: "Import a signing account from a private key.",
+		Long:  "Import a signing account from a private key. This will be stored at the given keystore path.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return KeyfileFromPrivateKey(keyfile)
+		},
+	}
+
+	accountsCommand.AddCommand(importCommand)
+
+	return accountsCommand
+}
+
 func CreateSignCommand() *cobra.Command {
 	signCommand := &cobra.Command{
 		Use:   "sign",
@@ -116,20 +140,19 @@ func CreateSignCommand() *cobra.Command {
 	rawSubcommand := &cobra.Command{
 		Use:   "hash",
 		Short: "Sign a raw message hash",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			key, err := KeyFromFile(keyfile, password)
 			if err != nil {
-				cmd.Println(err.Error())
-				os.Exit(1)
+				return err
 			}
 
 			signature, err := SignRawMessage(rawMessage, key, sensible)
 			if err != nil {
-				cmd.Println(err.Error())
-				os.Exit(1)
+				return err
 			}
 
 			cmd.Println(hex.EncodeToString(signature))
+			return nil
 		},
 	}
 	rawSubcommand.Flags().BytesHexVarP(&rawMessage, "message", "m", []byte{}, "Raw message to sign (do not include the 0x prefix).")

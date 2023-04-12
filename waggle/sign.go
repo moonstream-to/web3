@@ -6,8 +6,53 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/google/uuid"
 	"golang.org/x/term"
 )
+
+func KeyfileFromPrivateKey(outfile string) error {
+	fmt.Print("Enter private key (it will not be displayed on screen): ")
+	privateKeyRaw, inputErr := term.ReadPassword(int(os.Stdin.Fd()))
+	if inputErr != nil {
+		return fmt.Errorf("error reading private key: %s", inputErr.Error())
+	}
+	fmt.Print("\n")
+	privateKey := string(privateKeyRaw)
+
+	parsedPrivateKey, parseErr := crypto.HexToECDSA(privateKey)
+	if parseErr != nil {
+		return fmt.Errorf("error parsing private key: %s", parseErr.Error())
+	}
+
+	keyUUID, uuidErr := uuid.NewRandom()
+	if uuidErr != nil {
+		return fmt.Errorf("error generating UUID for keystore: %s", uuidErr.Error())
+	}
+
+	key := &keystore.Key{
+		Id:         keyUUID,
+		PrivateKey: parsedPrivateKey,
+		Address:    crypto.PubkeyToAddress(parsedPrivateKey.PublicKey),
+	}
+	scryptN := keystore.StandardScryptN
+	scryptP := keystore.StandardScryptP
+
+	fmt.Printf("Enter the passphrase you would like to secure the keyfile (%s) with: ", outfile)
+	passphraseRaw, passphraseInputErr := term.ReadPassword(int(os.Stdin.Fd()))
+	if passphraseInputErr != nil {
+		return fmt.Errorf("error reading passphrase: %s", inputErr.Error())
+	}
+	fmt.Print("\n")
+	passphrase := string(passphraseRaw)
+
+	keystoreJSON, encryptErr := keystore.EncryptKey(key, passphrase, scryptN, scryptP)
+	if encryptErr != nil {
+		return fmt.Errorf("could not generate encrypted keystore: %s", encryptErr.Error())
+	}
+
+	err := os.WriteFile(outfile, keystoreJSON, 0600)
+	return err
+}
 
 func KeyFromFile(keystoreFile string, password string) (*keystore.Key, error) {
 	var emptyKey *keystore.Key
@@ -23,7 +68,7 @@ func KeyFromFile(keystoreFile string, password string) (*keystore.Key, error) {
 		if inputErr != nil {
 			return emptyKey, fmt.Errorf("error reading password: %s", inputErr.Error())
 		}
-		fmt.Printf("\n")
+		fmt.Print("\n")
 		password = string(passwordRaw)
 	}
 
