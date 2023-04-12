@@ -93,6 +93,16 @@ func SignRawMessage(message []byte, key *keystore.Key, sensible bool) ([]byte, e
 	return signature, err
 }
 
+type DropperClaimMessage struct {
+	DropId        string `json:"dropId"`
+	RequestID     string `json:"requestID"`
+	Claimant      string `json:"claimant"`
+	BlockDeadline string `json:"blockDeadline"`
+	Amount        string `json:"amount"`
+	Signature     string `json:"signature,omitempty"`
+	Signer        string `json:"signer,omitempty"`
+}
+
 func DropperClaimMessageHash(chainId int64, dropperAddress string, dropId, requestId string, claimant string, blockDeadline, amount string) ([]byte, error) {
 	// Inspired by: https://medium.com/alpineintel/issuing-and-verifying-eip-712-challenges-with-go-32635ca78aaf
 	signerData := apitypes.TypedData{
