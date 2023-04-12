@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/hex"
+	"fmt"
 
 	"github.com/spf13/cobra"
 )
@@ -123,6 +124,41 @@ func CreateAccountsCommand() *cobra.Command {
 	return accountsCommand
 }
 
+func CreateSignDropperCommand() *cobra.Command {
+	dropperCommand := &cobra.Command{
+		Use:   "dropper",
+		Short: "Dropper-related signing functionality",
+	}
+
+	var chainId int64
+	var dropId, requestId, blockDeadline, amount string
+	var claimant, dropperAddress string
+
+	hashCommand := &cobra.Command{
+		Use:   "hash",
+		Short: "Generate a message hash for a claim method call",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			messageHash, err := DropperClaimMessageHash(chainId, dropperAddress, dropId, requestId, claimant, blockDeadline, amount)
+			if err != nil {
+				return err
+			}
+			fmt.Println(hex.EncodeToString(messageHash))
+			return nil
+		},
+	}
+	hashCommand.Flags().Int64Var(&chainId, "chain-id", 1, "Chain ID of the network you are signing for.")
+	hashCommand.Flags().StringVar(&dropperAddress, "dropper", "0x0000000000000000000000000000000000000000", "Address of Dropper contract")
+	hashCommand.Flags().StringVar(&dropId, "drop-id", "0", "ID of the drop.")
+	hashCommand.Flags().StringVar(&requestId, "request-id", "0", "ID of the request.")
+	hashCommand.Flags().StringVar(&claimant, "claimant", "", "Address of the intended claimant.")
+	hashCommand.Flags().StringVar(&blockDeadline, "block-deadline", "0", "Block number by which the claim must be made.")
+	hashCommand.Flags().StringVar(&amount, "amount", "0", "Amount of tokens to distribute.")
+
+	dropperCommand.AddCommand(hashCommand)
+
+	return dropperCommand
+}
+
 func CreateSignCommand() *cobra.Command {
 	signCommand := &cobra.Command{
 		Use:   "sign",
@@ -157,7 +193,9 @@ func CreateSignCommand() *cobra.Command {
 	}
 	rawSubcommand.Flags().BytesHexVarP(&rawMessage, "message", "m", []byte{}, "Raw message to sign (do not include the 0x prefix).")
 
-	signCommand.AddCommand(rawSubcommand)
+	dropperSubcommand := CreateSignDropperCommand()
+
+	signCommand.AddCommand(rawSubcommand, dropperSubcommand)
 
 	return signCommand
 }
