@@ -110,7 +110,7 @@ func CreateSignCommand() *cobra.Command {
 	var sensible bool
 	signCommand.PersistentFlags().StringVarP(&keyfile, "keystore", "k", "", "Path to keystore file (this should be a JSON file).")
 	signCommand.PersistentFlags().StringVarP(&password, "password", "p", "", "Password for keystore file. If not provided, you will be prompted for it when you sign with the key.")
-	signCommand.PersistentFlags().BoolVar(&sensible, "sensible", false, "Set this flag if you do not want to shift the final, v, byte of the signature by 27. For reference: https://github.com/ethereum/go-ethereum/issues/2053")
+	signCommand.PersistentFlags().BoolVar(&sensible, "sensible", false, "Set this flag if you do not want to shift the final, v, byte of all signatures by 27. For reference: https://github.com/ethereum/go-ethereum/issues/2053")
 
 	var rawMessage []byte
 	rawSubcommand := &cobra.Command{
