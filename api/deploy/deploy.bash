@@ -22,9 +22,6 @@ PIP="${PYTHON_ENV_DIR}/bin/pip"
 SCRIPT_DIR="$(realpath $(dirname $0))"
 SECRETS_DIR="${SECRETS_DIR:-/home/ubuntu/engine-secrets}"
 PARAMETERS_ENV_PATH="${SECRETS_DIR}/app.env"
-AWS_SSM_PARAMETER_PATH="${AWS_SSM_PARAMETER_PATH:-/engine/prod}"
-PARAMETERS_SCRIPT="${SCRIPT_DIR}/parameters.py"
-
 
 # API server service file
 ENGINE_SERVICE_FILE="engine.service"
@@ -43,22 +40,18 @@ echo -e "${PREFIX_INFO} Installing Python dependencies"
 
 echo
 echo
+echo -e "${PREFIX_INFO} Install checkenv"
+HOME=/home/ubuntu /usr/local/go/bin/go install github.com/bugout-dev/checkenv@latest
+
+echo
+echo
 echo -e "${PREFIX_INFO} Retrieving deployment parameters"
-if [ ! -d "$SECRETS_DIR" ]; then
-  mkdir "$SECRETS_DIR"
+if [ ! -d "${SECRETS_DIR}" ]; then
+  mkdir "${SECRETS_DIR}"
   echo -e "${PREFIX_WARN} Created new secrets directory"
 fi
-AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION}" "${PYTHON}" "${PARAMETERS_SCRIPT}" "${AWS_SSM_PARAMETER_PATH}" -o "${PARAMETERS_ENV_PATH}"
-
-echo
-echo
-echo -e "${PREFIX_INFO} Install checkenv"
-HOME=/root /usr/local/go/bin/go install github.com/bugout-dev/checkenv@latest
-
-echo
-echo
-echo -e "${PREFIX_INFO} Retrieving engine parameters"
-AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION}" /root/go/bin/checkenv show aws_ssm+engine:true >> "${PARAMETERS_ENV_PATH}"
+AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION}" /home/ubuntu/go/bin/checkenv show aws_ssm+engine:true > "${PARAMETERS_ENV_PATH}"
+chmod 0640 "${PARAMETERS_ENV_PATH}"
 
 echo
 echo
@@ -72,9 +65,8 @@ echo "AWS_LOCAL_IPV4=$(ec2metadata --local-ipv4)" >> "${PARAMETERS_ENV_PATH}"
 
 echo
 echo
-echo -e "${PREFIX_INFO} Replacing existing Engine signing API server service definition with ${ENGINE_SERVICE_FILE}"
+echo -e "${PREFIX_INFO} Replacing existing Engine API server service definition with ${ENGINE_SERVICE_FILE}"
 chmod 644 "${SCRIPT_DIR}/${ENGINE_SERVICE_FILE}"
-cp "${SCRIPT_DIR}/${ENGINE_SERVICE_FILE}" "/etc/systemd/system/${ENGINE_SERVICE_FILE}"
-systemctl daemon-reload
-systemctl restart "${ENGINE_SERVICE_FILE}"
-systemctl status "${ENGINE_SERVICE_FILE}"
+cp "${SCRIPT_DIR}/${ENGINE_SERVICE_FILE}" "/home/ubuntu/.config/systemd/user/${ENGINE_SERVICE_FILE}"
+XDG_RUNTIME_DIR="/run/user/1000" systemctl --user daemon-reload
+XDG_RUNTIME_DIR="/run/user/1000" systemctl --user restart --no-block "${ENGINE_SERVICE_FILE}"

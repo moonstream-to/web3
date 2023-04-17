@@ -1,12 +1,10 @@
 [Unit]
-Description=Engine signing API service
+Description=Engine API service
 After=network.target
 StartLimitIntervalSec=300
 StartLimitBurst=3
 
 [Service]
-User=ubuntu
-Group=www-data
 WorkingDirectory=/home/ubuntu/engine/api
 EnvironmentFile=/home/ubuntu/engine-secrets/app.env
 Restart=on-failure
