@@ -18,10 +18,11 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-#from lootbox.models import Base as LootboxBase
+# from lootbox.models import Base as LootboxBase
 
-from engineapi.models import Base as LootboxBase
-target_metadata = LootboxBase.metadata
+from engineapi.models import Base as EngineBase
+
+target_metadata = EngineBase.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -48,7 +49,7 @@ def run_migrations_offline():
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         version_table="alembic_version",
-        version_table_schema=LootboxBase.metadata.schema,
+        version_table_schema=EngineBase.metadata.schema,
     )
 
     with context.begin_transaction():
@@ -73,7 +74,7 @@ def run_migrations_online():
             connection=connection,
             target_metadata=target_metadata,
             version_table="alembic_version",
-            version_table_schema=LootboxBase.metadata.schema,
+            version_table_schema=EngineBase.metadata.schema,
         )
 
         with context.begin_transaction():

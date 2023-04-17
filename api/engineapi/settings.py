@@ -1,4 +1,5 @@
 import os
+import warnings
 
 from web3 import Web3, HTTPProvider
 from web3.middleware import geth_poa_middleware
@@ -8,11 +9,13 @@ from bugout.app import Bugout
 BUGOUT_BROOD_URL = os.environ.get("BUGOUT_BROOD_URL", "https://auth.bugout.dev")
 BUGOUT_SPIRE_URL = os.environ.get("BUGOUT_SPIRE_URL", "https://spire.bugout.dev")
 
-
 bugout_client = Bugout(brood_api_url=BUGOUT_BROOD_URL, spire_api_url=BUGOUT_SPIRE_URL)
 
 
-# Origin
+ENGINE_DEV_RAW = os.environ.get("ENGINE_DEV", "")
+ENGINE_DEV = True if ENGINE_DEV_RAW in {"1", "true", "yes", "t", "y"} else False
+
+# Authorized origins for CORS
 RAW_ORIGINS = os.environ.get("ENGINE_CORS_ALLOWED_ORIGINS")
 if RAW_ORIGINS is None:
     raise ValueError(
@@ -20,39 +23,49 @@ if RAW_ORIGINS is None:
     )
 ORIGINS = RAW_ORIGINS.split(",")
 
-ENGINE_BROWNIE_NETWORK = os.environ.get("ENGINE_BROWNIE_NETWORK")
-if ENGINE_BROWNIE_NETWORK is None:
-    raise ValueError("ENGINE_BROWNIE_NETWORK environment variable must be set")
+# Open API documentation path
+DOCS_TARGET_PATH = os.environ.get("DOCS_TARGET_PATH", "docs")
 
-ENGINE_DROPPER_ADDRESS = os.environ.get("ENGINE_DROPPER_ADDRESS")
-if ENGINE_DROPPER_ADDRESS is None:
-    raise ValueError("ENGINE_DROPPER_ADDRESS environment variable must be set")
 
+# If SIGNER_KEYSTORE and SIGNER_PASSWORD are set, then we use the local signer.
+# Otherwise, we use the AWS signer.
 SIGNER_KEYSTORE = os.environ.get("SIGNER_KEYSTORE")
 SIGNER_PASSWORD = os.environ.get("SIGNER_PASSWORD")
 
 MOONSTREAM_SIGNING_SERVER_IP = os.environ.get("MOONSTREAM_SIGNING_SERVER_IP", None)
 
-
-DOCS_TARGET_PATH = os.environ.get("DOCS_TARGET_PATH", "docs")
-
-
-# AWS signer
+# Settings related to the AWS signer
 AWS_DEFAULT_REGION = os.environ.get("AWS_DEFAULT_REGION")
 if AWS_DEFAULT_REGION is None:
-    raise ValueError("AWS_DEFAULT_REGION environment variable must be set")
+    if not ENGINE_DEV:
+        raise ValueError("AWS_DEFAULT_REGION environment variable must be set")
+    else:
+        warnings.warn(
+            'AWS_DEFAULT_REGION environment variable is not set. Using "us-east-1".'
+        )
+        AWS_DEFAULT_REGION = "us-east-1"
 
 MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID = os.environ.get(
     "MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID"
 )
 if MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID is None:
-    raise ValueError(
-        "MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID environment variable must be set"
-    )
+    if not ENGINE_DEV:
+        raise ValueError(
+            "MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID environment variable must be set"
+        )
+    else:
+        warnings.warn(
+            "MOONSTREAM_AWS_SIGNER_LAUNCH_TEMPLATE_ID environment variable is not set."
+        )
 
 MOONSTREAM_AWS_SIGNER_IMAGE_ID = os.environ.get("MOONSTREAM_AWS_SIGNER_IMAGE_ID")
 if MOONSTREAM_AWS_SIGNER_IMAGE_ID is None:
-    raise ValueError("MOONSTREAM_AWS_SIGNER_IMAGE_ID environment variable must be set")
+    if not ENGINE_DEV:
+        raise ValueError(
+            "MOONSTREAM_AWS_SIGNER_IMAGE_ID environment variable must be set"
+        )
+    else:
+        warnings.warn("MOONSTREAM_AWS_SIGNER_IMAGE_ID environment is not set.")
 
 MOONSTREAM_AWS_SIGNER_INSTANCE_PORT = 17181
 
@@ -126,7 +139,8 @@ ENGINE_DB_URI_READ_ONLY = os.environ.get("ENGINE_DB_URI_READ_ONLY")
 if ENGINE_DB_URI_READ_ONLY is None:
     raise ValueError("ENGINE_DB_URI_READ_ONLY environment variable must be set")
 
-ENGINE_POOL_SIZE_RAW = os.environ.get("ENGINE_POOL_SIZE", 0)
+ENGINE_POOL_SIZE_RAW = os.environ.get("ENGINE_POOL_SIZE")
+ENGINE_POOL_SIZE = 0
 try:
     if ENGINE_POOL_SIZE_RAW is not None:
         ENGINE_POOL_SIZE = int(ENGINE_POOL_SIZE_RAW)

@@ -1,6 +1,6 @@
 import argparse
-from ast import arg
 import csv
+import getpass
 import json
 import logging
 from uuid import UUID
@@ -12,10 +12,7 @@ from . import db
 from . import signatures
 from . import data
 from . import auth
-
-# from .settings import BLOCKCHAINS_TO_BROWNIE_NETWORKS
-from .models import DropperClaim, DropperContract
-
+from . import contracts_actions
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -218,7 +215,6 @@ def dropper_delete_drop_handler(args: argparse.Namespace) -> None:
 
 
 def add_claimants_handler(args: argparse.Namespace) -> None:
-
     """
     Load list of claimats from csv file and add them to the database.
     """
@@ -226,11 +222,9 @@ def add_claimants_handler(args: argparse.Namespace) -> None:
     claimants = []
 
     with open(args.claimants_file, "r") as f:
-
         reader = csv.DictReader(f)
 
         for row in reader:
-
             if len(row) != 2:
                 logger.error(f"Invalid row: {row}")
                 raise Exception("Invalid row")
@@ -243,7 +237,6 @@ def add_claimants_handler(args: argparse.Namespace) -> None:
     )
 
     with db.yield_db_session_ctx() as db_session:
-
         try:
             claimants = actions.add_claimants(
                 db_session=db_session,
@@ -267,11 +260,9 @@ def delete_claimants_handler(args: argparse.Namespace) -> None:
     addresses = []
 
     with open(args.claimants_file, "r") as f:
-
         reader = csv.DictReader(f)
 
         for row in reader:
-
             if len(row) != 1:
                 logger.error(f"Invalid row: {row}")
                 raise Exception("Invalid row")
@@ -284,7 +275,6 @@ def delete_claimants_handler(args: argparse.Namespace) -> None:
     )
 
     with db.yield_db_session_ctx() as db_session:
-
         try:
             addresses = actions.delete_claimants(
                 db_session=db_session,
@@ -303,7 +293,6 @@ def list_claimants_handler(args: argparse.Namespace) -> None:
     """
 
     with db.yield_db_session_ctx() as db_session:
-
         try:
             claimants = actions.get_claimants(
                 db_session=db_session, dropper_claim_id=args.dropper_claim_id
@@ -315,12 +304,10 @@ def list_claimants_handler(args: argparse.Namespace) -> None:
 
 
 def add_scores_handler(args: argparse.Namespace) -> None:
-
     """
     Adding scores to leaderboard
     """
     with open(args.input_file, "r") as f:
-
         json_input = json.load(f)
 
         try:
@@ -331,7 +318,6 @@ def add_scores_handler(args: argparse.Namespace) -> None:
             return
 
     with db.yield_db_session_ctx() as db_session:
-
         try:
             scores = actions.add_scores(
                 db_session=db_session,
@@ -345,7 +331,6 @@ def add_scores_handler(args: argparse.Namespace) -> None:
 
 
 def list_leaderboards_handler(args: argparse.Namespace) -> None:
-
     with db.yield_db_session_ctx() as db_session:
         Leaderboards = actions.list_leaderboards(
             db_session=db_session,
@@ -357,7 +342,6 @@ def list_leaderboards_handler(args: argparse.Namespace) -> None:
 
 
 def create_leaderboard_handler(args: argparse.Namespace) -> None:
-
     with db.yield_db_session_ctx() as db_session:
         Leaderboard = actions.create_leaderboard(
             db_session=db_session,
@@ -368,31 +352,8 @@ def create_leaderboard_handler(args: argparse.Namespace) -> None:
         print(Leaderboard)
 
 
-# def claimant_signature_refetch_handler(args: argparse.Namespace) -> None:
-
-#     with db.yield_db_session_ctx() as db_session:
-
-#         blockchain = (
-#             db_session.query(DropperContract.blockchain)
-#             .join(DropperClaim, DropperClaim.dropper_contract_id == DropperContract.id)
-#             .filter(DropperClaim.id == UUID(args.dropper_claim_id))
-#         ).one()
-
-#         network.connect(BLOCKCHAINS_TO_BROWNIE_NETWORKS[blockchain.blockchain])
-
-#         claimant_signature = actions.refetch_drop_signatures(
-#             db_session=db_session,
-#             dropper_claim_id=args.dropper_claim_id,
-#             added_by="cli",
-#         )
-
-#         print(f"Amount of updated claimants: {len(claimant_signature)}")
-
-
 def assign_resource_handler(args: argparse.Namespace) -> None:
-
     with db.yield_db_session_ctx() as db_session:
-
         try:
             resource_id = actions.assign_resource(
                 db_session=db_session,
@@ -408,7 +369,6 @@ def assign_resource_handler(args: argparse.Namespace) -> None:
 
 
 def list_resources_handler(args: argparse.Namespace) -> None:
-
     with db.yield_db_session_ctx() as db_session:
         resources = actions.list_leaderboards_resources(db_session=db_session)
 
@@ -444,17 +404,40 @@ def delete_user_handler(args: argparse.Namespace) -> None:
     pass
 
 
-def main() -> None:
+def sign_handler(args: argparse.Namespace) -> None:
+    # Prompt user to enter the password for their signing account
+    password_raw = getpass.getpass(
+        prompt=f"Enter password for signing account ({args.signer}): "
+    )
+    password = password_raw.strip()
+    signer = signatures.create_account_signer(args.signer, password)
+    signed_message = signer.sign_message(args.message)
+    print(signed_message)
 
+
+def main() -> None:
     parser = argparse.ArgumentParser(
-        description="dao: The command line interface to Moonstream DAO"
+        description="engineapi: The command line interface to Moonstream Engine API"
     )
     parser.set_defaults(func=lambda _: parser.print_help())
     subparsers = parser.add_subparsers()
 
+    parser_sign = subparsers.add_parser("sign", description="Manually sign a message")
+    parser_sign.add_argument(
+        "-m", "--message", required=True, type=str, help="Message to sign (hex bytes)"
+    )
+    parser_sign.add_argument(
+        "-s",
+        "--signer",
+        required=True,
+        type=str,
+        help="Path to keystore file for signer",
+    )
+    parser_sign.set_defaults(func=sign_handler)
+
     # Signing server parser
     parser_signing_server = subparsers.add_parser(
-        "signing", description="Signing server commands"
+        "signing-server", description="Signing server commands"
     )
     parser_signing_server.set_defaults(
         func=lambda _: parser_signing_server.print_help()
@@ -929,16 +912,10 @@ def main() -> None:
     )
     parser_dropper_list_claimants.set_defaults(func=list_claimants_handler)
 
-    # parser_dropper_claimant_signature_refetch = subparsers_dropper.add_parser(
-    #     "signature-refetch", description="Refetch signature for claimant"
-    # )
-    # parser_dropper_claimant_signature_refetch.add_argument(
-    #     "--dropper-claim-id", type=str, required=True
-    # )
-
-    # parser_dropper_claimant_signature_refetch.set_defaults(
-    #     func=claimant_signature_refetch_handler
-    # )
+    contracts_parser = contracts_actions.generate_cli()
+    subparsers_engine_database.add_parser(
+        "contracts", parents=[contracts_parser], add_help=False
+    )
 
     args = parser.parse_args()
     args.func(args)
