@@ -31,13 +31,13 @@ struct Session {
 }
 
 /**
-StageReward represents the reward an NFT owner can collect by making a choice with their NFT on the
+Reward represents the reward an NFT owner can collect by making a choice with their NFT on the
 corresponding stage in a given Garden of Forking Paths session.
 
 The reward must be a Terminus token and the Garden of Forking Paths contract must have minting privileges
 on the token pool.
  */
-struct StageReward {
+struct Reward {
     address terminusAddress;
     uint256 terminusPoolId;
     uint256 rewardAmount;
@@ -63,7 +63,7 @@ library LibGOFP {
         uint256 numSessions;
         mapping(uint256 => Session) sessionById;
         // session => stage => stageReward
-        mapping(uint256 => mapping(uint256 => StageReward)) sessionStageReward;
+        mapping(uint256 => mapping(uint256 => Reward)) sessionStageReward;
         // session => stage => correct path for that stage
         mapping(uint256 => mapping(uint256 => uint256)) sessionStagePath;
         // nftAddress => tokenId => sessionId
@@ -84,6 +84,8 @@ library LibGOFP {
         // session => tokenId => was token ever staked into session?
         // This guards against a token being staked into a session multiple times.
         mapping(uint256 => mapping(uint256 => bool)) sessionTokenStakeGuard;
+        // GOFP v2: session => stage => path => reward
+        mapping(uint256 => mapping(uint256 => mapping(uint256 => Reward))) sessionPathReward;
     }
 
     function gofpStorage() internal pure returns (GOFPStorage storage gs) {
@@ -171,6 +173,14 @@ contract GOFPFacet is
         uint256 terminusPoolId,
         uint256 rewardAmount
     );
+    event PathRewardChanged(
+        uint256 indexed sessionId,
+        uint256 indexed stage,
+        uint256 indexed path,
+        address terminusAddress,
+        uint256 terminusPoolId,
+        uint256 rewardAmount
+    );
     event SessionUriChanged(uint256 indexed sessionId, string uri);
     event PathRegistered(
         uint256 indexed sessionId,
@@ -184,20 +194,19 @@ contract GOFPFacet is
         uint256 path
     );
 
-    function init(address adminTerminusAddress, uint256 adminTerminusPoolID)
-        external
-    {
+    function init(
+        address adminTerminusAddress,
+        uint256 adminTerminusPoolID
+    ) external {
         LibDiamond.enforceIsContractOwner();
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         gs.AdminTerminusAddress = adminTerminusAddress;
         gs.AdminTerminusPoolID = adminTerminusPoolID;
     }
 
-    function getSession(uint256 sessionId)
-        external
-        view
-        returns (Session memory)
-    {
+    function getSession(
+        uint256 sessionId
+    ) external view returns (Session memory) {
         return LibGOFP.gofpStorage().sessionById[sessionId];
     }
 
@@ -272,11 +281,10 @@ contract GOFPFacet is
         emit SessionUriChanged(gs.numSessions, uri);
     }
 
-    function getStageReward(uint256 sessionId, uint256 stage)
-        external
-        view
-        returns (StageReward memory)
-    {
+    function getStageReward(
+        uint256 sessionId,
+        uint256 stage
+    ) external view returns (Reward memory) {
         return LibGOFP.gofpStorage().sessionStageReward[sessionId][stage];
     }
 
@@ -312,7 +320,7 @@ contract GOFPFacet is
                 (1 <= stages[i]) && (stages[i] <= session.stages.length),
                 "GOFPFacet.setStageRewards: Invalid stage"
             );
-            gs.sessionStageReward[sessionId][stages[i]] = StageReward({
+            gs.sessionStageReward[sessionId][stages[i]] = Reward({
                 terminusAddress: terminusAddresses[i],
                 terminusPoolId: terminusPoolIds[i],
                 rewardAmount: rewardAmounts[i]
@@ -327,10 +335,67 @@ contract GOFPFacet is
         }
     }
 
-    function setSessionActive(uint256 sessionId, bool isActive)
-        external
-        onlyGameMaster
-    {
+    function getPathReward(
+        uint256 sessionId,
+        uint256 stage,
+        uint256 path
+    ) external view returns (Reward memory) {
+        return LibGOFP.gofpStorage().sessionPathReward[sessionId][stage][path];
+    }
+
+    function setPathRewards(
+        uint256 sessionId,
+        uint256 stage,
+        uint256[] memory paths,
+        address[] memory terminusAddresses,
+        uint256[] memory terminusPoolIds,
+        uint256[] memory rewardAmounts
+    ) external onlyGameMaster {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        require(
+            paths.length == terminusAddresses.length,
+            "GOFPFacet.setPathRewards: terminusAddresses must have same length as stages"
+        );
+        require(
+            paths.length == terminusPoolIds.length,
+            "GOFPFacet.setPathRewards: terminusPoolIds must have same length as stages"
+        );
+        require(
+            paths.length == rewardAmounts.length,
+            "GOFPFacet.setPathRewards: rewardAmounts must have same length as stages"
+        );
+
+        Session storage session = gs.sessionById[sessionId];
+        require(
+            !session.isActive,
+            "GOFPFacet.setPathRewards: Cannot set path rewards on active session"
+        );
+
+        for (uint256 i = 0; i < paths.length; i++) {
+            require(
+                (1 <= paths[i]) && (paths[i] <= session.stages[stage - 1]),
+                "GOFPFacet.setPathRewards: Invalid path"
+            );
+            gs.sessionPathReward[sessionId][stage][paths[i]] = Reward({
+                terminusAddress: terminusAddresses[i],
+                terminusPoolId: terminusPoolIds[i],
+                rewardAmount: rewardAmounts[i]
+            });
+            emit PathRewardChanged(
+                sessionId,
+                stage,
+                paths[i],
+                terminusAddresses[i],
+                terminusPoolIds[i],
+                rewardAmounts[i]
+            );
+        }
+    }
+
+    function setSessionActive(
+        uint256 sessionId,
+        bool isActive
+    ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
             sessionId <= gs.numSessions,
@@ -340,11 +405,10 @@ contract GOFPFacet is
         emit SessionActivated(sessionId, isActive);
     }
 
-    function getCorrectPathForStage(uint256 sessionId, uint256 stage)
-        external
-        view
-        returns (uint256)
-    {
+    function getCorrectPathForStage(
+        uint256 sessionId,
+        uint256 stage
+    ) external view returns (uint256) {
         require(
             stage > 0,
             "GOFPFacet.getCorrectPathForStage: Stages are 1-indexed, 0 is not a valid stage"
@@ -402,10 +466,10 @@ contract GOFPFacet is
         emit SessionChoosingActivated(sessionId, setIsChoosingActive);
     }
 
-    function setSessionChoosingActive(uint256 sessionId, bool isChoosingActive)
-        external
-        onlyGameMaster
-    {
+    function setSessionChoosingActive(
+        uint256 sessionId,
+        bool isChoosingActive
+    ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
             sessionId <= gs.numSessions,
@@ -415,10 +479,10 @@ contract GOFPFacet is
         emit SessionChoosingActivated(sessionId, isChoosingActive);
     }
 
-    function setSessionUri(uint256 sessionId, string memory uri)
-        external
-        onlyGameMaster
-    {
+    function setSessionUri(
+        uint256 sessionId,
+        string memory uri
+    ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
             sessionId <= gs.numSessions,
@@ -436,11 +500,10 @@ contract GOFPFacet is
     If the token is not currently staked in the Garden of Forking Paths contract, this method returns
     0 for the sessionId and the 0 address as the staker.
      */
-    function getStakedTokenInfo(address nftAddress, uint256 tokenId)
-        external
-        view
-        returns (uint256, address)
-    {
+    function getStakedTokenInfo(
+        address nftAddress,
+        uint256 tokenId
+    ) external view returns (uint256, address) {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         return (
             gs.stakedTokenSession[nftAddress][tokenId],
@@ -448,19 +511,17 @@ contract GOFPFacet is
         );
     }
 
-    function getSessionTokenStakeGuard(uint256 sessionId, uint256 tokenId)
-        external
-        view
-        returns (bool)
-    {
+    function getSessionTokenStakeGuard(
+        uint256 sessionId,
+        uint256 tokenId
+    ) external view returns (bool) {
         return LibGOFP.gofpStorage().sessionTokenStakeGuard[sessionId][tokenId];
     }
 
-    function numTokensStakedIntoSession(uint256 sessionId, address staker)
-        external
-        view
-        returns (uint256)
-    {
+    function numTokensStakedIntoSession(
+        uint256 sessionId,
+        address staker
+    ) external view returns (uint256) {
         return
             LibGOFP.gofpStorage().numTokensStakedByOwnerInSession[sessionId][
                 staker
@@ -669,11 +730,9 @@ contract GOFPFacet is
     /**
     Returns the number of the current stage.
      */
-    function getCurrentStage(uint256 sessionId)
-        external
-        view
-        returns (uint256)
-    {
+    function getCurrentStage(
+        uint256 sessionId
+    ) external view returns (uint256) {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
             sessionId <= gs.numSessions,
@@ -760,7 +819,7 @@ contract GOFPFacet is
         uint256 numPaths = session.stages[lastStage];
 
         uint256 rewardAmount = 0;
-        StageReward storage stageReward = gs.sessionStageReward[sessionId][
+        Reward storage stageReward = gs.sessionStageReward[sessionId][
             currentStage
         ];
 

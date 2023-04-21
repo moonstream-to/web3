@@ -178,6 +178,50 @@ STAGE_REWARD_CHANGED_ABI = {
     "type": "event",
 }
 
+PATH_REWARD_CHANGED_ABI = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "sessionId",
+            "type": "uint256",
+        },
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "stage",
+            "type": "uint256",
+        },
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "path",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "address",
+            "name": "terminusAddress",
+            "type": "address",
+        },
+        {
+            "indexed": False,
+            "internalType": "uint256",
+            "name": "terminusPoolId",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "uint256",
+            "name": "rewardAmount",
+            "type": "uint256",
+        },
+    ],
+    "name": "PathRewardChanged",
+    "type": "event",
+}
+
 PATH_CHOSEN_EVENT_ABI = {
     "anonymous": False,
     "inputs": [
@@ -1273,6 +1317,117 @@ class TestAdminFlow(GOFPTestCase):
         self.assertListEqual(
             [event["args"]["rewardAmount"] for event in events],
             [i + 1 for i, _ in enumerate(stages_with_rewards)],
+        )
+
+    def test_set_and_get_path_rewards(self):
+        """
+        Tests administrators' ability to set rewards for the paths in a session. Also tests anyone's
+        ability to view the rewards for a given path in a given stage in a given session.
+
+        Test actions:
+        1. Create active session
+        2. Check rewards have default values
+        3. Attempt to set rewards on active session should fail
+        4. Check rewards still have default values
+        5. Make session inactive
+        6. Set rewards for all but the first stage
+        7. Check that rewards were correctly set
+        8. Check that the extend StageRewardChanged events are fired
+        """
+        payment_amount = 132
+        uri = "https://example.com/test_set_and_get_stage_rewards.json"
+        stages = (5, 5, 3, 3, 2)
+        is_active = True
+
+        # Rewards should be associated with all but the first path in stage 2.
+        stage_with_path_rewards = 2
+        paths_with_rewards = list(range(2, len(stages) + 1))
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            False,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        for i in range(1, len(stages) + 1):
+            for j in range(1, stages[i - 1]):
+                reward = self.gofp.get_path_reward(session_id, i, j)
+                self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.set_path_rewards(
+                session_id,
+                stage_with_path_rewards,
+                paths_with_rewards,
+                [self.terminus.address for _ in paths_with_rewards],
+                [self.reward_pool_id for _ in paths_with_rewards],
+                [i + 1 for i, _ in enumerate(paths_with_rewards)],
+                {"from": self.game_master},
+            )
+
+        for i in range(1, len(stages) + 1):
+            reward = self.gofp.get_stage_reward(session_id, i)
+            self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+
+        self.gofp.set_session_active(session_id, False, {"from": self.game_master})
+
+        tx_receipt = self.gofp.set_path_rewards(
+            session_id,
+            stage_with_path_rewards,
+            paths_with_rewards,
+            [self.terminus.address for _ in paths_with_rewards],
+            [self.reward_pool_id for _ in paths_with_rewards],
+            [i + 1 for i, _ in enumerate(paths_with_rewards)],
+            {"from": self.game_master},
+        )
+
+        reward = self.gofp.get_path_reward(session_id, stage_with_path_rewards, 1)
+        self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+
+        for i in range(2, len(stages) + 1):
+            reward = self.gofp.get_path_reward(session_id, stage_with_path_rewards, i)
+            self.assertEqual(
+                reward, (self.terminus.address, self.reward_pool_id, i - 1)
+            )
+
+        events = _fetch_events_chunk(
+            web3_client,
+            PATH_REWARD_CHANGED_ABI,
+            from_block=tx_receipt.block_number,
+            to_block=tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(events), len(paths_with_rewards))
+        self.assertListEqual(
+            [event["args"]["sessionId"] for event in events],
+            [session_id for _ in paths_with_rewards],
+        )
+        self.assertListEqual(
+            [event["args"]["stage"] for event in events],
+            [2 for _ in paths_with_rewards],
+        )
+        self.assertListEqual(
+            [event["args"]["path"] for event in events],
+            [path for path in paths_with_rewards],
+        )
+        self.assertListEqual(
+            [event["args"]["terminusAddress"] for event in events],
+            [self.terminus.address for _ in paths_with_rewards],
+        )
+        self.assertListEqual(
+            [event["args"]["terminusPoolId"] for event in events],
+            [self.reward_pool_id for _ in paths_with_rewards],
+        )
+        self.assertListEqual(
+            [event["args"]["rewardAmount"] for event in events],
+            [i + 1 for i, _ in enumerate(paths_with_rewards)],
         )
 
     def test_non_game_master_cannot_set_stage_rewards(self):
