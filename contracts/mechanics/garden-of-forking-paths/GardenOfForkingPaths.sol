@@ -826,7 +826,7 @@ contract GOFPFacet is
         // This is just for convenience, saving one subtraction.
         uint256 numPaths = session.stages[lastStage];
 
-        uint256 rewardAmount = 0;
+        uint256 stageRewardAmount = 0;
         Reward storage stageReward = gs.sessionStageReward[sessionId][
             currentStage
         ];
@@ -866,13 +866,29 @@ contract GOFPFacet is
             // there is a stage reward.
             if (stageReward.terminusAddress != address(0)) {
                 if (lastStage == 0) {
-                    rewardAmount += stageReward.rewardAmount;
+                    stageRewardAmount += stageReward.rewardAmount;
                 } else if (
                     gs.pathChoices[sessionId][tokenIds[i]][lastStage] ==
                     lastStageCorrectPath
                 ) {
-                    rewardAmount += stageReward.rewardAmount;
+                    stageRewardAmount += stageReward.rewardAmount;
                 }
+            }
+
+            // Distribute path reward.
+            Reward storage pathReward = gs.sessionPathReward[sessionId][
+                currentStage
+            ][paths[i]];
+            if (pathReward.terminusAddress != address(0)) {
+                TerminusFacet rewardTerminus = TerminusFacet(
+                    pathReward.terminusAddress
+                );
+                rewardTerminus.mint(
+                    msg.sender,
+                    pathReward.terminusPoolId,
+                    pathReward.rewardAmount,
+                    ""
+                );
             }
         }
 
@@ -883,7 +899,7 @@ contract GOFPFacet is
             rewardTerminus.mint(
                 msg.sender,
                 stageReward.terminusPoolId,
-                rewardAmount,
+                stageRewardAmount,
                 ""
             );
         }
