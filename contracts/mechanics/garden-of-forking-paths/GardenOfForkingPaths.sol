@@ -345,7 +345,7 @@ contract GOFPFacet is
 
     function setPathRewards(
         uint256 sessionId,
-        uint256 stage,
+        uint256[] memory stages,
         uint256[] memory paths,
         address[] memory terminusAddresses,
         uint256[] memory terminusPoolIds,
@@ -353,15 +353,19 @@ contract GOFPFacet is
     ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
-            paths.length == terminusAddresses.length,
+            stages.length == paths.length,
+            "GOFPFacet.setPathRewards: paths must have same length as stages"
+        );
+        require(
+            stages.length == terminusAddresses.length,
             "GOFPFacet.setPathRewards: terminusAddresses must have same length as stages"
         );
         require(
-            paths.length == terminusPoolIds.length,
+            stages.length == terminusPoolIds.length,
             "GOFPFacet.setPathRewards: terminusPoolIds must have same length as stages"
         );
         require(
-            paths.length == rewardAmounts.length,
+            stages.length == rewardAmounts.length,
             "GOFPFacet.setPathRewards: rewardAmounts must have same length as stages"
         );
 
@@ -371,19 +375,23 @@ contract GOFPFacet is
             "GOFPFacet.setPathRewards: Cannot set path rewards on active session"
         );
 
-        for (uint256 i = 0; i < paths.length; i++) {
+        for (uint256 i = 0; i < stages.length; i++) {
             require(
-                (1 <= paths[i]) && (paths[i] <= session.stages[stage - 1]),
+                (1 <= stages[i]) && (stages[i] <= session.stages.length),
+                "GOFPFacet.setPathRewards: Invalid stage"
+            );
+            require(
+                (1 <= paths[i]) && (paths[i] <= session.stages[stages[i] - 1]),
                 "GOFPFacet.setPathRewards: Invalid path"
             );
-            gs.sessionPathReward[sessionId][stage][paths[i]] = Reward({
+            gs.sessionPathReward[sessionId][stages[i]][paths[i]] = Reward({
                 terminusAddress: terminusAddresses[i],
                 terminusPoolId: terminusPoolIds[i],
                 rewardAmount: rewardAmounts[i]
             });
             emit PathRewardChanged(
                 sessionId,
-                stage,
+                stages[i],
                 paths[i],
                 terminusAddresses[i],
                 terminusPoolIds[i],
