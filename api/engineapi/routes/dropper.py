@@ -39,15 +39,16 @@ tags_metadata = [{"name": "dropper", "description": "Moonstream Engine old drops
 whitelist_paths: Dict[str, str] = {}
 whitelist_paths.update(
     {
-        "/drops": "GET",
-        "/drops/batch": "GET",
-        "/drops/claims": "GET",
-        "/drops/contracts": "GET",
-        "/drops/docs": "GET",
-        "/drops/terminus": "GET",
-        "/drops/blockchains": "GET",
-        "/drops/terminus/claims": "GET",
-        "/drops/openapi.json": "GET",
+        "/engine/drops": "GET",
+        "/engine/drops/batch": "GET",
+        "/engine/drops/claims": "GET",
+        "/engine/drops/contracts": "GET",
+        "/engine/drops/docs": "GET",
+        "/engine/drops/terminus": "GET",
+        "/engine/drops/blockchains": "GET",
+        "/engine/drops/terminus/claims": "GET",
+        "/engine/drops/openapi.json": "GET",
+        f"/engine/drops/{DOCS_TARGET_PATH}": "GET",
     }
 )
 

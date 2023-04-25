@@ -27,8 +27,8 @@ tags_metadata = [{"name": "admin", "description": "Moonstream Engine Admin API"}
 whitelist_paths: Dict[str, str] = {}
 whitelist_paths.update(
     {
-        "/admin/docs": "GET",
-        "/admin/openapi.json": "GET",
+        f"/engine/admin/{DOCS_TARGET_PATH}": "GET",
+        "/engine/admin/openapi.json": "GET",
     }
 )
 

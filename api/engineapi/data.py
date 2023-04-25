@@ -21,6 +21,14 @@ class NowResponse(BaseModel):
     epoch_time: float
 
 
+class VersionResponse(BaseModel):
+    """
+    Schema for version response
+    """
+
+    version: str
+
+
 class SignerListResponse(BaseModel):
     instances: List[Any] = Field(default_factory=list)
 

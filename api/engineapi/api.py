@@ -42,7 +42,7 @@ app.add_middleware(
 )
 
 
-@app.get("/ping", response_model=data.PingResponse)
+@app.get("/engine/ping", response_model=data.PingResponse)
 async def ping_handler() -> data.PingResponse:
     """
     Check server status.
@@ -50,7 +50,7 @@ async def ping_handler() -> data.PingResponse:
     return data.PingResponse(status="ok")
 
 
-@app.get("/now", tags=["time"])
+@app.get("/engine/now", tags=["time"])
 async def now_handler() -> data.NowResponse:
     """
     Get server current time.
@@ -58,8 +58,16 @@ async def now_handler() -> data.NowResponse:
     return data.NowResponse(epoch_time=time.time())
 
 
-app.mount("/leaderboard", leaderboard_app)
-app.mount("/drops", dropper_app)
-app.mount("/admin", admin_app)
-app.mount("/play", play_app)
-app.mount("/contracts", contracts_app)
+@app.get("/engine/version", response_model=data.VersionResponse)
+async def version_handler() -> data.VersionResponse:
+    """
+    Check server version.
+    """
+    return data.VersionResponse(version=VERSION)
+
+
+app.mount("/engine/leaderboard", leaderboard_app)
+app.mount("/engine/drops", dropper_app)
+app.mount("/engine/admin", admin_app)
+app.mount("/engine/play", play_app)
+app.mount("/engine/contracts", contracts_app)

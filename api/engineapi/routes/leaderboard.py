@@ -27,12 +27,14 @@ tags_metadata = [
 
 
 leaderboad_whitelist = {
-    "/leaderboard/quartiles": "GET",
-    "/leaderboard/count/addresses": "GET",
-    "/leaderboard/position": "GET",
-    "/leaderboard": "GET",
-    "/leaderboard/rank": "GET",
-    "/leaderboard/ranks": "GET",
+    "/engine/leaderboard/quartiles": "GET",
+    "/engine/leaderboard/count/addresses": "GET",
+    "/engine/leaderboard/position": "GET",
+    "/engine/leaderboard": "GET",
+    "/engine/leaderboard/rank": "GET",
+    "/engine/leaderboard/ranks": "GET",
+    "/engine/leaderboard/openapi.json": "GET",
+    f"/engine/leaderboard/{DOCS_TARGET_PATH}": "GET",
 }
 
 app = FastAPI(
