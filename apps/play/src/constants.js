@@ -114,3 +114,7 @@ export const SUPPORT_EMAIL = "support@moonstream.to";
 App name that will show in titles, modals etc
 */
 export const APP_NAME = "Moonstream player";
+
+export const API =
+  process.env.NEXT_PUBLIC_ENGINE_API_URL ??
+  process.env.NEXT_PUBLIC_PLAY_API_URL;

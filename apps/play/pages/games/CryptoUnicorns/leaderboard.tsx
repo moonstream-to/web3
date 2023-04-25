@@ -24,7 +24,7 @@ import { InfoOutlineIcon } from "@chakra-ui/icons";
 
 import http from "moonstream-components/src/core/utils/http";
 import queryCacheProps from "moonstream-components/src/core/hooks/hookCommon";
-import { DEFAULT_METATAGS } from "../../../src/constants";
+import { API, DEFAULT_METATAGS } from "../../../src/constants";
 
 import Web3 from "web3";
 import Web3Context from "moonstream-components/src/core/providers/Web3Provider/context";
@@ -55,7 +55,7 @@ const Leaderboard = () => {
     return http(
       {
         method: "GET",
-        url: `https://engineapi.moonstream.to/leaderboard/?leaderboard_id=863429ad-ea0d-4cbf-b0f9-6e5c3fc83bb2&limit=${pageLimit}&offset=${pageOffset}`,
+        url: `${API}/leaderboard/?leaderboard_id=863429ad-ea0d-4cbf-b0f9-6e5c3fc83bb2&limit=${pageLimit}&offset=${pageOffset}`,
       },
       true
     );
