@@ -3473,6 +3473,18 @@ class TestFullGames(GOFPTestCase):
             reward_amounts,
             {"from": self.game_master},
         )
+
+        # First path has reward on each stage
+        self.gofp.set_path_rewards(
+            session_id,
+            [1, 2, 3],
+            [1, 1, 1],
+            [self.terminus.address] * 3,
+            [self.reward_pool_id] * 3,
+            [1, 1, 1],
+            {"from": self.game_master},
+        )
+
         self.gofp.set_session_active(session_id, True, {"from": self.game_master})
 
         # We create a second session to ensure that the NFTs are being staked into the right session.
@@ -3544,7 +3556,11 @@ class TestFullGames(GOFPTestCase):
         )
         self.assertEqual(
             player_reward_token_balance_1,
-            player_reward_token_balance_0 + int(reward_amounts[0] * len(token_ids)),
+            player_reward_token_balance_0
+            # stage rewards
+            + int(reward_amounts[0] * len(token_ids))
+            # path rewards
+            + int(1 * len(token_ids) / stages[0]),
         )
 
         self.gofp.set_session_choosing_active(
@@ -3595,7 +3611,10 @@ class TestFullGames(GOFPTestCase):
         self.assertEqual(
             player_reward_token_balance_2,
             player_reward_token_balance_1
-            + int(reward_amounts[1] * len(token_ids) / stages[0]),
+            # stage rewards
+            + int(reward_amounts[1] * len(token_ids) / stages[0])
+            # path rewards
+            + int(1 * len(first_stage_correct_token_ids) / stages[1]),
         )
 
         self.gofp.set_session_choosing_active(
@@ -3644,7 +3663,10 @@ class TestFullGames(GOFPTestCase):
         self.assertEqual(
             player_reward_token_balance_3,
             player_reward_token_balance_2
-            + int(reward_amounts[2] * len(token_ids) / (stages[0] * stages[1])),
+            # stage rewards
+            + int(reward_amounts[2] * len(token_ids) / (stages[0] * stages[1]))
+            # path rewards
+            + int(1 * len(second_stage_correct_token_ids) / stages[2]),
         )
 
         self.gofp.set_session_choosing_active(
@@ -3703,6 +3725,18 @@ class TestFullGames(GOFPTestCase):
             reward_amounts,
             {"from": self.game_master},
         )
+
+        # First path has reward on each stage
+        self.gofp.set_path_rewards(
+            session_id,
+            [1, 2, 3],
+            [1, 1, 1],
+            [self.terminus.address] * 3,
+            [self.reward_pool_id] * 3,
+            [1, 1, 1],
+            {"from": self.game_master},
+        )
+
         self.gofp.set_session_active(session_id, True, {"from": self.game_master})
 
         # We create a second session to ensure that the NFTs are being staked into the right session.
@@ -3774,7 +3808,11 @@ class TestFullGames(GOFPTestCase):
         )
         self.assertEqual(
             player_reward_token_balance_1,
-            player_reward_token_balance_0 + int(reward_amounts[0] * len(token_ids)),
+            player_reward_token_balance_0
+            # stage rewards
+            + int(reward_amounts[0] * len(token_ids))
+            # path rewards
+            + int(1 * len(token_ids) / stages[0]),
         )
 
         self.gofp.set_session_choosing_active(
@@ -3787,32 +3825,20 @@ class TestFullGames(GOFPTestCase):
         # Check that current stage has progressed to stage 2
         self.assertEqual(self.gofp.get_current_stage(session_id), 2)
 
-        first_stage_incorrect_token_ids = [
-            token_id
-            for token_id in token_ids
-            if token_id not in first_stage_correct_token_ids
-        ]
-
         # **Stage 2**
-        second_stage_path_choices = [
-            token_id % stages[1] + 1 for token_id in first_stage_correct_token_ids
-        ] + [correct_paths[1] for _ in first_stage_incorrect_token_ids]
+        second_stage_path_choices = [token_id % stages[1] + 1 for token_id in token_ids]
         second_stage_correct_token_ids = [
             token_id
-            for token_id in first_stage_correct_token_ids
+            for token_id in token_ids
             if token_id % stages[1] + 1 == correct_paths[1]
-        ] + first_stage_incorrect_token_ids
+        ]
 
         # Sanity check for test setup
-        self.assertEqual(
-            len(second_stage_correct_token_ids),
-            int(num_nfts / (stages[0] * stages[1]))
-            + len(first_stage_incorrect_token_ids),
-        )
+        self.assertEqual(len(second_stage_correct_token_ids), int(num_nfts / stages[1]))
 
         self.gofp.choose_current_stage_paths(
             session_id,
-            first_stage_correct_token_ids + first_stage_incorrect_token_ids,
+            token_ids,
             second_stage_path_choices,
             {"from": self.player},
         )
@@ -3823,7 +3849,10 @@ class TestFullGames(GOFPTestCase):
         self.assertEqual(
             player_reward_token_balance_2,
             player_reward_token_balance_1
-            + reward_amounts[1] * int(len(token_ids) / stages[0]),
+            # stage rewards
+            + reward_amounts[1] * int(len(token_ids) / stages[0])
+            # path rewards
+            + int(1 * len(token_ids) / stages[1]),
         )
 
         self.gofp.set_session_choosing_active(
@@ -3843,25 +3872,20 @@ class TestFullGames(GOFPTestCase):
         ]
 
         # **Stage 3**
-        third_stage_path_choices = [
-            token_id % stages[2] + 1 for token_id in second_stage_correct_token_ids
-        ] + [correct_paths[2] for _ in second_stage_incorrect_token_ids]
+        third_stage_path_choices = [token_id % stages[2] + 1 for token_id in token_ids]
 
         third_stage_correct_token_ids = [
             token_id
-            for token_id in second_stage_correct_token_ids
+            for token_id in token_ids
             if token_id % stages[2] + 1 == correct_paths[2]
-        ] + second_stage_incorrect_token_ids
+        ]
+
         # Sanity check for test setup
-        self.assertEqual(
-            len(third_stage_correct_token_ids),
-            int(len(second_stage_correct_token_ids) / stages[2])
-            + len(second_stage_incorrect_token_ids),
-        )
+        self.assertEqual(len(third_stage_correct_token_ids), int(num_nfts / stages[2]))
 
         self.gofp.choose_current_stage_paths(
             session_id,
-            second_stage_correct_token_ids + second_stage_incorrect_token_ids,
+            token_ids,
             third_stage_path_choices,
             {"from": self.player},
         )
@@ -3872,7 +3896,10 @@ class TestFullGames(GOFPTestCase):
         self.assertEqual(
             player_reward_token_balance_3,
             player_reward_token_balance_2
-            + reward_amounts[2] * len(second_stage_correct_token_ids),
+            # stage rewards
+            + reward_amounts[2] * int(len(token_ids) / stages[1])
+            # path rewards
+            + int(1 * len(token_ids) / stages[2]),
         )
 
         self.gofp.set_session_choosing_active(
