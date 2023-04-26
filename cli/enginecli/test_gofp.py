@@ -465,9 +465,7 @@ class TestAdminFlow(GOFPTestCase):
         num_sessions_0 = self.gofp.num_sessions()
 
         expected_payment_amount = 42
-        expected_uri = (
-            "https://example.com/test_create_session_then_get_session_active.json"
-        )
+        expected_uri = "https://example.com/test_create_forgiving_session_then_get_session_active.json"
         expected_stages = (5, 5, 3, 3, 2)
         expected_is_active = True
         expected_is_forgiving = True
@@ -3300,7 +3298,7 @@ class TestPlayerFlow(GOFPTestCase):
         8. Check that appropriate ERC1155 Transfer events are fired in that transaction
         """
         payment_amount = 175
-        uri = "https://example.com/test_player_is_rewarded_for_choosing_path_that_has_reward.json"
+        uri = "https://example.com/test_player_can_receive_different_pool_ids_in_stage_and_path_rewards.json"
         stages = (1, 1)
         is_active = False
 
