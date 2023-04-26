@@ -13,6 +13,7 @@ from . import (
     setup_drop,
     CraftingFacet,
     GOFPFacet,
+    GOFPPredicates,
 )
 
 
@@ -21,7 +22,6 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> None:
-
     parser = argparse.ArgumentParser(
         description="dao: The command line interface to Moonstream DAO"
     )
@@ -60,6 +60,18 @@ def main() -> None:
 
     setup_drop_parser = setup_drop.generate_cli()
     subparsers.add_parser("setup-drop", parents=[setup_drop_parser], add_help=False)
+
+    predicates_usage = "Predicates for use with Moonstream game mechanics"
+    predicates_parser = subparsers.add_parser(
+        "predicates", help=predicates_usage, description=predicates_usage
+    )
+    predicates_parser.set_defaults(func=lambda _: predicates_parser.print_help())
+    predicates_subparsers = predicates_parser.add_subparsers()
+
+    gofp_predicates_parser = GOFPPredicates.generate_cli()
+    predicates_subparsers.add_parser(
+        "gofp", parents=[gofp_predicates_parser], add_help=False
+    )
 
     args = parser.parse_args()
     args.func(args)

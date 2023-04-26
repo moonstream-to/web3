@@ -6,7 +6,7 @@ from brownie import accounts, network, web3 as web3_client, ZERO_ADDRESS
 from brownie.exceptions import VirtualMachineError
 from moonworm.watch import _fetch_events_chunk
 
-from . import GOFPFacet, MockTerminus, MockErc20, MockERC721
+from . import GOFPFacet, MockTerminus, MockErc20, MockERC721, GOFPPredicates
 from .core import gofp_gogogo
 
 MAX_UINT = 2**256 - 1
@@ -297,6 +297,9 @@ class GOFPTestCase(unittest.TestCase):
 
         cls.nft = MockERC721.MockERC721(None)
         cls.nft.deploy(cls.owner_tx_config)
+
+        cls.gofp_predicates = GOFPPredicates.GOFPPredicates(None)
+        cls.gofp_predicates.deploy(cls.owner_tx_config)
 
         cls.terminus = MockTerminus.MockTerminus(None)
         cls.terminus.deploy(cls.owner_tx_config)
