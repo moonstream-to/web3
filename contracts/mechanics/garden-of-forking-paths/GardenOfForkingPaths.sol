@@ -43,6 +43,11 @@ struct Reward {
     uint256 rewardAmount;
 }
 
+struct Predicate {
+    address predicateAddress;
+    bytes methodCalldata;
+}
+
 library LibGOFP {
     bytes32 constant STORAGE_POSITION =
         keccak256("moonstreamdao.eth.storage.mechanics.GardenOfForkingPaths");
@@ -84,8 +89,10 @@ library LibGOFP {
         // session => tokenId => was token ever staked into session?
         // This guards against a token being staked into a session multiple times.
         mapping(uint256 => mapping(uint256 => bool)) sessionTokenStakeGuard;
-        // GOFP v2: session => stage => path => reward
+        // GOFP v0.2: session => stage => path => reward
         mapping(uint256 => mapping(uint256 => mapping(uint256 => Reward))) sessionPathReward;
+        // Predicate to check prior to staking into session
+        mapping(uint256 => Predicate) sessionStakingPredicate;
     }
 
     function gofpStorage() internal pure returns (GOFPStorage storage gs) {
@@ -199,6 +206,7 @@ contract GOFPFacet is
         uint256 adminTerminusPoolID
     ) external {
         LibDiamond.enforceIsContractOwner();
+
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         gs.AdminTerminusAddress = adminTerminusAddress;
         gs.AdminTerminusPoolID = adminTerminusPoolID;
@@ -642,6 +650,25 @@ contract GOFPFacet is
         delete gs.tokensStakedByOwnerInSession[sessionId][owner][currStaked];
         //updating staked count
         gs.numTokensStakedByOwnerInSession[sessionId][owner]--;
+    }
+
+    function getSessionStakingPredicate(
+        uint256 sessionId
+    ) external view returns (Predicate memory) {
+        return LibGOFP.gofpStorage().sessionStakingPredicate[sessionId];
+    }
+
+    function setSessionStakingPredicate(
+        uint256 sessionId,
+        address predicateAddress,
+        bytes calldata methodCalldata
+    ) external onlyGameMaster {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+
+        gs.sessionStakingPredicate[sessionId] = Predicate({
+            predicateAddress: predicateAddress,
+            methodCalldata: methodCalldata
+        });
     }
 
     function stakeTokensIntoSession(
