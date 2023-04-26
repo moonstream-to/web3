@@ -90,6 +90,10 @@ class DropperTestCase(unittest.TestCase):
             cls.mintable_terminus_pool_id, cls.dropper.address, {"from": accounts[0]}
         )
 
+        terminus_info_1, terminus_info_2 = cls.dropper.get_terminus_admin_info()
+        DropperTestCase().assertEqual(cls.terminus.address, terminus_info_1)
+        DropperTestCase().assertEqual(cls.admin_terminus_pool_id, terminus_info_2)
+
         # Create signer accounts
         cls.signer_0 = accounts.add()
         cls.signer_1 = accounts.add()
@@ -3095,6 +3099,7 @@ class DropperSignatureAuthorizationTest(DropperTestCase):
     - Add tests for ERC1155 transfer claims
     - Add tests for Terminus mint claims
     """
+
     def tearDown(self):
         """
         Return permissions to how they are at the beginning of the general test case setup (DropperTestCase).
