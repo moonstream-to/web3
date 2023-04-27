@@ -46,9 +46,8 @@ struct Reward {
 struct Predicate {
     address predicateAddress;
     bytes4 functionSelector;
-    // initialArguments is intended to be the ABIen
+    // initialArguments is intended to be ABI encoded partial arguments to the predicate function.
     bytes initialArguments;
-    uint256 initialArgumentsLength;
 }
 
 library LibGOFP {
@@ -671,8 +670,7 @@ contract GOFPFacet is
         gs.sessionStakingPredicate[sessionId] = Predicate({
             predicateAddress: predicateAddress,
             functionSelector: functionSelector,
-            initialArguments: initialArguments,
-            initialArgumentsLength: initialArguments.length
+            initialArguments: initialArguments
         });
     }
 
@@ -685,35 +683,58 @@ contract GOFPFacet is
         address erc721Address = gs.sessionById[sessionId].playerTokenAddress;
 
         Predicate memory predicate = gs.sessionStakingPredicate[sessionId];
-        address predicateAddress = predicate.predicateAddress;
-        bytes4 predicateSelector = predicate.functionSelector;
-        bytes memory initialArguments = predicate.initialArguments;
-        uint256 initialArgumentsLength = predicate.initialArgumentsLength;
+        // If there is no predicate registered, simply return true.
+        if (predicate.predicateAddress == address(0)) {
+            return true;
+        }
 
-        // TODO(zomglings): BROKEN AS FUCK
         assembly {
-            let freePtr := mload(0x40)
-            mstore(freePtr, predicateSelector)
-            let postSelector := add(freePtr, 0x04)
+            let starting_position := mload(0x40)
+
+            // Layout of predicate in memory:
+            // predicate + 0x0 : predicate + 0x20 -- predicateAddress
+            // predicate + 0x20 : predicate + 0x40 -- functionSelector
+            // predicate + 0x40 : predicate + 0x60 -- memory position of initialArguments array
+            //
+            // We store the memory position as initial_arguments_position.
+            // initial_arguments_position + 0x0 : initial_arguments_position + 0x20 -- length of initialArguments
+            //
+            // We use this to iterate over the initial arguments and add them to the calldata we are
+            // constructing.
+            let initial_arguments_position := mload(add(predicate, 0x40))
+            let initial_arguments_length := mload(initial_arguments_position)
+            let initial_arguments_start := add(initial_arguments_position, 0x20)
+
+            let i := 0
+
+            mstore(starting_position, mload(add(predicate, 0x20)))
+            let post_selector := add(starting_position, 0x4)
+
             for {
-                let i := 0
-            } lt(i, initialArgumentsLength) {
+                i := 0
+            } lt(i, initial_arguments_length) {
                 i := add(i, 0x20)
             } {
-                mstore(add(postSelector, i), mload(add(initialArguments, i)))
+                mstore(
+                    add(post_selector, i),
+                    mload(add(initial_arguments_start, i))
+                )
             }
-            let l := mload(initialArgumentsLength)
-            let postSelectorAndInitialArgs := add(postSelector, l)
-            mstore(add(postSelectorAndInitialArgs, 0x04), player)
-            mstore(add(postSelectorAndInitialArgs, 0x24), erc721Address)
-            mstore(add(postSelectorAndInitialArgs, 0x44), tokenId)
-            let calldataLength := add(l, 0x64)
+
+            i := add(post_selector, initial_arguments_length)
+            mstore(i, player)
+            i := add(i, 0x20)
+            mstore(i, erc721Address)
+            i := add(i, 0x20)
+            mstore(i, tokenId)
+
+            let calldata_length := add(initial_arguments_length, 0x64)
             let success := staticcall(
                 gas(),
-                predicateAddress,
-                freePtr,
-                calldataLength,
-                add(freePtr, calldataLength),
+                mload(predicate),
+                starting_position,
+                calldata_length,
+                add(starting_position, calldata_length),
                 0x20
             )
 
@@ -721,7 +742,7 @@ contract GOFPFacet is
                 revert(0, returndatasize())
             }
 
-            valid := mload(add(freePtr, calldataLength))
+            valid := mload(add(starting_position, calldata_length))
         }
     }
 
@@ -763,23 +784,6 @@ contract GOFPFacet is
             "GOFPFacet.stakeTokensIntoSession: The first stage for this session has already been resolved"
         );
 
-        // bytes4 predicateSelector = gs
-        //     .sessionStakingPredicate[sessionId]
-        //     .functionSelector;
-        // bytes memory predicateInitialArguments = gs
-        //     .sessionStakingPredicate[sessionId]
-        //     .initialArguments;
-        // uint256 predicateInitialArgumentsLength = gs
-        //     .sessionStakingPredicate[sessionId]
-        //     .initialArgumentsLength;
-
-        // assembly {
-        //     let currentPosition := mload(0x40)
-        //     mstore(currentPosition, predicateSelector)
-        //     currentPosition := add(currentPosition, 4)
-        //     mstore(currentPosition, predicateInitialArgumentsLength)
-        // }
-
         address nftAddress = gs.sessionById[sessionId].playerTokenAddress;
         IERC721 token = IERC721(nftAddress);
         for (uint256 i = 0; i < tokenIds.length; i++) {
@@ -799,9 +803,10 @@ contract GOFPFacet is
                 "GOFPFacet.stakeTokensIntoSession: Token was previously staked into session"
             );
 
-            // assembly {
-
-            // }
+            require(
+                callSessionStakingPredicate(sessionId, msg.sender, tokenIds[i]),
+                "GOFPFacet.stakeTokensIntoSession: Session staking predicate not satisfied"
+            );
 
             token.safeTransferFrom(msg.sender, address(this), tokenIds[i]);
             gs.sessionTokenStakeGuard[sessionId][tokenIds[i]] = true;

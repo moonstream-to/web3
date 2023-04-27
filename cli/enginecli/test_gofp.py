@@ -1696,104 +1696,6 @@ class TestAdminFlow(GOFPTestCase):
             ),
         )
 
-    def test_session_staking_predicate(self):
-        """
-        Tests administrators' ability to register and view staking predicate for a given session.
-        The staking predicate is called once per token that a user tries to stake into the session.
-        It is called with three arguments appended to its calldata:
-        1. The address of player who is trying to stake the token.
-        2. The address of the ERC721 contract that the token belongs to.
-        3. The token ID.
-
-        The predicate is expected to return true/false.
-
-        Test actions:
-        1. Create inactive session
-        2. Check that no predicate is registered for that session.
-        3. Register a predicate for that session.
-        4. Check that predicate was registered correctly.
-        5. Call that predicate through the GOFP contract to make sure call logic functions as intended.
-        """
-        payment_amount = 135
-        uri = "https://example.com/test_session_staking_predicate.json"
-        stages = (4, 1)
-        is_active = False
-
-        self.gofp.create_session(
-            self.nft.address,
-            self.payment_token.address,
-            payment_amount,
-            is_active,
-            uri,
-            stages,
-            False,
-            {"from": self.game_master},
-        )
-
-        session_id = self.gofp.num_sessions()
-
-        """
-        Predicate structure:
-        struct Predicate {
-            address predicateAddress;
-            bytes4 functionSelector;
-            // initialArguments is intended to be the ABIen
-            bytes initialArguments;
-            uint256 initialArgumentsLength;
-        }
-        """
-        initial_predicate = self.gofp.get_session_staking_predicate(session_id)
-        self.assertEqual(initial_predicate, (ZERO_ADDRESS, "0x0", "0x0", 0))
-
-        encoded_predicate_with_dummy_end_values = (
-            self.gofp_predicates.contract.doesNotExceedMaxTokensInSession.encode_input(
-                1, self.gofp.address, session_id, ZERO_ADDRESS, ZERO_ADDRESS, 0
-            )
-        )
-        encoded_predicate_initial_args = encoded_predicate_with_dummy_end_values[
-            10 : len(encoded_predicate_with_dummy_end_values) - 96 * 2
-        ]
-
-        with self.assertRaises(VirtualMachineError):
-            self.gofp.set_session_staking_predicate(
-                session_id,
-                "0x52760e08",
-                self.gofp_predicates.address,
-                encoded_predicate_initial_args,
-                {"from": self.player},
-            )
-
-        self.gofp.set_session_staking_predicate(
-            session_id,
-            "0x52760e08",
-            self.gofp_predicates.address,
-            encoded_predicate_initial_args,
-            {"from": self.game_master},
-        )
-
-        predicate = self.gofp.get_session_staking_predicate(session_id)
-        self.assertEqual(
-            predicate,
-            (
-                self.gofp_predicates.address,
-                "0x52760e08",
-                f"0x{encoded_predicate_initial_args}",
-                96,
-            ),
-        )
-
-        num_nfts = self.nft.total_supply()
-        token_ids = [num_nfts + 1, num_nfts + 2]
-        for token_id in token_ids:
-            self.nft.mint(self.player.address, token_id, {"from": self.owner})
-
-        # TODO(zomglings): This test and callSessionStakingPredicate are broken AF
-        self.assertTrue(
-            self.gofp.call_session_staking_predicate(
-                session_id, self.player.address, token_ids[0]
-            )
-        )
-
 
 class TestPlayerFlow(GOFPTestCase):
     def test_player_can_stake_and_unstake_nfts(self):
@@ -4318,6 +4220,121 @@ class TestFullGames(GOFPTestCase):
                     [1],
                     {"from": self.player},
                 )
+
+
+class TestCallbacks(GOFPTestCase):
+    def test_session_staking_predicate(self):
+        """
+        Tests administrators' ability to register and view staking predicate for a given session.
+        The staking predicate is called once per token that a user tries to stake into the session.
+        It is called with three arguments appended to its calldata:
+        1. The address of player who is trying to stake the token.
+        2. The address of the ERC721 contract that the token belongs to.
+        3. The token ID.
+
+        The predicate is expected to return true/false.
+
+        Test actions:
+        1. Create inactive session
+        2. Check that no predicate is registered for that session.
+        3. Register a predicate for that session.
+        4. Check that predicate was registered correctly.
+        5. Call that predicate through the GOFP contract to make sure call logic functions as intended.
+        """
+        payment_amount = 0
+        uri = "https://example.com/test_session_staking_predicate.json"
+        stages = (4, 1)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            False,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        """
+        Predicate structure:
+        struct Predicate {
+            address predicateAddress;
+            bytes4 functionSelector;
+            // initialArguments is intended to be the ABIen
+            bytes initialArguments;
+            uint256 initialArgumentsLength;
+        }
+        """
+        initial_predicate = self.gofp.get_session_staking_predicate(session_id)
+        self.assertEqual(initial_predicate, (ZERO_ADDRESS, "0x0", "0x0"))
+
+        encoded_predicate_with_dummy_end_values = (
+            self.gofp_predicates.contract.doesNotExceedMaxTokensInSession.encode_input(
+                1, self.gofp.address, session_id, ZERO_ADDRESS, ZERO_ADDRESS, 0
+            )
+        )
+        encoded_predicate_initial_args = encoded_predicate_with_dummy_end_values[
+            10 : len(encoded_predicate_with_dummy_end_values) - 96 * 2
+        ]
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.set_session_staking_predicate(
+                session_id,
+                "0x52760e08",
+                self.gofp_predicates.address,
+                encoded_predicate_initial_args,
+                {"from": self.player},
+            )
+
+        self.gofp.set_session_staking_predicate(
+            session_id,
+            "0x52760e08",
+            self.gofp_predicates.address,
+            encoded_predicate_initial_args,
+            {"from": self.game_master},
+        )
+
+        predicate = self.gofp.get_session_staking_predicate(session_id)
+        self.assertEqual(
+            predicate,
+            (
+                self.gofp_predicates.address,
+                "0x52760e08",
+                f"0x{encoded_predicate_initial_args}",
+            ),
+        )
+
+        num_nfts = self.nft.total_supply()
+        token_ids = [num_nfts + 1, num_nfts + 2]
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+            self.nft.approve(self.gofp.address, token_id, {"from": self.player})
+
+        # TODO(zomglings): This test and callSessionStakingPredicate are broken AF
+        check_0 = self.gofp.call_session_staking_predicate(
+            session_id, self.player.address, token_ids[0]
+        )
+        self.assertTrue(check_0)
+
+        self.gofp.set_session_active(session_id, True, {"from": self.game_master})
+
+        self.gofp.stake_tokens_into_session(
+            session_id, [token_ids[0]], {"from": self.player}
+        )
+
+        check_1 = self.gofp.call_session_staking_predicate(
+            session_id, self.player.address, token_ids[1]
+        )
+        self.assertFalse(check_1)
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.stake_tokens_into_session(
+                session_id, [token_ids[1]], {"from": self.player}
+            )
 
 
 if __name__ == "__main__":
