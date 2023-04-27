@@ -4281,10 +4281,13 @@ class TestCallbacks(GOFPTestCase):
             10 : len(encoded_predicate_with_dummy_end_values) - 96 * 2
         ]
 
+        # GOFPPredicates.doesNotExceedMaxTokensInSession selector - calculated using -annotations flag on solface: https://github.com/bugout-dev/solface.
+        predicate_selector = "0x52760e08"
+
         with self.assertRaises(VirtualMachineError):
             self.gofp.set_session_staking_predicate(
                 session_id,
-                "0x52760e08",
+                predicate_selector,
                 self.gofp_predicates.address,
                 encoded_predicate_initial_args,
                 {"from": self.player},
@@ -4292,7 +4295,7 @@ class TestCallbacks(GOFPTestCase):
 
         self.gofp.set_session_staking_predicate(
             session_id,
-            "0x52760e08",
+            predicate_selector,
             self.gofp_predicates.address,
             encoded_predicate_initial_args,
             {"from": self.game_master},
@@ -4303,7 +4306,7 @@ class TestCallbacks(GOFPTestCase):
             predicate,
             (
                 self.gofp_predicates.address,
-                "0x52760e08",
+                predicate_selector,
                 f"0x{encoded_predicate_initial_args}",
             ),
         )
@@ -4314,7 +4317,6 @@ class TestCallbacks(GOFPTestCase):
             self.nft.mint(self.player.address, token_id, {"from": self.owner})
             self.nft.approve(self.gofp.address, token_id, {"from": self.player})
 
-        # TODO(zomglings): This test and callSessionStakingPredicate are broken AF
         check_0 = self.gofp.call_session_staking_predicate(
             session_id, self.player.address, token_ids[0]
         )
