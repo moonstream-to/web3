@@ -45,7 +45,10 @@ struct Reward {
 
 struct Predicate {
     address predicateAddress;
-    bytes methodCalldata;
+    bytes4 functionSelector;
+    // initialArguments is intended to be the ABIen
+    bytes initialArguments;
+    uint256 initialArgumentsLength;
 }
 
 library LibGOFP {
@@ -660,15 +663,66 @@ contract GOFPFacet is
 
     function setSessionStakingPredicate(
         uint256 sessionId,
+        bytes4 functionSelector,
         address predicateAddress,
-        bytes calldata methodCalldata
+        bytes calldata initialArguments
     ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
-
         gs.sessionStakingPredicate[sessionId] = Predicate({
             predicateAddress: predicateAddress,
-            methodCalldata: methodCalldata
+            functionSelector: functionSelector,
+            initialArguments: initialArguments,
+            initialArgumentsLength: initialArguments.length
         });
+    }
+
+    function callSessionStakingPredicate(
+        uint256 sessionId,
+        address player,
+        uint256 tokenId
+    ) public view returns (bool valid) {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        address erc721Address = gs.sessionById[sessionId].playerTokenAddress;
+
+        Predicate memory predicate = gs.sessionStakingPredicate[sessionId];
+        address predicateAddress = predicate.predicateAddress;
+        bytes4 predicateSelector = predicate.functionSelector;
+        bytes memory initialArguments = predicate.initialArguments;
+        uint256 initialArgumentsLength = predicate.initialArgumentsLength;
+
+        // TODO(zomglings): BROKEN AS FUCK
+        assembly {
+            let freePtr := mload(0x40)
+            mstore(freePtr, predicateSelector)
+            let postSelector := add(freePtr, 0x04)
+            for {
+                let i := 0
+            } lt(i, initialArgumentsLength) {
+                i := add(i, 0x20)
+            } {
+                mstore(add(postSelector, i), mload(add(initialArguments, i)))
+            }
+            let l := mload(initialArgumentsLength)
+            let postSelectorAndInitialArgs := add(postSelector, l)
+            mstore(add(postSelectorAndInitialArgs, 0x04), player)
+            mstore(add(postSelectorAndInitialArgs, 0x24), erc721Address)
+            mstore(add(postSelectorAndInitialArgs, 0x44), tokenId)
+            let calldataLength := add(l, 0x64)
+            let success := staticcall(
+                gas(),
+                predicateAddress,
+                freePtr,
+                calldataLength,
+                add(freePtr, calldataLength),
+                0x20
+            )
+
+            if eq(success, 0) {
+                revert(0, returndatasize())
+            }
+
+            valid := mload(add(freePtr, calldataLength))
+        }
     }
 
     function stakeTokensIntoSession(
@@ -709,6 +763,23 @@ contract GOFPFacet is
             "GOFPFacet.stakeTokensIntoSession: The first stage for this session has already been resolved"
         );
 
+        // bytes4 predicateSelector = gs
+        //     .sessionStakingPredicate[sessionId]
+        //     .functionSelector;
+        // bytes memory predicateInitialArguments = gs
+        //     .sessionStakingPredicate[sessionId]
+        //     .initialArguments;
+        // uint256 predicateInitialArgumentsLength = gs
+        //     .sessionStakingPredicate[sessionId]
+        //     .initialArgumentsLength;
+
+        // assembly {
+        //     let currentPosition := mload(0x40)
+        //     mstore(currentPosition, predicateSelector)
+        //     currentPosition := add(currentPosition, 4)
+        //     mstore(currentPosition, predicateInitialArgumentsLength)
+        // }
+
         address nftAddress = gs.sessionById[sessionId].playerTokenAddress;
         IERC721 token = IERC721(nftAddress);
         for (uint256 i = 0; i < tokenIds.length; i++) {
@@ -727,6 +798,11 @@ contract GOFPFacet is
                 !gs.sessionTokenStakeGuard[sessionId][tokenIds[i]],
                 "GOFPFacet.stakeTokensIntoSession: Token was previously staked into session"
             );
+
+            // assembly {
+
+            // }
+
             token.safeTransferFrom(msg.sender, address(this), tokenIds[i]);
             gs.sessionTokenStakeGuard[sessionId][tokenIds[i]] = true;
             _addTokenToEnumeration(

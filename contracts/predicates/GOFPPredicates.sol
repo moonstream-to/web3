@@ -11,7 +11,7 @@ import {IERC721} from "@openzeppelin/contracts/contracts/token/ERC721/IERC721.so
 import {IGOFP} from "../interfaces/IGOFP.sol";
 
 library GOFPPredicates {
-    function maxTokensForSession(
+    function doesNotExceedMaxTokensInSession(
         uint256 maxStakable,
         address gofpAddress,
         uint256 sessionId,

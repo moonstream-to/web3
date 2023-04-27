@@ -96,7 +96,7 @@ class GOFPPredicates:
         contract_class = contract_from_build(self.contract_name)
         contract_class.publish_source(self.contract)
 
-    def max_tokens_for_session(
+    def does_not_exceed_max_tokens_in_session(
         self,
         max_stakable: int,
         gofp_address: ChecksumAddress,
@@ -107,7 +107,7 @@ class GOFPPredicates:
         block_number: Optional[Union[str, int]] = "latest",
     ) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.maxTokensForSession.call(
+        return self.contract.doesNotExceedMaxTokensInSession.call(
             max_stakable,
             gofp_address,
             session_id,
@@ -202,10 +202,10 @@ def handle_verify_contract(args: argparse.Namespace) -> None:
     print(result)
 
 
-def handle_max_tokens_for_session(args: argparse.Namespace) -> None:
+def handle_does_not_exceed_max_tokens_in_session(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPPredicates(args.address)
-    result = contract.max_tokens_for_session(
+    result = contract.does_not_exceed_max_tokens_in_session(
         max_stakable=args.max_stakable,
         gofp_address=args.gofp_address,
         session_id=args.session_id,
@@ -230,27 +230,31 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(verify_contract_parser, False)
     verify_contract_parser.set_defaults(func=handle_verify_contract)
 
-    max_tokens_for_session_parser = subcommands.add_parser("max-tokens-for-session")
-    add_default_arguments(max_tokens_for_session_parser, False)
-    max_tokens_for_session_parser.add_argument(
+    does_not_exceed_max_tokens_in_session_parser = subcommands.add_parser(
+        "does-not-exceed-max-tokens-in-session"
+    )
+    add_default_arguments(does_not_exceed_max_tokens_in_session_parser, False)
+    does_not_exceed_max_tokens_in_session_parser.add_argument(
         "--max-stakable", required=True, help="Type: uint256", type=int
     )
-    max_tokens_for_session_parser.add_argument(
+    does_not_exceed_max_tokens_in_session_parser.add_argument(
         "--gofp-address", required=True, help="Type: address"
     )
-    max_tokens_for_session_parser.add_argument(
+    does_not_exceed_max_tokens_in_session_parser.add_argument(
         "--session-id", required=True, help="Type: uint256", type=int
     )
-    max_tokens_for_session_parser.add_argument(
+    does_not_exceed_max_tokens_in_session_parser.add_argument(
         "--player", required=True, help="Type: address"
     )
-    max_tokens_for_session_parser.add_argument(
+    does_not_exceed_max_tokens_in_session_parser.add_argument(
         "--nft-address", required=True, help="Type: address"
     )
-    max_tokens_for_session_parser.add_argument(
+    does_not_exceed_max_tokens_in_session_parser.add_argument(
         "--token-id", required=True, help="Type: uint256", type=int
     )
-    max_tokens_for_session_parser.set_defaults(func=handle_max_tokens_for_session)
+    does_not_exceed_max_tokens_in_session_parser.set_defaults(
+        func=handle_does_not_exceed_max_tokens_in_session
+    )
 
     return parser
 
