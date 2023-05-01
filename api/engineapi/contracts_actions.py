@@ -261,7 +261,9 @@ def list_call_requests(
         query = query.filter(CallRequest.registered_contract_id == contract_id)
 
     if contract_address is not None:
-        query = query.filter(RegisteredContract.address == Web3.toChecksumAddress(contract_address))
+        query = query.filter(
+            RegisteredContract.address == Web3.toChecksumAddress(contract_address)
+        )
 
     if not show_expired:
         query = query.filter(
