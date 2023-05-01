@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, root_validator
 from web3 import Web3
 
 
@@ -218,6 +218,15 @@ class CreateCallRequestsAPIRequest(BaseModel):
     contract_address: Optional[str] = None
     specifications: List[CallSpecification] = Field(default_factory=list)
     ttl_days: Optional[int] = None
+
+    # Solution found thanks to https://github.com/pydantic/pydantic/issues/506
+    @root_validator
+    def at_least_one_of_contract_id_and_contract_address(cls, values):
+        if values.get("contract_id") is None and values.get("contract_address") is None:
+            raise ValueError(
+                "At least one of contract_id and contract_address must be provided"
+            )
+        return values
 
 
 class CallRequest(BaseModel):
