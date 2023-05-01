@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, Field, validator
-from uuid import UUID
+from web3 import Web3
 
 
 class PingResponse(BaseModel):
@@ -53,7 +54,6 @@ class DropperBlockchainResponse(BaseModel):
 
 
 class DropRegisterRequest(BaseModel):
-
     dropper_contract_id: UUID
     title: Optional[str] = None
     description: Optional[str] = None
@@ -220,7 +220,8 @@ class CreateCallRequestsAPIRequest(BaseModel):
 
 class CallRequest(BaseModel):
     id: UUID
-    registered_contract_id: UUID
+    contract_id: UUID
+    contract_address: str
     moonstream_user_id: UUID
     caller: str
     method: str
@@ -229,13 +230,17 @@ class CallRequest(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    @validator("id", "registered_contract_id", "moonstream_user_id")
+    @validator("id", "contract_id", "moonstream_user_id")
     def validate_uuids(cls, v):
         return str(v)
 
     @validator("created_at", "updated_at", "expires_at")
     def validate_datetimes(cls, v):
         return v.isoformat()
+
+    @validator("contract_address", "caller")
+    def validate_web3_adresses(cls, v):
+        return Web3.toChecksumAddress(v)
 
 
 class QuartilesResponse(BaseModel):

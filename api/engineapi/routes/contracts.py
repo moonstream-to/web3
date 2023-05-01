@@ -157,10 +157,12 @@ async def delete_contract(
 
 @app.get("/requests", response_model=List[data.CallRequest])
 async def list_requests(
-    contract_id: UUID = Query(...),
+    contract_id: Optional[UUID] = Query(None),
+    contract_address: Optional[str] = Query(None),
     caller: str = Query(...),
     limit: int = Query(100),
     offset: Optional[int] = Query(None),
+    show_expired: Optional[bool] = Query(False),
     db_session: Session = Depends(db.yield_db_read_only_session),
 ) -> List[data.CallRequest]:
     """
@@ -169,12 +171,16 @@ async def list_requests(
     try:
         requests = contracts_actions.list_call_requests(
             db_session=db_session,
-            registered_contract_id=contract_id,
+            contract_id=contract_id,
+            contract_address=contract_address,
             caller=caller,
             limit=limit,
             offset=offset,
-            show_expired=False,
+            show_expired=show_expired,
         )
+    except ValueError as e:
+        logger.error(repr(e))
+        raise EngineHTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(repr(e))
         raise EngineHTTPException(status_code=500)

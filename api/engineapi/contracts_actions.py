@@ -229,8 +229,9 @@ def request_calls(
 
 def list_call_requests(
     db_session: Session,
-    registered_contract_id: uuid.UUID,
-    caller: str,
+    contract_id: Optional[uuid.UUID],
+    contract_address: Optional[str],
+    caller: Optional[str],
     limit: int = 10,
     offset: Optional[int] = None,
     show_expired: bool = False,
@@ -238,11 +239,29 @@ def list_call_requests(
     """
     List call requests for the given moonstream_user_id
     """
+    if caller is None:
+        raise ValueError("caller must be specified")
+
+    if contract_id is None and contract_address is None:
+        raise ValueError(
+            "At least one of contract_id or contract_address must be specified"
+        )
+
     # If show_expired is False, filter out expired requests using current time on database server
-    query = db_session.query(CallRequest).filter(
-        CallRequest.registered_contract_id == registered_contract_id,
-        CallRequest.caller == Web3.toChecksumAddress(caller),
+    query = (
+        db_session.query(CallRequest, RegisteredContract)
+        .join(
+            RegisteredContract,
+            CallRequest.registered_contract_id == RegisteredContract.id,
+        )
+        .filter(CallRequest.caller == Web3.toChecksumAddress(caller))
     )
+
+    if contract_id is not None:
+        query = query.filter(CallRequest.registered_contract_id == contract_id)
+
+    if contract_address is not None:
+        query = query.filter(RegisteredContract.address == Web3.toChecksumAddress(contract_address))
 
     if not show_expired:
         query = query.filter(
@@ -254,7 +273,10 @@ def list_call_requests(
 
     query = query.limit(limit)
     results = query.all()
-    return [render_call_request(call_request) for call_request in results]
+    return [
+        render_call_request(call_request, registered_contract)
+        for call_request, registered_contract in results
+    ]
 
 
 # TODO(zomglings): What should the delete functionality for call requests look like?
@@ -282,10 +304,13 @@ def render_registered_contract(contract: RegisteredContract) -> data.RegisteredC
     )
 
 
-def render_call_request(call_request: CallRequest) -> data.CallRequest:
+def render_call_request(
+    call_request: CallRequest, registered_contract: RegisteredContract
+) -> data.CallRequest:
     return data.CallRequest(
         id=call_request.id,
-        registered_contract_id=call_request.registered_contract_id,
+        contract_id=call_request.registered_contract_id,
+        contract_address=registered_contract.address,
         moonstream_user_id=call_request.moonstream_user_id,
         caller=call_request.caller,
         method=call_request.method,
@@ -404,7 +429,7 @@ def handle_list_requests(args: argparse.Namespace) -> None:
         with db.yield_db_session_ctx() as db_session:
             call_requests = list_call_requests(
                 db_session=db_session,
-                registered_contract_id=args.registered_contract_id,
+                contract_id=args.registered_contract_id,
                 caller=args.caller,
                 limit=args.limit,
                 offset=args.offset,
