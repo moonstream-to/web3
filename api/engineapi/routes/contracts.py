@@ -195,7 +195,9 @@ async def create_requests(
     db_session: Session = Depends(db.yield_db_session),
 ) -> int:
     """
-    Allows API user to register call requests from given call specifications.
+    Allows API user to register call requests from given contract details, TTL, and call specifications.
+
+    At least one of `contract_id` or `contract_address` must be provided in the request body.
     """
     try:
         num_requests = contracts_actions.request_calls(
