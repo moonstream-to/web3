@@ -296,7 +296,7 @@ func CreateMoonstreamCommand() *cobra.Command {
 		Long:  "Commands that help you interact with the Moonstream Engine API from your command-line.",
 	}
 
-	var blockchain, address, contractType, contractId, infile string
+	var blockchain, address, contractType, contractId, contractAddress, infile string
 	var limit, offset int
 
 	contractsSubcommand := &cobra.Command{
@@ -332,7 +332,7 @@ func CreateMoonstreamCommand() *cobra.Command {
 				return clientErr
 			}
 
-			callRequests, err := client.ListCallRequests(contractId, address, limit, offset)
+			callRequests, err := client.ListCallRequests(contractId, contractAddress, address, limit, offset)
 			if err != nil {
 				return err
 			}
@@ -342,6 +342,7 @@ func CreateMoonstreamCommand() *cobra.Command {
 		},
 	}
 	callRequestsSubcommand.Flags().StringVar(&contractId, "contract-id", "", "Moonstream Engine ID of the registered contract")
+	callRequestsSubcommand.Flags().StringVar(&contractAddress, "contract-address", "", "Address of the contract (at least one of --contract-id or --contract-address must be specified)")
 	callRequestsSubcommand.Flags().StringVar(&address, "caller", "", "Address of caller")
 	callRequestsSubcommand.Flags().IntVar(&limit, "limit", 100, "Limit")
 	callRequestsSubcommand.Flags().IntVar(&offset, "offset", 0, "Offset")
@@ -388,11 +389,12 @@ func CreateMoonstreamCommand() *cobra.Command {
 				}
 			}
 
-			err := client.CreateCallRequests(contractId, limit, callRequests)
+			err := client.CreateCallRequests(contractId, contractAddress, limit, callRequests)
 			return err
 		},
 	}
 	createCallRequestsSubcommand.Flags().StringVar(&contractId, "contract-id", "", "Moonstream Engine ID of the registered contract")
+	createCallRequestsSubcommand.Flags().StringVar(&contractAddress, "contract-address", "", "Address of the contract (at least one of --contract-id or --contract-address must be specified)")
 	createCallRequestsSubcommand.Flags().IntVar(&limit, "ttl-days", 30, "Number of days for which request will remain active")
 	createCallRequestsSubcommand.Flags().StringVar(&infile, "infile", "", "Input file. If not specified, input will be expected from stdin.")
 

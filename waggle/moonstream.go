@@ -25,15 +25,16 @@ type RegisteredContract struct {
 }
 
 type CallRequest struct {
-	Id                   string      `json:"id"`
-	RegisteredContractId string      `json:"registered_contract_id"`
-	MoonstreamUserId     string      `json:"moonstream_user_id"`
-	Caller               string      `json:"caller"`
-	Method               string      `json:"method"`
-	Parameters           interface{} `json:"parameters"`
-	ExpiresAt            time.Time   `json:"expires_at"`
-	CreatedAt            time.Time   `json:"created_at"`
-	UpdateAt             time.Time   `json:"updated_at"`
+	Id               string      `json:"id"`
+	ContractId       string      `json:"contract_id"`
+	ContractAddress  string      `json:"contract_address"`
+	MoonstreamUserId string      `json:"moonstream_user_id"`
+	Caller           string      `json:"caller"`
+	Method           string      `json:"method"`
+	Parameters       interface{} `json:"parameters"`
+	ExpiresAt        time.Time   `json:"expires_at"`
+	CreatedAt        time.Time   `json:"created_at"`
+	UpdateAt         time.Time   `json:"updated_at"`
 }
 
 type CallRequestSpecification struct {
@@ -43,8 +44,10 @@ type CallRequestSpecification struct {
 }
 
 type CreateCallRequestsRequest struct {
-	TTLDays        int                        `json:"ttl_days"`
-	Specifications []CallRequestSpecification `json:"specifications"`
+	ContractID      string                     `json:"contract_id,omitempty"`
+	ContractAddress string                     `json:"contract_address,omitempty"`
+	TTLDays         int                        `json:"ttl_days"`
+	Specifications  []CallRequestSpecification `json:"specifications"`
 }
 
 type DropperCallRequestParameters struct {
@@ -144,8 +147,12 @@ func (client *MoonstreamEngineAPIClient) ListRegisteredContracts(blockchain, add
 	return contracts, nil
 }
 
-func (client *MoonstreamEngineAPIClient) ListCallRequests(contractId, caller string, limit, offset int) ([]CallRequest, error) {
+func (client *MoonstreamEngineAPIClient) ListCallRequests(contractId, contractAddress, caller string, limit, offset int) ([]CallRequest, error) {
 	var callRequests []CallRequest
+
+	if caller == "" {
+		return callRequests, fmt.Errorf("You must specify caller when listing call requests")
+	}
 
 	request, requestCreationErr := http.NewRequest("GET", fmt.Sprintf("%s/contracts/requests", client.BaseURL), nil)
 	if requestCreationErr != nil {
@@ -156,7 +163,12 @@ func (client *MoonstreamEngineAPIClient) ListCallRequests(contractId, caller str
 	request.Header.Add("Accept", "application/json")
 
 	queryParameters := request.URL.Query()
-	queryParameters.Add("contract_id", contractId)
+	if contractId != "" {
+		queryParameters.Add("contract_id", contractId)
+	}
+	if contractAddress != "" {
+		queryParameters.Add("contract_address", contractAddress)
+	}
 	queryParameters.Add("caller", caller)
 	queryParameters.Add("limit", strconv.Itoa(limit))
 	queryParameters.Add("offset", strconv.Itoa(offset))
@@ -191,10 +203,22 @@ func (client *MoonstreamEngineAPIClient) ListCallRequests(contractId, caller str
 	return callRequests, nil
 }
 
-func (client *MoonstreamEngineAPIClient) CreateCallRequests(contractId string, ttlDays int, spec []CallRequestSpecification) error {
+func (client *MoonstreamEngineAPIClient) CreateCallRequests(contractId, contractAddress string, ttlDays int, spec []CallRequestSpecification) error {
+	if contractId == "" && contractAddress == "" {
+		return fmt.Errorf("You must specify at least one of contractId or contractAddress when creating call requests")
+	}
+
 	requestBody := CreateCallRequestsRequest{
 		TTLDays:        ttlDays,
 		Specifications: spec,
+	}
+
+	if contractId != "" {
+		requestBody.ContractID = contractId
+	}
+
+	if contractAddress != "" {
+		requestBody.ContractAddress = contractAddress
 	}
 
 	requestBodyBytes, requestBodyBytesErr := json.Marshal(requestBody)
@@ -202,7 +226,7 @@ func (client *MoonstreamEngineAPIClient) CreateCallRequests(contractId string, t
 		return requestBodyBytesErr
 	}
 
-	request, requestCreationErr := http.NewRequest("POST", fmt.Sprintf("%s/contracts/%s/requests", client.BaseURL, contractId), bytes.NewBuffer(requestBodyBytes))
+	request, requestCreationErr := http.NewRequest("POST", fmt.Sprintf("%s/contracts/requests", client.BaseURL), bytes.NewBuffer(requestBodyBytes))
 	if requestCreationErr != nil {
 		return requestCreationErr
 	}
