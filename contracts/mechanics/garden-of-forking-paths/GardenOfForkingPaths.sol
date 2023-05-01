@@ -95,6 +95,8 @@ library LibGOFP {
         mapping(uint256 => mapping(uint256 => mapping(uint256 => Reward))) sessionPathReward;
         // Predicate to check prior to staking into session
         mapping(uint256 => Predicate) sessionStakingPredicate;
+        // Predicate to check prior to choosing path
+        mapping(uint256 => mapping(uint256 => mapping(uint256 => Predicate))) pathChoicePredicate;
     }
 
     function gofpStorage() internal pure returns (GOFPStorage storage gs) {
@@ -674,15 +676,37 @@ contract GOFPFacet is
         });
     }
 
-    function callSessionStakingPredicate(
+    function getPathChoicePredicate(
         uint256 sessionId,
-        address player,
-        uint256 tokenId
-    ) public view returns (bool valid) {
-        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
-        address erc721Address = gs.sessionById[sessionId].playerTokenAddress;
+        uint256 stage,
+        uint256 path
+    ) external view returns (Predicate memory) {
+        return
+            LibGOFP.gofpStorage().pathChoicePredicate[sessionId][stage][path];
+    }
 
-        Predicate memory predicate = gs.sessionStakingPredicate[sessionId];
+    function setPathChoicePredicate(
+        uint256 sessionId,
+        uint256 stage,
+        uint256 path,
+        bytes4 functionSelector,
+        address predicateAddress,
+        bytes calldata initialArguments
+    ) external onlyGameMaster {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        gs.pathChoicePredicate[sessionId][stage][path] = Predicate({
+            predicateAddress: predicateAddress,
+            functionSelector: functionSelector,
+            initialArguments: initialArguments
+        });
+    }
+
+    function _callPredicate(
+        Predicate memory predicate,
+        address player,
+        address tokenAddress,
+        uint256 tokenId
+    ) internal view returns (bool valid) {
         // If there is no predicate registered, simply return true.
         if (predicate.predicateAddress == address(0)) {
             return true;
@@ -724,7 +748,7 @@ contract GOFPFacet is
             i := add(post_selector, initial_arguments_length)
             mstore(i, player)
             i := add(i, 0x20)
-            mstore(i, erc721Address)
+            mstore(i, tokenAddress)
             i := add(i, 0x20)
             mstore(i, tokenId)
 
@@ -744,6 +768,36 @@ contract GOFPFacet is
 
             valid := mload(add(starting_position, calldata_length))
         }
+    }
+
+    function callSessionStakingPredicate(
+        uint256 sessionId,
+        address player,
+        uint256 tokenId
+    ) public view returns (bool valid) {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        address tokenAddress = gs.sessionById[sessionId].playerTokenAddress;
+
+        Predicate memory predicate = gs.sessionStakingPredicate[sessionId];
+
+        return _callPredicate(predicate, player, tokenAddress, tokenId);
+    }
+
+    function callPathChoicePredicate(
+        uint256 sessionId,
+        uint256 stage,
+        uint256 path,
+        address player,
+        uint256 tokenId
+    ) public view returns (bool valid) {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        address tokenAddress = gs.sessionById[sessionId].playerTokenAddress;
+
+        Predicate memory predicate = gs.pathChoicePredicate[sessionId][stage][
+            path
+        ];
+
+        return _callPredicate(predicate, player, tokenAddress, tokenId);
     }
 
     function stakeTokensIntoSession(

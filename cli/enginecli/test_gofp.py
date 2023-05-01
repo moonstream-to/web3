@@ -4338,6 +4338,121 @@ class TestCallbacks(GOFPTestCase):
                 session_id, [token_ids[1]], {"from": self.player}
             )
 
+    def test_path_choice_predicate(self):
+        """ """
+        payment_amount = 0
+        uri = "https://example.com/test_path_choice_predicate.json"
+        stages = (4, 1)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            False,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+        stage_with_path_choice_predicate = 1
+        path_with_path_choice_predicate = 2
+        """
+        Predicate structure:
+        struct Predicate {
+            address predicateAddress;
+            bytes4 functionSelector;
+            // initialArguments is intended to be the ABIen
+            bytes initialArguments;
+            uint256 initialArgumentsLength;
+        }
+        """
+        initial_predicate = self.gofp.get_path_choice_predicate(
+            session_id,
+            stage_with_path_choice_predicate,
+            path_with_path_choice_predicate,
+        )
+        self.assertEqual(initial_predicate, (ZERO_ADDRESS, "0x0", "0x0"))
+
+        encoded_predicate_with_dummy_end_values = (
+            self.gofp_predicates.contract.doesNotExceedMaxTokensInSession.encode_input(
+                1, self.gofp.address, session_id, ZERO_ADDRESS, ZERO_ADDRESS, 0
+            )
+        )
+        encoded_predicate_initial_args = encoded_predicate_with_dummy_end_values[
+            10 : len(encoded_predicate_with_dummy_end_values) - 96 * 2
+        ]
+
+        # GOFPPredicates.doesNotExceedMaxTokensInSession selector - calculated using -annotations flag on solface: https://github.com/bugout-dev/solface.
+        predicate_selector = "0x52760e08"
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.set_path_choice_predicate(
+                session_id,
+                stage_with_path_choice_predicate,
+                path_with_path_choice_predicate,
+                predicate_selector,
+                self.gofp_predicates.address,
+                encoded_predicate_initial_args,
+                {"from": self.player},
+            )
+
+        self.gofp.set_path_choice_predicate(
+            session_id,
+            stage_with_path_choice_predicate,
+            path_with_path_choice_predicate,
+            predicate_selector,
+            self.gofp_predicates.address,
+            encoded_predicate_initial_args,
+            {"from": self.game_master},
+        )
+
+        predicate = self.gofp.get_path_choice_predicate(
+            session_id,
+            stage_with_path_choice_predicate,
+            path_with_path_choice_predicate,
+        )
+        self.assertEqual(
+            predicate,
+            (
+                self.gofp_predicates.address,
+                predicate_selector,
+                f"0x{encoded_predicate_initial_args}",
+            ),
+        )
+
+        num_nfts = self.nft.total_supply()
+        token_ids = [num_nfts + 1, num_nfts + 2]
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+            self.nft.approve(self.gofp.address, token_id, {"from": self.player})
+
+        check_0 = self.gofp.call_path_choice_predicate(
+            session_id,
+            stage_with_path_choice_predicate,
+            path_with_path_choice_predicate,
+            self.player.address,
+            token_ids[0],
+        )
+        self.assertTrue(check_0)
+
+        self.gofp.set_session_active(session_id, True, {"from": self.game_master})
+
+        self.gofp.stake_tokens_into_session(
+            session_id, [token_ids[0]], {"from": self.player}
+        )
+
+        check_1 = self.gofp.call_path_choice_predicate(
+            session_id,
+            stage_with_path_choice_predicate,
+            path_with_path_choice_predicate,
+            self.player.address,
+            token_ids[0],
+        )
+        self.assertFalse(check_1)
+
 
 if __name__ == "__main__":
     unittest.main()
