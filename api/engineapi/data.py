@@ -214,6 +214,8 @@ class CallSpecification(BaseModel):
 
 
 class CreateCallRequestsAPIRequest(BaseModel):
+    contract_id: Optional[UUID] = None
+    contract_address: Optional[str] = None
     specifications: List[CallSpecification] = Field(default_factory=list)
     ttl_days: Optional[int] = None
 

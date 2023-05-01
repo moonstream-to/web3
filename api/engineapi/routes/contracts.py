@@ -188,10 +188,9 @@ async def list_requests(
     return requests
 
 
-@app.post("/{contract_id}/requests")
+@app.post("/requests")
 async def create_requests(
     request: Request,
-    contract_id: UUID,
     data: data.CreateCallRequestsAPIRequest = Body(...),
     db_session: Session = Depends(db.yield_db_session),
 ) -> int:
@@ -202,7 +201,8 @@ async def create_requests(
         num_requests = contracts_actions.request_calls(
             db_session=db_session,
             moonstream_user_id=request.state.user.id,
-            registered_contract_id=contract_id,
+            registered_contract_id=data.contract_id,
+            contract_address=data.contract_address,
             call_specs=data.specifications,
             ttl_days=data.ttl_days,
         )

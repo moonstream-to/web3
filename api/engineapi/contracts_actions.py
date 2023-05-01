@@ -164,7 +164,8 @@ def delete_registered_contract(
 def request_calls(
     db_session: Session,
     moonstream_user_id: uuid.UUID,
-    registered_contract_id: uuid.UUID,
+    registered_contract_id: Optional[uuid.UUID],
+    contract_address: Optional[str],
     call_specs: List[data.CallSpecification],
     ttl_days: Optional[int] = None,
 ) -> int:
@@ -174,21 +175,31 @@ def request_calls(
     # TODO(zomglings): Do not pass raw ttl_days into SQL query - could be subject to SQL injection
     # For now, in the interest of speed, let us just be super cautious with ttl_days.
     # Check that the ttl_days is indeed an integer
+    if registered_contract_id is None and contract_address is None:
+        raise ValueError(
+            "At least one of registered_contract_id or contract_address is required"
+        )
+
     if ttl_days is not None:
         assert ttl_days == int(ttl_days), "ttl_days must be an integer"
         if ttl_days <= 0:
             raise ValueError("ttl_days must be positive")
 
-    # Check that the moonstream_user_id matches the RegisteredContract
-    try:
-        registered_contract = (
-            db_session.query(RegisteredContract)
-            .filter(
-                RegisteredContract.id == registered_contract_id,
-                RegisteredContract.moonstream_user_id == moonstream_user_id,
-            )
-            .one()
+    # Check that the moonstream_user_id matches a RegisteredContract with the given id or address
+    query = db_session.query(RegisteredContract).filter(
+        RegisteredContract.moonstream_user_id == moonstream_user_id
+    )
+
+    if registered_contract_id is not None:
+        query = query.filter(RegisteredContract.id == registered_contract_id)
+
+    if contract_address is not None:
+        query = query.filter(
+            RegisteredContract.address == Web3.toChecksumAddress(contract_address)
         )
+
+    try:
+        registered_contract = query.one()
     except NoResultFound:
         raise ValueError("Invalid registered_contract_id or moonstream_user_id")
 
