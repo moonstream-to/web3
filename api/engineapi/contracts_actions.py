@@ -2,13 +2,14 @@ import argparse
 import json
 import logging
 import uuid
-from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import func, text
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.orm import Session
 from web3 import Web3
+
+from .data import ContractType
 
 from . import data, db
 from .models import RegisteredContract, CallRequest
@@ -19,11 +20,6 @@ logger = logging.getLogger(__name__)
 
 class ContractAlreadyRegistered(Exception):
     pass
-
-
-class ContractType(Enum):
-    raw = "raw"
-    dropper = "dropper-v0.2.0"
 
 
 def validate_method_and_params(
@@ -95,6 +91,46 @@ def register_contract(
     except Exception as err:
         db_session.rollback()
         logger.error(repr(err))
+        raise
+
+    return render_registered_contract(contract)
+
+
+def update_registered_contract(
+    db_session: Session,
+    moonstream_user_id: uuid.UUID,
+    contract_id: uuid.UUID,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    image_uri: Optional[str] = None,
+    ignore_nulls: bool = True,
+) -> data.RegisteredContract:
+    """
+    Update the registered contract with the given contract ID provided that the user with moonstream_user_id
+    has access to it.
+    """
+    query = db_session.query(RegisteredContract).filter(
+        RegisteredContract.id == contract_id,
+        RegisteredContract.moonstream_user_id == moonstream_user_id,
+    )
+
+    contract = query.one()
+
+    if not (title is None and ignore_nulls):
+        contract.title = title
+    if not (description is None and ignore_nulls):
+        contract.description = description
+    if not (image_uri is None and ignore_nulls):
+        contract.image_uri = image_uri
+
+    try:
+        db_session.add(contract)
+        db_session.commit()
+    except Exception as err:
+        logger.error(
+            f"update_registered_contract -- error storing update in database: {repr(err)}"
+        )
+        db_session.rollback()
         raise
 
     return render_registered_contract(contract)

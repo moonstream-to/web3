@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
@@ -177,13 +178,25 @@ class DropUpdatedResponse(BaseModel):
     active: bool = True
 
 
+class ContractType(Enum):
+    raw = "raw"
+    dropper = "dropper-v0.2.0"
+
+
 class RegisterContractRequest(BaseModel):
     blockchain: str
     address: str
-    contract_type: str
+    contract_type: ContractType
     title: Optional[str] = None
     description: Optional[str] = None
     image_uri: Optional[str] = None
+
+
+class UpdateContractRequest(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    image_uri: Optional[str] = None
+    ignore_nulls: bool = True
 
 
 class RegisteredContract(BaseModel):
