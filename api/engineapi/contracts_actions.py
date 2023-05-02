@@ -1,4 +1,5 @@
 import argparse
+from datetime import timedelta
 import json
 import logging
 import uuid
@@ -243,10 +244,9 @@ def request_calls(
             contract_type, specification.method, specification.parameters
         )
 
-        # Calculate the expiration time (if ttl_days is specified)
-        expires_at_sql = None
+        expires_at = None
         if ttl_days is not None:
-            expires_at_sql = text(f"(NOW() + INTERVAL '{ttl_days} days')")
+            expires_at = func.now() + timedelta(days=ttl_days)
 
         request = CallRequest(
             registered_contract_id=registered_contract.id,
@@ -254,7 +254,7 @@ def request_calls(
             moonstream_user_id=moonstream_user_id,
             method=specification.method,
             parameters=specification.parameters,
-            expires_at=expires_at_sql,
+            expires_at=expires_at,
         )
 
         db_session.add(request)

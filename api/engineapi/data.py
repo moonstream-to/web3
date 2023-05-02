@@ -250,7 +250,7 @@ class CallRequest(BaseModel):
     caller: str
     method: str
     parameters: Dict[str, Any]
-    expires_at: datetime
+    expires_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
 
@@ -260,7 +260,8 @@ class CallRequest(BaseModel):
 
     @validator("created_at", "updated_at", "expires_at")
     def validate_datetimes(cls, v):
-        return v.isoformat()
+        if v is not None:
+            return v.isoformat()
 
     @validator("contract_address", "caller")
     def validate_web3_adresses(cls, v):
