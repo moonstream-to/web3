@@ -104,16 +104,14 @@ class GOFPFacet:
 
     def call_path_choice_predicate(
         self,
-        session_id: int,
-        stage: int,
-        path: int,
+        path: tuple,
         player: ChecksumAddress,
         token_id: int,
         block_number: Optional[Union[str, int]] = "latest",
     ) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.callPathChoicePredicate.call(
-            session_id, stage, path, player, token_id, block_identifier=block_number
+            path, player, token_id, block_identifier=block_number
         )
 
     def call_session_staking_predicate(
@@ -191,15 +189,11 @@ class GOFPFacet:
         )
 
     def get_path_choice_predicate(
-        self,
-        session_id: int,
-        stage: int,
-        path: int,
-        block_number: Optional[Union[str, int]] = "latest",
+        self, path: tuple, block_number: Optional[Union[str, int]] = "latest"
     ) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.getPathChoicePredicate.call(
-            session_id, stage, path, block_identifier=block_number
+            path, block_identifier=block_number
         )
 
     def get_path_reward(
@@ -260,6 +254,10 @@ class GOFPFacet:
         return self.contract.getStakedTokenInfo.call(
             nft_address, token_id, block_identifier=block_number
         )
+
+    def gofp_version(self, block_number: Optional[Union[str, int]] = "latest") -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.gofpVersion.call(block_identifier=block_number)
 
     def init(
         self,
@@ -343,9 +341,7 @@ class GOFPFacet:
 
     def set_path_choice_predicate(
         self,
-        session_id: int,
-        stage: int,
-        path: int,
+        path: tuple,
         function_selector: bytes,
         predicate_address: ChecksumAddress,
         initial_arguments: bytes,
@@ -353,8 +349,6 @@ class GOFPFacet:
     ) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.setPathChoicePredicate(
-            session_id,
-            stage,
             path,
             function_selector,
             predicate_address,
@@ -569,8 +563,6 @@ def handle_call_path_choice_predicate(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPFacet(args.address)
     result = contract.call_path_choice_predicate(
-        session_id=args.session_id,
-        stage=args.stage,
         path=args.path,
         player=args.player,
         token_id=args.token_id,
@@ -659,10 +651,7 @@ def handle_get_path_choice_predicate(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPFacet(args.address)
     result = contract.get_path_choice_predicate(
-        session_id=args.session_id,
-        stage=args.stage,
-        path=args.path,
-        block_number=args.block_number,
+        path=args.path, block_number=args.block_number
     )
     print(result)
 
@@ -726,6 +715,16 @@ def handle_get_staked_token_info(args: argparse.Namespace) -> None:
         block_number=args.block_number,
     )
     print(result)
+
+
+def handle_gofp_version(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.gofp_version(transaction_config=transaction_config)
+    print(result)
+    if args.verbose:
+        print(result.info())
 
 
 def handle_init(args: argparse.Namespace) -> None:
@@ -829,8 +828,6 @@ def handle_set_path_choice_predicate(args: argparse.Namespace) -> None:
     contract = GOFPFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.set_path_choice_predicate(
-        session_id=args.session_id,
-        stage=args.stage,
         path=args.path,
         function_selector=args.function_selector,
         predicate_address=args.predicate_address,
@@ -1004,13 +1001,7 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     add_default_arguments(call_path_choice_predicate_parser, False)
     call_path_choice_predicate_parser.add_argument(
-        "--session-id", required=True, help="Type: uint256", type=int
-    )
-    call_path_choice_predicate_parser.add_argument(
-        "--stage", required=True, help="Type: uint256", type=int
-    )
-    call_path_choice_predicate_parser.add_argument(
-        "--path", required=True, help="Type: uint256", type=int
+        "--path", required=True, help="Type: tuple", type=eval
     )
     call_path_choice_predicate_parser.add_argument(
         "--player", required=True, help="Type: address"
@@ -1120,13 +1111,7 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     add_default_arguments(get_path_choice_predicate_parser, False)
     get_path_choice_predicate_parser.add_argument(
-        "--session-id", required=True, help="Type: uint256", type=int
-    )
-    get_path_choice_predicate_parser.add_argument(
-        "--stage", required=True, help="Type: uint256", type=int
-    )
-    get_path_choice_predicate_parser.add_argument(
-        "--path", required=True, help="Type: uint256", type=int
+        "--path", required=True, help="Type: tuple", type=eval
     )
     get_path_choice_predicate_parser.set_defaults(func=handle_get_path_choice_predicate)
 
@@ -1194,6 +1179,10 @@ def generate_cli() -> argparse.ArgumentParser:
         "--token-id", required=True, help="Type: uint256", type=int
     )
     get_staked_token_info_parser.set_defaults(func=handle_get_staked_token_info)
+
+    gofp_version_parser = subcommands.add_parser("gofp-version")
+    add_default_arguments(gofp_version_parser, False)
+    gofp_version_parser.set_defaults(func=handle_gofp_version)
 
     init_parser = subcommands.add_parser("init")
     add_default_arguments(init_parser, True)
@@ -1307,13 +1296,7 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     add_default_arguments(set_path_choice_predicate_parser, True)
     set_path_choice_predicate_parser.add_argument(
-        "--session-id", required=True, help="Type: uint256", type=int
-    )
-    set_path_choice_predicate_parser.add_argument(
-        "--stage", required=True, help="Type: uint256", type=int
-    )
-    set_path_choice_predicate_parser.add_argument(
-        "--path", required=True, help="Type: uint256", type=int
+        "--path", required=True, help="Type: tuple", type=eval
     )
     set_path_choice_predicate_parser.add_argument(
         "--function-selector",

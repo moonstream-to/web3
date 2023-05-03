@@ -50,6 +50,12 @@ struct Predicate {
     bytes initialArguments;
 }
 
+struct PathDetails {
+    uint256 sessionId;
+    uint256 stageNumber;
+    uint256 pathNumber;
+}
+
 library LibGOFP {
     bytes32 constant STORAGE_POSITION =
         keccak256("moonstreamdao.eth.storage.mechanics.GardenOfForkingPaths");
@@ -214,6 +220,10 @@ contract GOFPFacet is
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         gs.AdminTerminusAddress = adminTerminusAddress;
         gs.AdminTerminusPoolID = adminTerminusPoolID;
+    }
+
+    function gofpVersion() public pure returns (string memory, string memory) {
+        return ("Moonstream Garden of Forking Paths", "0.2.0");
     }
 
     function getSession(
@@ -677,24 +687,24 @@ contract GOFPFacet is
     }
 
     function getPathChoicePredicate(
-        uint256 sessionId,
-        uint256 stage,
-        uint256 path
+        PathDetails calldata path
     ) external view returns (Predicate memory) {
         return
-            LibGOFP.gofpStorage().pathChoicePredicate[sessionId][stage][path];
+            LibGOFP.gofpStorage().pathChoicePredicate[path.sessionId][
+                path.stageNumber
+            ][path.pathNumber];
     }
 
     function setPathChoicePredicate(
-        uint256 sessionId,
-        uint256 stage,
-        uint256 path,
+        PathDetails calldata path,
         bytes4 functionSelector,
         address predicateAddress,
         bytes calldata initialArguments
     ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
-        gs.pathChoicePredicate[sessionId][stage][path] = Predicate({
+        gs.pathChoicePredicate[path.sessionId][path.stageNumber][
+            path.pathNumber
+        ] = Predicate({
             predicateAddress: predicateAddress,
             functionSelector: functionSelector,
             initialArguments: initialArguments
@@ -711,6 +721,8 @@ contract GOFPFacet is
         if (predicate.predicateAddress == address(0)) {
             return true;
         }
+
+        // require(predicate.predicateAddress != address(0), "Empty predicate.");
 
         assembly {
             let starting_position := mload(0x40)
@@ -784,18 +796,18 @@ contract GOFPFacet is
     }
 
     function callPathChoicePredicate(
-        uint256 sessionId,
-        uint256 stage,
-        uint256 path,
+        PathDetails memory path,
         address player,
         uint256 tokenId
     ) public view returns (bool valid) {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
-        address tokenAddress = gs.sessionById[sessionId].playerTokenAddress;
+        address tokenAddress = gs
+            .sessionById[path.sessionId]
+            .playerTokenAddress;
 
-        Predicate memory predicate = gs.pathChoicePredicate[sessionId][stage][
-            path
-        ];
+        Predicate memory predicate = gs.pathChoicePredicate[path.sessionId][
+            path.stageNumber
+        ][path.pathNumber];
 
         return _callPredicate(predicate, player, tokenAddress, tokenId);
     }
@@ -1020,6 +1032,18 @@ contract GOFPFacet is
             require(
                 (paths[i] >= 1) && (paths[i] <= numPaths),
                 "GOFPFacet.chooseCurrentStagePaths: Invalid path"
+            );
+            require(
+                callPathChoicePredicate(
+                    PathDetails({
+                        sessionId: sessionId,
+                        stageNumber: currentStage,
+                        pathNumber: paths[i]
+                    }),
+                    msg.sender,
+                    tokenIds[i]
+                ),
+                "GOFPFacet.chooseCurrentStagePaths: Path choice predicate not satisfied"
             );
             gs.pathChoices[sessionId][tokenIds[i]][currentStage] = paths[i];
             emit PathChosen(sessionId, tokenIds[i], currentStage, paths[i]);

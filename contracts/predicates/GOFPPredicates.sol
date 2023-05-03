@@ -19,11 +19,6 @@ library GOFPPredicates {
         address nftAddress,
         uint256 tokenId
     ) external view returns (bool) {
-        IERC721 erc721Contract = IERC721(nftAddress);
-        if (erc721Contract.ownerOf(tokenId) != player) {
-            return false;
-        }
-
         IGOFP gofpContract = IGOFP(gofpAddress);
         uint256 numStaked = gofpContract.numTokensStakedIntoSession(
             sessionId,

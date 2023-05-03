@@ -4339,7 +4339,26 @@ class TestCallbacks(GOFPTestCase):
             )
 
     def test_path_choice_predicate(self):
-        """ """
+        """
+        Tests administrators' ability to register and view path choice predicate for a specified path.
+        The path choice predicate is called when user tries to choice the specified path.
+        It is called with three arguments appended to its calldata:
+        1. The address of player who is trying to stake the token.
+        2. The address of the ERC721 contract that the token belongs to.
+        3. The token ID.
+
+        The predicate is expected to return true/false.
+
+        Test actions:
+        1. Create inactive session
+        2. Check that no predicate is registered for the specified path.
+        3. Register a predicate for specified path.
+        4. Check that predicate was registered correctly.
+        5. Call that predicate through the GOFP contract to make sure call logic functions as intended.
+        6. Verify path can be selected when predicate passes.
+        7. Verify path cannot be selected when predicate fails.
+        8. Verify that a different path can be selected when predicate fails.
+        """
         payment_amount = 0
         uri = "https://example.com/test_path_choice_predicate.json"
         stages = (4, 1)
@@ -4358,6 +4377,7 @@ class TestCallbacks(GOFPTestCase):
 
         session_id = self.gofp.num_sessions()
         stage_with_path_choice_predicate = 1
+        path_without_predicate = 1
         path_with_path_choice_predicate = 2
         """
         Predicate structure:
@@ -4370,15 +4390,17 @@ class TestCallbacks(GOFPTestCase):
         }
         """
         initial_predicate = self.gofp.get_path_choice_predicate(
-            session_id,
-            stage_with_path_choice_predicate,
-            path_with_path_choice_predicate,
+            (
+                session_id,
+                stage_with_path_choice_predicate,
+                path_with_path_choice_predicate,
+            )
         )
         self.assertEqual(initial_predicate, (ZERO_ADDRESS, "0x0", "0x0"))
 
         encoded_predicate_with_dummy_end_values = (
             self.gofp_predicates.contract.doesNotExceedMaxTokensInSession.encode_input(
-                1, self.gofp.address, session_id, ZERO_ADDRESS, ZERO_ADDRESS, 0
+                2, self.gofp.address, session_id, ZERO_ADDRESS, ZERO_ADDRESS, 0
             )
         )
         encoded_predicate_initial_args = encoded_predicate_with_dummy_end_values[
@@ -4390,9 +4412,11 @@ class TestCallbacks(GOFPTestCase):
 
         with self.assertRaises(VirtualMachineError):
             self.gofp.set_path_choice_predicate(
-                session_id,
-                stage_with_path_choice_predicate,
-                path_with_path_choice_predicate,
+                (
+                    session_id,
+                    stage_with_path_choice_predicate,
+                    path_with_path_choice_predicate,
+                ),
                 predicate_selector,
                 self.gofp_predicates.address,
                 encoded_predicate_initial_args,
@@ -4400,9 +4424,11 @@ class TestCallbacks(GOFPTestCase):
             )
 
         self.gofp.set_path_choice_predicate(
-            session_id,
-            stage_with_path_choice_predicate,
-            path_with_path_choice_predicate,
+            (
+                session_id,
+                stage_with_path_choice_predicate,
+                path_with_path_choice_predicate,
+            ),
             predicate_selector,
             self.gofp_predicates.address,
             encoded_predicate_initial_args,
@@ -4410,9 +4436,11 @@ class TestCallbacks(GOFPTestCase):
         )
 
         predicate = self.gofp.get_path_choice_predicate(
-            session_id,
-            stage_with_path_choice_predicate,
-            path_with_path_choice_predicate,
+            (
+                session_id,
+                stage_with_path_choice_predicate,
+                path_with_path_choice_predicate,
+            )
         )
         self.assertEqual(
             predicate,
@@ -4429,29 +4457,83 @@ class TestCallbacks(GOFPTestCase):
             self.nft.mint(self.player.address, token_id, {"from": self.owner})
             self.nft.approve(self.gofp.address, token_id, {"from": self.player})
 
+        self.gofp.set_session_active(session_id, True, {"from": self.game_master})
+        self.gofp.set_session_choosing_active(
+            session_id, True, {"from": self.game_master}
+        )
+
+        # First token
+        self.gofp.stake_tokens_into_session(
+            session_id, [token_ids[0]], {"from": self.player}
+        )
         check_0 = self.gofp.call_path_choice_predicate(
-            session_id,
-            stage_with_path_choice_predicate,
-            path_with_path_choice_predicate,
+            (
+                session_id,
+                stage_with_path_choice_predicate,
+                path_with_path_choice_predicate,
+            ),
             self.player.address,
             token_ids[0],
         )
         self.assertTrue(check_0)
 
-        self.gofp.set_session_active(session_id, True, {"from": self.game_master})
-
-        self.gofp.stake_tokens_into_session(
-            session_id, [token_ids[0]], {"from": self.player}
+        # With one token staked predicate should still pass
+        self.gofp.choose_current_stage_paths(
+            session_id,
+            [token_ids[0]],
+            [path_with_path_choice_predicate],
+            {"from": self.player},
+        )
+        self.assertEqual(
+            self.gofp.get_path_choice(
+                session_id, token_ids[0], stage_with_path_choice_predicate
+            ),
+            path_with_path_choice_predicate,
         )
 
+        # Second Token
+        self.gofp.stake_tokens_into_session(
+            session_id, [token_ids[1]], {"from": self.player}
+        )
         check_1 = self.gofp.call_path_choice_predicate(
-            session_id,
-            stage_with_path_choice_predicate,
-            path_with_path_choice_predicate,
+            (
+                session_id,
+                stage_with_path_choice_predicate,
+                path_with_path_choice_predicate,
+            ),
             self.player.address,
-            token_ids[0],
+            token_ids[1],
         )
         self.assertFalse(check_1)
+
+        # With two tokens staked predicate should fail
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.choose_current_stage_paths(
+                session_id,
+                [token_ids[1]],
+                [path_with_path_choice_predicate],
+                {"from": self.player},
+            )
+        self.assertEqual(
+            self.gofp.get_path_choice(
+                session_id, token_ids[1], stage_with_path_choice_predicate
+            ),
+            0,
+        )
+
+        # A path without a predicate can still be selected.
+        self.gofp.choose_current_stage_paths(
+            session_id,
+            [token_ids[1]],
+            [path_without_predicate],
+            {"from": self.player},
+        )
+        self.assertEqual(
+            self.gofp.get_path_choice(
+                session_id, token_ids[1], stage_with_path_choice_predicate
+            ),
+            path_without_predicate,
+        )
 
 
 if __name__ == "__main__":
