@@ -111,7 +111,7 @@ contract DropperFacet is
         ds.TerminusAdminPoolID = terminusAdminPoolID;
     }
 
-    function getTerminusAdminInfo() external view returns (address, uint) {
+    function adminTerminusInfo() external view returns (address, uint) {
         LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
         return (ds.TerminusAdminContractAddress, ds.TerminusAdminPoolID);
     }

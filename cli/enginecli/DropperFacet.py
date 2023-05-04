@@ -96,6 +96,12 @@ class DropperFacet:
         contract_class = contract_from_build(self.contract_name)
         contract_class.publish_source(self.contract)
 
+    def admin_terminus_info(
+        self, block_number: Optional[Union[str, int]] = "latest"
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.adminTerminusInfo.call(block_identifier=block_number)
+
     def claim(
         self,
         drop_id: int,
@@ -213,12 +219,6 @@ class DropperFacet:
         return self.contract.getDropAuthorization.call(
             drop_id, block_identifier=block_number
         )
-
-    def get_terminus_admin_info(
-        self, block_number: Optional[Union[str, int]] = "latest"
-    ) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.getTerminusAdminInfo.call(block_identifier=block_number)
 
     def init(
         self,
@@ -431,6 +431,13 @@ def handle_verify_contract(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_admin_terminus_info(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = DropperFacet(args.address)
+    result = contract.admin_terminus_info(block_number=args.block_number)
+    print(result)
+
+
 def handle_claim(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = DropperFacet(args.address)
@@ -546,13 +553,6 @@ def handle_get_drop_authorization(args: argparse.Namespace) -> None:
     result = contract.get_drop_authorization(
         drop_id=args.drop_id, block_number=args.block_number
     )
-    print(result)
-
-
-def handle_get_terminus_admin_info(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = DropperFacet(args.address)
-    result = contract.get_terminus_admin_info(block_number=args.block_number)
     print(result)
 
 
@@ -753,6 +753,10 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(verify_contract_parser, False)
     verify_contract_parser.set_defaults(func=handle_verify_contract)
 
+    admin_terminus_info_parser = subcommands.add_parser("admin-terminus-info")
+    add_default_arguments(admin_terminus_info_parser, False)
+    admin_terminus_info_parser.set_defaults(func=handle_admin_terminus_info)
+
     claim_parser = subcommands.add_parser("claim")
     add_default_arguments(claim_parser, True)
     claim_parser.add_argument(
@@ -868,10 +872,6 @@ def generate_cli() -> argparse.ArgumentParser:
         "--drop-id", required=True, help="Type: uint256", type=int
     )
     get_drop_authorization_parser.set_defaults(func=handle_get_drop_authorization)
-
-    get_terminus_admin_info_parser = subcommands.add_parser("get-terminus-admin-info")
-    add_default_arguments(get_terminus_admin_info_parser, False)
-    get_terminus_admin_info_parser.set_defaults(func=handle_get_terminus_admin_info)
 
     init_parser = subcommands.add_parser("init")
     add_default_arguments(init_parser, True)
