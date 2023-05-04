@@ -119,8 +119,13 @@ class DropperTestCase(unittest.TestCase):
         self.assertEqual(len(events), 1)
         return events[0]["args"]["dropId"]
 
+    def test_dropper_admin_terminus_info(self):
+        terminus_addr, terminus_pool_id = self.dropper.admin_terminus_info()
+        self.assertEqual(self.terminus.address, terminus_addr)
+        self.assertEqual(self.admin_terminus_pool_id, terminus_pool_id)
 
 class DropperDropSetupTests(DropperTestCase):
+    
     def test_drop_creation(self):
         num_drops_0 = self.dropper.num_drops()
         drop_id = self.create_drop_and_return_drop_id(
@@ -3095,6 +3100,7 @@ class DropperSignatureAuthorizationTest(DropperTestCase):
     - Add tests for ERC1155 transfer claims
     - Add tests for Terminus mint claims
     """
+
     def tearDown(self):
         """
         Return permissions to how they are at the beginning of the general test case setup (DropperTestCase).
