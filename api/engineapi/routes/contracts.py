@@ -152,6 +152,9 @@ async def update_contract(
             status_code=404,
             detail="Either there is not contract with that ID or you do not have access to that contract.",
         )
+    except Exception as err:
+        logger.error(repr(err))
+        raise EngineHTTPException(status_code=500)
 
     return contract
 
