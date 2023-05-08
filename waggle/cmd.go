@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 
+	bugout "github.com/bugout-dev/bugout-go/pkg"
 	"github.com/spf13/cobra"
 )
 
@@ -136,8 +138,9 @@ func CreateSignCommand() *cobra.Command {
 
 	// All variables to be used for arguments.
 	var chainId int64
-	var keyfile, password, claimant, dropperAddress, dropId, requestId, blockDeadline, amount, infile, outfile string
-	var sensible bool
+	var batchSize int
+	var bugoutToken, cursorName, journalID, keyfile, password, claimant, dropperAddress, dropId, requestId, blockDeadline, amount, infile, outfile string
+	var sensible, header bool
 
 	signCommand.PersistentFlags().StringVarP(&keyfile, "keystore", "k", "", "Path to keystore file (this should be a JSON file).")
 	signCommand.PersistentFlags().StringVarP(&password, "password", "p", "", "Password for keystore file. If not provided, you will be prompted for it when you sign with the key.")
@@ -282,7 +285,37 @@ func CreateSignCommand() *cobra.Command {
 	dropperBatchSubcommand.Flags().StringVar(&infile, "infile", "", "Input file. If not specified, input will be expected from stdin.")
 	dropperBatchSubcommand.Flags().StringVar(&outfile, "outfile", "", "Output file. If not specified, output will be written to stdout.")
 
-	dropperSubcommand.AddCommand(dropperHashSubcommand, dropperSingleSubcommand, dropperBatchSubcommand)
+	dropperPullSubcommand := &cobra.Command{
+		Use:   "pull",
+		Short: "Pull unprocessed claim requests from the Bugout API",
+		Long:  "Pull unprocessed claim requests from the Bugout API and write them to a CSV file.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			bugoutClient, bugoutErr := bugout.ClientFromEnv()
+			if bugoutErr != nil {
+				return bugoutErr
+			}
+
+			if bugoutToken == "" {
+				bugoutToken = os.Getenv("BUGOUT_ACCESS_TOKEN")
+			}
+			if bugoutToken == "" {
+				return errors.New("please specify a Bugout API access token, either by passing it as the --token/-t argument or by setting the BUGOUT_ACCESS_TOKEN environment variable")
+			}
+
+			if journalID == "" {
+				return errors.New("please specify a Bugout journal ID, by passing it as the --journal/-j argument")
+			}
+
+			return ProcessDropperClaims(&bugoutClient, bugoutToken, journalID, cursorName, batchSize, header, os.Stdout)
+		},
+	}
+	dropperPullSubcommand.Flags().StringVarP(&bugoutToken, "token", "t", "", "Bugout API access token. If you don't have one, you can generate one at https://bugout.dev/account/tokens.")
+	dropperPullSubcommand.Flags().StringVarP(&journalID, "journal", "j", "", "ID of Bugout journal from which to pull claim requests.")
+	dropperPullSubcommand.Flags().StringVarP(&cursorName, "cursor", "c", "", "Name of cursor which defines which requests are processed and which ones are not.")
+	dropperPullSubcommand.Flags().IntVarP(&batchSize, "batch-size", "N", 500, "Maximum number of messages to process.")
+	dropperPullSubcommand.Flags().BoolVarP(&header, "header", "H", true, "Set this flag to include header row in output CSV.")
+
+	dropperSubcommand.AddCommand(dropperHashSubcommand, dropperSingleSubcommand, dropperBatchSubcommand, dropperPullSubcommand)
 
 	signCommand.AddCommand(rawSubcommand, dropperSubcommand)
 
