@@ -160,6 +160,7 @@ class RegisteredContract(Base):  # type: ignore
     __table_args__ = (
         UniqueConstraint(
             "blockchain",
+            "moonstream_user_id",
             "address",
             "contract_type",
         ),
@@ -257,7 +258,6 @@ class Leaderboard(Base):  # type: ignore
 
 
 class LeaderboardScores(Base):  # type: ignore
-
     __tablename__ = "leaderboard_scores"
     __table_args__ = (UniqueConstraint("leaderboard_id", "address"),)
 

@@ -1,14 +1,16 @@
 import argparse
+from datetime import timedelta
 import json
 import logging
 import uuid
-from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import func, text
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.orm import Session
 from web3 import Web3
+
+from .data import ContractType
 
 from . import data, db
 from .models import RegisteredContract, CallRequest
@@ -19,11 +21,6 @@ logger = logging.getLogger(__name__)
 
 class ContractAlreadyRegistered(Exception):
     pass
-
-
-class ContractType(Enum):
-    raw = "raw"
-    dropper = "dropper-v0.2.0"
 
 
 def validate_method_and_params(
@@ -71,12 +68,6 @@ def register_contract(
     """
     Register a contract against the Engine instance
     """
-
-    # TODO(zomglings): Make it so that contract_type is passed as a string. Convert to
-    # ContractType here. That will mean there is a single point at which the validation is
-    # performed rather than relying on each entrypoint to register_contract having to implement
-    # their own validation.
-
     try:
         contract = RegisteredContract(
             blockchain=blockchain,
@@ -95,6 +86,46 @@ def register_contract(
     except Exception as err:
         db_session.rollback()
         logger.error(repr(err))
+        raise
+
+    return render_registered_contract(contract)
+
+
+def update_registered_contract(
+    db_session: Session,
+    moonstream_user_id: uuid.UUID,
+    contract_id: uuid.UUID,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    image_uri: Optional[str] = None,
+    ignore_nulls: bool = True,
+) -> data.RegisteredContract:
+    """
+    Update the registered contract with the given contract ID provided that the user with moonstream_user_id
+    has access to it.
+    """
+    query = db_session.query(RegisteredContract).filter(
+        RegisteredContract.id == contract_id,
+        RegisteredContract.moonstream_user_id == moonstream_user_id,
+    )
+
+    contract = query.one()
+
+    if not (title is None and ignore_nulls):
+        contract.title = title
+    if not (description is None and ignore_nulls):
+        contract.description = description
+    if not (image_uri is None and ignore_nulls):
+        contract.image_uri = image_uri
+
+    try:
+        db_session.add(contract)
+        db_session.commit()
+    except Exception as err:
+        logger.error(
+            f"update_registered_contract -- error storing update in database: {repr(err)}"
+        )
+        db_session.rollback()
         raise
 
     return render_registered_contract(contract)
@@ -164,7 +195,8 @@ def delete_registered_contract(
 def request_calls(
     db_session: Session,
     moonstream_user_id: uuid.UUID,
-    registered_contract_id: uuid.UUID,
+    registered_contract_id: Optional[uuid.UUID],
+    contract_address: Optional[str],
     call_specs: List[data.CallSpecification],
     ttl_days: Optional[int] = None,
 ) -> int:
@@ -174,21 +206,31 @@ def request_calls(
     # TODO(zomglings): Do not pass raw ttl_days into SQL query - could be subject to SQL injection
     # For now, in the interest of speed, let us just be super cautious with ttl_days.
     # Check that the ttl_days is indeed an integer
+    if registered_contract_id is None and contract_address is None:
+        raise ValueError(
+            "At least one of registered_contract_id or contract_address is required"
+        )
+
     if ttl_days is not None:
         assert ttl_days == int(ttl_days), "ttl_days must be an integer"
         if ttl_days <= 0:
             raise ValueError("ttl_days must be positive")
 
-    # Check that the moonstream_user_id matches the RegisteredContract
-    try:
-        registered_contract = (
-            db_session.query(RegisteredContract)
-            .filter(
-                RegisteredContract.id == registered_contract_id,
-                RegisteredContract.moonstream_user_id == moonstream_user_id,
-            )
-            .one()
+    # Check that the moonstream_user_id matches a RegisteredContract with the given id or address
+    query = db_session.query(RegisteredContract).filter(
+        RegisteredContract.moonstream_user_id == moonstream_user_id
+    )
+
+    if registered_contract_id is not None:
+        query = query.filter(RegisteredContract.id == registered_contract_id)
+
+    if contract_address is not None:
+        query = query.filter(
+            RegisteredContract.address == Web3.toChecksumAddress(contract_address)
         )
+
+    try:
+        registered_contract = query.one()
     except NoResultFound:
         raise ValueError("Invalid registered_contract_id or moonstream_user_id")
 
@@ -202,10 +244,9 @@ def request_calls(
             contract_type, specification.method, specification.parameters
         )
 
-        # Calculate the expiration time (if ttl_days is specified)
-        expires_at_sql = None
+        expires_at = None
         if ttl_days is not None:
-            expires_at_sql = text(f"(NOW() + INTERVAL '{ttl_days} days')")
+            expires_at = func.now() + timedelta(days=ttl_days)
 
         request = CallRequest(
             registered_contract_id=registered_contract.id,
@@ -213,7 +254,7 @@ def request_calls(
             moonstream_user_id=moonstream_user_id,
             method=specification.method,
             parameters=specification.parameters,
-            expires_at=expires_at_sql,
+            expires_at=expires_at,
         )
 
         db_session.add(request)
@@ -229,8 +270,9 @@ def request_calls(
 
 def list_call_requests(
     db_session: Session,
-    registered_contract_id: uuid.UUID,
-    caller: str,
+    contract_id: Optional[uuid.UUID],
+    contract_address: Optional[str],
+    caller: Optional[str],
     limit: int = 10,
     offset: Optional[int] = None,
     show_expired: bool = False,
@@ -238,11 +280,31 @@ def list_call_requests(
     """
     List call requests for the given moonstream_user_id
     """
+    if caller is None:
+        raise ValueError("caller must be specified")
+
+    if contract_id is None and contract_address is None:
+        raise ValueError(
+            "At least one of contract_id or contract_address must be specified"
+        )
+
     # If show_expired is False, filter out expired requests using current time on database server
-    query = db_session.query(CallRequest).filter(
-        CallRequest.registered_contract_id == registered_contract_id,
-        CallRequest.caller == Web3.toChecksumAddress(caller),
+    query = (
+        db_session.query(CallRequest, RegisteredContract)
+        .join(
+            RegisteredContract,
+            CallRequest.registered_contract_id == RegisteredContract.id,
+        )
+        .filter(CallRequest.caller == Web3.toChecksumAddress(caller))
     )
+
+    if contract_id is not None:
+        query = query.filter(CallRequest.registered_contract_id == contract_id)
+
+    if contract_address is not None:
+        query = query.filter(
+            RegisteredContract.address == Web3.toChecksumAddress(contract_address)
+        )
 
     if not show_expired:
         query = query.filter(
@@ -254,7 +316,10 @@ def list_call_requests(
 
     query = query.limit(limit)
     results = query.all()
-    return [render_call_request(call_request) for call_request in results]
+    return [
+        render_call_request(call_request, registered_contract)
+        for call_request, registered_contract in results
+    ]
 
 
 # TODO(zomglings): What should the delete functionality for call requests look like?
@@ -282,10 +347,13 @@ def render_registered_contract(contract: RegisteredContract) -> data.RegisteredC
     )
 
 
-def render_call_request(call_request: CallRequest) -> data.CallRequest:
+def render_call_request(
+    call_request: CallRequest, registered_contract: RegisteredContract
+) -> data.CallRequest:
     return data.CallRequest(
         id=call_request.id,
-        registered_contract_id=call_request.registered_contract_id,
+        contract_id=call_request.registered_contract_id,
+        contract_address=registered_contract.address,
         moonstream_user_id=call_request.moonstream_user_id,
         caller=call_request.caller,
         method=call_request.method,
@@ -404,7 +472,7 @@ def handle_list_requests(args: argparse.Namespace) -> None:
         with db.yield_db_session_ctx() as db_session:
             call_requests = list_call_requests(
                 db_session=db_session,
-                registered_contract_id=args.registered_contract_id,
+                contract_id=args.registered_contract_id,
                 caller=args.caller,
                 limit=args.limit,
                 offset=args.offset,

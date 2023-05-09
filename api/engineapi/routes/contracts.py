@@ -11,6 +11,7 @@ from uuid import UUID
 
 from fastapi import Body, Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
 
 from .. import data, db
@@ -69,8 +70,8 @@ async def contract_types() -> Dict[str, str]:
     Describes the contract_types that users can register contracts as against this API.
     """
     return {
-        contracts_actions.ContractType.raw.value: "A generic smart contract. You can ask users to submit arbitrary calldata to this contract.",
-        contracts_actions.ContractType.dropper.value: "A Dropper contract. You can authorize users to submit claims against this contract.",
+        data.ContractType.raw.value: "A generic smart contract. You can ask users to submit arbitrary calldata to this contract.",
+        data.ContractType.dropper.value: "A Dropper contract. You can authorize users to submit claims against this contract.",
     }
 
 
@@ -79,7 +80,7 @@ async def list_registered_contracts(
     request: Request,
     blockchain: Optional[str] = Query(None),
     address: Optional[str] = Query(None),
-    contract_type: Optional[contracts_actions.ContractType] = Query(None),
+    contract_type: Optional[data.ContractType] = Query(None),
     limit: int = Query(10),
     offset: Optional[int] = Query(None),
     db_session: Session = Depends(db.yield_db_read_only_session),
@@ -101,7 +102,7 @@ async def list_registered_contracts(
     ]
 
 
-@app.post("/register", response_model=data.RegisteredContract)
+@app.post("/", response_model=data.RegisteredContract)
 async def register_contract(
     request: Request,
     contract: data.RegisterContractRequest,
@@ -111,16 +112,12 @@ async def register_contract(
     Allows users to register contracts.
     """
     try:
-        contract_type = contracts_actions.ContractType(contract.contract_type)
-    except ValueError:
-        raise EngineHTTPException(status_code=404, detail="Invalid contract type")
-    try:
         registered_contract = contracts_actions.register_contract(
             db_session=db_session,
             moonstream_user_id=request.state.user.id,
             blockchain=contract.blockchain,
             address=contract.address,
-            contract_type=contract_type,
+            contract_type=contract.contract_type,
             title=contract.title,
             description=contract.description,
             image_uri=contract.image_uri,
@@ -131,6 +128,35 @@ async def register_contract(
             detail="Contract already registered",
         )
     return registered_contract
+
+
+@app.put("/{contract_id}", response_model=data.RegisteredContract)
+async def update_contract(
+    request: Request,
+    contract_id: UUID,
+    update_info: data.UpdateContractRequest,
+    db_session: Session = Depends(db.yield_db_session),
+) -> data.RegisteredContract:
+    try:
+        contract = contracts_actions.update_registered_contract(
+            db_session,
+            request.state.user.id,
+            contract_id,
+            update_info.title,
+            update_info.description,
+            update_info.image_uri,
+            update_info.ignore_nulls,
+        )
+    except NoResultFound:
+        raise EngineHTTPException(
+            status_code=404,
+            detail="Either there is not contract with that ID or you do not have access to that contract.",
+        )
+    except Exception as err:
+        logger.error(repr(err))
+        raise EngineHTTPException(status_code=500)
+
+    return contract
 
 
 @app.delete("/{contract_id}", response_model=data.RegisteredContract)
@@ -157,24 +183,32 @@ async def delete_contract(
 
 @app.get("/requests", response_model=List[data.CallRequest])
 async def list_requests(
-    contract_id: UUID = Query(...),
+    contract_id: Optional[UUID] = Query(None),
+    contract_address: Optional[str] = Query(None),
     caller: str = Query(...),
     limit: int = Query(100),
     offset: Optional[int] = Query(None),
+    show_expired: Optional[bool] = Query(False),
     db_session: Session = Depends(db.yield_db_read_only_session),
 ) -> List[data.CallRequest]:
     """
     Allows API user to see all unexpired call requests for a given caller against a given contract.
+
+    At least one of `contract_id` or `contract_address` must be provided as query parameters.
     """
     try:
         requests = contracts_actions.list_call_requests(
             db_session=db_session,
-            registered_contract_id=contract_id,
+            contract_id=contract_id,
+            contract_address=contract_address,
             caller=caller,
             limit=limit,
             offset=offset,
-            show_expired=False,
+            show_expired=show_expired,
         )
+    except ValueError as e:
+        logger.error(repr(e))
+        raise EngineHTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(repr(e))
         raise EngineHTTPException(status_code=500)
@@ -182,21 +216,23 @@ async def list_requests(
     return requests
 
 
-@app.post("/{contract_id}/requests")
+@app.post("/requests")
 async def create_requests(
     request: Request,
-    contract_id: UUID,
     data: data.CreateCallRequestsAPIRequest = Body(...),
     db_session: Session = Depends(db.yield_db_session),
 ) -> int:
     """
-    Allows API user to register call requests from given call specifications.
+    Allows API user to register call requests from given contract details, TTL, and call specifications.
+
+    At least one of `contract_id` or `contract_address` must be provided in the request body.
     """
     try:
         num_requests = contracts_actions.request_calls(
             db_session=db_session,
             moonstream_user_id=request.state.user.id,
-            registered_contract_id=contract_id,
+            registered_contract_id=data.contract_id,
+            contract_address=data.contract_address,
             call_specs=data.specifications,
             ttl_days=data.ttl_days,
         )

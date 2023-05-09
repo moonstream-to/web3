@@ -1,8 +1,10 @@
 from datetime import datetime
+from enum import Enum
 from typing import Any, Dict, List, Optional
-
-from pydantic import BaseModel, Field, validator
 from uuid import UUID
+
+from pydantic import BaseModel, Field, validator, root_validator
+from web3 import Web3
 
 
 class PingResponse(BaseModel):
@@ -53,7 +55,6 @@ class DropperBlockchainResponse(BaseModel):
 
 
 class DropRegisterRequest(BaseModel):
-
     dropper_contract_id: UUID
     title: Optional[str] = None
     description: Optional[str] = None
@@ -177,13 +178,25 @@ class DropUpdatedResponse(BaseModel):
     active: bool = True
 
 
+class ContractType(Enum):
+    raw = "raw"
+    dropper = "dropper-v0.2.0"
+
+
 class RegisterContractRequest(BaseModel):
     blockchain: str
     address: str
-    contract_type: str
+    contract_type: ContractType
     title: Optional[str] = None
     description: Optional[str] = None
     image_uri: Optional[str] = None
+
+
+class UpdateContractRequest(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    image_uri: Optional[str] = None
+    ignore_nulls: bool = True
 
 
 class RegisteredContract(BaseModel):
@@ -214,28 +227,45 @@ class CallSpecification(BaseModel):
 
 
 class CreateCallRequestsAPIRequest(BaseModel):
+    contract_id: Optional[UUID] = None
+    contract_address: Optional[str] = None
     specifications: List[CallSpecification] = Field(default_factory=list)
     ttl_days: Optional[int] = None
+
+    # Solution found thanks to https://github.com/pydantic/pydantic/issues/506
+    @root_validator
+    def at_least_one_of_contract_id_and_contract_address(cls, values):
+        if values.get("contract_id") is None and values.get("contract_address") is None:
+            raise ValueError(
+                "At least one of contract_id and contract_address must be provided"
+            )
+        return values
 
 
 class CallRequest(BaseModel):
     id: UUID
-    registered_contract_id: UUID
+    contract_id: UUID
+    contract_address: str
     moonstream_user_id: UUID
     caller: str
     method: str
     parameters: Dict[str, Any]
-    expires_at: datetime
+    expires_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
 
-    @validator("id", "registered_contract_id", "moonstream_user_id")
+    @validator("id", "contract_id", "moonstream_user_id")
     def validate_uuids(cls, v):
         return str(v)
 
     @validator("created_at", "updated_at", "expires_at")
     def validate_datetimes(cls, v):
-        return v.isoformat()
+        if v is not None:
+            return v.isoformat()
+
+    @validator("contract_address", "caller")
+    def validate_web3_adresses(cls, v):
+        return Web3.toChecksumAddress(v)
 
 
 class QuartilesResponse(BaseModel):
