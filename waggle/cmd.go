@@ -211,7 +211,20 @@ func CreateSignCommand() *cobra.Command {
 				return err
 			}
 
-			cmd.Println(hex.EncodeToString(signedMessage))
+			result := DropperClaimMessage{
+				DropId:        dropId,
+				RequestID:     requestId,
+				Claimant:      claimant,
+				BlockDeadline: blockDeadline,
+				Amount:        amount,
+				Signature:     hex.EncodeToString(signedMessage),
+				Signer:        key.Address.Hex(),
+			}
+			resultJSON, encodeErr := json.Marshal(result)
+			if encodeErr != nil {
+				return encodeErr
+			}
+			os.Stdout.Write(resultJSON)
 			return nil
 		},
 	}
