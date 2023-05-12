@@ -190,7 +190,7 @@ is the user's Ethereum account address.
 waggle sign dropper pull \
   --cursor <cursor name> \
   -j <Bugout Journal ID> \
-  >output.csv
+  >unsigned.csv
 ```
 
 This expects a `BUGOUT_ACCESS_TOKEN` environment variable to be set. You can generate an access token
@@ -204,6 +204,26 @@ export BUGOUT_ACCESS_TOKEN=<token>
 
 This will only pull messages that were sent to the Bugout journal since the last time you queried it with
 the same cursor.
+
+The data comes down as a CSV file that looks like this:
+
+```
+dropId,requestID,claimant,blockDeadline,amount,signer,signature
+1,115720181650977233700713231242528612405061886387364945891853856642923,0x0DEFbcF39bC9035262e3E5C1c72a82299B542bAF,95351184,500000000000000000000,,
+```
+
+You can sign this using the `waggle sign dropper batch command` by passing the CSV file as the `--infile`
+argument and setting the `--csv` flag:
+
+```
+waggle sign dropper batch -k signer.json \
+    --chain-id 80001 \
+    --dropper 0x4ec36E288E1b5d6914851a141cb041152Cf95328 \
+    --infile unsigned.csv \
+    --csv \
+    --outfile signed_batch.json
+
+```
 
 ### Build
 
