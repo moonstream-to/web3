@@ -184,6 +184,27 @@ Here, `$CONTRACT_ID` should be the same contract ID you used in `waggle moonstre
 is the user's Ethereum account address.
 
 
+#### Get claim requests from Bugout journal
+
+```
+waggle sign dropper pull \
+  --cursor <cursor name> \
+  -j <Bugout Journal ID> \
+  >output.csv
+```
+
+This expects a `BUGOUT_ACCESS_TOKEN` environment variable to be set. You can generate an access token
+at https://bugout.dev/account/tokens. Once you have generated a token, set it in your shell session using:
+
+```
+export BUGOUT_ACCESS_TOKEN=<token>
+```
+
+(For example: `export BUGOUT_ACCESS_TOKEN=61884ddf-46aa-434f-b489-53819cfa2307`)
+
+This will only pull messages that were sent to the Bugout journal since the last time you queried it with
+the same cursor.
+
 ### Build
 
 ```
