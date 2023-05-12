@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -140,7 +141,7 @@ func CreateSignCommand() *cobra.Command {
 	var chainId int64
 	var batchSize int
 	var bugoutToken, cursorName, journalID, keyfile, password, claimant, dropperAddress, dropId, requestId, blockDeadline, amount, infile, outfile string
-	var sensible, header bool
+	var sensible, header, isCSV bool
 
 	signCommand.PersistentFlags().StringVarP(&keyfile, "keystore", "k", "", "Path to keystore file (this should be a JSON file).")
 	signCommand.PersistentFlags().StringVarP(&password, "password", "p", "", "Password for keystore file. If not provided, you will be prompted for it when you sign with the key.")
@@ -250,18 +251,54 @@ func CreateSignCommand() *cobra.Command {
 
 			var batch []*DropperClaimMessage
 
-			if infile != "" {
-				batchRaw, readErr = os.ReadFile(infile)
-			} else {
-				batchRaw, readErr = io.ReadAll(os.Stdin)
-			}
-			if readErr != nil {
-				return readErr
-			}
+			if !isCSV {
+				if infile != "" {
+					batchRaw, readErr = os.ReadFile(infile)
+				} else {
+					batchRaw, readErr = io.ReadAll(os.Stdin)
+				}
+				if readErr != nil {
+					return readErr
+				}
 
-			parseErr := json.Unmarshal(batchRaw, &batch)
-			if parseErr != nil {
-				return parseErr
+				parseErr := json.Unmarshal(batchRaw, &batch)
+				if parseErr != nil {
+					return parseErr
+				}
+			} else {
+				r, csvOpenErr := os.Open(infile)
+				if csvOpenErr != nil {
+					return csvOpenErr
+				}
+				defer r.Close()
+
+				csvReader := csv.NewReader(r)
+				csvData, csvReadErr := csvReader.ReadAll()
+				if csvReadErr != nil {
+					return csvReadErr
+				}
+
+				csvHeaders := csvData[0]
+				csvData = csvData[1:]
+				batch = make([]*DropperClaimMessage, len(csvData))
+
+				for i, row := range csvData {
+					jsonData := make(map[string]string)
+
+					for j, value := range row {
+						jsonData[csvHeaders[j]] = value
+					}
+
+					jsonString, rowMarshalErr := json.Marshal(jsonData)
+					if rowMarshalErr != nil {
+						return rowMarshalErr
+					}
+
+					rowParseErr := json.Unmarshal(jsonString, &batch[i])
+					if rowParseErr != nil {
+						return rowParseErr
+					}
+				}
 			}
 
 			for _, message := range batch {
@@ -297,6 +334,7 @@ func CreateSignCommand() *cobra.Command {
 	dropperBatchSubcommand.Flags().StringVar(&dropperAddress, "dropper", "0x0000000000000000000000000000000000000000", "Address of Dropper contract")
 	dropperBatchSubcommand.Flags().StringVar(&infile, "infile", "", "Input file. If not specified, input will be expected from stdin.")
 	dropperBatchSubcommand.Flags().StringVar(&outfile, "outfile", "", "Output file. If not specified, output will be written to stdout.")
+	dropperBatchSubcommand.Flags().BoolVar(&isCSV, "csv", false, "Set this flag if the --infile is a CSV file.")
 
 	dropperPullSubcommand := &cobra.Command{
 		Use:   "pull",
