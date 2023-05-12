@@ -266,13 +266,19 @@ func CreateSignCommand() *cobra.Command {
 					return parseErr
 				}
 			} else {
-				r, csvOpenErr := os.Open(infile)
-				if csvOpenErr != nil {
-					return csvOpenErr
-				}
-				defer r.Close()
+				var csvReader *csv.Reader
+				if infile == "" {
+					csvReader = csv.NewReader(os.Stdin)
+				} else {
+					r, csvOpenErr := os.Open(infile)
+					if csvOpenErr != nil {
+						return csvOpenErr
+					}
+					defer r.Close()
 
-				csvReader := csv.NewReader(r)
+					csvReader = csv.NewReader(r)
+				}
+
 				csvData, csvReadErr := csvReader.ReadAll()
 				if csvReadErr != nil {
 					return csvReadErr
