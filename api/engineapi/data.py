@@ -247,7 +247,7 @@ class CreateCallRequestsAPIRequest(BaseModel):
 
 class CallRequest(BaseModel):
     id: UUID
-    contract_id: UUID
+    contract_id: UUID = Field(alias="registered_contract_id")
     contract_address: str
     moonstream_user_id: UUID
     caller: str
@@ -256,6 +256,9 @@ class CallRequest(BaseModel):
     expires_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        orm_mode = True
 
     @validator("id", "contract_id", "moonstream_user_id")
     def validate_uuids(cls, v):

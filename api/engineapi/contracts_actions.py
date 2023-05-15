@@ -316,7 +316,9 @@ def list_call_requests(
     query = query.limit(limit)
     results = query.all()
     return [
-        render_call_request(call_request, registered_contract)
+        data.CallRequest(
+            contract_address=registered_contract.address, **call_request.__dict__
+        )
         for call_request, registered_contract in results
     ]
 
@@ -329,23 +331,6 @@ def list_call_requests(
 # Should we implement these all using a single delete method, or a different method for each
 # use case?
 # Will come back to this once API is live.
-
-
-def render_call_request(
-    call_request: CallRequest, registered_contract: RegisteredContract
-) -> data.CallRequest:
-    return data.CallRequest(
-        id=call_request.id,
-        contract_id=call_request.registered_contract_id,
-        contract_address=registered_contract.address,
-        moonstream_user_id=call_request.moonstream_user_id,
-        caller=call_request.caller,
-        method=call_request.method,
-        parameters=call_request.parameters,
-        expires_at=call_request.expires_at,
-        created_at=call_request.created_at,
-        updated_at=call_request.updated_at,
-    )
 
 
 def handle_register(args: argparse.Namespace) -> None:
