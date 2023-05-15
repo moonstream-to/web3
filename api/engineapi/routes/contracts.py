@@ -14,8 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
 
-from .. import data, db
-from .. import contracts_actions
+from .. import contracts_actions, data, db
 from ..middleware import BroodAuthMiddleware, EngineHTTPException
 from ..settings import DOCS_TARGET_PATH, ORIGINS
 from ..version import VERSION
@@ -75,7 +74,7 @@ async def contract_types() -> Dict[str, str]:
     }
 
 
-@app.get("/")
+@app.get("/", response_model=List[data.RegisteredContract])
 async def list_registered_contracts(
     request: Request,
     blockchain: Optional[str] = Query(None),
@@ -88,18 +87,20 @@ async def list_registered_contracts(
     """
     Users can use this endpoint to look up the contracts they have registered against this API.
     """
-    contracts = contracts_actions.lookup_registered_contracts(
-        db_session=db_session,
-        moonstream_user_id=request.state.user.id,
-        blockchain=blockchain,
-        address=address,
-        contract_type=contract_type,
-        limit=limit,
-        offset=offset,
-    )
-    return [
-        contracts_actions.render_registered_contract(contract) for contract in contracts
-    ]
+    try:
+        contracts = contracts_actions.lookup_registered_contracts(
+            db_session=db_session,
+            moonstream_user_id=request.state.user.id,
+            blockchain=blockchain,
+            address=address,
+            contract_type=contract_type,
+            limit=limit,
+            offset=offset,
+        )
+    except Exception as err:
+        logger.error(repr(err))
+        raise EngineHTTPException(status_code=500)
+    return [contract for contract in contracts]
 
 
 @app.post("/", response_model=data.RegisteredContract)
@@ -178,7 +179,7 @@ async def delete_contract(
         logger.error(repr(err))
         raise EngineHTTPException(status_code=500)
 
-    return contracts_actions.render_registered_contract(deleted_contract)
+    return deleted_contract
 
 
 @app.get("/requests", response_model=List[data.CallRequest])

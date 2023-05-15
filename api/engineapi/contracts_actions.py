@@ -1,8 +1,8 @@
 import argparse
-from datetime import timedelta
 import json
 import logging
 import uuid
+from datetime import timedelta
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import func, text
@@ -10,10 +10,9 @@ from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.orm import Session
 from web3 import Web3
 
-from .data import ContractType
-
 from . import data, db
-from .models import RegisteredContract, CallRequest
+from .data import ContractType
+from .models import CallRequest, RegisteredContract
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -88,7 +87,7 @@ def register_contract(
         logger.error(repr(err))
         raise
 
-    return render_registered_contract(contract)
+    return contract
 
 
 def update_registered_contract(
@@ -128,7 +127,7 @@ def update_registered_contract(
         db_session.rollback()
         raise
 
-    return render_registered_contract(contract)
+    return contract
 
 
 def lookup_registered_contracts(
@@ -332,21 +331,6 @@ def list_call_requests(
 # Will come back to this once API is live.
 
 
-def render_registered_contract(contract: RegisteredContract) -> data.RegisteredContract:
-    return data.RegisteredContract(
-        id=contract.id,
-        blockchain=contract.blockchain,
-        address=contract.address,
-        contract_type=contract.contract_type,
-        moonstream_user_id=contract.moonstream_user_id,
-        title=contract.title,
-        description=contract.description,
-        image_uri=contract.image_uri,
-        created_at=contract.created_at,
-        updated_at=contract.updated_at,
-    )
-
-
 def render_call_request(
     call_request: CallRequest, registered_contract: RegisteredContract
 ) -> data.CallRequest:
@@ -405,11 +389,7 @@ def handle_list(args: argparse.Namespace) -> None:
         logger.error(err)
         return
 
-    print(
-        json.dumps(
-            [render_registered_contract(contract).dict() for contract in contracts]
-        )
-    )
+    print(json.dumps([contract.dict() for contract in contracts]))
 
 
 def handle_delete(args: argparse.Namespace) -> None:
@@ -427,7 +407,7 @@ def handle_delete(args: argparse.Namespace) -> None:
         logger.error(err)
         return
 
-    print(render_registered_contract(deleted_contract).json())
+    print(deleted_contract.json())
 
 
 def handle_request_calls(args: argparse.Namespace) -> None:
