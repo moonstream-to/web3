@@ -2820,8 +2820,10 @@ class TestPlayerFlow(GOFPTestCase):
         self,
     ):
         """
-        This tests that players can unstake and restake into an inactive session. It tests for regression
-        of a bug that existed in a development version of this contract.
+        This tests that players can unstake from an active session but not restake into the same session.
+        It also tests that players are able to stake tokens that were unstaked from a session into *other*
+        active sessions that they were not previously staked in.
+        It tests for regression of a bug that existed in a development version of this contract.
         """
         payment_amount = 177
         uri = "https://example.com/test_player_can_unstake_from_active_session_not_restake_into_same_session_but_stake_into_new_session.json"
