@@ -248,7 +248,7 @@ class CreateCallRequestsAPIRequest(BaseModel):
 class CallRequest(BaseModel):
     id: UUID
     contract_id: UUID = Field(alias="registered_contract_id")
-    contract_address: str
+    contract_address: Optional[str] = None
     moonstream_user_id: UUID
     caller: str
     method: str
