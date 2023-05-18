@@ -15,7 +15,7 @@ from .routes.dropper import app as dropper_app
 from .routes.leaderboard import app as leaderboard_app
 from .routes.admin import app as admin_app
 from .routes.play import app as play_app
-from .routes.contracts import app as contracts_app
+from .routes.metatx import app as metatx_app
 from .version import VERSION
 
 logging.basicConfig(level=logging.INFO)
@@ -62,4 +62,4 @@ app.mount("/leaderboard", leaderboard_app)
 app.mount("/drops", dropper_app)
 app.mount("/admin", admin_app)
 app.mount("/play", play_app)
-app.mount("/contracts", contracts_app)
+app.mount("/metatx", metatx_app)

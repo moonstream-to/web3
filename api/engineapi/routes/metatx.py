@@ -9,7 +9,7 @@ import logging
 from typing import Dict, List, Optional
 from uuid import UUID
 
-from fastapi import Body, Depends, FastAPI, Query, Request
+from fastapi import Body, Depends, FastAPI, Query, Request, Path
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
@@ -30,15 +30,16 @@ tags_metadata = [
     {
         "name": "contracts",
         "description": DESCRIPTION,
-    }
+    },
+    {"name": "requests", "description": "Call requests for registered contracts."},
 ]
 
 
 whitelist_paths = {
-    "/contracts/openapi.json": "GET",
-    f"/contracts/{DOCS_TARGET_PATH}": "GET",
-    "/contracts/types": "GET",
-    "/contracts/requests": "GET",
+    "/metatx/openapi.json": "GET",
+    f"/metatx/{DOCS_TARGET_PATH}": "GET",
+    "/metatx/contracts/types": "GET",
+    "/metatx/contracts/requests": "GET",
 }
 
 app = FastAPI(
@@ -63,7 +64,7 @@ app.add_middleware(
 )
 
 
-@app.get("/types")
+@app.get("/contracts/types", tags=["contracts"])
 async def contract_types() -> Dict[str, str]:
     """
     Describes the contract_types that users can register contracts as against this API.
@@ -74,7 +75,7 @@ async def contract_types() -> Dict[str, str]:
     }
 
 
-@app.get("/", response_model=List[data.RegisteredContract])
+@app.get("/contracts", tags=["contracts"], response_model=List[data.RegisteredContract])
 async def list_registered_contracts(
     request: Request,
     blockchain: Optional[str] = Query(None),
@@ -103,10 +104,40 @@ async def list_registered_contracts(
     return [contract for contract in contracts]
 
 
-@app.post("/", response_model=data.RegisteredContract)
+@app.get(
+    "/contracts/{contract_id}",
+    tags=["contracts"],
+    response_model=data.RegisteredContract,
+)
+async def get_registered_contract(
+    request: Request,
+    contract_id: UUID = Path(...),
+    db_session: Session = Depends(db.yield_db_read_only_session),
+) -> List[data.RegisteredContract]:
+    """
+    Get the contract by ID.
+    """
+    try:
+        contract = contracts_actions.get_registered_contract(
+            db_session=db_session,
+            moonstream_user_id=request.state.user.id,
+            contract_id=contract_id,
+        )
+    except NoResultFound:
+        raise EngineHTTPException(
+            status_code=404,
+            detail="Either there is not contract with that ID or you do not have access to that contract.",
+        )
+    except Exception as err:
+        logger.error(repr(err))
+        raise EngineHTTPException(status_code=500)
+    return contract
+
+
+@app.post("/contracts", tags=["contracts"], response_model=data.RegisteredContract)
 async def register_contract(
     request: Request,
-    contract: data.RegisterContractRequest,
+    contract: data.RegisterContractRequest = Body(...),
     db_session: Session = Depends(db.yield_db_session),
 ) -> data.RegisteredContract:
     """
@@ -131,11 +162,15 @@ async def register_contract(
     return registered_contract
 
 
-@app.put("/{contract_id}", response_model=data.RegisteredContract)
+@app.put(
+    "/contracts/{contract_id}",
+    tags=["contracts"],
+    response_model=data.RegisteredContract,
+)
 async def update_contract(
     request: Request,
-    contract_id: UUID,
-    update_info: data.UpdateContractRequest,
+    contract_id: UUID = Path(...),
+    update_info: data.UpdateContractRequest = Body(...),
     db_session: Session = Depends(db.yield_db_session),
 ) -> data.RegisteredContract:
     try:
@@ -160,7 +195,11 @@ async def update_contract(
     return contract
 
 
-@app.delete("/{contract_id}", response_model=data.RegisteredContract)
+@app.delete(
+    "/contracts/{contract_id}",
+    tags=["contracts"],
+    response_model=data.RegisteredContract,
+)
 async def delete_contract(
     request: Request,
     contract_id: UUID,
@@ -182,8 +221,9 @@ async def delete_contract(
     return deleted_contract
 
 
-@app.get("/requests", response_model=List[data.CallRequest])
+@app.get("/requests", tags=["requests"], response_model=List[data.CallRequest])
 async def list_requests(
+    request: Request,
     contract_id: Optional[UUID] = Query(None),
     contract_address: Optional[str] = Query(None),
     caller: str = Query(...),
@@ -200,6 +240,7 @@ async def list_requests(
     try:
         requests = contracts_actions.list_call_requests(
             db_session=db_session,
+            moonstream_user_id=request.state.user.id,
             contract_id=contract_id,
             contract_address=contract_address,
             caller=caller,
@@ -217,7 +258,36 @@ async def list_requests(
     return requests
 
 
-@app.post("/requests")
+@app.get("/requests/{request_id}", tags=["requests"], response_model=data.CallRequest)
+async def get_request(
+    request: Request,
+    request_id: UUID = Path(...),
+    db_session: Session = Depends(db.yield_db_read_only_session),
+) -> List[data.CallRequest]:
+    """
+    Allows API user to see call request.
+
+    At least one of `contract_id` or `contract_address` must be provided as query parameters.
+    """
+    try:
+        result = contracts_actions.get_call_requests(
+            db_session=db_session,
+            moonstream_user_id=request.state.user.id,
+            request_id=request_id,
+        )
+    except contracts_actions.CallRequestNotFound:
+        raise EngineHTTPException(
+            status_code=404,
+            detail="There is no call request with that ID.",
+        )
+    except Exception as e:
+        logger.error(repr(e))
+        raise EngineHTTPException(status_code=500)
+
+    return result
+
+
+@app.post("/requests", tags=["requests"], response_model=int)
 async def create_requests(
     request: Request,
     data: data.CreateCallRequestsAPIRequest = Body(...),
@@ -244,4 +314,23 @@ async def create_requests(
     return num_requests
 
 
-# TODO(zomglings): Make it possible for users to delete call requests.
+@app.delete("/requests", tags=["requests"], response_model=int)
+async def delete_requests(
+    request: Request,
+    request_ids: List[UUID] = Body(...),
+    db_session: Session = Depends(db.yield_db_session),
+) -> int:
+    """
+    Allows users to delete requests.
+    """
+    try:
+        deleted_requests = contracts_actions.delete_requests(
+            db_session=db_session,
+            moonstream_user_id=request.state.user.id,
+            request_ids=request_ids,
+        )
+    except Exception as err:
+        logger.error(repr(err))
+        raise EngineHTTPException(status_code=500)
+
+    return deleted_requests

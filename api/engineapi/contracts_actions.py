@@ -18,6 +18,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+class CallRequestNotFound(Exception):
+    """
+    Raised when call request with the given parameters is not found in the database.
+    """
+
+
 class ContractAlreadyRegistered(Exception):
     pass
 
@@ -127,6 +133,23 @@ def update_registered_contract(
         db_session.rollback()
         raise
 
+    return contract
+
+
+def get_registered_contract(
+    db_session: Session,
+    moonstream_user_id: uuid.UUID,
+    contract_id: uuid.UUID,
+) -> RegisteredContract:
+    """
+    Get registered contract by ID.
+    """
+    contract = (
+        db_session.query(RegisteredContract)
+        .filter(RegisteredContract.moonstream_user_id == moonstream_user_id)
+        .filter(RegisteredContract.id == contract_id)
+        .one()
+    )
     return contract
 
 
@@ -267,8 +290,38 @@ def request_calls(
     return len(call_specs)
 
 
+def get_call_requests(
+    db_session: Session,
+    moonstream_user_id: uuid.UUID,
+    request_id: uuid.UUID,
+) -> data.CallRequest:
+    """
+    Get call request by ID.
+    """
+    results = (
+        db_session.query(CallRequest, RegisteredContract)
+        .join(
+            RegisteredContract,
+            CallRequest.registered_contract_id == RegisteredContract.id,
+        )
+        .filter(CallRequest.moonstream_user_id == moonstream_user_id)
+        .filter(CallRequest.id == request_id)
+        .all()
+    )
+    if len(results) == 0:
+        raise CallRequestNotFound("Call request with given ID not found")
+    elif len(results) != 1:
+        raise Exception(
+            f"Incorrect number of results found for moonstream_user_id {moonstream_user_id} and request_id {request_id}"
+        )
+    return data.CallRequest(
+        contract_address=results[0][1].address, **results[0][0].__dict__
+    )
+
+
 def list_call_requests(
     db_session: Session,
+    moonstream_user_id: uuid.UUID,
     contract_id: Optional[uuid.UUID],
     contract_address: Optional[str],
     caller: Optional[str],
@@ -295,6 +348,7 @@ def list_call_requests(
             CallRequest.registered_contract_id == RegisteredContract.id,
         )
         .filter(CallRequest.caller == Web3.toChecksumAddress(caller))
+        .filter(CallRequest.moonstream_user_id == moonstream_user_id)
     )
 
     if contract_id is not None:
@@ -331,6 +385,32 @@ def list_call_requests(
 # Should we implement these all using a single delete method, or a different method for each
 # use case?
 # Will come back to this once API is live.
+
+
+def delete_requests(
+    db_session: Session,
+    moonstream_user_id: uuid.UUID,
+    request_ids: List[uuid.UUID] = [],
+) -> int:
+    """
+    Delete a requests.
+    """
+    try:
+        requests_to_delete_query = (
+            db_session.query(CallRequest)
+            .filter(CallRequest.moonstream_user_id == moonstream_user_id)
+            .filter(CallRequest.id.in_(request_ids))
+        )
+        requests_to_delete_num: int = requests_to_delete_query.delete(
+            synchronize_session=False
+        )
+        db_session.commit()
+    except Exception as err:
+        db_session.rollback()
+        logger.error(repr(err))
+        raise Exception("Failed to delete call requests")
+
+    return requests_to_delete_num
 
 
 def handle_register(args: argparse.Namespace) -> None:
