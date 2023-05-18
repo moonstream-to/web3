@@ -39,7 +39,7 @@ whitelist_paths = {
     "/metatx/openapi.json": "GET",
     f"/metatx/{DOCS_TARGET_PATH}": "GET",
     "/metatx/contracts/types": "GET",
-    "/metatx/contracts/requests": "GET",
+    "/metatx/requests": "GET",
 }
 
 app = FastAPI(
@@ -223,7 +223,6 @@ async def delete_contract(
 
 @app.get("/requests", tags=["requests"], response_model=List[data.CallRequest])
 async def list_requests(
-    request: Request,
     contract_id: Optional[UUID] = Query(None),
     contract_address: Optional[str] = Query(None),
     caller: str = Query(...),
@@ -240,7 +239,6 @@ async def list_requests(
     try:
         requests = contracts_actions.list_call_requests(
             db_session=db_session,
-            moonstream_user_id=request.state.user.id,
             contract_id=contract_id,
             contract_address=contract_address,
             caller=caller,
@@ -260,7 +258,6 @@ async def list_requests(
 
 @app.get("/requests/{request_id}", tags=["requests"], response_model=data.CallRequest)
 async def get_request(
-    request: Request,
     request_id: UUID = Path(...),
     db_session: Session = Depends(db.yield_db_read_only_session),
 ) -> List[data.CallRequest]:
@@ -272,7 +269,6 @@ async def get_request(
     try:
         result = contracts_actions.get_call_requests(
             db_session=db_session,
-            moonstream_user_id=request.state.user.id,
             request_id=request_id,
         )
     except contracts_actions.CallRequestNotFound:

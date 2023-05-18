@@ -292,7 +292,6 @@ def request_calls(
 
 def get_call_requests(
     db_session: Session,
-    moonstream_user_id: uuid.UUID,
     request_id: uuid.UUID,
 ) -> data.CallRequest:
     """
@@ -304,7 +303,6 @@ def get_call_requests(
             RegisteredContract,
             CallRequest.registered_contract_id == RegisteredContract.id,
         )
-        .filter(CallRequest.moonstream_user_id == moonstream_user_id)
         .filter(CallRequest.id == request_id)
         .all()
     )
@@ -321,7 +319,6 @@ def get_call_requests(
 
 def list_call_requests(
     db_session: Session,
-    moonstream_user_id: uuid.UUID,
     contract_id: Optional[uuid.UUID],
     contract_address: Optional[str],
     caller: Optional[str],
@@ -348,7 +345,6 @@ def list_call_requests(
             CallRequest.registered_contract_id == RegisteredContract.id,
         )
         .filter(CallRequest.caller == Web3.toChecksumAddress(caller))
-        .filter(CallRequest.moonstream_user_id == moonstream_user_id)
     )
 
     if contract_id is not None:
