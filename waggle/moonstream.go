@@ -96,7 +96,7 @@ func ClientFromEnv() (*MoonstreamEngineAPIClient, error) {
 func (client *MoonstreamEngineAPIClient) ListRegisteredContracts(blockchain, address, contractType string, limit, offset int) ([]RegisteredContract, error) {
 	var contracts []RegisteredContract
 
-	request, requestCreationErr := http.NewRequest("GET", fmt.Sprintf("%s/contracts/", client.BaseURL), nil)
+	request, requestCreationErr := http.NewRequest("GET", fmt.Sprintf("%s/metatx/contracts/", client.BaseURL), nil)
 	if requestCreationErr != nil {
 		return contracts, requestCreationErr
 	}
@@ -154,7 +154,7 @@ func (client *MoonstreamEngineAPIClient) ListCallRequests(contractId, contractAd
 		return callRequests, fmt.Errorf("You must specify caller when listing call requests")
 	}
 
-	request, requestCreationErr := http.NewRequest("GET", fmt.Sprintf("%s/contracts/requests", client.BaseURL), nil)
+	request, requestCreationErr := http.NewRequest("GET", fmt.Sprintf("%s/metatx/requests", client.BaseURL), nil)
 	if requestCreationErr != nil {
 		return callRequests, requestCreationErr
 	}
@@ -226,7 +226,7 @@ func (client *MoonstreamEngineAPIClient) CreateCallRequests(contractId, contract
 		return requestBodyBytesErr
 	}
 
-	request, requestCreationErr := http.NewRequest("POST", fmt.Sprintf("%s/contracts/requests", client.BaseURL), bytes.NewBuffer(requestBodyBytes))
+	request, requestCreationErr := http.NewRequest("POST", fmt.Sprintf("%s/metatx/requests", client.BaseURL), bytes.NewBuffer(requestBodyBytes))
 	if requestCreationErr != nil {
 		return requestCreationErr
 	}

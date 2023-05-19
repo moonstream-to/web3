@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, validator, root_validator
+from pydantic import BaseModel, Field, root_validator, validator
 from web3 import Web3
 
 
@@ -205,9 +205,9 @@ class RegisteredContract(BaseModel):
     address: str
     contract_type: str
     moonstream_user_id: UUID
-    title: Optional[str]
-    description: Optional[str]
-    image_uri: Optional[str]
+    title: Optional[str] = None
+    description: Optional[str] = None
+    image_uri: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -218,6 +218,9 @@ class RegisteredContract(BaseModel):
     @validator("created_at", "updated_at")
     def validate_datetimes(cls, v):
         return v.isoformat()
+
+    class Config:
+        orm_mode = True
 
 
 class CallSpecification(BaseModel):
@@ -244,8 +247,8 @@ class CreateCallRequestsAPIRequest(BaseModel):
 
 class CallRequest(BaseModel):
     id: UUID
-    contract_id: UUID
-    contract_address: str
+    contract_id: UUID = Field(alias="registered_contract_id")
+    contract_address: Optional[str] = None
     moonstream_user_id: UUID
     caller: str
     method: str
@@ -253,6 +256,9 @@ class CallRequest(BaseModel):
     expires_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        orm_mode = True
 
     @validator("id", "contract_id", "moonstream_user_id")
     def validate_uuids(cls, v):
