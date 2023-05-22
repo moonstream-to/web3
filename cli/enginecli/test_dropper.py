@@ -1084,12 +1084,14 @@ class DropperClaimERC20Tests(DropperTestCase):
 
 class DropperClaimERC721Tests(DropperTestCase):
     def test_claim_erc721(self):
-        token_id = 103
-        self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
+        token_id_as_amount = 103
+        self.nft_contract.mint(
+            self.dropper.address, token_id_as_amount, {"from": accounts[0]}
+        )
         claim_id = self.create_drop_and_return_drop_id(
             721,
             self.nft_contract.address,
-            token_id,
+            0,
             1,
             self.terminus.address,
             self.signer_terminus_pool_id,
@@ -1102,33 +1104,45 @@ class DropperClaimERC721Tests(DropperTestCase):
 
         request_id = 9892348234
         message_hash = self.dropper.claim_message_hash(
-            claim_id, request_id, accounts[1].address, block_deadline, 0
+            claim_id,
+            request_id,
+            accounts[1].address,
+            block_deadline,
+            token_id_as_amount,
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
-        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
         self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
         self.dropper.claim(
             claim_id,
             request_id,
             block_deadline,
-            0,
+            token_id_as_amount,
             self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
-        self.assertEqual(self.nft_contract.owner_of(token_id), accounts[1].address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), accounts[1].address
+        )
         self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
-    def test_claim_erc721_with_custom_amount(self):
-        token_id = 1003
-        custom_amount = 79
-        self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
+    def test_claim_erc721_multiple_nfts(self):
+        token_ids = [104, 105, 106]
+
+        for token_id_as_ammount in token_ids:
+            self.nft_contract.mint(
+                self.dropper.address, token_id_as_ammount, {"from": accounts[0]}
+            )
+
         claim_id = self.create_drop_and_return_drop_id(
             721,
             self.nft_contract.address,
-            token_id,
+            0,
             1,
             self.terminus.address,
             self.signer_terminus_pool_id,
@@ -1137,36 +1151,106 @@ class DropperClaimERC721Tests(DropperTestCase):
         )
 
         current_block = len(chain)
-        block_deadline = current_block  # since blocks are 0-indexed
+        block_deadline_0 = current_block  # since blocks are 0-indexed
 
-        request_id = 89390589485
-        message_hash = self.dropper.claim_message_hash(
-            claim_id, request_id, accounts[1].address, block_deadline, custom_amount
-        )
-        signed_message = sign_message(message_hash, self.signer_0)
+        request_id_0 = 89390589485
 
-        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
-        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+        for idx, token_id_as_ammount in enumerate(token_ids):
+            request_id = request_id_0 + idx
+            block_deadline = block_deadline_0 + idx
+            message_hash = self.dropper.claim_message_hash(
+                claim_id,
+                request_id,
+                accounts[1].address,
+                block_deadline,
+                token_id_as_ammount,
+            )
+            signed_message = sign_message(message_hash, self.signer_0)
 
-        self.dropper.claim(
-            claim_id,
-            request_id,
-            block_deadline,
-            custom_amount,
-            self.signer_0,
-            signed_message,
-            {"from": accounts[1]},
-        )
-        self.assertEqual(self.nft_contract.owner_of(token_id), accounts[1].address)
-        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
+            self.assertEqual(
+                self.nft_contract.owner_of(token_id_as_ammount), self.dropper.address
+            )
+            self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
-    def test_claim_erc721_fails_if_block_deadline_exceeded(self):
-        token_id = 105
-        self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
+            self.dropper.claim(
+                claim_id,
+                request_id,
+                block_deadline,
+                token_id_as_ammount,
+                self.signer_0,
+                signed_message,
+                {"from": accounts[1]},
+            )
+            self.assertEqual(
+                self.nft_contract.owner_of(token_id_as_ammount), accounts[1].address
+            )
+            self.assertTrue(self.dropper.claim_status(claim_id, request_id))
+
+    def test_claim_erc721_multiple_claimants(self):
+        token_ids = [107, 108, 109]
+
+        for token_id_as_ammount in token_ids:
+            self.nft_contract.mint(
+                self.dropper.address, token_id_as_ammount, {"from": accounts[0]}
+            )
+
         claim_id = self.create_drop_and_return_drop_id(
             721,
             self.nft_contract.address,
-            token_id,
+            0,
+            1,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
+        )
+
+        current_block = len(chain)
+        block_deadline_0 = current_block  # since blocks are 0-indexed
+
+        request_id_0 = 89390589488
+
+        for idx, token_id_as_ammount in enumerate(token_ids):
+            request_id = request_id_0 + idx
+            block_deadline = block_deadline_0 + idx
+            acct = accounts[1 + idx]
+            message_hash = self.dropper.claim_message_hash(
+                claim_id,
+                request_id,
+                acct.address,
+                block_deadline,
+                token_id_as_ammount,
+            )
+            signed_message = sign_message(message_hash, self.signer_0)
+
+            self.assertEqual(
+                self.nft_contract.owner_of(token_id_as_ammount), self.dropper.address
+            )
+            self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
+            self.dropper.claim(
+                claim_id,
+                request_id,
+                block_deadline,
+                token_id_as_ammount,
+                self.signer_0,
+                signed_message,
+                {"from": acct},
+            )
+            self.assertEqual(
+                self.nft_contract.owner_of(token_id_as_ammount), acct.address
+            )
+            self.assertTrue(self.dropper.claim_status(claim_id, request_id))
+
+    def test_claim_erc721_fails_if_block_deadline_exceeded(self):
+        token_id_as_amount = 110
+        self.nft_contract.mint(
+            self.dropper.address, token_id_as_amount, {"from": accounts[0]}
+        )
+        claim_id = self.create_drop_and_return_drop_id(
+            721,
+            self.nft_contract.address,
+            0,
             1,
             self.terminus.address,
             self.signer_terminus_pool_id,
@@ -1179,11 +1263,17 @@ class DropperClaimERC721Tests(DropperTestCase):
 
         request_id = 97842358
         message_hash = self.dropper.claim_message_hash(
-            claim_id, request_id, accounts[1].address, block_deadline, 0
+            claim_id,
+            request_id,
+            accounts[1].address,
+            block_deadline,
+            token_id_as_amount,
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
-        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
         self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
         with self.assertRaises(VirtualMachineError):
@@ -1191,22 +1281,27 @@ class DropperClaimERC721Tests(DropperTestCase):
                 claim_id,
                 request_id,
                 block_deadline,
-                0,
+                token_id_as_amount,
                 self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
 
-        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
         self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
-    def test_claim_erc721_fails_if_incorrect_amount(self):
-        token_id = 1005
-        self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
+    def test_claim_erc721_fails_if_wrong_token_is_claimed(self):
+        token_id_as_amount = 111
+        another_token_id = 112
+        self.nft_contract.mint(
+            self.dropper.address, token_id_as_amount, {"from": accounts[0]}
+        )
         claim_id = self.create_drop_and_return_drop_id(
             721,
             self.nft_contract.address,
-            token_id,
+            0,
             1,
             self.terminus.address,
             self.signer_terminus_pool_id,
@@ -1218,12 +1313,20 @@ class DropperClaimERC721Tests(DropperTestCase):
         block_deadline = current_block
 
         request_id = 2983432
+
+        # Signed message has the correct token id
         message_hash = self.dropper.claim_message_hash(
-            claim_id, request_id, accounts[1].address, block_deadline, 0
+            claim_id,
+            request_id,
+            accounts[1].address,
+            block_deadline,
+            token_id_as_amount,
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
-        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
         self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
         with self.assertRaises(VirtualMachineError) as vm_error:
@@ -1231,7 +1334,7 @@ class DropperClaimERC721Tests(DropperTestCase):
                 claim_id,
                 request_id,
                 block_deadline,
-                1,
+                another_token_id,
                 self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
@@ -1241,16 +1344,20 @@ class DropperClaimERC721Tests(DropperTestCase):
             "Dropper: claim -- Invalid signer for claim.",
         )
 
-        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
         self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc721_fails_if_drop_is_inactive(self):
-        token_id = 108
-        self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
+        token_id_as_amount = 113
+        self.nft_contract.mint(
+            self.dropper.address, token_id_as_amount, {"from": accounts[0]}
+        )
         claim_id = self.create_drop_and_return_drop_id(
             721,
             self.nft_contract.address,
-            token_id,
+            0,
             1,
             self.terminus.address,
             self.signer_terminus_pool_id,
@@ -1266,11 +1373,17 @@ class DropperClaimERC721Tests(DropperTestCase):
         request_id = 23908492834
 
         message_hash = self.dropper.claim_message_hash(
-            claim_id, request_id, accounts[1].address, block_deadline, 0
+            claim_id,
+            request_id,
+            accounts[1].address,
+            block_deadline,
+            token_id_as_amount,
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
-        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
         self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
         with self.assertRaises(VirtualMachineError) as vme_1:
@@ -1278,7 +1391,7 @@ class DropperClaimERC721Tests(DropperTestCase):
                 claim_id,
                 request_id,
                 block_deadline,
-                0,
+                token_id_as_amount,
                 self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
@@ -1288,16 +1401,20 @@ class DropperClaimERC721Tests(DropperTestCase):
             "Dropper: claim -- cannot claim inactive drop",
         )
 
-        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
         self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc721_fails_if_wrong_claimant(self):
-        token_id = 106
-        self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
+        token_id_as_amount = 114
+        self.nft_contract.mint(
+            self.dropper.address, token_id_as_amount, {"from": accounts[0]}
+        )
         claim_id = self.create_drop_and_return_drop_id(
             721,
             self.nft_contract.address,
-            token_id,
+            0,
             1,
             self.terminus.address,
             self.signer_terminus_pool_id,
@@ -1310,11 +1427,17 @@ class DropperClaimERC721Tests(DropperTestCase):
 
         request_id = 73842743
         message_hash = self.dropper.claim_message_hash(
-            claim_id, request_id, accounts[1].address, block_deadline, 0
+            claim_id,
+            request_id,
+            accounts[1].address,
+            block_deadline,
+            token_id_as_amount,
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
-        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
         self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
         with self.assertRaises(VirtualMachineError):
@@ -1322,22 +1445,26 @@ class DropperClaimERC721Tests(DropperTestCase):
                 claim_id,
                 request_id,
                 block_deadline,
-                0,
+                token_id_as_amount,
                 self.signer_0,
                 signed_message,
                 {"from": accounts[2]},
             )
 
-        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
         self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc721_fails_if_wrong_signer(self):
-        token_id = 107
-        self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
+        token_id_as_amount = 115
+        self.nft_contract.mint(
+            self.dropper.address, token_id_as_amount, {"from": accounts[0]}
+        )
         claim_id = self.create_drop_and_return_drop_id(
             721,
             self.nft_contract.address,
-            token_id,
+            0,
             1,
             self.terminus.address,
             self.signer_terminus_pool_id,
@@ -1350,11 +1477,17 @@ class DropperClaimERC721Tests(DropperTestCase):
 
         request_id = 7283743
         message_hash = self.dropper.claim_message_hash(
-            claim_id, request_id, accounts[1].address, block_deadline, 0
+            claim_id,
+            request_id,
+            accounts[1].address,
+            block_deadline,
+            token_id_as_amount,
         )
         signed_message = sign_message(message_hash, self.signer_1)
 
-        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
         self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
         with self.assertRaises(VirtualMachineError):
@@ -1365,19 +1498,23 @@ class DropperClaimERC721Tests(DropperTestCase):
                 0,
                 self.signer_1,
                 signed_message,
-                {"from": accounts[2]},
+                {"from": accounts[1]},
             )
 
-        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
         self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc721_fails_on_repeated_attempts_with_same_signed_message(self):
-        token_id = 109
-        self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
+        token_id_as_amount = 116
+        self.nft_contract.mint(
+            self.dropper.address, token_id_as_amount, {"from": accounts[0]}
+        )
         claim_id = self.create_drop_and_return_drop_id(
             721,
             self.nft_contract.address,
-            token_id,
+            0,
             1,
             self.terminus.address,
             self.signer_terminus_pool_id,
@@ -1390,34 +1527,44 @@ class DropperClaimERC721Tests(DropperTestCase):
 
         request_id = 789278945273
         message_hash = self.dropper.claim_message_hash(
-            claim_id, request_id, accounts[1].address, block_deadline, 0
+            claim_id,
+            request_id,
+            accounts[1].address,
+            block_deadline,
+            token_id_as_amount,
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
-        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
         self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
         self.dropper.claim(
             claim_id,
             request_id,
             block_deadline,
-            0,
+            token_id_as_amount,
             self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
-        self.assertEqual(self.nft_contract.owner_of(token_id), accounts[1].address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), accounts[1].address
+        )
         self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
         self.nft_contract.safe_transfer_from(
             accounts[1].address,
             self.dropper.address,
-            token_id,
+            token_id_as_amount,
             "",
             {"from": accounts[1]},
         )
 
-        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
         self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
         with self.assertRaises(VirtualMachineError) as vm_error:
@@ -1425,7 +1572,7 @@ class DropperClaimERC721Tests(DropperTestCase):
                 claim_id,
                 request_id,
                 block_deadline,
-                0,
+                token_id_as_amount,
                 self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
@@ -1435,18 +1582,22 @@ class DropperClaimERC721Tests(DropperTestCase):
             "Dropper.claim: That (dropID, requestID) pair has already been claimed",
         )
 
-        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
         self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc721_fails_on_repeated_attempts_with_different_signed_messages(
         self,
     ):
-        token_id = 110
-        self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
+        token_id_as_amount = 117
+        self.nft_contract.mint(
+            self.dropper.address, token_id_as_amount, {"from": accounts[0]}
+        )
         claim_id = self.create_drop_and_return_drop_id(
             721,
             self.nft_contract.address,
-            token_id,
+            0,
             1,
             self.terminus.address,
             self.signer_terminus_pool_id,
@@ -1459,7 +1610,11 @@ class DropperClaimERC721Tests(DropperTestCase):
 
         request_id = 234589085
         message_hash = self.dropper.claim_message_hash(
-            claim_id, request_id, accounts[1].address, block_deadline, 0
+            claim_id,
+            request_id,
+            accounts[1].address,
+            block_deadline,
+            token_id_as_amount,
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -1469,18 +1624,20 @@ class DropperClaimERC721Tests(DropperTestCase):
             claim_id,
             request_id,
             block_deadline,
-            0,
+            token_id_as_amount,
             self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
-        self.assertEqual(self.nft_contract.owner_of(token_id), accounts[1].address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), accounts[1].address
+        )
         self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
         self.nft_contract.safe_transfer_from(
             accounts[1].address,
             self.dropper.address,
-            token_id,
+            token_id_as_amount,
             "",
             {"from": accounts[1]},
         )
@@ -1489,7 +1646,11 @@ class DropperClaimERC721Tests(DropperTestCase):
         block_deadline = current_block
 
         message_hash = self.dropper.claim_message_hash(
-            claim_id, request_id, accounts[1].address, block_deadline, 0
+            claim_id,
+            request_id,
+            accounts[1].address,
+            block_deadline,
+            token_id_as_amount,
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -1498,7 +1659,7 @@ class DropperClaimERC721Tests(DropperTestCase):
                 claim_id,
                 request_id,
                 block_deadline,
-                0,
+                token_id_as_amount,
                 self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
@@ -1508,18 +1669,22 @@ class DropperClaimERC721Tests(DropperTestCase):
             "Dropper.claim: That (dropID, requestID) pair has already been claimed",
         )
 
-        self.assertEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
         self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc721_succeeds_multiple_times_for_same_claimant(
         self,
     ):
-        token_id = 111
-        self.nft_contract.mint(self.dropper.address, token_id, {"from": accounts[0]})
+        token_id_as_amount = 118
+        self.nft_contract.mint(
+            self.dropper.address, token_id_as_amount, {"from": accounts[0]}
+        )
         claim_id = self.create_drop_and_return_drop_id(
             721,
             self.nft_contract.address,
-            token_id,
+            0,
             1,
             self.terminus.address,
             self.signer_terminus_pool_id,
@@ -1533,7 +1698,11 @@ class DropperClaimERC721Tests(DropperTestCase):
         request_id_0 = 234589085
         request_id_1 = request_id_0 + 1
         message_hash = self.dropper.claim_message_hash(
-            claim_id, request_id_0, accounts[1].address, block_deadline, 0
+            claim_id,
+            request_id_0,
+            accounts[1].address,
+            block_deadline,
+            token_id_as_amount,
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -1543,18 +1712,20 @@ class DropperClaimERC721Tests(DropperTestCase):
             claim_id,
             request_id_0,
             block_deadline,
-            0,
+            token_id_as_amount,
             self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
-        self.assertEqual(self.nft_contract.owner_of(token_id), accounts[1].address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), accounts[1].address
+        )
         self.assertTrue(self.dropper.claim_status(claim_id, request_id_0))
 
         self.nft_contract.safe_transfer_from(
             accounts[1].address,
             self.dropper.address,
-            token_id,
+            token_id_as_amount,
             "",
             {"from": accounts[1]},
         )
@@ -1563,7 +1734,11 @@ class DropperClaimERC721Tests(DropperTestCase):
         block_deadline = current_block
 
         message_hash = self.dropper.claim_message_hash(
-            claim_id, request_id_1, accounts[1].address, block_deadline, 0
+            claim_id,
+            request_id_1,
+            accounts[1].address,
+            block_deadline,
+            token_id_as_amount,
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -1573,23 +1748,29 @@ class DropperClaimERC721Tests(DropperTestCase):
             claim_id,
             request_id_1,
             block_deadline,
-            0,
+            token_id_as_amount,
             self.signer_0,
             signed_message,
             {"from": accounts[1]},
         )
 
-        self.assertEqual(self.nft_contract.owner_of(token_id), accounts[1].address)
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), accounts[1].address
+        )
         self.assertTrue(self.dropper.claim_status(claim_id, request_id_1))
 
     def test_claim_erc721_fails_if_dropper_not_owner(self):
-        token_id = 112
-        self.nft_contract.mint(accounts[0].address, token_id, {"from": accounts[0]})
-        self.assertNotEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+        token_id_as_amount = 119
+        self.nft_contract.mint(
+            accounts[0].address, token_id_as_amount, {"from": accounts[0]}
+        )
+        self.assertNotEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
         claim_id = self.create_drop_and_return_drop_id(
             721,
             self.nft_contract.address,
-            token_id,
+            0,
             1,
             self.terminus.address,
             self.signer_terminus_pool_id,
@@ -1602,7 +1783,11 @@ class DropperClaimERC721Tests(DropperTestCase):
 
         request_id = 7823743
         message_hash = self.dropper.claim_message_hash(
-            claim_id, request_id, accounts[1].address, block_deadline, 0
+            claim_id,
+            request_id,
+            accounts[1].address,
+            block_deadline,
+            token_id_as_amount,
         )
         signed_message = sign_message(message_hash, self.signer_0)
 
@@ -1613,14 +1798,18 @@ class DropperClaimERC721Tests(DropperTestCase):
                 claim_id,
                 request_id,
                 block_deadline,
-                0,
+                token_id_as_amount,
                 self.signer_0,
                 signed_message,
                 {"from": accounts[1]},
             )
 
-        self.assertNotEqual(self.nft_contract.owner_of(token_id), accounts[1].address)
-        self.assertNotEqual(self.nft_contract.owner_of(token_id), self.dropper.address)
+        self.assertNotEqual(
+            self.nft_contract.owner_of(token_id_as_amount), accounts[1].address
+        )
+        self.assertNotEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
         self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
 
