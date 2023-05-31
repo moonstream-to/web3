@@ -157,6 +157,11 @@ contract DropperFacet is
             "Dropper: createDrop -- Amount must be greater than 0"
         );
 
+        require(
+            tokenId == 0 || tokenType != ERC721_TYPE,
+            "Dropper: createDrop -- TokenId should be zero for ERC721 drop."
+        );
+
         LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
 
         ds.NumDrops++;

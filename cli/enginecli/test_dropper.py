@@ -124,8 +124,8 @@ class DropperTestCase(unittest.TestCase):
         self.assertEqual(self.terminus.address, terminus_addr)
         self.assertEqual(self.admin_terminus_pool_id, terminus_pool_id)
 
+
 class DropperDropSetupTests(DropperTestCase):
-    
     def test_drop_creation(self):
         num_drops_0 = self.dropper.num_drops()
         drop_id = self.create_drop_and_return_drop_id(
@@ -170,6 +170,26 @@ class DropperDropSetupTests(DropperTestCase):
         self.assertEqual(
             vm_error.exception.revert_msg,
             "Dropper: createDrop -- Unknown token type",
+        )
+        num_drops_1 = self.dropper.num_drops()
+        self.assertEqual(num_drops_1, num_drops_0)
+
+    def test_drop_creation_fails_if_erc721_type_and_tokenId_not_zero(self):
+        num_drops_0 = self.dropper.num_drops()
+        with self.assertRaises(VirtualMachineError) as vm_error:
+            self.dropper.create_drop(
+                721,
+                self.nft_contract.address,
+                1,
+                1,
+                self.terminus.address,
+                self.signer_terminus_pool_id,
+                "https://example.com",
+                {"from": accounts[0]},
+            )
+        self.assertEqual(
+            vm_error.exception.revert_msg,
+            "Dropper: createDrop -- TokenId should be zero for ERC721 drop.",
         )
         num_drops_1 = self.dropper.num_drops()
         self.assertEqual(num_drops_1, num_drops_0)
