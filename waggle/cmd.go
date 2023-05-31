@@ -140,7 +140,7 @@ func CreateSignCommand() *cobra.Command {
 	// All variables to be used for arguments.
 	var chainId int64
 	var batchSize int
-	var bugoutToken, cursorName, journalID, keyfile, password, claimant, dropperAddress, dropId, requestId, blockDeadline, amount, infile, outfile string
+	var bugoutToken, cursorName, journalID, keyfile, password, claimant, dropperAddress, dropId, requestId, blockDeadline, amount, infile, outfile, query string
 	var sensible, header, isCSV bool
 
 	signCommand.PersistentFlags().StringVarP(&keyfile, "keystore", "k", "", "Path to keystore file (this should be a JSON file).")
@@ -363,12 +363,13 @@ func CreateSignCommand() *cobra.Command {
 				return errors.New("please specify a Bugout journal ID, by passing it as the --journal/-j argument")
 			}
 
-			return ProcessDropperClaims(&bugoutClient, bugoutToken, journalID, cursorName, batchSize, header, os.Stdout)
+			return ProcessDropperClaims(&bugoutClient, bugoutToken, journalID, cursorName, query, batchSize, header, os.Stdout)
 		},
 	}
 	dropperPullSubcommand.Flags().StringVarP(&bugoutToken, "token", "t", "", "Bugout API access token. If you don't have one, you can generate one at https://bugout.dev/account/tokens.")
 	dropperPullSubcommand.Flags().StringVarP(&journalID, "journal", "j", "", "ID of Bugout journal from which to pull claim requests.")
 	dropperPullSubcommand.Flags().StringVarP(&cursorName, "cursor", "c", "", "Name of cursor which defines which requests are processed and which ones are not.")
+	dropperPullSubcommand.Flags().StringVarP(&query, "query", "q", "", "Additional Bugout search query to apply in Bugout.")
 	dropperPullSubcommand.Flags().IntVarP(&batchSize, "batch-size", "N", 500, "Maximum number of messages to process.")
 	dropperPullSubcommand.Flags().BoolVarP(&header, "header", "H", true, "Set this flag to include header row in output CSV.")
 
