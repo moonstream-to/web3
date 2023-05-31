@@ -1151,6 +1151,54 @@ class DropperClaimERC721Tests(DropperTestCase):
         )
         self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
+    def test_claim_erc721_can_claim_token_id_zero(self):
+        token_id_as_amount = 0
+        self.nft_contract.mint(
+            self.dropper.address, token_id_as_amount, {"from": accounts[0]}
+        )
+        claim_id = self.create_drop_and_return_drop_id(
+            721,
+            self.nft_contract.address,
+            0,
+            1,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
+        )
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        request_id = 9892348234
+        message_hash = self.dropper.claim_message_hash(
+            claim_id,
+            request_id,
+            accounts[1].address,
+            block_deadline,
+            token_id_as_amount,
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
+        self.dropper.claim(
+            claim_id,
+            request_id,
+            block_deadline,
+            token_id_as_amount,
+            self.signer_0,
+            signed_message,
+            {"from": accounts[1]},
+        )
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), accounts[1].address
+        )
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
+
     def test_claim_erc721_multiple_nfts(self):
         token_ids = [104, 105, 106]
 
@@ -1207,6 +1255,8 @@ class DropperClaimERC721Tests(DropperTestCase):
             self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc721_multiple_claimants(self):
+        # This list should be small i.e. each NFT is assigned to a different account
+        # so the size of this list should not exceed the number of accounts.
         token_ids = [107, 108, 109]
 
         for token_id_as_ammount in token_ids:
