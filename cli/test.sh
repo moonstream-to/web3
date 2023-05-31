@@ -6,7 +6,7 @@
 
 set -e
 
-GAS_PROFILE=${GAS_PROFILE:-y}
+GAS_PROFILE=${GAS_PROFILE:-n}
 
 usage() {
     echo "Usage: $0" [TEST_SPEC ...]

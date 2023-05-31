@@ -8,7 +8,15 @@ import eth_keys
 from hexbytes import HexBytes
 from moonworm.watch import _fetch_events_chunk
 
-from . import core, DropperFacet, MockTerminus, MockErc20, MockERC721
+from . import (
+    core,
+    DropperFacet,
+    MockTerminus,
+    MockErc20,
+    MockERC721,
+    ClaimProxy,
+    ERC721CompatibleClaimProxy,
+)
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
@@ -1150,6 +1158,118 @@ class DropperClaimERC721Tests(DropperTestCase):
             self.nft_contract.owner_of(token_id_as_amount), accounts[1].address
         )
         self.assertTrue(self.dropper.claim_status(claim_id, request_id))
+
+    def test_claim_erc721_with_smart_contract(self):
+        token_id_as_amount = 1030
+        self.nft_contract.mint(
+            self.dropper.address, token_id_as_amount, {"from": accounts[0]}
+        )
+        claim_id = self.create_drop_and_return_drop_id(
+            721,
+            self.nft_contract.address,
+            0,
+            1,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com/test_claim_erc721_with_smart_contract",
+            {"from": accounts[0]},
+        )
+
+        # Deploy smart contract claimant
+        claimant_contract = ERC721CompatibleClaimProxy.ERC721CompatibleClaimProxy(None)
+        claimant_contract.deploy(self.dropper.address, {"from": accounts[1]})
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        request_id = 98923482340
+        message_hash = self.dropper.claim_message_hash(
+            claim_id,
+            request_id,
+            claimant_contract.address,
+            block_deadline,
+            token_id_as_amount,
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
+        claimant_contract.claim(
+            claim_id,
+            request_id,
+            block_deadline,
+            token_id_as_amount,
+            self.signer_0,
+            signed_message,
+            {"from": accounts[1]},
+        )
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), claimant_contract.address
+        )
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
+
+        claimant_contract.drain(
+            721, self.nft_contract.address, token_id_as_amount, {"from": accounts[1]}
+        )
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), accounts[1].address
+        )
+
+    def test_claim_erc721_fails_with_smart_contract_not_receiver(self):
+        token_id_as_amount = 1031
+        self.nft_contract.mint(
+            self.dropper.address, token_id_as_amount, {"from": accounts[0]}
+        )
+        claim_id = self.create_drop_and_return_drop_id(
+            721,
+            self.nft_contract.address,
+            0,
+            1,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com/test_claim_erc721_fails_with_smart_contract_not_receiver",
+            {"from": accounts[0]},
+        )
+
+        # Deploy smart contract claimant
+        claimant_contract = ClaimProxy.ClaimProxy(None)
+        claimant_contract.deploy(self.dropper.address, {"from": accounts[1]})
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        request_id = 98923482340
+        message_hash = self.dropper.claim_message_hash(
+            claim_id,
+            request_id,
+            claimant_contract.address,
+            block_deadline,
+            token_id_as_amount,
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
+        with self.assertRaises(VirtualMachineError):
+            claimant_contract.claim(
+                claim_id,
+                request_id,
+                block_deadline,
+                token_id_as_amount,
+                self.signer_0,
+                signed_message,
+                {"from": accounts[1]},
+            )
+        self.assertEqual(
+            self.nft_contract.owner_of(token_id_as_amount), self.dropper.address
+        )
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
     def test_claim_erc721_can_claim_token_id_zero(self):
         token_id_as_amount = 0
