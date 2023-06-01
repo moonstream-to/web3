@@ -303,8 +303,13 @@ async def create_requests(
             call_specs=data.specifications,
             ttl_days=data.ttl_days,
         )
-    except Exception as e:
-        logger.error(repr(e))
+    except contracts_actions.InvalidAddressFormat as err:
+        raise EngineHTTPException(
+            status_code=400,
+            detail=f"Address not passed web3checksum validation, err: {err}",
+        )
+    except Exception as err:
+        logger.error(repr(err))
         raise EngineHTTPException(status_code=500)
 
     return num_requests
