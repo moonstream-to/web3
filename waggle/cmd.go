@@ -197,14 +197,19 @@ func CreateSignCommand() *cobra.Command {
 		Use:   "single",
 		Short: "Sign a single claim method call",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			key, keyErr := KeyFromFile(keyfile, password)
-			if keyErr != nil {
-				return keyErr
-			}
-
 			messageHash, hashErr := DropperClaimMessageHash(chainId, dropperAddress, dropId, requestId, claimant, blockDeadline, amount)
 			if hashErr != nil {
 				return hashErr
+			}
+
+			if header {
+				cmd.Println(hex.EncodeToString(messageHash))
+				return nil
+			}
+
+			key, keyErr := KeyFromFile(keyfile, password)
+			if keyErr != nil {
+				return keyErr
 			}
 
 			signedMessage, err := SignRawMessage(messageHash, key, sensible)
@@ -236,6 +241,7 @@ func CreateSignCommand() *cobra.Command {
 	dropperSingleSubcommand.Flags().StringVar(&claimant, "claimant", "", "Address of the intended claimant.")
 	dropperSingleSubcommand.Flags().StringVar(&blockDeadline, "block-deadline", "0", "Block number by which the claim must be made.")
 	dropperSingleSubcommand.Flags().StringVar(&amount, "amount", "0", "Amount of tokens to distribute.")
+	dropperSingleSubcommand.Flags().BoolVar(&header, "hash", false, "Output the message hash instead of the signature.")
 
 	dropperBatchSubcommand := &cobra.Command{
 		Use:   "batch",
