@@ -55,7 +55,6 @@ func WriteCursorToJournal(client *bugout.BugoutClient, token, journalID, cursorN
 
 func ReportsIterator(client *bugout.BugoutClient, token, journalID, cursor, queryTerms string, limit, offset int) (spire.EntryResultsPage, error) {
 	var query string = fmt.Sprintf("!tag:type:cursor %s", queryTerms)
-	fmt.Println(query)
 	if cursor != "" {
 		cleanedCursor := CleanTimestamp(cursor)
 		query = fmt.Sprintf("%s created_at:>%s", query, cleanedCursor)
