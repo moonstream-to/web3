@@ -36,7 +36,7 @@ func GetCursorFromJournal(client *bugout.BugoutClient, token, journalID, cursorN
 	return results.Results[0].ContextUrl, nil
 }
 
-func WriteCursorToJournal(client *bugout.BugoutClient, token, journalID, cursorName, cursor string) error {
+func WriteCursorToJournal(client *bugout.BugoutClient, token, journalID, cursorName, cursor, queryTerms string) error {
 	title := fmt.Sprintf("waggle cursor: %s", cursorName)
 	entryContext := spire.EntryContext{
 		ContextType: "waggle",
@@ -48,12 +48,13 @@ func WriteCursorToJournal(client *bugout.BugoutClient, token, journalID, cursorN
 		fmt.Sprintf("cursor:%s", cursorName),
 		fmt.Sprintf("waggle_version:%s", WAGGLE_VERSION),
 	}
-	_, err := client.Spire.CreateEntry(token, journalID, title, cursor, tags, entryContext)
+	content := fmt.Sprintf("Cursor: %s at %s\nQuery: %s", cursorName, cursor, queryTerms)
+	_, err := client.Spire.CreateEntry(token, journalID, title, content, tags, entryContext)
 	return err
 }
 
-func ReportsIterator(client *bugout.BugoutClient, token, journalID, cursor string, limit, offset int) (spire.EntryResultsPage, error) {
-	var query string = "!tag:type:cursor"
+func ReportsIterator(client *bugout.BugoutClient, token, journalID, cursor, queryTerms string, limit, offset int) (spire.EntryResultsPage, error) {
+	var query string = fmt.Sprintf("!tag:type:cursor %s", queryTerms)
 	if cursor != "" {
 		cleanedCursor := CleanTimestamp(cursor)
 		query = fmt.Sprintf("%s created_at:>%s", query, cleanedCursor)
@@ -108,13 +109,13 @@ func DropperReportsToCSV(reports []DropperClaimMessage, header bool, w io.Writer
 	return csvWriter.WriteAll(records)
 }
 
-func ProcessDropperClaims(client *bugout.BugoutClient, bugoutToken, journalID, cursorName string, batchSize int, header bool, w io.Writer) error {
+func ProcessDropperClaims(client *bugout.BugoutClient, bugoutToken, journalID, cursorName, query string, batchSize int, header bool, w io.Writer) error {
 	cursor, cursorErr := GetCursorFromJournal(client, bugoutToken, journalID, cursorName)
 	if cursorErr != nil {
 		return cursorErr
 	}
 
-	searchResults, searchErr := ReportsIterator(client, bugoutToken, journalID, cursor, batchSize, 0)
+	searchResults, searchErr := ReportsIterator(client, bugoutToken, journalID, cursor, query, batchSize, 0)
 	if searchErr != nil {
 		return searchErr
 	}
@@ -131,7 +132,7 @@ func ProcessDropperClaims(client *bugout.BugoutClient, bugoutToken, journalID, c
 
 	var processedErr error
 	if len(searchResults.Results) > 0 {
-		processedErr = WriteCursorToJournal(client, bugoutToken, journalID, cursorName, searchResults.Results[len(searchResults.Results)-1].CreatedAt)
+		processedErr = WriteCursorToJournal(client, bugoutToken, journalID, cursorName, searchResults.Results[len(searchResults.Results)-1].CreatedAt, query)
 	}
 
 	return processedErr
