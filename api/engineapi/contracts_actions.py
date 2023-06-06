@@ -24,6 +24,12 @@ class CallRequestNotFound(Exception):
     """
 
 
+class InvalidAddressFormat(Exception):
+    """
+    Raised when address not pass web3checksum validation.
+    """
+
+
 class ContractAlreadyRegistered(Exception):
     pass
 
@@ -56,6 +62,11 @@ def validate_method_and_params(
             raise ValueError(
                 f"Parameters must have {required_params} keys for dropper contract type"
             )
+        try:
+            Web3.toChecksumAddress(parameters["signer"])
+        except:
+            raise InvalidAddressFormat("Parameter signer must be a valid address")
+        required_params["amount"] = str(required_params["amount"])
     else:
         raise ValueError(f"Unknown contract type {contract_type}")
 
@@ -262,9 +273,16 @@ def request_calls(
         normalized_caller = Web3.toChecksumAddress(specification.caller)
 
         # Validate the method and parameters for the contract_type
-        validate_method_and_params(
-            contract_type, specification.method, specification.parameters
-        )
+        try:
+            validate_method_and_params(
+                contract_type, specification.method, specification.parameters
+            )
+        except InvalidAddressFormat as err:
+            raise InvalidAddressFormat(err)
+        except Exception as err:
+            logger.error(
+                f"Unhandled error occurred during methods and parameters validation, err: {err}"
+            )
 
         expires_at = None
         if ttl_days is not None:
