@@ -228,6 +228,10 @@ class CallSpecification(BaseModel):
     method: str
     parameters: Dict[str, Any]
 
+    @validator("caller")
+    def validate_web3_addresses(cls, v):
+        return Web3.toChecksumAddress(v)
+
 
 class CreateCallRequestsAPIRequest(BaseModel):
     contract_id: Optional[UUID] = None

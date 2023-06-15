@@ -1,43 +1,9 @@
-# lootbox
+# Moonstream Engine
 
-Use lootboxes in your game economy with ready to use contracts
+The API to Moonstream's Game and Economic Engine.
 
-## Deployment
+We are in the process of splitting up this repository. The smart contracts and the API server will go into separate repositories under the https://github.com/moonstream-to organization.
 
-Deployment with local signer server
+We will update this documentation once the split is complete.
 
-```bash
-MOONSTREAM_SIGNING_SERVER_IP=127.0.0.1 ./dev.sh
-```
-
-## Run frontend
-
-Do from root directory workspace directory:
-
-Engine:
-
-Run dev
-
-```
-yarn workspace engine run dev
-```
-
-Build
-
-```
-yarn workspace engine run build
-```
-
-Player:
-
-Run dev
-
-```
-yarn workspace player run dev
-```
-
-Build
-
-```
-yarn workspace player run build
-```
+In the mean time, you can view the [Moonstream documentation](https://docs.moonstream.to).
