@@ -11,6 +11,7 @@ import "@openzeppelin-contracts/contracts/access/Ownable.sol";
 import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
 
 import {IDropper} from "../interfaces/IDropper.sol";
 
@@ -82,6 +83,25 @@ contract ERC721CompatibleClaimProxy is ClaimProxy {
         return
             bytes4(
                 keccak256("onERC721Received(address,address,uint256,bytes)")
+            );
+    }
+}
+
+contract ERC1155CompatibleClaimProxy is ClaimProxy {
+    constructor(address _dropperAddress) ClaimProxy(_dropperAddress) {}
+
+    function onERC1155Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        uint256 amount,
+        bytes calldata data
+    ) external returns (bytes4) {
+        return
+            bytes4(
+                keccak256(
+                    "onERC1155Received(address,address,uint256,uint256,bytes)"
+                )
             );
     }
 }

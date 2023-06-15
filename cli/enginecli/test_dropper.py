@@ -16,6 +16,7 @@ from . import (
     MockERC721,
     ClaimProxy,
     ERC721CompatibleClaimProxy,
+    ERC1155CompatibleClaimProxy,
 )
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
@@ -1108,6 +1109,55 @@ class DropperClaimERC20Tests(DropperTestCase):
         self.assertEqual(balance_dropper_1, balance_dropper_0)
 
         self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
+    def test_claim_erc20_with_smart_contract(self):
+        reward = 3
+        self.erc20_contract.mint(self.dropper.address, 100, {"from": accounts[0]})
+        claim_id = self.create_drop_and_return_drop_id(
+            20,
+            self.erc20_contract.address,
+            0,
+            reward,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
+        )
+
+        # Deploy smart contract claimant
+        claimant_contract = ClaimProxy.ClaimProxy(None)
+        claimant_contract.deploy(self.dropper.address, {"from": accounts[1]})
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        request_id = 90284359
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, request_id, claimant_contract.address, block_deadline, 0
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        balance_claimant_0 = self.erc20_contract.balance_of(claimant_contract.address)
+        balance_dropper_0 = self.erc20_contract.balance_of(self.dropper.address)
+
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
+        claimant_contract.claim(
+            claim_id,
+            request_id,
+            block_deadline,
+            0,
+            self.signer_0,
+            signed_message,
+            {"from": accounts[1]},
+        )
+        balance_claimant_1 = self.erc20_contract.balance_of(claimant_contract.address)
+        balance_dropper_1 = self.erc20_contract.balance_of(self.dropper.address)
+
+        self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
+        self.assertEqual(balance_dropper_1, balance_dropper_0 - reward)
+
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
 
 
 class DropperClaimERC721Tests(DropperTestCase):
@@ -2620,6 +2670,7 @@ class DropperClaimERC1155Tests(DropperTestCase):
         self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
         self.assertEqual(balance_dropper_1, balance_dropper_0 - reward)
         self.assertTrue(self.dropper.claim_status(claim_id, request_id_0))
+
         current_block = len(chain)
         block_deadline = current_block
         message_hash = self.dropper.claim_message_hash(
@@ -2697,6 +2748,131 @@ class DropperClaimERC1155Tests(DropperTestCase):
         balance_dropper_1 = self.terminus.balance_of(
             self.dropper.address, self.terminus_pool_id
         )
+        self.assertEqual(balance_claimant_1, balance_claimant_0)
+        self.assertEqual(balance_dropper_1, balance_dropper_0)
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
+    def test_claim_erc115_with_smart_contract(self):
+        token_id = 1032
+        reward = 9
+        self.terminus.mint(
+            self.dropper.address,
+            self.terminus_pool_id,
+            10 * reward,
+            "",
+            {"from": accounts[0]},
+        )
+        claim_id = self.create_drop_and_return_drop_id(
+            1155,
+            self.terminus.address,
+            self.terminus_pool_id,
+            reward,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
+        )
+
+        # Deploy smart contract claimant
+        claimant_contract = ERC1155CompatibleClaimProxy.ERC1155CompatibleClaimProxy(
+            None
+        )
+        claimant_contract.deploy(self.dropper.address, {"from": accounts[1]})
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        request_id = 7283474
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, request_id, claimant_contract.address, block_deadline, reward
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+        balance_claimant_0 = self.terminus.balance_of(
+            claimant_contract.address, self.terminus_pool_id
+        )
+        balance_dropper_0 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+        claimant_contract.claim(
+            claim_id,
+            request_id,
+            block_deadline,
+            reward,
+            self.signer_0,
+            signed_message,
+            {"from": accounts[1]},
+        )
+        balance_claimant_1 = self.terminus.balance_of(
+            claimant_contract.address, self.terminus_pool_id
+        )
+        balance_dropper_1 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+        self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
+        self.assertEqual(balance_dropper_1, balance_dropper_0 - reward)
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
+
+    def test_claim_erc115_fails_with_smart_contract_non_receiver(self):
+        token_id = 1033
+        reward = 9
+        self.terminus.mint(
+            self.dropper.address,
+            self.terminus_pool_id,
+            10 * reward,
+            "",
+            {"from": accounts[0]},
+        )
+        claim_id = self.create_drop_and_return_drop_id(
+            1155,
+            self.terminus.address,
+            self.terminus_pool_id,
+            reward,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
+        )
+
+        # Deploy smart contract claimant
+        claimant_contract = ClaimProxy.ClaimProxy(None)
+        claimant_contract.deploy(self.dropper.address, {"from": accounts[1]})
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        request_id = 7283474
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, request_id, claimant_contract.address, block_deadline, reward
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+        balance_claimant_0 = self.terminus.balance_of(
+            claimant_contract.address, self.terminus_pool_id
+        )
+        balance_dropper_0 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
+        with self.assertRaises(VirtualMachineError):
+            claimant_contract.claim(
+                claim_id,
+                request_id,
+                block_deadline,
+                reward,
+                self.signer_0,
+                signed_message,
+                {"from": accounts[1]},
+            )
+
+        balance_claimant_1 = self.terminus.balance_of(
+            claimant_contract.address, self.terminus_pool_id
+        )
+
+        balance_dropper_1 = self.terminus.balance_of(
+            self.dropper.address, self.terminus_pool_id
+        )
+
         self.assertEqual(balance_claimant_1, balance_claimant_0)
         self.assertEqual(balance_dropper_1, balance_dropper_0)
         self.assertFalse(self.dropper.claim_status(claim_id, request_id))
@@ -3468,6 +3644,124 @@ class DropperClaimERC1155MintableTests(DropperTestCase):
         self.assertEqual(balance_claimant_2, balance_claimant_1 + reward)
         self.assertEqual(pool_supply_2, pool_supply_1 + reward)
         self.assertTrue(self.dropper.claim_status(claim_id, request_id_1))
+
+    def test_claim_erc1155_with_smart_contract(self):
+        reward = 3
+        claim_id = self.create_drop_and_return_drop_id(
+            self.TERMINUS_MINTABLE_TYPE,
+            self.terminus.address,
+            self.mintable_terminus_pool_id,
+            reward,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
+        )
+
+        # Deploy smart contract claimant
+        claimant_contract = ERC1155CompatibleClaimProxy.ERC1155CompatibleClaimProxy(
+            None
+        )
+        claimant_contract.deploy(self.dropper.address, {"from": accounts[1]})
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        request_id = 84908590346
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, request_id, claimant_contract.address, block_deadline, 0
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        balance_claimant_0 = self.terminus.balance_of(
+            claimant_contract.address, self.mintable_terminus_pool_id
+        )
+
+        pool_supply_0 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
+
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
+        claimant_contract.claim(
+            claim_id,
+            request_id,
+            block_deadline,
+            0,
+            self.signer_0,
+            signed_message,
+            {"from": accounts[1]},
+        )
+
+        pool_supply_1 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
+
+        balance_claimant_1 = self.terminus.balance_of(
+            claimant_contract.address, self.mintable_terminus_pool_id
+        )
+        self.assertEqual(balance_claimant_1, balance_claimant_0 + reward)
+        self.assertEqual(pool_supply_1, pool_supply_0 + reward)
+        self.assertTrue(self.dropper.claim_status(claim_id, request_id))
+
+    def test_claim_erc1155_fails_with_smart_contract_non_receiver(self):
+        reward = 3
+        claim_id = self.create_drop_and_return_drop_id(
+            self.TERMINUS_MINTABLE_TYPE,
+            self.terminus.address,
+            self.mintable_terminus_pool_id,
+            reward,
+            self.terminus.address,
+            self.signer_terminus_pool_id,
+            "https://example.com",
+            {"from": accounts[0]},
+        )
+
+        # Deploy smart contract claimant
+        claimant_contract = ClaimProxy.ClaimProxy(None)
+        claimant_contract.deploy(self.dropper.address, {"from": accounts[1]})
+
+        current_block = len(chain)
+        block_deadline = current_block  # since blocks are 0-indexed
+
+        request_id = 84908590346
+        message_hash = self.dropper.claim_message_hash(
+            claim_id, request_id, claimant_contract.address, block_deadline, 0
+        )
+        signed_message = sign_message(message_hash, self.signer_0)
+
+        balance_claimant_0 = self.terminus.balance_of(
+            claimant_contract.address, self.mintable_terminus_pool_id
+        )
+
+        pool_supply_0 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
+
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
+
+        with self.assertRaises(VirtualMachineError) as vm_error:
+            claimant_contract.claim(
+                claim_id,
+                request_id,
+                block_deadline,
+                0,
+                self.signer_0,
+                signed_message,
+                {"from": accounts[1]},
+            )
+
+        pool_supply_1 = self.terminus.terminus_pool_supply(
+            self.mintable_terminus_pool_id
+        )
+
+        balance_claimant_1 = self.terminus.balance_of(
+            claimant_contract.address, self.mintable_terminus_pool_id
+        )
+
+        self.assertEqual(balance_claimant_1, balance_claimant_0)
+        self.assertEqual(pool_supply_1, pool_supply_0)
+        self.assertFalse(self.dropper.claim_status(claim_id, request_id))
 
 
 class DropperSignatureAuthorizationTest(DropperTestCase):
