@@ -157,6 +157,11 @@ contract DropperFacet is
             "Dropper: createDrop -- Amount must be greater than 0"
         );
 
+        require(
+            tokenId == 0 || tokenType != ERC721_TYPE,
+            "Dropper: createDrop -- TokenId should be zero for ERC721 drop."
+        );
+
         LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
 
         ds.NumDrops++;
@@ -303,7 +308,8 @@ contract DropperFacet is
 
         DroppableToken memory claimToken = ds.DropToken[dropId];
 
-        if (amount == 0) {
+        // ERC721 drop type passes the token id as the amount. There should be no default token id.
+        if (amount == 0 && claimToken.tokenType != ERC721_TYPE) {
             amount = claimToken.amount;
         }
 
@@ -315,7 +321,7 @@ contract DropperFacet is
             erc721Contract.safeTransferFrom(
                 address(this),
                 msg.sender,
-                claimToken.tokenId,
+                amount,
                 ""
             );
         } else if (claimToken.tokenType == ERC1155_TYPE) {
