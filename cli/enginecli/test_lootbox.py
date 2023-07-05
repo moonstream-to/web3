@@ -76,11 +76,6 @@ class LootboxTestCase(unittest.TestCase):
 
         cls.payment_token.mint(accounts[0], 100 * 10**18, {"from": accounts[0]})
 
-        cls.admin_terminus.set_payment_token(
-            cls.payment_token.address, {"from": accounts[0]}
-        )
-        cls.admin_terminus.set_pool_base_price(1, {"from": accounts[0]})
-
         # Deploy lootbox contract
         gogogo_result = lootbox_gogogo(
             cls.terminus.address,
