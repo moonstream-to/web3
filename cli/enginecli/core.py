@@ -474,40 +474,22 @@ def create_lootboxes_from_config(
 
 def lootbox_gogogo(
     terminus_address,
+    admin_terminus_address,
+    admin_terminus_pool_id,
     vrf_coordinator_address,
     link_token_address,
     chainlik_vrf_fee,
     chainlik_vrf_keyhash,
     tx_config,
 ) -> Dict[str, Any]:
-    deployer = tx_config["from"]
-    terminus_contract = MockTerminus.MockTerminus(terminus_address)
-
-    terminus_payment_token_address = terminus_contract.payment_token()
-    terminus_payment_token = MockErc20(terminus_payment_token_address)
-
-    pool_base_price = terminus_contract.pool_base_price()
-    deployer_payment_token_balance = terminus_payment_token.balance_of(deployer.address)
-
-    if deployer_payment_token_balance < pool_base_price:
-        raise Exception(
-            f"Deployer does not have enough tokens to create terminus pool."
-            f"Need {pool_base_price} but only have {deployer_payment_token_balance}"
-        )
-
-    print("Approving deployer to spend tokens to create terminus pool...")
-    terminus_payment_token.approve(terminus_address, pool_base_price, tx_config)
-
-    print("Creating terminus pool...")
-    terminus_contract.create_pool_v1(pool_base_price, False, True, tx_config)
-
-    admin_token_pool_id = terminus_contract.total_pools()
+    admin_terminus_contract = MockTerminus.MockTerminus(admin_terminus_address)
 
     print("Deploying lootbox...")
     lootbox_contract = Lootbox.Lootbox(None)
     lootbox_contract.deploy(
         terminus_address,
-        admin_token_pool_id,
+        admin_terminus_address,
+        admin_terminus_pool_id,
         vrf_coordinator_address,
         link_token_address,
         chainlik_vrf_fee,
@@ -516,13 +498,13 @@ def lootbox_gogogo(
     )
 
     print("Setting pool controller...")
-    terminus_contract.set_pool_controller(
-        admin_token_pool_id, lootbox_contract.address, tx_config
+    admin_terminus_contract.set_pool_controller(
+        admin_terminus_pool_id, lootbox_contract.address, tx_config
     )
 
     contracts = {
         "Lootbox": lootbox_contract.address,
-        "adminTokenPoolId": admin_token_pool_id,
+        "adminTokenPoolId": admin_terminus_pool_id,
     }
 
     return contracts
