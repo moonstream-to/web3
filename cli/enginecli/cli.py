@@ -3,6 +3,7 @@ import logging
 
 from . import (
     core,
+    flows,
     drop,
     DropperFacet,
     Dropper,
@@ -30,6 +31,9 @@ def main() -> None:
 
     core_parser = core.generate_cli()
     subparsers.add_parser("core", parents=[core_parser], add_help=False)
+
+    flows_parser = flows.generate_cli()
+    subparsers.add_parser("flows", parents=[flows_parser], add_help=False)
 
     dropper_parser = Dropper.generate_cli()
     subparsers.add_parser("dropper-v1", parents=[dropper_parser], add_help=False)
