@@ -23,6 +23,9 @@ class LootboxTestCase(unittest.TestCase):
         except:
             pass
 
+        cls.owner = accounts[0]
+        cls.owner_tx_config = {"from": cls.owner}
+
         cls.linkToken = MockLinkToken.MockLinkToken(None)
         cls.linkToken.deploy({"from": accounts[0]})
 
@@ -42,22 +45,42 @@ class LootboxTestCase(unittest.TestCase):
         vrfFee = 0.01 * 10**18
         vrfKeyhash = b"lol"
 
-        cls.terminus = MockTerminus.MockTerminus(None)
-        cls.terminus.deploy({"from": accounts[0]})
-
+        # Create payment token
         cls.erc20_contracts = [MockErc20.MockErc20(None) for _ in range(5)]
         for i, contract in enumerate(cls.erc20_contracts):
             contract.deploy(f"Mock Erc20-{i}", "MOCKERC20-{i}", {"from": accounts[0]})
 
-        cls.erc20_contracts[0].mint(accounts[0], 100 * 10**18, {"from": accounts[0]})
+        cls.payment_token = cls.erc20_contracts[0]
 
-        cls.terminus.set_payment_token(
-            cls.erc20_contracts[0].address, {"from": accounts[0]}
+        # Create lootbox terminus 
+        cls.terminus = MockTerminus.MockTerminus(None)
+        cls.terminus.deploy(cls.owner_tx_config)
+
+        cls.terminus.set_payment_token(cls.payment_token.address, cls.owner_tx_config)
+        cls.terminus.set_pool_base_price(1, cls.owner_tx_config)
+
+        # Create admin terminus and admin pool
+        cls.admin_terminus = MockTerminus.MockTerminus(None)
+        cls.admin_terminus.deploy(cls.owner_tx_config)
+
+        cls.admin_terminus.set_payment_token(cls.payment_token.address, cls.owner_tx_config)
+        cls.admin_terminus.set_pool_base_price(1, cls.owner_tx_config)
+
+        cls.payment_token.mint(cls.owner.address, 999999, cls.owner_tx_config)
+
+        cls.payment_token.approve(
+            cls.admin_terminus.address, 2**256 - 1, cls.owner_tx_config
         )
-        cls.terminus.set_pool_base_price(1, {"from": accounts[0]})
+        cls.admin_terminus.create_pool_v1(1, False, True, cls.owner_tx_config)
+        cls.admin_pool_id = cls.admin_terminus.total_pools()
 
+        cls.payment_token.mint(accounts[0], 100 * 10**18, {"from": accounts[0]})
+
+        # Deploy lootbox contract
         gogogo_result = lootbox_gogogo(
             cls.terminus.address,
+            cls.admin_terminus.address,
+            cls.admin_pool_id,
             cls.mock_chainlink_coordinator.address,
             cls.linkToken.address,
             vrfFee,
