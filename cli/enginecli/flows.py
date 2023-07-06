@@ -6,6 +6,8 @@ import sys
 import time
 from typing import Any, Dict, Optional, List, Set
 
+from enginecli.core import lootbox_item_to_tuple
+
 from .MockErc20 import MockErc20
 from brownie import network
 
@@ -17,125 +19,60 @@ from . import (
 
 MAX_UINT = 2**256 - 1
 
-METAGAME_EQUIPMENT: List[object] = [
-    {
-        "id": "primal_armor_common",
-        "type": "armor",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/armor/primal-armor-common.json",
-    },
-    {
-        "id": "primal_armor_rare",
-        "type": "armor",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/armor/primal-armor-rare.json",
-    },
-    {
-        "id": "primal_armor_epic",
-        "type": "armor",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/armor/primal-armor-epic.json",
-    },
-    {
-        "id": "primal_armor_legendary",
-        "type": "armor",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/armor/primal-armor-legendary.json",
-    },
-    {
-        "id": "brawlers_boots_common",
-        "type": "boots",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/boots/brawlers-boots-common.json",
-    },
-    {
-        "id": "brawlers_boots_rare",
-        "type": "boots",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/boots/brawlers-boots-rare.json",
-    },
-    {
-        "id": "brawlers_boots_epic",
-        "type": "boots",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/boots/brawlers-boots-epic.json",
-    },
-    {
-        "id": "brawlers_boots_legendary",
-        "type": "boots",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/boots/brawlers-boots-legendary.json",
-    },
-    {
-        "id": "charged_bracers_common",
-        "type": "bracers",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/bracers/charged-bracers-common.json",
-    },
-    {
-        "id": "charged_bracers_rare",
-        "type": "bracers",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/bracers/charged-bracers-rare.json",
-    },
-    {
-        "id": "charged_bracers_epic",
-        "type": "bracers",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/bracers/charged-bracers-epic.json",
-    },
-    {
-        "id": "charged_bracers_legendary",
-        "type": "bracers",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/bracers/charged-bracers-legendary.json",
-    },
-    {
-        "id": "skull_mask_common",
-        "type": "helmet",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/helmet/skull-mask-common.json",
-    },
-    {
-        "id": "skull_mask_rare",
-        "type": "helmet",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/helmet/skull-mask-rare.json",
-    },
-    {
-        "id": "skull_mask_epic",
-        "type": "helmet",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/helmet/skull-mask-epic.json",
-    },
-    {
-        "id": "skull_mask_legendary",
-        "type": "helmet",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/helmet/skull-mask-legendary.json",
-    },
-    {
-        "id": "double_axe_common",
-        "type": "weapon",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/weapon/double-axe-common.json",
-    },
-    {
-        "id": "double_axe_rare",
-        "type": "weapon",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/weapon/double-axe-rare.json",
-    },
-    {
-        "id": "double_axe_epic",
-        "type": "weapon",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/weapon/double-axe-epic.json",
-    },
-    {
-        "id": "double_axe_legendary",
-        "type": "weapon",
-        "metadata": "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/weapon/double-axe-legendary.json ",
-    },
-]
-
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 
-def handle_create_metagame_equipment(args: argparse.Namespace) -> None:
+def handle_create_equippable_pools_from_config(args: argparse.Namespace) -> None:
+    with open(args.config_file, "r") as f:
+        config = json.load(f)
+
+    if type(config) is not list:
+        raise Exception("Config must be a list of equippable items.")
+
     network.connect(args.network)
     transaction_config = ITerminus.get_transaction_config(args)
 
     equipment = ITerminus.ITerminus(args.equipment_address)
     print("Started with " + str(equipment.total_pools()) + " pools.")
 
-    for item in METAGAME_EQUIPMENT:
+    for item in config:
         print(item["id"])
         # equipment.create_pool_v2(2**256-1, True, True, item["metadata"], transaction_config)
         # pool_id = equipment.total_pools()
 
     print("Ended with " + str(equipment.total_pools()) + " pools.")
+
+
+def handle_create_equippables_lootbox_from_config(args: argparse.Namespace) -> None:
+    with open(args.config_file, "r") as f:
+        config = json.load(f)
+
+    if type(config) is not list:
+        raise Exception("Config must be a list of equippable items.")
+
+    network.connect(args.network)
+    transaction_config = ITerminus.get_transaction_config(args)
+
+    lootbox_contract = Lootbox.Lootbox(args.lootbox_address)
+    token_address = args.equipment_address
+
+    lootbox_items = []
+    for item in config:
+        lootbox_items.append(
+            lootbox_item_to_tuple(
+                reward_type=1155,
+                token_address=token_address,
+                # TODO: How do I get the pool id for each item?
+                token_id=0,
+                token_amount=1,
+                weight=int(item["weight"] * 1000),
+            )
+        )
+
+    print(lootbox_items)
+
+    # Magic number "1" is the random lootbox type. Currently it's only enumerated in test file.
+    # lootbox_contract.create_lootbox(lootbox_items, 1, transaction_config)
 
 
 def generate_cli():
@@ -146,29 +83,63 @@ def generate_cli():
     parser.set_defaults(func=lambda _: parser.print_help())
     subcommands = parser.add_subparsers()
 
-    create_metagame_equipment_parser = subcommands.add_parser(
-        "create-metagame-equipment",
+    create_pools_from_config_parser = subcommands.add_parser(
+        "create-pools-from-config",
         help="Creates metagame equipment",
         description="Creates base metagame equipment for Crypto Guilds",
     )
 
-    create_metagame_equipment_parser.add_argument(
-        "-o",
-        "--outfile",
-        type=argparse.FileType("w"),
-        default=None,
-        help="(Optional) file to write deployed addresses to",
-    )
-
-    create_metagame_equipment_parser.add_argument(
+    create_pools_from_config_parser.add_argument(
         "--equipment-address",
         type=str,
         required=True,
-        help="Address of the equipment contract",
+        help="Address of the equipment terminus contract",
     )
 
-    ITerminus.add_default_arguments(create_metagame_equipment_parser, transact=True)
+    create_pools_from_config_parser.add_argument(
+        "--config-file",
+        type=str,
+        required=True,
+        help="Path to the config file",
+    )
 
-    create_metagame_equipment_parser.set_defaults(func=handle_create_metagame_equipment)
+    ITerminus.add_default_arguments(create_pools_from_config_parser, transact=True)
+
+    create_pools_from_config_parser.set_defaults(
+        func=handle_create_equippable_pools_from_config
+    )
+
+    create_lootbox_from_config_parser = subcommands.add_parser(
+        "create-lootbox-from-config",
+        help="Creates lootbox",
+        description="Creates lootbox with weights from item config file.",
+    )
+
+    create_lootbox_from_config_parser.add_argument(
+        "--lootbox-address",
+        type=str,
+        required=True,
+        help="Address of the lootbox contract",
+    )
+
+    create_lootbox_from_config_parser.add_argument(
+        "--equipment-address",
+        type=str,
+        required=True,
+        help="Address of the equipment terminus contract",
+    )
+
+    create_lootbox_from_config_parser.add_argument(
+        "--config-file",
+        type=str,
+        required=True,
+        help="Path to the config file",
+    )
+
+    ITerminus.add_default_arguments(create_lootbox_from_config_parser, transact=True)
+
+    create_lootbox_from_config_parser.set_defaults(
+        func=handle_create_equippables_lootbox_from_config
+    )
 
     return parser

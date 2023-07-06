@@ -52,7 +52,7 @@ class LootboxTestCase(unittest.TestCase):
 
         cls.payment_token = cls.erc20_contracts[0]
 
-        # Create lootbox terminus 
+        # Create lootbox terminus
         cls.terminus = MockTerminus.MockTerminus(None)
         cls.terminus.deploy(cls.owner_tx_config)
 
@@ -63,7 +63,9 @@ class LootboxTestCase(unittest.TestCase):
         cls.admin_terminus = MockTerminus.MockTerminus(None)
         cls.admin_terminus.deploy(cls.owner_tx_config)
 
-        cls.admin_terminus.set_payment_token(cls.payment_token.address, cls.owner_tx_config)
+        cls.admin_terminus.set_payment_token(
+            cls.payment_token.address, cls.owner_tx_config
+        )
         cls.admin_terminus.set_pool_base_price(1, cls.owner_tx_config)
 
         cls.payment_token.mint(cls.owner.address, 999999, cls.owner_tx_config)
@@ -93,7 +95,6 @@ class LootboxTestCase(unittest.TestCase):
         )
 
         cls.lootbox = Lootbox.Lootbox(gogogo_result["Lootbox"])
-        cls.admin_token_pool_id = gogogo_result["adminTokenPoolId"]
 
         cls.linkToken.mint(
             cls.lootbox.address, (10**10) * 10**18, {"from": accounts[0]}

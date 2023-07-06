@@ -504,7 +504,9 @@ def lootbox_gogogo(
 
     contracts = {
         "Lootbox": lootbox_contract.address,
-        "adminTokenPoolId": admin_terminus_pool_id,
+        "TerminusAddress": terminus_address,
+        "AdminTerminusAddress": admin_terminus_address,
+        "AdminTokenPoolId": admin_terminus_pool_id,
     }
 
     return contracts
@@ -597,6 +599,8 @@ def handle_lootbox_gogogo(args: argparse.Namespace) -> None:
     transaction_config = MockTerminus.get_transaction_config(args)
     result = lootbox_gogogo(
         terminus_address,
+        args.admin_terminus_address,
+        args.admin_terminus_pool_id,
         args.vrf_coordinator_address,
         args.link_token_address,
         args.chainlik_vrf_fee,
@@ -792,6 +796,18 @@ def generate_cli():
         type=str,
         required=True,
         help="Address of the terminus contract",
+    )
+
+    lootbox_gogogo_parser.add_argument(
+        "--admin-terminus-address",
+        required=True,
+        help="Address of Terminus contract defining access control for this Lootbox contract",
+    )
+    lootbox_gogogo_parser.add_argument(
+        "--admin-terminus-pool-id",
+        required=True,
+        type=int,
+        help="Pool ID of Terminus pool for administrators of this Lootbox contract",
     )
 
     lootbox_gogogo_parser.add_argument(

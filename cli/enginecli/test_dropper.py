@@ -21,7 +21,7 @@ from . import (
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
-MAX_UINT_LOL = 2**256 - 1
+MAX_UINT = 2**256 - 1
 
 
 def sign_message(message_hash, signer):
