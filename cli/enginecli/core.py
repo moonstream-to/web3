@@ -6,8 +6,6 @@ import sys
 import time
 from typing import Any, Dict, Optional, List, Set
 
-from enginecli.test_dropper import MAX_UINT
-
 from .MockErc20 import MockErc20
 from brownie import network
 
@@ -27,7 +25,7 @@ from . import (
     GOFPFacet,
 )
 
-MAX_UINT = 2**256 - 1
+MAX_UINT_LOL = 2**256 - 1
 
 FACETS: Dict[str, Any] = {
     "DiamondCutFacet": DiamondCutFacet,
