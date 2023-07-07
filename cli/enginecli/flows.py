@@ -35,10 +35,13 @@ def handle_create_equippable_pools_from_config(args: argparse.Namespace) -> None
     equipment = ITerminus.ITerminus(args.equipment_address)
     print("Started with " + str(equipment.total_pools()) + " pools.")
 
+    print("{Item Id} => {Pool Id}")
     for item in config:
-        print(item["id"])
-        # equipment.create_pool_v2(2**256-1, True, True, item["metadata"], transaction_config)
-        # pool_id = equipment.total_pools()
+        equipment.create_pool_v2(
+            MAX_UINT, True, True, item["metadata"], transaction_config
+        )
+        pool_id = equipment.total_pools()
+        print(item["id"] + " => " + str(pool_id))
 
     print("Ended with " + str(equipment.total_pools()) + " pools.")
 
@@ -54,16 +57,15 @@ def handle_create_equippables_lootbox_from_config(args: argparse.Namespace) -> N
     transaction_config = ITerminus.get_transaction_config(args)
 
     lootbox_contract = Lootbox.Lootbox(args.lootbox_address)
-    token_address = args.equipment_address
+    equipment = ITerminus.ITerminus(args.equipment_address)
 
     lootbox_items = []
     for item in config:
         lootbox_items.append(
             lootbox_item_to_tuple(
                 reward_type=1155,
-                token_address=token_address,
-                # TODO: How do I get the pool id for each item?
-                token_id=0,
+                token_address=args.equipment_address,
+                token_id=item["pool_id"],
                 token_amount=1,
                 weight=int(item["weight"] * 1000),
             )
@@ -71,8 +73,13 @@ def handle_create_equippables_lootbox_from_config(args: argparse.Namespace) -> N
 
     print(lootbox_items)
 
+    lootbox_pool_id = 24
+
     # Magic number "1" is the random lootbox type. Currently it's only enumerated in test file.
-    # lootbox_contract.create_lootbox(lootbox_items, 1, transaction_config)
+    lootbox_contract.create_lootbox_with_terminus_pool(
+        lootbox_items, lootbox_pool_id, 1, transaction_config
+    )
+    print("Lootbox id: " + str(equipment.total_pools()))
 
 
 def generate_cli():
