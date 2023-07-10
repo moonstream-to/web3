@@ -36,6 +36,7 @@ contract Lootbox is
 
     uint256 public ERC20_REWARD_TYPE = 20;
     uint256 public ERC1155_REWARD_TYPE = 1155;
+    uint256 public TERMINUS_MINTABLE_REWARD_TYPE = 1;
 
     uint256 public ORDINARY_LOOTBOX_TYPE = 0;
     uint256 public RANDOM_LOOTBOX_TYPE_1 = 1;
@@ -341,6 +342,16 @@ contract Lootbox is
         } else if (item.rewardType == ERC1155_REWARD_TYPE) {
             IERC1155(item.tokenAddress).safeTransferFrom(
                 address(this),
+                msg.sender,
+                item.tokenId,
+                item.amount * count,
+                ""
+            );
+        } else if (item.rewardType == TERMINUS_MINTABLE_REWARD_TYPE) {
+            TerminusFacet terminusFacetContract = TerminusFacet(
+                item.tokenAddress
+            );
+            terminusFacetContract.mint(
                 msg.sender,
                 item.tokenId,
                 item.amount * count,

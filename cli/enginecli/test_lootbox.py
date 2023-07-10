@@ -51,6 +51,7 @@ class LootboxTestCase(unittest.TestCase):
             contract.deploy(f"Mock Erc20-{i}", "MOCKERC20-{i}", {"from": accounts[0]})
 
         cls.payment_token = cls.erc20_contracts[0]
+        cls.payment_token.mint(cls.owner.address, 999999, cls.owner_tx_config)
 
         # Create lootbox terminus
         cls.terminus = MockTerminus.MockTerminus(None)
@@ -58,6 +59,13 @@ class LootboxTestCase(unittest.TestCase):
 
         cls.terminus.set_payment_token(cls.payment_token.address, cls.owner_tx_config)
         cls.terminus.set_pool_base_price(1, cls.owner_tx_config)
+
+        cls.payment_token.approve(
+            cls.terminus.address, 2**256 - 1, cls.owner_tx_config
+        )
+
+        cls.terminus.create_pool_v1(2**256 - 1, False, True, cls.owner_tx_config)
+        cls.reward_pool_id = cls.terminus.total_pools()
 
         # Create admin terminus and admin pool
         cls.admin_terminus = MockTerminus.MockTerminus(None)
@@ -67,8 +75,6 @@ class LootboxTestCase(unittest.TestCase):
             cls.payment_token.address, cls.owner_tx_config
         )
         cls.admin_terminus.set_pool_base_price(1, cls.owner_tx_config)
-
-        cls.payment_token.mint(cls.owner.address, 999999, cls.owner_tx_config)
 
         cls.payment_token.approve(
             cls.admin_terminus.address, 2**256 - 1, cls.owner_tx_config
@@ -171,6 +177,7 @@ class LootboxTestCase(unittest.TestCase):
 
             elif reward_type == 1155:
                 mockErc1155 = MockTerminus.MockTerminus(token_address)
+
                 contract_balance_before = mockErc1155.balance_of(
                     self.lootbox.address, token_id
                 )
@@ -190,6 +197,33 @@ class LootboxTestCase(unittest.TestCase):
                 self.assertEqual(
                     contract_balance_before - contract_balance_after,
                     token_amount * count,
+                )
+                self.assertEqual(
+                    claimer_balance_after - claimer_balance_before,
+                    token_amount * count,
+                )
+
+            elif reward_type == 1:
+                mockErc1155 = MockTerminus.MockTerminus(token_address)
+                contract_balance_before = mockErc1155.balance_of(
+                    self.lootbox.address, token_id
+                )
+                claimer_balance_before = mockErc1155.balance_of(
+                    account.address, token_id
+                )
+
+                self.lootbox.open_lootbox(lootboxId, count, {"from": account})
+
+                contract_balance_after = mockErc1155.balance_of(
+                    self.lootbox.address, token_id
+                )
+                claimer_balance_after = mockErc1155.balance_of(
+                    account.address, token_id
+                )
+
+                self.assertEqual(
+                    contract_balance_before,
+                    contract_balance_after,
                 )
                 self.assertEqual(
                     claimer_balance_after - claimer_balance_before,
@@ -290,6 +324,54 @@ class LootboxBaseTest(LootboxTestCase):
 
         self.lootbox.set_lootbox_uri(created_lootbox_id, "lol", {"from": accounts[0]})
         self.assertEquals(self.lootbox.get_lootbox_uri(created_lootbox_id), "lol")
+
+        self.lootbox.batch_mint_lootboxes(
+            created_lootbox_id, [accounts[1].address], [1], {"from": accounts[0]}
+        )
+
+        self._open_lootbox(accounts[1], created_lootbox_id, 1)
+
+    def test_lootbox_with_terminus_mintable_reward(self):
+
+        reward_amount = 3
+
+        terminus_pool = self._create_terminus_pool()
+        self.terminus.set_pool_controller(
+            terminus_pool, self.lootbox.address, {"from": accounts[0]}
+        )
+        self.terminus.approve_for_pool(
+            self.reward_pool_id, self.lootbox.address, {"from": accounts[0]}
+        )
+        self.payment_token.mint(
+            self.lootbox.address, (10**10) * 10**18, {"from": accounts[0]}
+        )
+
+        lootboxes_count_0 = self.lootbox.total_lootbox_count()
+        self.lootbox.create_lootbox_with_terminus_pool(
+            [
+                lootbox_item_to_tuple(
+                    reward_type=1,
+                    token_address=self.terminus.address,
+                    token_id=self.reward_pool_id,
+                    token_amount=reward_amount,
+                )
+            ],
+            terminus_pool,
+            LootboxTypes.ORDINARY.value,
+            {"from": accounts[0]},
+        )
+
+        created_lootbox_id = self.lootbox.total_lootbox_count()
+        lootboxes_count_1 = created_lootbox_id
+
+        self.assertEqual(lootboxes_count_1, lootboxes_count_0 + 1)
+
+        self.assertEqual(self.lootbox.lootbox_item_count(created_lootbox_id), 1)
+
+        self.assertEqual(
+            self.lootbox.get_lootbox_item_by_index(created_lootbox_id, 0),
+            (1, self.terminus.address, self.reward_pool_id, reward_amount, 0),
+        )
 
         self.lootbox.batch_mint_lootboxes(
             created_lootbox_id, [accounts[1].address], [1], {"from": accounts[0]}
