@@ -14,6 +14,7 @@ from . import (
     setup_drop,
     CraftingFacet,
     GOFPFacet,
+    InventoryFacet,
 )
 
 
@@ -64,6 +65,9 @@ def main() -> None:
 
     setup_drop_parser = setup_drop.generate_cli()
     subparsers.add_parser("setup-drop", parents=[setup_drop_parser], add_help=False)
+
+    inventory_parser = InventoryFacet.generate_cli()
+    subparsers.add_parser("inventory", parents=[inventory_parser], add_help=False)
 
     args = parser.parse_args()
     args.func(args)

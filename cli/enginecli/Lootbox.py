@@ -155,6 +155,14 @@ class Lootbox:
         self.assert_contract_is_instantiated()
         return self.contract.RANDOM_LOOTBOX_TYPE_1.call(block_identifier=block_number)
 
+    def terminus_mintable_reward_type(
+        self, block_number: Optional[Union[str, int]] = "latest"
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.TERMINUS_MINTABLE_REWARD_TYPE.call(
+            block_identifier=block_number
+        )
+
     def add_lootbox_item(self, lootbox_id: int, item: tuple, transaction_config) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.addLootboxItem(lootbox_id, item, transaction_config)
@@ -567,6 +575,13 @@ def handle_random_lootbox_type_1(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = Lootbox(args.address)
     result = contract.random_lootbox_type_1(block_number=args.block_number)
+    print(result)
+
+
+def handle_terminus_mintable_reward_type(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = Lootbox(args.address)
+    result = contract.terminus_mintable_reward_type(block_number=args.block_number)
     print(result)
 
 
@@ -1085,6 +1100,14 @@ def generate_cli() -> argparse.ArgumentParser:
     random_lootbox_type_1_parser = subcommands.add_parser("random-lootbox-type-1")
     add_default_arguments(random_lootbox_type_1_parser, False)
     random_lootbox_type_1_parser.set_defaults(func=handle_random_lootbox_type_1)
+
+    terminus_mintable_reward_type_parser = subcommands.add_parser(
+        "terminus-mintable-reward-type"
+    )
+    add_default_arguments(terminus_mintable_reward_type_parser, False)
+    terminus_mintable_reward_type_parser.set_defaults(
+        func=handle_terminus_mintable_reward_type
+    )
 
     add_lootbox_item_parser = subcommands.add_parser("add-lootbox-item")
     add_default_arguments(add_lootbox_item_parser, True)

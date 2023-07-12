@@ -503,10 +503,12 @@ def lootbox_gogogo(
     )
 
     contracts = {
-        "Lootbox": lootbox_contract.address,
-        "TerminusAddress": terminus_address,
-        "AdminTerminusAddress": admin_terminus_address,
-        "AdminTokenPoolId": admin_terminus_pool_id,
+        "Lootbox": {
+            "Address": lootbox_contract.address,
+            "TerminusAddress": terminus_address,
+            "AdminTerminusAddress": admin_terminus_address,
+            "AdminTokenPoolId": admin_terminus_pool_id,
+        },
     }
 
     return contracts

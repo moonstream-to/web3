@@ -100,12 +100,20 @@ class LootboxTestCase(unittest.TestCase):
             cls.terminus.address, 100 * 10**18, {"from": accounts[0]}
         )
 
-        cls.lootbox = Lootbox.Lootbox(gogogo_result["Lootbox"])
+        cls.lootbox = Lootbox.Lootbox(gogogo_result["Lootbox"]["Address"])
 
         cls.linkToken.mint(
             cls.lootbox.address, (10**10) * 10**18, {"from": accounts[0]}
         )
         cls.terminus.set_controller(cls.lootbox.address, {"from": accounts[0]})
+
+        cls.terminus.approve_for_pool(
+            cls.reward_pool_id, cls.lootbox.address, {"from": accounts[0]}
+        )
+        # Lootbox contract will need an admin token if we decide to remove setController from deployment script.
+        # cls.admin_terminus.mint(
+        #     cls.lootbox.address, cls.admin_pool_id, 1, "", {"from": accounts[0]}
+        # )
 
         for i in range(5):
             cls.erc20_contracts[i].mint(

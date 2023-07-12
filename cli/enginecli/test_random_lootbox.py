@@ -130,6 +130,76 @@ class RandomLootboxTest(LootboxTestCase):
         self.assertEqual(contract_balance_1 - contract_balance_2, new_lootbox[1][3])
         self.assertEqual(account_balance_2 - account_balance_1, new_lootbox[1][3])
 
+    def test_create_terminus_mintable_random_lootbox(self):
+        new_lootbox = [
+            lootbox_item_to_tuple(
+                reward_type=1,
+                token_address=self.terminus.address,
+                token_id=self.reward_pool_id,
+                token_amount=2,
+                weight=1,
+            ),
+            lootbox_item_to_tuple(
+                reward_type=1,
+                token_address=self.terminus.address,
+                token_id=self.reward_pool_id,
+                token_amount=1,
+                weight=4,
+            ),
+        ]
+
+        self.lootbox.create_lootbox(
+            new_lootbox, LootboxTypes.RANDOM_TYPE_1.value, {"from": accounts[0]}
+        )
+
+        new_lootbox_id = self.lootbox.total_lootbox_count()
+
+        self.lootbox.batch_mint_lootboxes_constant(
+            new_lootbox_id,
+            [accounts[1].address],
+            3,
+            {"from": accounts[0]},
+        )
+
+        contract_balance_0 = self.erc20_contracts[1].balance_of(self.lootbox.address)
+        account_balance_0 = self.erc20_contracts[1].balance_of(accounts[1].address)
+
+        self.lootbox.open_lootbox(
+            new_lootbox_id,
+            1,
+            {"from": accounts[1]},
+        )
+
+        self.mock_vrf_oracle.fulfill_pending_requests(lambda: 0)
+
+        self.lootbox.complete_random_lootbox_opening(
+            {"from": accounts[1]},
+        )
+
+        # contract_balance_1 = self.erc20_contracts[1].balance_of(self.lootbox.address)
+        # account_balance_1 = self.erc20_contracts[1].balance_of(accounts[1].address)
+
+        # self.assertEqual(contract_balance_0 - contract_balance_1, new_lootbox[0][3])
+        # self.assertEqual(account_balance_1 - account_balance_0, new_lootbox[0][3])
+
+        # self.lootbox.open_lootbox(
+        #     new_lootbox_id,
+        #     1,
+        #     {"from": accounts[1]},
+        # )
+
+        # self.mock_vrf_oracle.fulfill_pending_requests(lambda: 1)
+
+        # self.lootbox.complete_random_lootbox_opening(
+        #     {"from": accounts[1]},
+        # )
+
+        # contract_balance_2 = self.erc20_contracts[1].balance_of(self.lootbox.address)
+        # account_balance_2 = self.erc20_contracts[1].balance_of(accounts[1].address)
+
+        # self.assertEqual(contract_balance_1 - contract_balance_2, new_lootbox[1][3])
+        # self.assertEqual(account_balance_2 - account_balance_1, new_lootbox[1][3])
+
     def test_complex_random_lootbox(self):
         weigths = [1, 2, 3, 5, 5, 2, 1, 8, 9, 10]
 
