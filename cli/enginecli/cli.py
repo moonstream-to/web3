@@ -1,6 +1,8 @@
 import argparse
 import logging
 
+from enginecli.ITerminus import ITerminus
+
 from . import (
     core,
     flows,
@@ -10,7 +12,7 @@ from . import (
     Lootbox,
     MockErc20,
     MockERC721,
-    MockTerminus,
+    ITerminus,
     setup_drop,
     CraftingFacet,
     GOFPFacet,
@@ -54,7 +56,7 @@ def main() -> None:
     drop_parser = drop.generate_cli()
     subparsers.add_parser("drop", parents=[drop_parser], add_help=False)
 
-    terminus_parser = MockTerminus.generate_cli()
+    terminus_parser = ITerminus.generate_cli()
     subparsers.add_parser("terminus", parents=[terminus_parser], add_help=False)
 
     crafting_parser = CraftingFacet.generate_cli()

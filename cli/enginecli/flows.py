@@ -19,7 +19,7 @@ MAX_UINT = 2**256 - 1
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 
-def handle_create_equippable_pools_from_config(args: argparse.Namespace) -> None:
+def handle_create_item_pools_from_config(args: argparse.Namespace) -> None:
     with open(args.config_file, "r") as f:
         config = json.load(f)
 
@@ -79,7 +79,6 @@ def handle_create_items_lootbox_from_config(args: argparse.Namespace) -> None:
     lootbox_contract.create_lootbox_with_terminus_pool(
         lootbox_items, args.lootbox_pool_id, 1, transaction_config
     )
-    print("Lootbox id: " + str(equipment.total_pools()))
 
 
 def handle_create_inventory_slots_from_config(args: argparse.Namespace) -> None:
@@ -99,6 +98,8 @@ def handle_create_inventory_slots_from_config(args: argparse.Namespace) -> None:
     slot_mapping = dict()
     pool_mapping = dict()
 
+    # No good way to search the existing slot types. This just starts creating slot types from id 11. Perhaps it could be a parameter, but really
+    # needs a contract change to support slot type creation.
     next_slot_type_id = 11
     for item in config:
         slot_type = item["type"]
@@ -168,7 +169,7 @@ def generate_cli():
     ITerminus.add_default_arguments(create_item_pools_from_config_parser, transact=True)
 
     create_item_pools_from_config_parser.set_defaults(
-        func=handle_create_equippable_pools_from_config
+        func=handle_create_item_pools_from_config
     )
 
     create_items_lootbox_from_config_parser = subcommands.add_parser(
