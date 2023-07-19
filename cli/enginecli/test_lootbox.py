@@ -219,6 +219,7 @@ class LootboxTestCase(unittest.TestCase):
                 claimer_balance_before = mockErc1155.balance_of(
                     account.address, token_id
                 )
+                total_supply_before = mockErc1155.terminus_pool_supply(token_id)
 
                 self.lootbox.open_lootbox(lootboxId, count, {"from": account})
 
@@ -228,6 +229,7 @@ class LootboxTestCase(unittest.TestCase):
                 claimer_balance_after = mockErc1155.balance_of(
                     account.address, token_id
                 )
+                total_supply_after = mockErc1155.terminus_pool_supply(token_id)
 
                 self.assertEqual(
                     contract_balance_before,
@@ -235,6 +237,10 @@ class LootboxTestCase(unittest.TestCase):
                 )
                 self.assertEqual(
                     claimer_balance_after - claimer_balance_before,
+                    token_amount * count,
+                )
+                self.assertEqual(
+                    total_supply_after - total_supply_before,
                     token_amount * count,
                 )
 

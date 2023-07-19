@@ -161,8 +161,9 @@ class RandomLootboxTest(LootboxTestCase):
             {"from": accounts[0]},
         )
 
-        contract_balance_0 = self.erc20_contracts[1].balance_of(self.lootbox.address)
-        account_balance_0 = self.erc20_contracts[1].balance_of(accounts[1].address)
+        account_balance_0 = self.terminus.balance_of(
+            accounts[1].address, self.reward_pool_id
+        )
 
         self.lootbox.open_lootbox(
             new_lootbox_id,
@@ -176,29 +177,29 @@ class RandomLootboxTest(LootboxTestCase):
             {"from": accounts[1]},
         )
 
-        # contract_balance_1 = self.erc20_contracts[1].balance_of(self.lootbox.address)
-        # account_balance_1 = self.erc20_contracts[1].balance_of(accounts[1].address)
+        account_balance_1 = self.terminus.balance_of(
+            accounts[1].address, self.reward_pool_id
+        )
 
-        # self.assertEqual(contract_balance_0 - contract_balance_1, new_lootbox[0][3])
-        # self.assertEqual(account_balance_1 - account_balance_0, new_lootbox[0][3])
+        self.assertEqual(account_balance_1 - account_balance_0, new_lootbox[0][3])
 
-        # self.lootbox.open_lootbox(
-        #     new_lootbox_id,
-        #     1,
-        #     {"from": accounts[1]},
-        # )
+        self.lootbox.open_lootbox(
+            new_lootbox_id,
+            1,
+            {"from": accounts[1]},
+        )
 
-        # self.mock_vrf_oracle.fulfill_pending_requests(lambda: 1)
+        self.mock_vrf_oracle.fulfill_pending_requests(lambda: 1)
 
-        # self.lootbox.complete_random_lootbox_opening(
-        #     {"from": accounts[1]},
-        # )
+        self.lootbox.complete_random_lootbox_opening(
+            {"from": accounts[1]},
+        )
 
-        # contract_balance_2 = self.erc20_contracts[1].balance_of(self.lootbox.address)
-        # account_balance_2 = self.erc20_contracts[1].balance_of(accounts[1].address)
+        account_balance_2 = self.terminus.balance_of(
+            accounts[1].address, self.reward_pool_id
+        )
 
-        # self.assertEqual(contract_balance_1 - contract_balance_2, new_lootbox[1][3])
-        # self.assertEqual(account_balance_2 - account_balance_1, new_lootbox[1][3])
+        self.assertEqual(account_balance_2 - account_balance_1, new_lootbox[1][3])
 
     def test_complex_random_lootbox(self):
         weigths = [1, 2, 3, 5, 5, 2, 1, 8, 9, 10]
