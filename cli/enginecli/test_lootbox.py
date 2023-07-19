@@ -634,7 +634,9 @@ class LootboxACLTests(LootboxTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.lootbox.grant_admin_role(accounts[1].address, {"from": accounts[0]})
+        cls.admin_terminus.mint(
+            accounts[1].address, cls.admin_pool_id, 1, "", {"from": accounts[0]}
+        )
 
     def test_nonadmin_cannot_create_lootbox(self):
         lootboxes_count_0 = self.lootbox.total_lootbox_count()

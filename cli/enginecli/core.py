@@ -497,11 +497,6 @@ def lootbox_gogogo(
         tx_config,
     )
 
-    print("Setting pool controller...")
-    admin_terminus_contract.set_pool_controller(
-        admin_terminus_pool_id, lootbox_contract.address, tx_config
-    )
-
     contracts = {
         "Lootbox": {
             "Address": lootbox_contract.address,
