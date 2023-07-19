@@ -31,10 +31,12 @@ contract Lootbox is
     ReentrancyGuard
 {
     address public terminusAddress;
+    address public administratorTerminusAddress;
     uint256 private _totalLootboxCount;
 
     uint256 public ERC20_REWARD_TYPE = 20;
     uint256 public ERC1155_REWARD_TYPE = 1155;
+    uint256 public TERMINUS_MINTABLE_REWARD_TYPE = 1;
 
     uint256 public ORDINARY_LOOTBOX_TYPE = 0;
     uint256 public RANDOM_LOOTBOX_TYPE_1 = 1;
@@ -84,13 +86,17 @@ contract Lootbox is
      */
     constructor(
         address _terminusAddress,
+        address _administratorTerminusAddress,
         uint256 _administratorPoolId,
         address _VRFCoordinatorAddress,
         address _LinkTokenAddress,
         uint256 _ChainlinkVRFFee,
         bytes32 _ChainlinkVRFKeyhash
     )
-        ControllableWithTerminus(_terminusAddress, _administratorPoolId)
+        ControllableWithTerminus(
+            _administratorTerminusAddress,
+            _administratorPoolId
+        )
         LootboxRandomness(
             _VRFCoordinatorAddress,
             _LinkTokenAddress,
@@ -99,6 +105,7 @@ contract Lootbox is
         )
     {
         terminusAddress = _terminusAddress;
+        administratorTerminusAddress = _administratorTerminusAddress;
     }
 
     function mintLootbox(
@@ -145,30 +152,27 @@ contract Lootbox is
         }
     }
 
-    function getLootboxURI(uint256 lootboxId)
-        public
-        view
-        returns (string memory)
-    {
+    function getLootboxURI(
+        uint256 lootboxId
+    ) public view returns (string memory) {
         uint256 lootboxTerminusPoolId = terminusPoolIdbyLootboxId[lootboxId];
         TerminusFacet terminusContract = TerminusFacet(terminusAddress);
         return terminusContract.uri(lootboxTerminusPoolId);
     }
 
-    function setLootboxURI(uint256 lootboxId, string memory uri)
-        public
-        onlyAdministrator
-    {
+    function setLootboxURI(
+        uint256 lootboxId,
+        string memory uri
+    ) public onlyAdministrator {
         uint256 lootboxTerminusPoolId = terminusPoolIdbyLootboxId[lootboxId];
         TerminusFacet terminusContract = TerminusFacet(terminusAddress);
         terminusContract.setURI(lootboxTerminusPoolId, uri);
     }
 
-    function getLootboxBalance(uint256 lootboxId, address owner)
-        public
-        view
-        returns (uint256)
-    {
+    function getLootboxBalance(
+        uint256 lootboxId,
+        address owner
+    ) public view returns (uint256) {
         uint256 lootboxTerminusPoolId = terminusPoolIdbyLootboxId[lootboxId];
         TerminusFacet terminusContract = TerminusFacet(terminusAddress);
         return terminusContract.balanceOf(owner, lootboxTerminusPoolId);
@@ -201,11 +205,10 @@ contract Lootbox is
      * @param lootboxId The id of the lootbox
      * @param itemIndex The index of the item in the lootbox
      */
-    function getLootboxItemByIndex(uint256 lootboxId, uint256 itemIndex)
-        public
-        view
-        returns (LootboxItem memory)
-    {
+    function getLootboxItemByIndex(
+        uint256 lootboxId,
+        uint256 itemIndex
+    ) public view returns (LootboxItem memory) {
         return lootboxItems[lootboxId][itemIndex];
     }
 
@@ -262,10 +265,10 @@ contract Lootbox is
         lootboxTypebyLootboxId[lootboxId] = lootboxType;
     }
 
-    function createLootbox(LootboxItem[] memory items, uint256 lootboxType)
-        public
-        onlyAdministrator
-    {
+    function createLootbox(
+        LootboxItem[] memory items,
+        uint256 lootboxType
+    ) public onlyAdministrator {
         TerminusFacet terminusContract = TerminusFacet(terminusAddress);
         IERC20 terminusPaymentToken = IERC20(terminusContract.paymentToken());
         uint256 poolBaseFee = terminusContract.poolBasePrice();
@@ -278,7 +281,7 @@ contract Lootbox is
         terminusPaymentToken.approve(terminusAddress, poolBaseFee);
 
         uint256 terminusPoolId = terminusContract.createPoolV1(
-            10**18 * 10**18,
+            10 ** 18 * 10 ** 18,
             true,
             true
         );
@@ -291,10 +294,10 @@ contract Lootbox is
      * @param lootboxId The id of the lootbox
      * @param item The item to add to the lootbox
      */
-    function addLootboxItem(uint256 lootboxId, LootboxItem memory item)
-        public
-        onlyAdministrator
-    {
+    function addLootboxItem(
+        uint256 lootboxId,
+        LootboxItem memory item
+    ) public onlyAdministrator {
         uint256 lootboxType = lootboxTypebyLootboxId[lootboxId];
         if (lootboxType == RANDOM_LOOTBOX_TYPE_1) {
             require(item.weight > 0, "Item weight must be greater than 0");
@@ -311,10 +314,10 @@ contract Lootbox is
      * @param lootboxId The id of the lootbox
      * @param itemIndex The index of the item in the lootbox
      */
-    function removeLootboxItem(uint256 lootboxId, uint256 itemIndex)
-        public
-        onlyAdministrator
-    {
+    function removeLootboxItem(
+        uint256 lootboxId,
+        uint256 itemIndex
+    ) public onlyAdministrator {
         //swap the item at the index with the last item in the array
         uint256 lastItemIndex = lootboxItemCounts[lootboxId] - 1;
 
@@ -344,6 +347,16 @@ contract Lootbox is
                 item.amount * count,
                 ""
             );
+        } else if (item.rewardType == TERMINUS_MINTABLE_REWARD_TYPE) {
+            TerminusFacet terminusFacetContract = TerminusFacet(
+                item.tokenAddress
+            );
+            terminusFacetContract.mint(
+                msg.sender,
+                item.tokenId,
+                item.amount * count,
+                ""
+            );
         } else {
             revert("Unsupported reward type");
         }
@@ -354,11 +367,10 @@ contract Lootbox is
      * @param lootboxId The id of the lootbox
      * @param count The number of lootboxes to open
      */
-    function openLootbox(uint256 lootboxId, uint256 count)
-        public
-        whenNotPaused
-        nonReentrant
-    {
+    function openLootbox(
+        uint256 lootboxId,
+        uint256 count
+    ) public whenNotPaused nonReentrant {
         uint256 terminusPoolForLootbox = terminusPoolIdbyLootboxId[lootboxId];
         TerminusFacet terminusContract = getTerminusContract();
 
@@ -420,10 +432,10 @@ contract Lootbox is
      * @param tokenAddress The address of the erc20 token contract
      * @param amount The amount to withdraw
      */
-    function withdrawERC20(address tokenAddress, uint256 amount)
-        external
-        onlyOwner
-    {
+    function withdrawERC20(
+        address tokenAddress,
+        uint256 amount
+    ) external onlyOwner {
         IERC20 erc20Contract = IERC20(tokenAddress);
         erc20Contract.transfer(_msgSender(), amount);
     }
@@ -455,10 +467,9 @@ contract Lootbox is
      * @dev Transfer controll of the terminus pools from contract to owner
      * @param poolIds The array of terminus pool ids
      */
-    function surrenderTerminusPools(uint256[] calldata poolIds)
-        external
-        onlyOwner
-    {
+    function surrenderTerminusPools(
+        uint256[] calldata poolIds
+    ) external onlyOwner {
         address _owner = owner();
         TerminusFacet terminusContract = TerminusFacet(terminusAddress);
         for (uint256 i = 0; i < poolIds.length; i++) {

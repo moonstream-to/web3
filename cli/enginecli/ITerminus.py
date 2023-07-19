@@ -69,12 +69,12 @@ def contract_from_build(abi_name: str) -> ContractContainer:
     return ContractContainer(PROJECT, build)
 
 
-class MockTerminus:
+class ITerminus:
     def __init__(self, contract_address: Optional[ChecksumAddress]):
-        self.contract_name = "MockTerminus"
+        self.contract_name = "ITerminus"
         self.address = contract_address
         self.contract = None
-        self.abi = get_abi_json("MockTerminus")
+        self.abi = get_abi_json("ITerminus")
         if self.address is not None:
             self.contract: Optional[Contract] = Contract.from_abi(
                 self.contract_name, self.address, self.abi
@@ -138,6 +138,19 @@ class MockTerminus:
         self.assert_contract_is_instantiated()
         return self.contract.createPoolV1(
             _capacity, _transferable, _burnable, transaction_config
+        )
+
+    def create_pool_v2(
+        self,
+        _capacity: int,
+        _transferable: bool,
+        _burnable: bool,
+        pool_uri: str,
+        transaction_config,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.createPoolV2(
+            _capacity, _transferable, _burnable, pool_uri, transaction_config
         )
 
     def create_simple_pool(self, _capacity: int, transaction_config) -> Any:
@@ -342,6 +355,12 @@ class MockTerminus:
         self.assert_contract_is_instantiated()
         return self.contract.totalPools.call(block_identifier=block_number)
 
+    def unapprove_for_pool(
+        self, pool_id: int, operator: ChecksumAddress, transaction_config
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.unapproveForPool(pool_id, operator, transaction_config)
+
     def uri(
         self, pool_id: int, block_number: Optional[Union[str, int]] = "latest"
     ) -> Any:
@@ -425,7 +444,7 @@ def add_default_arguments(parser: argparse.ArgumentParser, transact: bool) -> No
 def handle_deploy(args: argparse.Namespace) -> None:
     network.connect(args.network)
     transaction_config = get_transaction_config(args)
-    contract = MockTerminus(None)
+    contract = ITerminus(None)
     result = contract.deploy(transaction_config=transaction_config)
     print(result)
     if args.verbose:
@@ -434,14 +453,14 @@ def handle_deploy(args: argparse.Namespace) -> None:
 
 def handle_verify_contract(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     result = contract.verify_contract()
     print(result)
 
 
 def handle_approve_for_pool(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.approve_for_pool(
         pool_id=args.pool_id,
@@ -455,7 +474,7 @@ def handle_approve_for_pool(args: argparse.Namespace) -> None:
 
 def handle_balance_of(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     result = contract.balance_of(
         account=args.account, id=args.id, block_number=args.block_number
     )
@@ -464,7 +483,7 @@ def handle_balance_of(args: argparse.Namespace) -> None:
 
 def handle_balance_of_batch(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     result = contract.balance_of_batch(
         accounts=args.accounts, ids=args.ids, block_number=args.block_number
     )
@@ -473,7 +492,7 @@ def handle_balance_of_batch(args: argparse.Namespace) -> None:
 
 def handle_burn(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.burn(
         from_=args.from_arg,
@@ -488,14 +507,14 @@ def handle_burn(args: argparse.Namespace) -> None:
 
 def handle_contract_uri(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     result = contract.contract_uri(block_number=args.block_number)
     print(result)
 
 
 def handle_create_pool_v1(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.create_pool_v1(
         _capacity=args.capacity_arg,
@@ -508,9 +527,25 @@ def handle_create_pool_v1(args: argparse.Namespace) -> None:
         print(result.info())
 
 
+def handle_create_pool_v2(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = ITerminus(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.create_pool_v2(
+        _capacity=args.capacity_arg,
+        _transferable=args.transferable_arg,
+        _burnable=args.burnable_arg,
+        pool_uri=args.pool_uri,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
 def handle_create_simple_pool(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.create_simple_pool(
         _capacity=args.capacity_arg, transaction_config=transaction_config
@@ -522,7 +557,7 @@ def handle_create_simple_pool(args: argparse.Namespace) -> None:
 
 def handle_is_approved_for_all(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     result = contract.is_approved_for_all(
         account=args.account, operator=args.operator, block_number=args.block_number
     )
@@ -531,7 +566,7 @@ def handle_is_approved_for_all(args: argparse.Namespace) -> None:
 
 def handle_is_approved_for_pool(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     result = contract.is_approved_for_pool(
         pool_id=args.pool_id, operator=args.operator, block_number=args.block_number
     )
@@ -540,7 +575,7 @@ def handle_is_approved_for_pool(args: argparse.Namespace) -> None:
 
 def handle_mint(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.mint(
         to=args.to,
@@ -556,7 +591,7 @@ def handle_mint(args: argparse.Namespace) -> None:
 
 def handle_mint_batch(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.mint_batch(
         to=args.to,
@@ -572,21 +607,21 @@ def handle_mint_batch(args: argparse.Namespace) -> None:
 
 def handle_payment_token(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     result = contract.payment_token(block_number=args.block_number)
     print(result)
 
 
 def handle_pool_base_price(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     result = contract.pool_base_price(block_number=args.block_number)
     print(result)
 
 
 def handle_pool_is_burnable(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     result = contract.pool_is_burnable(
         pool_id=args.pool_id, block_number=args.block_number
     )
@@ -595,7 +630,7 @@ def handle_pool_is_burnable(args: argparse.Namespace) -> None:
 
 def handle_pool_is_transferable(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     result = contract.pool_is_transferable(
         pool_id=args.pool_id, block_number=args.block_number
     )
@@ -604,7 +639,7 @@ def handle_pool_is_transferable(args: argparse.Namespace) -> None:
 
 def handle_pool_mint_batch(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.pool_mint_batch(
         id=args.id,
@@ -619,7 +654,7 @@ def handle_pool_mint_batch(args: argparse.Namespace) -> None:
 
 def handle_safe_batch_transfer_from(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.safe_batch_transfer_from(
         from_=args.from_arg,
@@ -636,7 +671,7 @@ def handle_safe_batch_transfer_from(args: argparse.Namespace) -> None:
 
 def handle_safe_transfer_from(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.safe_transfer_from(
         from_=args.from_arg,
@@ -653,7 +688,7 @@ def handle_safe_transfer_from(args: argparse.Namespace) -> None:
 
 def handle_set_approval_for_all(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.set_approval_for_all(
         operator=args.operator,
@@ -667,7 +702,7 @@ def handle_set_approval_for_all(args: argparse.Namespace) -> None:
 
 def handle_set_contract_uri(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.set_contract_uri(
         _contract_uri=args.contract_uri_arg, transaction_config=transaction_config
@@ -679,7 +714,7 @@ def handle_set_contract_uri(args: argparse.Namespace) -> None:
 
 def handle_set_controller(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.set_controller(
         new_controller=args.new_controller, transaction_config=transaction_config
@@ -691,7 +726,7 @@ def handle_set_controller(args: argparse.Namespace) -> None:
 
 def handle_set_payment_token(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.set_payment_token(
         new_payment_token=args.new_payment_token, transaction_config=transaction_config
@@ -703,7 +738,7 @@ def handle_set_payment_token(args: argparse.Namespace) -> None:
 
 def handle_set_pool_base_price(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.set_pool_base_price(
         new_base_price=args.new_base_price, transaction_config=transaction_config
@@ -715,7 +750,7 @@ def handle_set_pool_base_price(args: argparse.Namespace) -> None:
 
 def handle_set_pool_burnable(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.set_pool_burnable(
         pool_id=args.pool_id,
@@ -729,7 +764,7 @@ def handle_set_pool_burnable(args: argparse.Namespace) -> None:
 
 def handle_set_pool_controller(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.set_pool_controller(
         pool_id=args.pool_id,
@@ -743,7 +778,7 @@ def handle_set_pool_controller(args: argparse.Namespace) -> None:
 
 def handle_set_pool_transferable(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.set_pool_transferable(
         pool_id=args.pool_id,
@@ -757,7 +792,7 @@ def handle_set_pool_transferable(args: argparse.Namespace) -> None:
 
 def handle_set_uri(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.set_uri(
         pool_id=args.pool_id,
@@ -771,7 +806,7 @@ def handle_set_uri(args: argparse.Namespace) -> None:
 
 def handle_supports_interface(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     result = contract.supports_interface(
         interface_id=args.interface_id, block_number=args.block_number
     )
@@ -780,14 +815,14 @@ def handle_supports_interface(args: argparse.Namespace) -> None:
 
 def handle_terminus_controller(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     result = contract.terminus_controller(block_number=args.block_number)
     print(result)
 
 
 def handle_terminus_pool_capacity(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     result = contract.terminus_pool_capacity(
         pool_id=args.pool_id, block_number=args.block_number
     )
@@ -796,7 +831,7 @@ def handle_terminus_pool_capacity(args: argparse.Namespace) -> None:
 
 def handle_terminus_pool_controller(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     result = contract.terminus_pool_controller(
         pool_id=args.pool_id, block_number=args.block_number
     )
@@ -805,7 +840,7 @@ def handle_terminus_pool_controller(args: argparse.Namespace) -> None:
 
 def handle_terminus_pool_supply(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     result = contract.terminus_pool_supply(
         pool_id=args.pool_id, block_number=args.block_number
     )
@@ -814,21 +849,35 @@ def handle_terminus_pool_supply(args: argparse.Namespace) -> None:
 
 def handle_total_pools(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     result = contract.total_pools(block_number=args.block_number)
     print(result)
 
 
+def handle_unapprove_for_pool(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = ITerminus(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.unapprove_for_pool(
+        pool_id=args.pool_id,
+        operator=args.operator,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
 def handle_uri(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     result = contract.uri(pool_id=args.pool_id, block_number=args.block_number)
     print(result)
 
 
 def handle_withdraw_payments(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = MockTerminus(args.address)
+    contract = ITerminus(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.withdraw_payments(
         to_address=args.to_address,
@@ -841,7 +890,7 @@ def handle_withdraw_payments(args: argparse.Namespace) -> None:
 
 
 def generate_cli() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="CLI for MockTerminus")
+    parser = argparse.ArgumentParser(description="CLI for ITerminus")
     parser.set_defaults(func=lambda _: parser.print_help())
     subcommands = parser.add_subparsers()
 
@@ -907,6 +956,25 @@ def generate_cli() -> argparse.ArgumentParser:
         "--burnable-arg", required=True, help="Type: bool", type=boolean_argument_type
     )
     create_pool_v1_parser.set_defaults(func=handle_create_pool_v1)
+
+    create_pool_v2_parser = subcommands.add_parser("create-pool-v2")
+    add_default_arguments(create_pool_v2_parser, True)
+    create_pool_v2_parser.add_argument(
+        "--capacity-arg", required=True, help="Type: uint256", type=int
+    )
+    create_pool_v2_parser.add_argument(
+        "--transferable-arg",
+        required=True,
+        help="Type: bool",
+        type=boolean_argument_type,
+    )
+    create_pool_v2_parser.add_argument(
+        "--burnable-arg", required=True, help="Type: bool", type=boolean_argument_type
+    )
+    create_pool_v2_parser.add_argument(
+        "--pool-uri", required=True, help="Type: string", type=str
+    )
+    create_pool_v2_parser.set_defaults(func=handle_create_pool_v2)
 
     create_simple_pool_parser = subcommands.add_parser("create-simple-pool")
     add_default_arguments(create_simple_pool_parser, True)
@@ -1143,6 +1211,16 @@ def generate_cli() -> argparse.ArgumentParser:
     total_pools_parser = subcommands.add_parser("total-pools")
     add_default_arguments(total_pools_parser, False)
     total_pools_parser.set_defaults(func=handle_total_pools)
+
+    unapprove_for_pool_parser = subcommands.add_parser("unapprove-for-pool")
+    add_default_arguments(unapprove_for_pool_parser, True)
+    unapprove_for_pool_parser.add_argument(
+        "--pool-id", required=True, help="Type: uint256", type=int
+    )
+    unapprove_for_pool_parser.add_argument(
+        "--operator", required=True, help="Type: address"
+    )
+    unapprove_for_pool_parser.set_defaults(func=handle_unapprove_for_pool)
 
     uri_parser = subcommands.add_parser("uri")
     add_default_arguments(uri_parser, False)

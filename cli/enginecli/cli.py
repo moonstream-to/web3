@@ -1,18 +1,22 @@
 import argparse
 import logging
 
+from enginecli.ITerminus import ITerminus
+
 from . import (
     core,
+    flows,
     drop,
     DropperFacet,
     Dropper,
     Lootbox,
     MockErc20,
     MockERC721,
-    MockTerminus,
+    ITerminus,
     setup_drop,
     CraftingFacet,
     GOFPFacet,
+    InventoryFacet,
 )
 
 
@@ -30,6 +34,9 @@ def main() -> None:
 
     core_parser = core.generate_cli()
     subparsers.add_parser("core", parents=[core_parser], add_help=False)
+
+    flows_parser = flows.generate_cli()
+    subparsers.add_parser("flows", parents=[flows_parser], add_help=False)
 
     dropper_parser = Dropper.generate_cli()
     subparsers.add_parser("dropper-v1", parents=[dropper_parser], add_help=False)
@@ -49,7 +56,7 @@ def main() -> None:
     drop_parser = drop.generate_cli()
     subparsers.add_parser("drop", parents=[drop_parser], add_help=False)
 
-    terminus_parser = MockTerminus.generate_cli()
+    terminus_parser = ITerminus.generate_cli()
     subparsers.add_parser("terminus", parents=[terminus_parser], add_help=False)
 
     crafting_parser = CraftingFacet.generate_cli()
@@ -60,6 +67,9 @@ def main() -> None:
 
     setup_drop_parser = setup_drop.generate_cli()
     subparsers.add_parser("setup-drop", parents=[setup_drop_parser], add_help=False)
+
+    inventory_parser = InventoryFacet.generate_cli()
+    subparsers.add_parser("inventory", parents=[inventory_parser], add_help=False)
 
     args = parser.parse_args()
     args.func(args)
