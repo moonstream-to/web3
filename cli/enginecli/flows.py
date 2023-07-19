@@ -1,9 +1,11 @@
 import argparse
 from enum import Enum
 import json
+import csv
 import os
 from re import I
 import sys
+from textwrap import indent
 import time
 from typing import Any, Dict, Optional, List, Set
 
@@ -138,6 +140,66 @@ def handle_create_inventory_slots_from_config(args: argparse.Namespace) -> None:
     print(pool_mapping)
 
 
+def handle_create_metadata_from_csv(args: argparse.Namespace) -> None:
+    dir = os.path.dirname(args.csv_file)
+
+    with open(args.csv_file, "r") as f:
+        reader = csv.DictReader(f)
+        i = 0
+        config = []
+        for row in reader:
+            i = i + 1
+            item_voucher_id = row["Voucher ID"]
+            item_name = row["Name"]
+            item_class = row["Class"]
+            item_rarity = row["Rarity"]
+            item_image = row["Image Type"].lower()
+            item_shadowcorn_id = row["Shadowcorn/Egg ID"]
+            if item_name != "":
+                config.append(
+                    {
+                        "id": item_voucher_id,
+                        "metadata": "https://badges.moonstream.to/cu-vouchers/voucher-{}.json".format(
+                            item_voucher_id
+                        ),
+                    }
+                )
+                metadata = {
+                    "name": item_name,
+                    "description": "Standing proud in all of its terrifying glory, behold the Shadowcorn Figurine! Legends speak of how this mighty idol sprang forth from a dark and enigmatic Shadowcorn Egg that was crafted deep in the bustling crafting halls of IsmToys, where the master figurine-smiths practice the ancient techniques needed to adequately capture the menacing essence of  a Shadowcorn’s visage! Redeem this voucher via the https://unicorns-beryl.vercel.app/ and receive your very own Shadowcorn Figurine!",
+                    "image": "https://badges.moonstream.to/cu-vouchers/images/{}.png".format(
+                        item_image
+                    ),
+                    "external_url": "https://www.cryptounicorns.fun/",
+                    "metadata_version": 1,
+                    "attributes": [
+                        {"trait_type": "token_type", "value": "voucher"},
+                        {"trait_type": "rarity", "value": item_rarity},
+                        {"trait_type": "class", "value": item_class},
+                        {"trait_type": "token_id", "value": item_shadowcorn_id},
+                        {
+                            "trait_type": "token_link",
+                            "value": "https://www.hawku.com/details/crypto-unicorns/shadowcorn/{}".format(
+                                item_shadowcorn_id
+                            ),
+                        },
+                        {"trait_type": "protocol", "value": "terminus"},
+                    ],
+                }
+
+                outfile = os.path.join(
+                    dir, "metadata", "voucher-{}.json".format(item_voucher_id)
+                )
+                if outfile is not None:
+                    with open(outfile, "w") as o:
+                        json.dump(metadata, o, indent=4)
+        if len(config) > 0:
+            config_file = os.path.join(dir, "config.json")
+            if config_file is not None:
+                with open(config_file, "w") as conf:
+                    json.dump(config, conf, indent=4)
+
+
 def generate_cli():
     parser = argparse.ArgumentParser(
         description="CLI to manage Lootbox contract",
@@ -247,6 +309,21 @@ def generate_cli():
 
     create_inventory_slots_from_config_parser.set_defaults(
         func=handle_create_inventory_slots_from_config
+    )
+
+    create_metadata_from_csv = subcommands.add_parser(
+        "create-metadata-from-csv",
+        help="Creates config file",
+        description="Creates config file with.",
+    )
+
+    create_metadata_from_csv.set_defaults(func=handle_create_metadata_from_csv)
+
+    create_metadata_from_csv.add_argument(
+        "--csv-file",
+        type=str,
+        required=True,
+        help="Path to the csv file",
     )
 
     return parser
