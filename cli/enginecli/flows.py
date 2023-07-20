@@ -165,7 +165,7 @@ def handle_create_metadata_from_csv(args: argparse.Namespace) -> None:
                     }
                 )
                 metadata = {
-                    "name": item_name,
+                    "name": item_name + " Voucher",
                     "description": "Standing proud in all of its terrifying glory, behold the Shadowcorn Figurine! Legends speak of how this mighty idol sprang forth from a dark and enigmatic Shadowcorn Egg that was crafted deep in the bustling crafting halls of IsmToys, where the master figurine-smiths practice the ancient techniques needed to adequately capture the menacing essence of  a Shadowcorn’s visage! Redeem this voucher via the https://unicorns-beryl.vercel.app/ and receive your very own Shadowcorn Figurine!",
                     "image": "https://badges.moonstream.to/cu-vouchers/images/{}.png".format(
                         item_image
@@ -176,10 +176,9 @@ def handle_create_metadata_from_csv(args: argparse.Namespace) -> None:
                         {"trait_type": "token_type", "value": "voucher"},
                         {"trait_type": "rarity", "value": item_rarity},
                         {"trait_type": "class", "value": item_class},
-                        {"trait_type": "token_id", "value": item_shadowcorn_id},
                         {
-                            "trait_type": "token_link",
-                            "value": "https://www.hawku.com/details/crypto-unicorns/shadowcorn/{}".format(
+                            "trait_type": "related Shadowcorn",
+                            "value": "https://opensea.io/assets/matic/0xa7d50ee3d7485288107664cf758e877a0d351725/{}".format(
                                 item_shadowcorn_id
                             ),
                         },
