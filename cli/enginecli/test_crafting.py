@@ -1,4 +1,5 @@
-from typing import List
+import json
+from typing import Any, Dict, List, Tuple
 import unittest
 
 from brownie import accounts, network
@@ -105,16 +106,36 @@ class CraftingTestCase(unittest.TestCase):
             cls.auth_terminus_contract.address, 1, {"from": accounts[0]}
         )
 
-    def _create_recipe(self, recipe: Recipe, from_account=None) -> int:
+    def _check_if_event_was_fired(self, tx, event_dict: Dict[str, Any]):
+        events = tx.events[event_dict["event"]]
+        if not events:
+            raise Exception(f"Event {event_dict['event']} was not fired")
+        if event_dict.get("args"):
+            for event in events:
+                if len(event_dict["args"]) != len(event[0]):
+                    continue
+                same = True
+                for key, value in event_dict["args"].items():
+                    if event[key] != value:
+                        same = False
+                        break
+                if not same:
+                    continue
+                return
+            raise Exception(
+                f"Event {event_dict['event']}, was not found with the given args: {event_dict['args']}"
+            )
+
+    def _create_recipe(self, recipe: Recipe, from_account=None) -> Tuple[int, Any]:
         if from_account is None:
             # Python doesn't allow me to set account[0]
             # as default value
             from_account = accounts[0]
-        self.crafting.add_recipe(recipe.to_tuple(), {"from": from_account})
+        tx = self.crafting.add_recipe(recipe.to_tuple(), {"from": from_account})
         recipe_id = self.crafting.num_recipes()
-        return recipe_id
+        return recipe_id, tx
 
-    def test_create_craft(self):
+    def test_create_recipe(self):
         inputs = [
             CraftingInput(
                 20,
@@ -136,10 +157,80 @@ class CraftingTestCase(unittest.TestCase):
         num_recipes_before = self.crafting.num_recipes()
         recipe = Recipe(inputs, outputs, True)
 
-        recipe_id = self._create_recipe(recipe)
+        recipe_id, tx = self._create_recipe(recipe)
         num_recipes_after = self.crafting.num_recipes()
 
         self.assertEqual(num_recipes_after, num_recipes_before + 1)
+        self._check_if_event_was_fired(
+            tx,
+            {
+                "event": "RecipeCreated",
+                "args": {
+                    "recipeId": recipe_id,
+                    "recipe": recipe.to_tuple(),
+                    "operator": accounts[0].address,
+                },
+            },
+        )
+
+        recipe_from_contract = self.crafting.get_recipe(recipe_id)
+        self.assertEqual(recipe_from_contract, recipe.to_tuple())
+
+    def test_update_recipe(self):
+        inputs = [
+            CraftingInput(
+                20,
+                self.erc20_contracts[1].address,
+                0,
+                10 * 10**18,
+                0,
+            ),
+        ]
+        outputs = [
+            CraftingOutput(
+                20,
+                self.erc20_contracts[2].address,
+                0,
+                10 * 10**18,
+                0,
+            ),
+        ]
+        num_recipes_before = self.crafting.num_recipes()
+        recipe = Recipe(inputs, outputs, True)
+
+        recipe_id, _ = self._create_recipe(recipe)
+        num_recipes_after = self.crafting.num_recipes()
+
+        self.assertEqual(num_recipes_after, num_recipes_before + 1)
+
+        recipe_from_contract = self.crafting.get_recipe(recipe_id)
+        self.assertEqual(recipe_from_contract, recipe.to_tuple())
+
+        recipe.outputs.append(
+            CraftingOutput(
+                20,
+                self.erc20_contracts[2].address,
+                0,
+                10 * 10**18,
+                0,
+            ),
+        )
+        self.assertNotEqual(recipe_from_contract, recipe.to_tuple())
+        tx = self.crafting.update_recipe(
+            recipe_id, recipe.to_tuple(), {"from": accounts[0]}
+        )
+
+        self._check_if_event_was_fired(
+            tx,
+            {
+                "event": "RecipeUpdated",
+                "args": {
+                    "recipeId": recipe_id,
+                    "recipe": recipe.to_tuple(),
+                    "operator": accounts[0].address,
+                },
+            },
+        )
 
         recipe_from_contract = self.crafting.get_recipe(recipe_id)
         self.assertEqual(recipe_from_contract, recipe.to_tuple())
@@ -269,7 +360,7 @@ class CraftingTestCase(unittest.TestCase):
         ]
 
         recipe = Recipe(inputs, outputs, True)
-        recipe_id = self._create_recipe(recipe)
+        recipe_id, _ = self._create_recipe(recipe)
 
         self.erc20_contracts[1].mint(accounts[1], input_amount, {"from": accounts[0]})
         self.erc20_contracts[2].mint(
@@ -280,8 +371,17 @@ class CraftingTestCase(unittest.TestCase):
             self.crafting.address, input_amount, {"from": accounts[1]}
         )
         block_no_before = web3_client.eth.block_number
-        self.crafting.craft(recipe_id, {"from": accounts[1]})
-
+        tx = self.crafting.craft(recipe_id, {"from": accounts[1]})
+        self._check_if_event_was_fired(
+            tx,
+            {
+                "event": "Craft",
+                "args": {
+                    "recipeId": recipe_id,
+                    "player": accounts[1].address,
+                },
+            },
+        )
         self._check_balances_after_crafting(recipe, block_no_before)
 
     def test_simple_transfer_craft_with_erc1155(self):
@@ -325,7 +425,7 @@ class CraftingTestCase(unittest.TestCase):
         ]
 
         recipe = Recipe(inputs, outputs, True)
-        recipe_id = self._create_recipe(recipe)
+        recipe_id, _ = self._create_recipe(recipe)
 
         self.erc20_contracts[1].mint(accounts[1], input_amount, {"from": accounts[0]})
         self.erc20_contracts[2].mint(
@@ -392,7 +492,7 @@ class CraftingTestCase(unittest.TestCase):
         ]
 
         recipe = Recipe(inputs, outputs, True)
-        recipe_id = self._create_recipe(recipe)
+        recipe_id, _ = self._create_recipe(recipe)
 
         self.erc20_contracts[1].mint(accounts[1], input_amount, {"from": accounts[0]})
         self.erc20_contracts[2].mint(
@@ -458,7 +558,7 @@ class CraftingTestCase(unittest.TestCase):
         ]
 
         recipe = Recipe(inputs, outputs, True)
-        recipe_id = self._create_recipe(recipe)
+        recipe_id, _ = self._create_recipe(recipe)
 
         self.erc20_contracts[1].mint(accounts[1], input_amount, {"from": accounts[0]})
         self.erc20_contracts[2].mint(
@@ -525,7 +625,7 @@ class CraftingTestCase(unittest.TestCase):
         ]
 
         recipe = Recipe(inputs, outputs, True)
-        recipe_id = self._create_recipe(recipe)
+        recipe_id, _ = self._create_recipe(recipe)
 
         self.erc20_contracts[1].mint(accounts[1], input_amount, {"from": accounts[0]})
         self.erc20_contracts[2].mint(
@@ -634,7 +734,7 @@ class CraftingTestCase(unittest.TestCase):
         ]
 
         recipe = Recipe(inputs, outputs, True)
-        recipe_id = self._create_recipe(recipe)
+        recipe_id, _ = self._create_recipe(recipe)
 
         for input in inputs:
             if input.token_type == 20:
@@ -732,7 +832,7 @@ class CraftingTestCase(unittest.TestCase):
         ]
 
         recipe = Recipe(inputs, outputs, True)
-        recipe_id = self._create_recipe(recipe)
+        recipe_id, _ = self._create_recipe(recipe)
 
         for output in outputs:
             if output.token_action == 0:
@@ -811,7 +911,7 @@ class CraftingTestCase(unittest.TestCase):
         ]
 
         recipe = Recipe(inputs, outputs, True)
-        recipe_id = self._create_recipe(recipe)
+        recipe_id, _ = self._create_recipe(recipe)
 
         for output in outputs:
             if output.token_action == 0:
@@ -890,7 +990,7 @@ class CraftingTestCase(unittest.TestCase):
         ]
 
         recipe = Recipe(inputs, outputs, True)
-        recipe_id = self._create_recipe(recipe)
+        recipe_id, _ = self._create_recipe(recipe)
 
         for output in outputs:
             if output.token_action == 0:
@@ -1024,7 +1124,7 @@ class CraftingTestCase(unittest.TestCase):
                 )
 
         recipe = Recipe(inputs, outputs, True)
-        recipe_id = self._create_recipe(recipe)
+        recipe_id, _ = self._create_recipe(recipe)
 
         block_no_before = web3_client.eth.block_number
         self.crafting.craft(recipe_id, {"from": accounts[1]})
