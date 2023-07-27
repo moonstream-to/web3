@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from enginecli.ITerminus import ITerminus
+from .ITerminus import ITerminus
 
 from . import (
     core,
