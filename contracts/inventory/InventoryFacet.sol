@@ -97,10 +97,10 @@ Admin flow:
 - [x] Define tokens as equippable in inventory slots
 
 Player flow:
-- [] Equip ERC20 tokens in eligible inventory slots
-- [] Equip ERC721 tokens in eligible inventory slots
-- [] Equip ERC1155 tokens in eligible inventory slots
-- [ ] Unequip items from unequippable slots
+- [x] Equip ERC20 tokens in eligible inventory slots
+- [x] Equip ERC721 tokens in eligible inventory slots
+- [x] Equip ERC1155 tokens in eligible inventory slots
+- [x] Unequip items from unequippable slots
 
 Batch endpoints:
 - [ ] Marking items as equippable
