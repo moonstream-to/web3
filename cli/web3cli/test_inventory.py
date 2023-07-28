@@ -181,35 +181,6 @@ class TestAdminFlow(InventoryTestCase):
             unequippable,
         )
 
-    def test_admin_can_add_backpacks_to_subject_token(self):
-        unequippable = False
-        subject_token_id = self.nft.total_supply()
-        self.nft.mint(self.player.address, subject_token_id, {"from": self.owner})
-
-        # player has 0 slots in their inventory
-        self.inventory.create_slot(
-            unequippable,
-            slot_type=1,
-            slot_uri="random_uri",
-            transaction_config={"from": self.admin},
-        )
-        num_slots_1 = self.inventory.num_slots()
-
-        # all the players has 1 slot in their inventory
-        self.assertEqual(num_slots_1, 1)
-
-        # admin adds 10 more slots to the subject token
-        self.inventory.add_backpack_to_subject(
-            10,
-            subject_token_id,
-            0,
-            "some_fancy_slot_uri",
-            transaction_config={"from": self.admin},
-        )
-
-        # all the players still having only 1 slot in their inventory
-        self.assertEqual(num_slots_1, 1)
-
     def test_admin_can_set_slot_uri(self):
         unequippable = False
 
@@ -263,66 +234,6 @@ class TestAdminFlow(InventoryTestCase):
             self.inventory.set_slot_uri(
                 "some_fancy_slot_uri",
                 1,
-                transaction_config={"from": self.player},
-            )
-
-        num_slots_1 = self.inventory.num_slots()
-
-        self.assertEqual(num_slots_1, num_slots_0)
-
-    def test_admin_cannot_get_subject_slots(self):
-        unequippable = False
-        subject_token_id = self.nft.total_supply()
-        self.nft.mint(self.player.address, subject_token_id, {"from": self.owner})
-
-        # player has 0 slots in their inventory
-        self.inventory.create_slot(
-            unequippable,
-            slot_type=1,
-            slot_uri="random_uri",
-            transaction_config={"from": self.admin},
-        )
-        num_slots_0 = self.inventory.num_slots()
-
-        # admin adds 10 more slots to the subject token
-        self.inventory.add_backpack_to_subject(
-            10,
-            subject_token_id,
-            0,
-            "some_fancy_slot_uri",
-            transaction_config={"from": self.admin},
-        )
-
-        # set the slot uri
-        with self.assertRaises(VirtualMachineError):
-            self.inventory.get_subject_token_slots(subject_token_id)
-
-        num_slots_1 = self.inventory.num_slots()
-
-        self.assertEqual(num_slots_1, num_slots_0)
-
-    def test_noadmin_cannot_add_backpack_to_subject(self):
-        unequippable = False
-        subject_token_id = self.nft.total_supply()
-        self.nft.mint(self.player.address, subject_token_id, {"from": self.owner})
-
-        # player has 0 slots in their inventory
-        self.inventory.create_slot(
-            unequippable,
-            slot_type=1,
-            slot_uri="random_uri",
-            transaction_config={"from": self.admin},
-        )
-        num_slots_0 = self.inventory.num_slots()
-
-        # set the slot uri
-        with self.assertRaises(VirtualMachineError):
-            # admin adds 10 more slots to the subject token
-            self.inventory.add_backpack_to_subject(
-                10,
-                subject_token_id,
-                0,
-                "some_fancy_slot_uri",
                 transaction_config={"from": self.player},
             )
 

@@ -139,17 +139,6 @@ interface IInventory {
         uint256 slotId
     ) external view returns (Slot memory slots);
 
-    function getSubjectTokenSlots(
-        uint256 subjectTokenId
-    ) external view returns (Slot[] memory slot);
-
-    function addBackpackToSubject(
-        uint256 slotQty,
-        uint256 toSubjectTokenId,
-        uint256 slotType,
-        string memory slotURI
-    ) external;
-
     function getSlotURI(uint256 slotId) external view returns (string memory);
 
     function createSlotType(
