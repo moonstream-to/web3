@@ -128,16 +128,6 @@ contract InventoryFacet is
         _;
     }
 
-    modifier requireValidItemType(uint256 itemType) {
-        require(
-            itemType == LibInventory.ERC20_ITEM_TYPE ||
-                itemType == LibInventory.ERC721_ITEM_TYPE ||
-                itemType == LibInventory.ERC1155_ITEM_TYPE,
-            "InventoryFacet.requireValidItemType: Invalid item type"
-        );
-        _;
-    }
-
     modifier onlySubjectTokenOwner(uint256 subjectTokenId) {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
@@ -345,7 +335,14 @@ contract InventoryFacet is
         address itemAddress,
         uint256 itemPoolId,
         uint256 maxAmount
-    ) external onlyAdmin requireValidItemType(itemType) {
+    ) external onlyAdmin {
+        require(
+            itemType == LibInventory.ERC20_ITEM_TYPE ||
+                itemType == LibInventory.ERC721_ITEM_TYPE ||
+                itemType == LibInventory.ERC1155_ITEM_TYPE,
+            "InventoryFacet.markItemAsEquippableInSlot: Invalid item type"
+        );
+
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
 
@@ -475,7 +472,14 @@ contract InventoryFacet is
         address itemAddress,
         uint256 itemTokenId,
         uint256 amount
-    ) external requireValidItemType(itemType) diamondNonReentrant {
+    ) external diamondNonReentrant {
+        require(
+            itemType == LibInventory.ERC20_ITEM_TYPE ||
+                itemType == LibInventory.ERC721_ITEM_TYPE ||
+                itemType == LibInventory.ERC1155_ITEM_TYPE,
+            "InventoryFacet.equip: Invalid item type"
+        );
+
         require(
             itemType == LibInventory.ERC721_ITEM_TYPE ||
                 itemType == LibInventory.ERC1155_ITEM_TYPE ||
