@@ -23,7 +23,7 @@ proxy.
  */
 library LibInventory {
     bytes32 constant STORAGE_POSITION =
-        keccak256("g7dao.eth.storage.Inventory");
+        keccak256("moonstreamdao.eth.storage.Inventory");
 
     uint256 constant ERC20_ITEM_TYPE = 20;
     uint256 constant ERC721_ITEM_TYPE = 721;
