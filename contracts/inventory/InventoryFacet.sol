@@ -138,7 +138,7 @@ contract InventoryFacet is
         _;
     }
 
-    modifier onlyContractSubjectOwner(uint256 subjectTokenId) {
+    modifier onlySubjectTokenOwner(uint256 subjectTokenId) {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
         IERC721 subjectContract = IERC721(istore.ContractERC721Address);
@@ -282,7 +282,7 @@ contract InventoryFacet is
     )
         external
         view
-        onlyContractSubjectOwner(subjectTokenId)
+        onlySubjectTokenOwner(subjectTokenId)
         returns (Slot[] memory slots)
     {
         LibInventory.InventoryStorage storage istore = LibInventory
