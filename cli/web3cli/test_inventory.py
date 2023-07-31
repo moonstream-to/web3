@@ -13,6 +13,19 @@ MAX_UINT = 2**256 - 1
 
 class InventoryTestCase(unittest.TestCase):
     @classmethod
+    def deploy_inventory(cls) -> str:
+        """
+        Deploys an Inventory and returns the address of the deployed contract.
+        """
+        deployed_contracts = inventory_gogogo(
+            cls.terminus.address,
+            cls.admin_terminus_pool_id,
+            cls.nft.address,
+            cls.owner_tx_config,
+        )
+        return deployed_contracts["contracts"]["Diamond"]
+
+    @classmethod
     def setUpClass(cls) -> None:
         try:
             network.connect()
@@ -54,16 +67,9 @@ class InventoryTestCase(unittest.TestCase):
         )
 
         cls.predeployment_block = len(chain)
-        cls.deployed_contracts = inventory_gogogo(
-            cls.terminus.address,
-            cls.admin_terminus_pool_id,
-            cls.nft.address,
-            cls.owner_tx_config,
-        )
+        inventory_address = cls.deploy_inventory()
+        cls.inventory = InventoryFacet.InventoryFacet(inventory_address)
         cls.postdeployment_block = len(chain)
-        cls.inventory = InventoryFacet.InventoryFacet(
-            cls.deployed_contracts["contracts"]["Diamond"]
-        )
 
 
 class InventorySetupTests(InventoryTestCase):
@@ -247,7 +253,7 @@ class TestAdminFlow(InventoryTestCase):
 
         self.assertEqual(num_slots_1, num_slots_0)
 
-    def test_noadmin_cannot_set_slot_uri(self):
+    def test_nonadmin_cannot_set_slot_uri(self):
         persistent = True
         self.inventory.create_slot(
             persistent,
