@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 struct Slot {
     string SlotURI;
     bool SlotIsPersistent;
-    uint256 SlotId;
 }
 
 // EquippedItem represents an item equipped in a specific inventory slot for a specific ERC721 token.

@@ -34,7 +34,7 @@ library LibInventory {
         uint256 AdminTerminusPoolId;
         address ContractERC721Address;
         uint256 NumSlots;
-        // SlotId => slot, useful to get the rest of the slot data.
+        // SlotId => slot data (URI, persistence)
         mapping(uint256 => Slot) SlotData;
         // Slot => item type => item address => item pool ID => maximum equippable
         // For ERC20 and ERC721 tokens, item pool ID is assumed to be 0. No data will be stored under positive
@@ -165,8 +165,7 @@ contract InventoryFacet is
         // save the slot type!
         istore.SlotData[newSlot] = Slot({
             SlotURI: slotURI,
-            SlotIsPersistent: persistent,
-            SlotId: newSlot
+            SlotIsPersistent: persistent
         });
 
         emit SlotCreated(msg.sender, newSlot, persistent);
