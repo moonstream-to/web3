@@ -14,6 +14,14 @@ struct EquippedItem {
     uint256 Amount;
 }
 
+// Interface ID: baca2357
+//
+// Calculated by solface: https://github.com/moonstream-to/solface
+//
+// To recalculate from root directory of this repo:
+// $ jq .abi build/contracts/IInventory.json  | solface -name IInventory -annotations | grep "Interface ID:"
+//
+// Note: Change path to build/contracts/IInventory.json depending on where you are relative to the repo root.
 interface IInventory {
     event AdministratorDesignated(
         address indexed adminTerminusAddress,
@@ -24,8 +32,8 @@ interface IInventory {
 
     event SlotCreated(
         address indexed creator,
-        uint256 indexed slot,
-        bool persistent
+        uint256 slot,
+        bool indexed persistent
     );
 
     event ItemMarkedAsEquippableInSlot(

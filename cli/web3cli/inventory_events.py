@@ -42,13 +42,13 @@ SLOT_CREATED_ABI = {
             "type": "address",
         },
         {
-            "indexed": True,
+            "indexed": False,
             "internalType": "uint256",
             "name": "slot",
             "type": "uint256",
         },
         {
-            "indexed": False,
+            "indexed": True,
             "internalType": "bool",
             "name": "persistent",
             "type": "bool",
