@@ -5,7 +5,7 @@
  * GitHub: https://github.com/moonstream-to/web3
  */
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.0;
 
 import {TerminusPermissions} from "@moonstream/contracts/terminus/TerminusPermissions.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
@@ -97,10 +97,10 @@ Admin flow:
 - [x] Define tokens as equippable in inventory slots
 
 Player flow:
-- [] Equip ERC20 tokens in eligible inventory slots
-- [] Equip ERC721 tokens in eligible inventory slots
-- [] Equip ERC1155 tokens in eligible inventory slots
-- [ ] Unequip items from unequippable slots
+- [x] Equip ERC20 tokens in eligible inventory slots
+- [x] Equip ERC721 tokens in eligible inventory slots
+- [x] Equip ERC1155 tokens in eligible inventory slots
+- [x] Unequip items from unequippable slots
 
 Batch endpoints:
 - [ ] Marking items as equippable
