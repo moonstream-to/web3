@@ -48,7 +48,7 @@ SLOT_CREATED_ABI = {
             "type": "uint256",
         },
         {
-            "indexed": True,
+            "indexed": False,
             "internalType": "bool",
             "name": "persistent",
             "type": "bool",

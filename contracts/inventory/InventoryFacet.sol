@@ -106,6 +106,11 @@ contract InventoryFacet is
     TerminusPermissions,
     DiamondReentrancyGuard
 {
+    event AdministratorDesignated(
+        address indexed adminTerminusAddress,
+        uint256 indexed adminTerminusPoolId
+    );
+
     modifier onlyAdmin() {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
@@ -189,7 +194,7 @@ contract InventoryFacet is
         return istore.SlotData[slotId].SlotURI;
     }
 
-    function setSlotUri(
+    function setSlotURI(
         string memory newSlotURI,
         uint slotId
     ) external onlyAdmin {
@@ -453,6 +458,15 @@ contract InventoryFacet is
             );
         }
 
+        istore.EquippedItems[istore.ContractERC721Address][subjectTokenId][
+            slot
+        ] = EquippedItem({
+            ItemType: itemType,
+            ItemAddress: itemAddress,
+            ItemTokenId: itemTokenId,
+            Amount: amount
+        });
+
         emit ItemEquipped(
             subjectTokenId,
             slot,
@@ -462,15 +476,6 @@ contract InventoryFacet is
             amount,
             msg.sender
         );
-
-        istore.EquippedItems[istore.ContractERC721Address][subjectTokenId][
-            slot
-        ] = EquippedItem({
-            ItemType: itemType,
-            ItemAddress: itemAddress,
-            ItemTokenId: itemTokenId,
-            Amount: amount
-        });
     }
 
     function unequip(

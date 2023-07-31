@@ -14,7 +14,7 @@ struct EquippedItem {
     uint256 Amount;
 }
 
-// Interface ID: baca2357
+// Interface ID: 6e34096c
 //
 // Calculated by solface: https://github.com/moonstream-to/solface
 //
@@ -23,18 +23,9 @@ struct EquippedItem {
 //
 // Note: Change path to build/contracts/IInventory.json depending on where you are relative to the repo root.
 interface IInventory {
-    event AdministratorDesignated(
-        address indexed adminTerminusAddress,
-        uint256 indexed adminTerminusPoolId
-    );
-
     event ContractAddressDesignated(address indexed contractAddress);
 
-    event SlotCreated(
-        address indexed creator,
-        uint256 slot,
-        bool indexed persistent
-    );
+    event SlotCreated(address indexed creator, uint256 slot, bool persistent);
 
     event ItemMarkedAsEquippableInSlot(
         uint256 indexed slot,
@@ -45,6 +36,8 @@ interface IInventory {
     );
 
     event NewSlotURI(uint256 indexed slotId);
+
+    event NewSlotPersistence(uint256 indexed slotId, bool persistent);
 
     event ItemEquipped(
         uint256 indexed subjectTokenId,
@@ -70,7 +63,8 @@ interface IInventory {
 
     function subject() external view returns (address);
 
-    // Cosntraint: Admin
+    // Constraint: Admin
+    // Emits: SlotCreated, NewSlotURI, NewSlotPersistence
     function createSlot(
         bool persistent,
         string memory slotURI
@@ -78,9 +72,24 @@ interface IInventory {
 
     function numSlots() external view returns (uint256);
 
+    function getSlotById(
+        uint256 slotId
+    ) external view returns (Slot memory slots);
+
+    function getSlotURI(uint256 slotId) external view returns (string memory);
+
     function slotIsPersistent(uint256 slotId) external view returns (bool);
 
-    // Cosntraint: Admin
+    // Constraint: Admin
+    // Emits: NewSlotURI
+    function setSlotURI(string memory newSlotURI, uint slotId) external;
+
+    // Constraint: Admin
+    // Emits: NewSlotPersistence
+    function setSlotPersistent(uint256 slotId, bool persistent) external;
+
+    // Constraint: Admin
+    // Emits: ItemMarkedAsEquippableInSlot
     function markItemAsEquippableInSlot(
         uint256 slot,
         uint256 itemType,
@@ -97,6 +106,8 @@ interface IInventory {
     ) external view returns (uint256);
 
     // Constraint: Non-reentrant.
+    // Emits: ItemEquipped
+    // Optionally emits: ItemUnequipped (if the current item in that slot is being replaced)
     function equip(
         uint256 subjectTokenId,
         uint256 slot,
@@ -107,6 +118,7 @@ interface IInventory {
     ) external;
 
     // Constraint: Non-reentrant.
+    // Emits: ItemUnequipped
     function unequip(
         uint256 subjectTokenId,
         uint256 slot,
@@ -118,13 +130,4 @@ interface IInventory {
         uint256 subjectTokenId,
         uint256 slot
     ) external view returns (EquippedItem memory item);
-
-    function getSlotById(
-        uint256 slotId
-    ) external view returns (Slot memory slots);
-
-    function getSlotURI(uint256 slotId) external view returns (string memory);
-
-    // Cosntraint: Admin
-    function setSlotPersistent(uint256 slotId, bool persistent) external;
 }

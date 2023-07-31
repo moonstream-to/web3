@@ -245,7 +245,7 @@ class InventoryFacet:
 
     def set_slot_uri(self, new_slot_uri: str, slot_id: int, transaction_config) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.setSlotUri(new_slot_uri, slot_id, transaction_config)
+        return self.contract.setSlotURI(new_slot_uri, slot_id, transaction_config)
 
     def slot_is_persistent(
         self, slot_id: int, block_number: Optional[Union[str, int]] = "latest"

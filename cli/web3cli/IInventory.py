@@ -187,6 +187,10 @@ class IInventory:
         self.assert_contract_is_instantiated()
         return self.contract.setSlotPersistent(slot_id, persistent, transaction_config)
 
+    def set_slot_uri(self, new_slot_uri: str, slot_id: int, transaction_config) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.setSlotURI(new_slot_uri, slot_id, transaction_config)
+
     def slot_is_persistent(
         self, slot_id: int, block_number: Optional[Union[str, int]] = "latest"
     ) -> Any:
@@ -414,6 +418,20 @@ def handle_set_slot_persistent(args: argparse.Namespace) -> None:
         print(result.info())
 
 
+def handle_set_slot_uri(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = IInventory(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.set_slot_uri(
+        new_slot_uri=args.new_slot_uri,
+        slot_id=args.slot_id,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
 def handle_slot_is_persistent(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = IInventory(args.address)
@@ -569,6 +587,16 @@ def generate_cli() -> argparse.ArgumentParser:
         "--persistent", required=True, help="Type: bool", type=boolean_argument_type
     )
     set_slot_persistent_parser.set_defaults(func=handle_set_slot_persistent)
+
+    set_slot_uri_parser = subcommands.add_parser("set-slot-uri")
+    add_default_arguments(set_slot_uri_parser, True)
+    set_slot_uri_parser.add_argument(
+        "--new-slot-uri", required=True, help="Type: string", type=str
+    )
+    set_slot_uri_parser.add_argument(
+        "--slot-id", required=True, help="Type: uint256", type=int
+    )
+    set_slot_uri_parser.set_defaults(func=handle_set_slot_uri)
 
     slot_is_persistent_parser = subcommands.add_parser("slot-is-persistent")
     add_default_arguments(slot_is_persistent_parser, False)
