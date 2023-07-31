@@ -18,7 +18,7 @@ ADMINISTRATOR_DESIGNATED_ABI = {
     "type": "event",
 }
 
-CONTRACT_ADDRESS_DESIGNATED_ABI = {
+NEW_SUBJECT_ADDRESS_ABI = {
     "anonymous": False,
     "inputs": [
         {
@@ -28,7 +28,7 @@ CONTRACT_ADDRESS_DESIGNATED_ABI = {
             "type": "address",
         }
     ],
-    "name": "ContractAddressDesignated",
+    "name": "NewSubjectAddress",
     "type": "event",
 }
 

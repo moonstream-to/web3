@@ -25,7 +25,7 @@ struct EquippedItem {
 interface IInventory {
     // This event should be emitted when the subject ERC721 contract address is set (or changes) on the
     // Inventory contract.
-    event ContractAddressDesignated(address indexed contractAddress);
+    event NewSubjectAddress(address indexed contractAddress);
 
     event SlotCreated(address indexed creator, uint256 slot);
 

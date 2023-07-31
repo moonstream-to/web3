@@ -144,7 +144,7 @@ contract InventoryFacet is
         istore.ContractERC721Address = contractAddress;
 
         emit AdministratorDesignated(adminTerminusAddress, adminTerminusPoolId);
-        emit ContractAddressDesignated(contractAddress);
+        emit NewSubjectAddress(contractAddress);
     }
 
     function adminTerminusInfo() external view returns (address, uint256) {

@@ -96,7 +96,7 @@ class InventorySetupTests(InventoryTestCase):
     def test_contract_address_designated_event(self):
         contract_address_designated_events = _fetch_events_chunk(
             web3_client,
-            inventory_events.CONTRACT_ADDRESS_DESIGNATED_ABI,
+            inventory_events.NEW_SUBJECT_ADDRESS_ABI,
             self.predeployment_block,
             self.postdeployment_block,
         )
