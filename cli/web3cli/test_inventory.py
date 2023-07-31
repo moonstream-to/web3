@@ -139,10 +139,7 @@ class TestAdminFlow(InventoryTestCase):
             inventory_slot_created_events[0]["args"]["slot"],
             num_slots_1,
         )
-        self.assertEqual(
-            inventory_slot_created_events[0]["args"]["persistent"],
-            persistent,
-        )
+        # TODO(zomglings): Add tests for NewSlotURI, NewSlotPersistence
 
     def test_admin_can_create_impersistent_slot(self):
         persistent = False
@@ -174,10 +171,7 @@ class TestAdminFlow(InventoryTestCase):
             inventory_slot_created_events[0]["args"]["slot"],
             num_slots_1,
         )
-        self.assertEqual(
-            inventory_slot_created_events[0]["args"]["persistent"],
-            persistent,
-        )
+        # TODO(zomglings): Add tests for NewSlotURI, NewSlotPersistence
 
     def test_admin_can_set_slot_uri(self):
         persistent = True

@@ -23,9 +23,11 @@ struct EquippedItem {
 //
 // Note: Change path to build/contracts/IInventory.json depending on where you are relative to the repo root.
 interface IInventory {
+    // This event should be emitted when the subject ERC721 contract address is set (or changes) on the
+    // Inventory contract.
     event ContractAddressDesignated(address indexed contractAddress);
 
-    event SlotCreated(address indexed creator, uint256 slot, bool persistent);
+    event SlotCreated(address indexed creator, uint256 slot);
 
     event ItemMarkedAsEquippableInSlot(
         uint256 indexed slot,

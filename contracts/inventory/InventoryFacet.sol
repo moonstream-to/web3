@@ -173,7 +173,9 @@ contract InventoryFacet is
             SlotIsPersistent: persistent
         });
 
-        emit SlotCreated(msg.sender, newSlot, persistent);
+        emit SlotCreated(msg.sender, newSlot);
+        emit NewSlotURI(newSlot);
+        emit NewSlotPersistence(newSlot, persistent);
         return newSlot;
     }
 
