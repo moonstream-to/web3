@@ -224,6 +224,8 @@ contract InventoryFacet is
         Slot memory slot = istore.SlotData[slotId];
         slot.SlotIsPersistent = persistent;
         istore.SlotData[slotId] = slot;
+
+        emit NewSlotPersistence(slotId, persistent);
     }
 
     function markItemAsEquippableInSlot(

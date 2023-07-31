@@ -228,7 +228,7 @@ class TestAdminFlow(InventoryTestCase):
         num_slots_1 = self.inventory.num_slots()
 
         # set the slot uri
-        self.inventory.set_slot_uri(
+        tx_receipt = self.inventory.set_slot_uri(
             "some_fancy_slot_uri",
             num_slots_1,
             transaction_config={"from": self.admin},
@@ -238,6 +238,15 @@ class TestAdminFlow(InventoryTestCase):
 
         # the slot uri is updated
         self.assertEqual(new_slot_uri, "some_fancy_slot_uri")
+
+        new_slot_uri_events = _fetch_events_chunk(
+            web3_client,
+            inventory_events.NEW_SLOT_URI_ABI,
+            tx_receipt.block_number,
+            tx_receipt.block_number,
+        )
+        self.assertEqual(len(new_slot_uri_events), 1)
+        self.assertEqual(new_slot_uri_events[0]["args"]["slotId"], num_slots_1)
 
     def test_nonadmin_cannot_create_slot(self):
         persistent = True
@@ -725,6 +734,105 @@ class TestAdminFlow(InventoryTestCase):
             ),
             0,
         )
+
+    def test_admin_can_set_slot_persistent(self):
+        """
+        Checks that an admin user can change the persistence of a slot after it has been created.
+        """
+        # Create slot
+        persistent = True
+        self.inventory.create_slot(
+            persistent,
+            slot_uri="random_uri",
+            transaction_config={"from": self.admin},
+        )
+        slot = self.inventory.num_slots()
+
+        self.assertTrue(self.inventory.slot_is_persistent(slot))
+
+        tx_receipt_0 = self.inventory.set_slot_persistent(
+            slot,
+            False,
+            transaction_config={"from": self.admin},
+        )
+
+        self.assertFalse(self.inventory.slot_is_persistent(slot))
+
+        new_slot_persistence_events = _fetch_events_chunk(
+            web3_client,
+            inventory_events.NEW_SLOT_PERSISTENCE_ABI,
+            tx_receipt_0.block_number,
+            tx_receipt_0.block_number,
+        )
+        self.assertEqual(len(new_slot_persistence_events), 1)
+        self.assertEqual(new_slot_persistence_events[0]["args"]["slotId"], slot)
+        self.assertEqual(new_slot_persistence_events[0]["args"]["persistent"], False)
+
+        tx_receipt_1 = self.inventory.set_slot_persistent(
+            slot,
+            True,
+            transaction_config={"from": self.admin},
+        )
+
+        self.assertTrue(self.inventory.slot_is_persistent(slot))
+
+        new_slot_persistence_events = _fetch_events_chunk(
+            web3_client,
+            inventory_events.NEW_SLOT_PERSISTENCE_ABI,
+            tx_receipt_1.block_number,
+            tx_receipt_1.block_number,
+        )
+        self.assertEqual(len(new_slot_persistence_events), 1)
+        self.assertEqual(new_slot_persistence_events[0]["args"]["slotId"], slot)
+        self.assertEqual(new_slot_persistence_events[0]["args"]["persistent"], True)
+
+    def test_nonadmin_cannot_make_persistent_slot_impersistent(self):
+        """
+        Checks that a non-admin user cannot set the persistence of a slot from persistent to impersistent
+        (i.e. from True to False).
+        """
+        persistent = True
+        self.inventory.create_slot(
+            persistent,
+            slot_uri="random_uri",
+            transaction_config={"from": self.admin},
+        )
+        slot = self.inventory.num_slots()
+
+        self.assertTrue(self.inventory.slot_is_persistent(slot))
+
+        with self.assertRaises(VirtualMachineError):
+            self.inventory.set_slot_persistent(
+                slot,
+                False,
+                transaction_config={"from": self.player},
+            )
+
+        self.assertTrue(self.inventory.slot_is_persistent(slot))
+
+    def test_nonadmin_cannot_make_impersistent_slot_persistent(self):
+        """
+        Checks that a non-admin user cannot set the persistence of a slot from impersistent to persistent
+        (i.e. from False to True).
+        """
+        persistent = False
+        self.inventory.create_slot(
+            persistent,
+            slot_uri="random_uri",
+            transaction_config={"from": self.admin},
+        )
+        slot = self.inventory.num_slots()
+
+        self.assertFalse(self.inventory.slot_is_persistent(slot))
+
+        with self.assertRaises(VirtualMachineError):
+            self.inventory.set_slot_persistent(
+                slot,
+                True,
+                transaction_config={"from": self.player},
+            )
+
+        self.assertFalse(self.inventory.slot_is_persistent(slot))
 
 
 class TestPlayerFlow(InventoryTestCase):
