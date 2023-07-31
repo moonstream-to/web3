@@ -405,6 +405,10 @@ contract InventoryFacet is
         // increasing the amount of an existing token in the given slot. To increase gas-efficiency,
         // we could add more complex logic here to handle that situation by only equipping the difference
         // between the existing amount of the token and the target amount.
+        // TODO(zomglings): The current implementation makes it so that players cannot increase the
+        // number of tokens of a given type that are equipped into a persistent slot. I would consider
+        // this a bug. For more details, see comment at bottom of the following test:
+        // web3cli.test_inventory.TestPlayerFlow.test_player_cannot_unequip_erc20_tokens_from_persistent_slot_but_can_increase_amount
         if (
             istore
             .EquippedItems[istore.ContractERC721Address][subjectTokenId][slot]
