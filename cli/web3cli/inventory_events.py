@@ -174,3 +174,37 @@ ITEM_UNEQUIPPED_ABI = {
     "name": "ItemUnequipped",
     "type": "event",
 }
+
+NEW_SLOT_URI_ABI = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "slotId",
+            "type": "uint256",
+        }
+    ],
+    "name": "NewSlotURI",
+    "type": "event",
+}
+
+NEW_SLOT_PERSISTENCE_ABI = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "slotId",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "bool",
+            "name": "persistent",
+            "type": "bool",
+        },
+    ],
+    "name": "NewSlotPersistence",
+    "type": "event",
+}

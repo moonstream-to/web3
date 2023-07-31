@@ -129,7 +129,6 @@ class TestAdminFlow(InventoryTestCase):
             tx_receipt.block_number,
             tx_receipt.block_number,
         )
-
         self.assertEqual(len(inventory_slot_created_events), 1)
         self.assertEqual(
             inventory_slot_created_events[0]["args"]["creator"],
@@ -139,7 +138,27 @@ class TestAdminFlow(InventoryTestCase):
             inventory_slot_created_events[0]["args"]["slot"],
             num_slots_1,
         )
-        # TODO(zomglings): Add tests for NewSlotURI, NewSlotPersistence
+
+        new_slot_uri_events = _fetch_events_chunk(
+            web3_client,
+            inventory_events.NEW_SLOT_URI_ABI,
+            tx_receipt.block_number,
+            tx_receipt.block_number,
+        )
+        self.assertEqual(len(new_slot_uri_events), 1)
+        self.assertEqual(new_slot_uri_events[0]["args"]["slotId"], num_slots_1)
+
+        new_slot_persistence_events = _fetch_events_chunk(
+            web3_client,
+            inventory_events.NEW_SLOT_PERSISTENCE_ABI,
+            tx_receipt.block_number,
+            tx_receipt.block_number,
+        )
+        self.assertEqual(len(new_slot_persistence_events), 1)
+        self.assertEqual(new_slot_persistence_events[0]["args"]["slotId"], num_slots_1)
+        self.assertEqual(
+            new_slot_persistence_events[0]["args"]["persistent"], persistent
+        )
 
     def test_admin_can_create_impersistent_slot(self):
         persistent = False
@@ -161,7 +180,6 @@ class TestAdminFlow(InventoryTestCase):
             tx_receipt.block_number,
             tx_receipt.block_number,
         )
-
         self.assertEqual(len(inventory_slot_created_events), 1)
         self.assertEqual(
             inventory_slot_created_events[0]["args"]["creator"],
@@ -171,7 +189,27 @@ class TestAdminFlow(InventoryTestCase):
             inventory_slot_created_events[0]["args"]["slot"],
             num_slots_1,
         )
-        # TODO(zomglings): Add tests for NewSlotURI, NewSlotPersistence
+
+        new_slot_uri_events = _fetch_events_chunk(
+            web3_client,
+            inventory_events.NEW_SLOT_URI_ABI,
+            tx_receipt.block_number,
+            tx_receipt.block_number,
+        )
+        self.assertEqual(len(new_slot_uri_events), 1)
+        self.assertEqual(new_slot_uri_events[0]["args"]["slotId"], num_slots_1)
+
+        new_slot_persistence_events = _fetch_events_chunk(
+            web3_client,
+            inventory_events.NEW_SLOT_PERSISTENCE_ABI,
+            tx_receipt.block_number,
+            tx_receipt.block_number,
+        )
+        self.assertEqual(len(new_slot_persistence_events), 1)
+        self.assertEqual(new_slot_persistence_events[0]["args"]["slotId"], num_slots_1)
+        self.assertEqual(
+            new_slot_persistence_events[0]["args"]["persistent"], persistent
+        )
 
     def test_admin_can_set_slot_uri(self):
         persistent = True
