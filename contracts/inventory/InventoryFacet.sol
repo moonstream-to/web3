@@ -36,8 +36,6 @@ library LibInventory {
         uint256 NumSlots;
         // SlotId => slot, useful to get the rest of the slot data.
         mapping(uint256 => Slot) SlotData;
-        // SlotType => "slot type name"
-        mapping(uint256 => string) SlotTypes;
         // Slot => item type => item address => item pool ID => maximum equippable
         // For ERC20 and ERC721 tokens, item pool ID is assumed to be 0. No data will be stored under positive
         // item pool IDs.
@@ -156,7 +154,6 @@ contract InventoryFacet is
 
     function createSlot(
         bool unequippable,
-        uint256 slotType,
         string memory slotURI
     ) external onlyAdmin returns (uint256) {
         LibInventory.InventoryStorage storage istore = LibInventory
@@ -167,52 +164,13 @@ contract InventoryFacet is
         uint256 newSlot = istore.NumSlots;
         // save the slot type!
         istore.SlotData[newSlot] = Slot({
-            SlotType: slotType,
             SlotURI: slotURI,
             SlotIsUnequippable: unequippable,
             SlotId: newSlot
         });
 
-        emit SlotCreated(msg.sender, newSlot, unequippable, slotType);
+        emit SlotCreated(msg.sender, newSlot, unequippable);
         return newSlot;
-    }
-
-    function createSlotType(
-        uint256 slotType,
-        string memory slotTypeName
-    ) external onlyAdmin {
-        require(
-            bytes(slotTypeName).length > 0,
-            "InventoryFacet.setSlotType: Slot type name must be non-empty"
-        );
-        require(
-            slotType > 0,
-            "InventoryFacet.setSlotType: Slot type must be greater than 0"
-        );
-        LibInventory.InventoryStorage storage istore = LibInventory
-            .inventoryStorage();
-        istore.SlotTypes[slotType] = slotTypeName;
-        emit NewSlotTypeAdded(msg.sender, slotType, slotTypeName);
-    }
-
-    function addSlotType(uint256 slot, uint256 slotType) external onlyAdmin {
-        require(
-            slotType > 0,
-            "InventoryFacet.addSlotType: SlotType must be greater than 0"
-        );
-
-        LibInventory.InventoryStorage storage istore = LibInventory
-            .inventoryStorage();
-        istore.SlotData[slot].SlotType = slotType;
-        emit SlotTypeAdded(msg.sender, slot, slotType);
-    }
-
-    function getSlotType(
-        uint256 slotType
-    ) external view returns (string memory slotTypeName) {
-        LibInventory.InventoryStorage storage istore = LibInventory
-            .inventoryStorage();
-        return istore.SlotTypes[slotType];
     }
 
     function numSlots() external view returns (uint256) {

@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 struct Slot {
     string SlotURI;
-    uint256 SlotType;
     bool SlotIsUnequippable;
     uint256 SlotId;
 }
@@ -27,14 +26,7 @@ interface IInventory {
     event SlotCreated(
         address indexed creator,
         uint256 indexed slot,
-        bool unequippable,
-        uint256 indexed slotType
-    );
-
-    event NewSlotTypeAdded(
-        address indexed creator,
-        uint256 indexed slotType,
-        string slotTypeName
+        bool unequippable
     );
 
     event ItemMarkedAsEquippableInSlot(
@@ -45,19 +37,7 @@ interface IInventory {
         uint256 maxAmount
     );
 
-    event BackpackAdded(
-        address indexed creator,
-        uint256 indexed toSubjectTokenId,
-        uint256 indexed slotQuantity
-    );
-
     event NewSlotURI(uint256 indexed slotId);
-
-    event SlotTypeAdded(
-        address indexed creator,
-        uint256 indexed slotId,
-        uint256 indexed slotType
-    );
 
     event ItemEquipped(
         uint256 indexed subjectTokenId,
@@ -91,7 +71,6 @@ interface IInventory {
 
     function createSlot(
         bool unequippable,
-        uint256 slotType,
         string memory slotURI
     ) external returns (uint256);
 
@@ -140,17 +119,6 @@ interface IInventory {
     ) external view returns (Slot memory slots);
 
     function getSlotURI(uint256 slotId) external view returns (string memory);
-
-    function createSlotType(
-        uint256 slotType,
-        string memory slotTypeName
-    ) external;
-
-    function addSlotType(uint256 slot, uint256 slotType) external;
-
-    function getSlotType(
-        uint256 slotType
-    ) external view returns (string memory slotTypeName);
 
     function setSlotUnequippable(bool unquippable, uint256 slotId) external;
 }

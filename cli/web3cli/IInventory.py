@@ -69,12 +69,12 @@ def contract_from_build(abi_name: str) -> ContractContainer:
     return ContractContainer(PROJECT, build)
 
 
-class InventoryFacet:
+class IInventory:
     def __init__(self, contract_address: Optional[ChecksumAddress]):
-        self.contract_name = "InventoryFacet"
+        self.contract_name = "IInventory"
         self.address = contract_address
         self.contract = None
-        self.abi = get_abi_json("InventoryFacet")
+        self.abi = get_abi_json("IInventory")
         if self.address is not None:
             self.contract: Optional[Contract] = Contract.from_abi(
                 self.contract_name, self.address, self.abi
@@ -154,14 +154,14 @@ class InventoryFacet:
         self,
         admin_terminus_address: ChecksumAddress,
         admin_terminus_pool_id: int,
-        contract_address: ChecksumAddress,
+        subject_address: ChecksumAddress,
         transaction_config,
     ) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.init(
             admin_terminus_address,
             admin_terminus_pool_id,
-            contract_address,
+            subject_address,
             transaction_config,
         )
 
@@ -196,47 +196,6 @@ class InventoryFacet:
         self.assert_contract_is_instantiated()
         return self.contract.numSlots.call(block_identifier=block_number)
 
-    def on_erc1155_batch_received(
-        self,
-        arg1: ChecksumAddress,
-        arg2: ChecksumAddress,
-        arg3: List,
-        arg4: List,
-        arg5: bytes,
-        transaction_config,
-    ) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.onERC1155BatchReceived(
-            arg1, arg2, arg3, arg4, arg5, transaction_config
-        )
-
-    def on_erc1155_received(
-        self,
-        arg1: ChecksumAddress,
-        arg2: ChecksumAddress,
-        arg3: int,
-        arg4: int,
-        arg5: bytes,
-        transaction_config,
-    ) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.onERC1155Received(
-            arg1, arg2, arg3, arg4, arg5, transaction_config
-        )
-
-    def on_erc721_received(
-        self,
-        arg1: ChecksumAddress,
-        arg2: ChecksumAddress,
-        arg3: int,
-        arg4: bytes,
-        transaction_config,
-    ) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.onERC721Received(
-            arg1, arg2, arg3, arg4, transaction_config
-        )
-
     def set_slot_unequippable(
         self, unquippable: bool, slot_id: int, transaction_config
     ) -> Any:
@@ -244,10 +203,6 @@ class InventoryFacet:
         return self.contract.setSlotUnequippable(
             unquippable, slot_id, transaction_config
         )
-
-    def set_slot_uri(self, new_slot_uri: str, slot_id: int, transaction_config) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.setSlotUri(new_slot_uri, slot_id, transaction_config)
 
     def slot_is_unequippable(
         self, slot_id: int, block_number: Optional[Union[str, int]] = "latest"
@@ -260,14 +215,6 @@ class InventoryFacet:
     def subject(self, block_number: Optional[Union[str, int]] = "latest") -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.subject.call(block_identifier=block_number)
-
-    def supports_interface(
-        self, interface_id: bytes, block_number: Optional[Union[str, int]] = "latest"
-    ) -> Any:
-        self.assert_contract_is_instantiated()
-        return self.contract.supportsInterface.call(
-            interface_id, block_identifier=block_number
-        )
 
     def unequip(
         self,
@@ -353,7 +300,7 @@ def add_default_arguments(parser: argparse.ArgumentParser, transact: bool) -> No
 def handle_deploy(args: argparse.Namespace) -> None:
     network.connect(args.network)
     transaction_config = get_transaction_config(args)
-    contract = InventoryFacet(None)
+    contract = IInventory(None)
     result = contract.deploy(transaction_config=transaction_config)
     print(result)
     if args.verbose:
@@ -362,21 +309,21 @@ def handle_deploy(args: argparse.Namespace) -> None:
 
 def handle_verify_contract(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = InventoryFacet(args.address)
+    contract = IInventory(args.address)
     result = contract.verify_contract()
     print(result)
 
 
 def handle_admin_terminus_info(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = InventoryFacet(args.address)
+    contract = IInventory(args.address)
     result = contract.admin_terminus_info(block_number=args.block_number)
     print(result)
 
 
 def handle_create_slot(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = InventoryFacet(args.address)
+    contract = IInventory(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.create_slot(
         unequippable=args.unequippable,
@@ -390,7 +337,7 @@ def handle_create_slot(args: argparse.Namespace) -> None:
 
 def handle_equip(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = InventoryFacet(args.address)
+    contract = IInventory(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.equip(
         subject_token_id=args.subject_token_id,
@@ -408,7 +355,7 @@ def handle_equip(args: argparse.Namespace) -> None:
 
 def handle_get_equipped_item(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = InventoryFacet(args.address)
+    contract = IInventory(args.address)
     result = contract.get_equipped_item(
         subject_token_id=args.subject_token_id,
         slot=args.slot,
@@ -419,7 +366,7 @@ def handle_get_equipped_item(args: argparse.Namespace) -> None:
 
 def handle_get_slot_by_id(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = InventoryFacet(args.address)
+    contract = IInventory(args.address)
     result = contract.get_slot_by_id(
         slot_id=args.slot_id, block_number=args.block_number
     )
@@ -428,19 +375,19 @@ def handle_get_slot_by_id(args: argparse.Namespace) -> None:
 
 def handle_get_slot_uri(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = InventoryFacet(args.address)
+    contract = IInventory(args.address)
     result = contract.get_slot_uri(slot_id=args.slot_id, block_number=args.block_number)
     print(result)
 
 
 def handle_init(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = InventoryFacet(args.address)
+    contract = IInventory(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.init(
         admin_terminus_address=args.admin_terminus_address,
         admin_terminus_pool_id=args.admin_terminus_pool_id,
-        contract_address=args.contract_address,
+        subject_address=args.subject_address,
         transaction_config=transaction_config,
     )
     print(result)
@@ -450,7 +397,7 @@ def handle_init(args: argparse.Namespace) -> None:
 
 def handle_mark_item_as_equippable_in_slot(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = InventoryFacet(args.address)
+    contract = IInventory(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.mark_item_as_equippable_in_slot(
         slot=args.slot,
@@ -467,7 +414,7 @@ def handle_mark_item_as_equippable_in_slot(args: argparse.Namespace) -> None:
 
 def handle_max_amount_of_item_in_slot(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = InventoryFacet(args.address)
+    contract = IInventory(args.address)
     result = contract.max_amount_of_item_in_slot(
         slot=args.slot,
         item_type=args.item_type,
@@ -480,64 +427,14 @@ def handle_max_amount_of_item_in_slot(args: argparse.Namespace) -> None:
 
 def handle_num_slots(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = InventoryFacet(args.address)
+    contract = IInventory(args.address)
     result = contract.num_slots(block_number=args.block_number)
     print(result)
 
 
-def handle_on_erc1155_batch_received(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = InventoryFacet(args.address)
-    transaction_config = get_transaction_config(args)
-    result = contract.on_erc1155_batch_received(
-        arg1=args.arg1,
-        arg2=args.arg2,
-        arg3=args.arg3,
-        arg4=args.arg4,
-        arg5=args.arg5,
-        transaction_config=transaction_config,
-    )
-    print(result)
-    if args.verbose:
-        print(result.info())
-
-
-def handle_on_erc1155_received(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = InventoryFacet(args.address)
-    transaction_config = get_transaction_config(args)
-    result = contract.on_erc1155_received(
-        arg1=args.arg1,
-        arg2=args.arg2,
-        arg3=args.arg3,
-        arg4=args.arg4,
-        arg5=args.arg5,
-        transaction_config=transaction_config,
-    )
-    print(result)
-    if args.verbose:
-        print(result.info())
-
-
-def handle_on_erc721_received(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = InventoryFacet(args.address)
-    transaction_config = get_transaction_config(args)
-    result = contract.on_erc721_received(
-        arg1=args.arg1,
-        arg2=args.arg2,
-        arg3=args.arg3,
-        arg4=args.arg4,
-        transaction_config=transaction_config,
-    )
-    print(result)
-    if args.verbose:
-        print(result.info())
-
-
 def handle_set_slot_unequippable(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = InventoryFacet(args.address)
+    contract = IInventory(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.set_slot_unequippable(
         unquippable=args.unquippable,
@@ -549,23 +446,9 @@ def handle_set_slot_unequippable(args: argparse.Namespace) -> None:
         print(result.info())
 
 
-def handle_set_slot_uri(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = InventoryFacet(args.address)
-    transaction_config = get_transaction_config(args)
-    result = contract.set_slot_uri(
-        new_slot_uri=args.new_slot_uri,
-        slot_id=args.slot_id,
-        transaction_config=transaction_config,
-    )
-    print(result)
-    if args.verbose:
-        print(result.info())
-
-
 def handle_slot_is_unequippable(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = InventoryFacet(args.address)
+    contract = IInventory(args.address)
     result = contract.slot_is_unequippable(
         slot_id=args.slot_id, block_number=args.block_number
     )
@@ -574,23 +457,14 @@ def handle_slot_is_unequippable(args: argparse.Namespace) -> None:
 
 def handle_subject(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = InventoryFacet(args.address)
+    contract = IInventory(args.address)
     result = contract.subject(block_number=args.block_number)
-    print(result)
-
-
-def handle_supports_interface(args: argparse.Namespace) -> None:
-    network.connect(args.network)
-    contract = InventoryFacet(args.address)
-    result = contract.supports_interface(
-        interface_id=args.interface_id, block_number=args.block_number
-    )
     print(result)
 
 
 def handle_unequip(args: argparse.Namespace) -> None:
     network.connect(args.network)
-    contract = InventoryFacet(args.address)
+    contract = IInventory(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.unequip(
         subject_token_id=args.subject_token_id,
@@ -605,7 +479,7 @@ def handle_unequip(args: argparse.Namespace) -> None:
 
 
 def generate_cli() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="CLI for InventoryFacet")
+    parser = argparse.ArgumentParser(description="CLI for IInventory")
     parser.set_defaults(func=lambda _: parser.print_help())
     subcommands = parser.add_subparsers()
 
@@ -679,7 +553,7 @@ def generate_cli() -> argparse.ArgumentParser:
     init_parser.add_argument(
         "--admin-terminus-pool-id", required=True, help="Type: uint256", type=int
     )
-    init_parser.add_argument("--contract-address", required=True, help="Type: address")
+    init_parser.add_argument("--subject-address", required=True, help="Type: address")
     init_parser.set_defaults(func=handle_init)
 
     mark_item_as_equippable_in_slot_parser = subcommands.add_parser(
@@ -729,62 +603,6 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(num_slots_parser, False)
     num_slots_parser.set_defaults(func=handle_num_slots)
 
-    on_erc1155_batch_received_parser = subcommands.add_parser(
-        "on-erc1155-batch-received"
-    )
-    add_default_arguments(on_erc1155_batch_received_parser, True)
-    on_erc1155_batch_received_parser.add_argument(
-        "--arg1", required=True, help="Type: address"
-    )
-    on_erc1155_batch_received_parser.add_argument(
-        "--arg2", required=True, help="Type: address"
-    )
-    on_erc1155_batch_received_parser.add_argument(
-        "--arg3", required=True, help="Type: uint256[]", nargs="+"
-    )
-    on_erc1155_batch_received_parser.add_argument(
-        "--arg4", required=True, help="Type: uint256[]", nargs="+"
-    )
-    on_erc1155_batch_received_parser.add_argument(
-        "--arg5", required=True, help="Type: bytes", type=bytes_argument_type
-    )
-    on_erc1155_batch_received_parser.set_defaults(func=handle_on_erc1155_batch_received)
-
-    on_erc1155_received_parser = subcommands.add_parser("on-erc1155-received")
-    add_default_arguments(on_erc1155_received_parser, True)
-    on_erc1155_received_parser.add_argument(
-        "--arg1", required=True, help="Type: address"
-    )
-    on_erc1155_received_parser.add_argument(
-        "--arg2", required=True, help="Type: address"
-    )
-    on_erc1155_received_parser.add_argument(
-        "--arg3", required=True, help="Type: uint256", type=int
-    )
-    on_erc1155_received_parser.add_argument(
-        "--arg4", required=True, help="Type: uint256", type=int
-    )
-    on_erc1155_received_parser.add_argument(
-        "--arg5", required=True, help="Type: bytes", type=bytes_argument_type
-    )
-    on_erc1155_received_parser.set_defaults(func=handle_on_erc1155_received)
-
-    on_erc721_received_parser = subcommands.add_parser("on-erc721-received")
-    add_default_arguments(on_erc721_received_parser, True)
-    on_erc721_received_parser.add_argument(
-        "--arg1", required=True, help="Type: address"
-    )
-    on_erc721_received_parser.add_argument(
-        "--arg2", required=True, help="Type: address"
-    )
-    on_erc721_received_parser.add_argument(
-        "--arg3", required=True, help="Type: uint256", type=int
-    )
-    on_erc721_received_parser.add_argument(
-        "--arg4", required=True, help="Type: bytes", type=bytes_argument_type
-    )
-    on_erc721_received_parser.set_defaults(func=handle_on_erc721_received)
-
     set_slot_unequippable_parser = subcommands.add_parser("set-slot-unequippable")
     add_default_arguments(set_slot_unequippable_parser, True)
     set_slot_unequippable_parser.add_argument(
@@ -794,16 +612,6 @@ def generate_cli() -> argparse.ArgumentParser:
         "--slot-id", required=True, help="Type: uint256", type=int
     )
     set_slot_unequippable_parser.set_defaults(func=handle_set_slot_unequippable)
-
-    set_slot_uri_parser = subcommands.add_parser("set-slot-uri")
-    add_default_arguments(set_slot_uri_parser, True)
-    set_slot_uri_parser.add_argument(
-        "--new-slot-uri", required=True, help="Type: string", type=str
-    )
-    set_slot_uri_parser.add_argument(
-        "--slot-id", required=True, help="Type: uint256", type=int
-    )
-    set_slot_uri_parser.set_defaults(func=handle_set_slot_uri)
 
     slot_is_unequippable_parser = subcommands.add_parser("slot-is-unequippable")
     add_default_arguments(slot_is_unequippable_parser, False)
@@ -815,13 +623,6 @@ def generate_cli() -> argparse.ArgumentParser:
     subject_parser = subcommands.add_parser("subject")
     add_default_arguments(subject_parser, False)
     subject_parser.set_defaults(func=handle_subject)
-
-    supports_interface_parser = subcommands.add_parser("supports-interface")
-    add_default_arguments(supports_interface_parser, False)
-    supports_interface_parser.add_argument(
-        "--interface-id", required=True, help="Type: bytes4", type=bytes_argument_type
-    )
-    supports_interface_parser.set_defaults(func=handle_supports_interface)
 
     unequip_parser = subcommands.add_parser("unequip")
     add_default_arguments(unequip_parser, True)

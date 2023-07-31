@@ -115,7 +115,6 @@ class TestAdminFlow(InventoryTestCase):
         num_slots_0 = self.inventory.num_slots()
         tx_receipt = self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -151,7 +150,6 @@ class TestAdminFlow(InventoryTestCase):
         num_slots_0 = self.inventory.num_slots()
         tx_receipt = self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -186,7 +184,6 @@ class TestAdminFlow(InventoryTestCase):
 
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -211,7 +208,6 @@ class TestAdminFlow(InventoryTestCase):
         with self.assertRaises(VirtualMachineError):
             self.inventory.create_slot(
                 unequippable,
-                slot_type=1,
                 slot_uri="random_uri",
                 transaction_config={"from": self.player},
             )
@@ -223,7 +219,6 @@ class TestAdminFlow(InventoryTestCase):
         unequippable = False
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -247,7 +242,6 @@ class TestAdminFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -276,7 +270,6 @@ class TestAdminFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -333,7 +326,6 @@ class TestAdminFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -364,7 +356,6 @@ class TestAdminFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -393,7 +384,6 @@ class TestAdminFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -450,7 +440,6 @@ class TestAdminFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -481,7 +470,6 @@ class TestAdminFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -512,7 +500,6 @@ class TestAdminFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -543,7 +530,6 @@ class TestAdminFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -618,7 +604,6 @@ class TestAdminFlow(InventoryTestCase):
         unequippable = False
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -677,7 +662,6 @@ class TestAdminFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -719,7 +703,6 @@ class TestPlayerFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -798,7 +781,6 @@ class TestPlayerFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -847,7 +829,6 @@ class TestPlayerFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -927,7 +908,6 @@ class TestPlayerFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -973,7 +953,6 @@ class TestPlayerFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -1024,7 +1003,6 @@ class TestPlayerFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -1112,7 +1090,6 @@ class TestPlayerFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -1163,7 +1140,6 @@ class TestPlayerFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -1261,7 +1237,6 @@ class TestPlayerFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -1359,7 +1334,6 @@ class TestPlayerFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -1458,7 +1432,6 @@ class TestPlayerFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -1558,7 +1531,6 @@ class TestPlayerFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -1668,7 +1640,6 @@ class TestPlayerFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -1785,7 +1756,6 @@ class TestPlayerFlow(InventoryTestCase):
         unequippable = True
         self.inventory.create_slot(
             unequippable,
-            slot_type=1,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )

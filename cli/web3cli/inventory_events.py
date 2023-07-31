@@ -53,12 +53,6 @@ SLOT_CREATED_ABI = {
             "name": "unequippable",
             "type": "bool",
         },
-        {
-            "indexed": True,
-            "internalType": "uint256",
-            "name": "slotType",
-            "type": "uint256",
-        },
     ],
     "name": "SlotCreated",
     "type": "event",
