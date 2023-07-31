@@ -109,19 +109,19 @@ class InventorySetupTests(InventoryTestCase):
 
 
 class TestAdminFlow(InventoryTestCase):
-    def test_admin_can_create_nonunequippable_slot(self):
-        unequippable = False
+    def test_admin_can_create_persistent_slot(self):
+        persistent = True
 
         num_slots_0 = self.inventory.num_slots()
         tx_receipt = self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
         num_slots_1 = self.inventory.num_slots()
 
         self.assertEqual(num_slots_1, num_slots_0 + 1)
-        self.assertEqual(self.inventory.slot_is_unequippable(num_slots_1), unequippable)
+        self.assertEqual(self.inventory.slot_is_persistent(num_slots_1), persistent)
 
         inventory_slot_created_events = _fetch_events_chunk(
             web3_client,
@@ -140,23 +140,23 @@ class TestAdminFlow(InventoryTestCase):
             num_slots_1,
         )
         self.assertEqual(
-            inventory_slot_created_events[0]["args"]["unequippable"],
-            unequippable,
+            inventory_slot_created_events[0]["args"]["persistent"],
+            persistent,
         )
 
-    def test_admin_can_create_unequippable_slot(self):
-        unequippable = True
+    def test_admin_can_create_impersistent_slot(self):
+        persistent = False
 
         num_slots_0 = self.inventory.num_slots()
         tx_receipt = self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
         num_slots_1 = self.inventory.num_slots()
 
         self.assertEqual(num_slots_1, num_slots_0 + 1)
-        self.assertEqual(self.inventory.slot_is_unequippable(num_slots_1), unequippable)
+        self.assertEqual(self.inventory.slot_is_persistent(num_slots_1), persistent)
 
         inventory_slot_created_events = _fetch_events_chunk(
             web3_client,
@@ -175,15 +175,15 @@ class TestAdminFlow(InventoryTestCase):
             num_slots_1,
         )
         self.assertEqual(
-            inventory_slot_created_events[0]["args"]["unequippable"],
-            unequippable,
+            inventory_slot_created_events[0]["args"]["persistent"],
+            persistent,
         )
 
     def test_admin_can_set_slot_uri(self):
-        unequippable = False
+        persistent = True
 
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -202,12 +202,12 @@ class TestAdminFlow(InventoryTestCase):
         self.assertEqual(new_slot_uri, "some_fancy_slot_uri")
 
     def test_nonadmin_cannot_create_slot(self):
-        unequippable = False
+        persistent = True
 
         num_slots_0 = self.inventory.num_slots()
         with self.assertRaises(VirtualMachineError):
             self.inventory.create_slot(
-                unequippable,
+                persistent,
                 slot_uri="random_uri",
                 transaction_config={"from": self.player},
             )
@@ -216,9 +216,9 @@ class TestAdminFlow(InventoryTestCase):
         self.assertEqual(num_slots_1, num_slots_0)
 
     def test_noadmin_cannot_set_slot_uri(self):
-        unequippable = False
+        persistent = True
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -239,9 +239,9 @@ class TestAdminFlow(InventoryTestCase):
     def test_admin_cannot_mark_contracts_with_invalid_type_as_eligible_for_slots(
         self,
     ):
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -267,9 +267,9 @@ class TestAdminFlow(InventoryTestCase):
         )
 
     def test_admin_can_mark_erc20_tokens_as_eligible_for_slots(self):
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -323,9 +323,9 @@ class TestAdminFlow(InventoryTestCase):
         )
 
     def test_nonadmin_cannot_mark_erc20_tokens_as_eligible_for_slots(self):
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -353,9 +353,9 @@ class TestAdminFlow(InventoryTestCase):
     def test_admin_cannot_mark_erc20_tokens_as_eligible_for_slots_if_pool_id_is_nonzero(
         self,
     ):
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -381,9 +381,9 @@ class TestAdminFlow(InventoryTestCase):
         )
 
     def test_admin_can_mark_erc721_tokens_as_eligible_for_slots(self):
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -437,9 +437,9 @@ class TestAdminFlow(InventoryTestCase):
         )
 
     def test_nonadmin_cannot_mark_erc721_tokens_as_eligible_for_slots(self):
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -467,9 +467,9 @@ class TestAdminFlow(InventoryTestCase):
     def test_admin_cannot_mark_erc721_tokens_as_eligible_for_slots_if_pool_id_is_nonzero(
         self,
     ):
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -497,9 +497,9 @@ class TestAdminFlow(InventoryTestCase):
     def test_admin_cannot_mark_erc721_tokens_as_eligible_for_slots_with_max_amount_greater_than_1(
         self,
     ):
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -527,9 +527,9 @@ class TestAdminFlow(InventoryTestCase):
     def test_admin_can_mark_erc721_tokens_as_eligible_for_slots_with_max_amount_1_then_0(
         self,
     ):
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -600,10 +600,10 @@ class TestAdminFlow(InventoryTestCase):
             )
 
     def test_admin_can_mark_erc1155_tokens_as_eligible_for_slots(self):
-        # Testing with non-unequippable slot.
-        unequippable = False
+        # Testing with non-persistent slot.
+        persistent = True
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -659,9 +659,9 @@ class TestAdminFlow(InventoryTestCase):
         )
 
     def test_nonadmin_cannot_mark_erc1155_tokens_as_eligible_for_slots(self):
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -700,9 +700,9 @@ class TestPlayerFlow(InventoryTestCase):
         )
 
         # Create inventory slot
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -778,9 +778,9 @@ class TestPlayerFlow(InventoryTestCase):
         )
 
         # Create inventory slot
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -826,9 +826,9 @@ class TestPlayerFlow(InventoryTestCase):
         )
 
         # Create inventory slot
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -905,9 +905,9 @@ class TestPlayerFlow(InventoryTestCase):
         )
 
         # Create inventory slot
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -950,9 +950,9 @@ class TestPlayerFlow(InventoryTestCase):
         )
 
         # Create inventory slot
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -1000,9 +1000,9 @@ class TestPlayerFlow(InventoryTestCase):
         )
 
         # Create inventory slot
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -1087,9 +1087,9 @@ class TestPlayerFlow(InventoryTestCase):
         )
 
         # Create inventory slot
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -1137,14 +1137,14 @@ class TestPlayerFlow(InventoryTestCase):
         )
 
         # Create inventory slot
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
         slot = self.inventory.num_slots()
-        self.assertTrue(self.inventory.slot_is_unequippable(slot))
+        self.assertFalse(self.inventory.slot_is_persistent(slot))
 
         # Set ERC20 token as equippable in slot with max amount of 10
         self.inventory.mark_item_as_equippable_in_slot(
@@ -1234,14 +1234,14 @@ class TestPlayerFlow(InventoryTestCase):
         )
 
         # Create inventory slot
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
         slot = self.inventory.num_slots()
-        self.assertTrue(self.inventory.slot_is_unequippable(slot))
+        self.assertFalse(self.inventory.slot_is_persistent(slot))
 
         # Set ERC20 token as equippable in slot with max amount of 10
         self.inventory.mark_item_as_equippable_in_slot(
@@ -1331,14 +1331,14 @@ class TestPlayerFlow(InventoryTestCase):
         )
 
         # Create inventory slot
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
         slot = self.inventory.num_slots()
-        self.assertTrue(self.inventory.slot_is_unequippable(slot))
+        self.assertFalse(self.inventory.slot_is_persistent(slot))
 
         # Set ERC721 token as equippable in slot
         self.inventory.mark_item_as_equippable_in_slot(
@@ -1429,14 +1429,14 @@ class TestPlayerFlow(InventoryTestCase):
         )
 
         # Create inventory slot
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
         slot = self.inventory.num_slots()
-        self.assertTrue(self.inventory.slot_is_unequippable(slot))
+        self.assertFalse(self.inventory.slot_is_persistent(slot))
 
         # Set ERC721 token as equippable in slot
         self.inventory.mark_item_as_equippable_in_slot(
@@ -1528,9 +1528,9 @@ class TestPlayerFlow(InventoryTestCase):
         )
 
         # Create inventory slot
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -1637,9 +1637,9 @@ class TestPlayerFlow(InventoryTestCase):
         )
 
         # Create inventory slot
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )
@@ -1753,9 +1753,9 @@ class TestPlayerFlow(InventoryTestCase):
         )
 
         # Create inventory slot
-        unequippable = True
+        persistent = False
         self.inventory.create_slot(
-            unequippable,
+            persistent,
             slot_uri="random_uri",
             transaction_config={"from": self.admin},
         )

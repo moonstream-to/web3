@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 struct Slot {
     string SlotURI;
-    bool SlotIsUnequippable;
+    bool SlotIsPersistent;
     uint256 SlotId;
 }
 
@@ -26,7 +26,7 @@ interface IInventory {
     event SlotCreated(
         address indexed creator,
         uint256 indexed slot,
-        bool unequippable
+        bool persistent
     );
 
     event ItemMarkedAsEquippableInSlot(
@@ -59,25 +59,21 @@ interface IInventory {
         address unequippedBy
     );
 
-    function init(
-        address adminTerminusAddress,
-        uint256 adminTerminusPoolId,
-        address subjectAddress
-    ) external;
-
     function adminTerminusInfo() external view returns (address, uint256);
 
     function subject() external view returns (address);
 
+    // Cosntraint: Admin
     function createSlot(
-        bool unequippable,
+        bool persistent,
         string memory slotURI
     ) external returns (uint256);
 
     function numSlots() external view returns (uint256);
 
-    function slotIsUnequippable(uint256 slotId) external view returns (bool);
+    function slotIsPersistent(uint256 slotId) external view returns (bool);
 
+    // Cosntraint: Admin
     function markItemAsEquippableInSlot(
         uint256 slot,
         uint256 itemType,
@@ -93,6 +89,7 @@ interface IInventory {
         uint256 itemPoolId
     ) external view returns (uint256);
 
+    // Constraint: Non-reentrant.
     function equip(
         uint256 subjectTokenId,
         uint256 slot,
@@ -102,6 +99,7 @@ interface IInventory {
         uint256 amount
     ) external;
 
+    // Constraint: Non-reentrant.
     function unequip(
         uint256 subjectTokenId,
         uint256 slot,
@@ -120,5 +118,6 @@ interface IInventory {
 
     function getSlotURI(uint256 slotId) external view returns (string memory);
 
-    function setSlotUnequippable(bool unquippable, uint256 slotId) external;
+    // Cosntraint: Admin
+    function setSlotPersistent(uint256 slotId, bool persistent) external;
 }

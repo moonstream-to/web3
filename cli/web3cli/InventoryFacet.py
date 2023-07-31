@@ -102,9 +102,9 @@ class InventoryFacet:
         self.assert_contract_is_instantiated()
         return self.contract.adminTerminusInfo.call(block_identifier=block_number)
 
-    def create_slot(self, unequippable: bool, slot_uri: str, transaction_config) -> Any:
+    def create_slot(self, persistent: bool, slot_uri: str, transaction_config) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.createSlot(unequippable, slot_uri, transaction_config)
+        return self.contract.createSlot(persistent, slot_uri, transaction_config)
 
     def equip(
         self,
@@ -237,23 +237,21 @@ class InventoryFacet:
             arg1, arg2, arg3, arg4, transaction_config
         )
 
-    def set_slot_unequippable(
-        self, unquippable: bool, slot_id: int, transaction_config
+    def set_slot_persistent(
+        self, slot_id: int, persistent: bool, transaction_config
     ) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.setSlotUnequippable(
-            unquippable, slot_id, transaction_config
-        )
+        return self.contract.setSlotPersistent(slot_id, persistent, transaction_config)
 
     def set_slot_uri(self, new_slot_uri: str, slot_id: int, transaction_config) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.setSlotUri(new_slot_uri, slot_id, transaction_config)
 
-    def slot_is_unequippable(
+    def slot_is_persistent(
         self, slot_id: int, block_number: Optional[Union[str, int]] = "latest"
     ) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.slotIsUnequippable.call(
+        return self.contract.slotIsPersistent.call(
             slot_id, block_identifier=block_number
         )
 
@@ -379,7 +377,7 @@ def handle_create_slot(args: argparse.Namespace) -> None:
     contract = InventoryFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.create_slot(
-        unequippable=args.unequippable,
+        persistent=args.persistent,
         slot_uri=args.slot_uri,
         transaction_config=transaction_config,
     )
@@ -535,13 +533,13 @@ def handle_on_erc721_received(args: argparse.Namespace) -> None:
         print(result.info())
 
 
-def handle_set_slot_unequippable(args: argparse.Namespace) -> None:
+def handle_set_slot_persistent(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = InventoryFacet(args.address)
     transaction_config = get_transaction_config(args)
-    result = contract.set_slot_unequippable(
-        unquippable=args.unquippable,
+    result = contract.set_slot_persistent(
         slot_id=args.slot_id,
+        persistent=args.persistent,
         transaction_config=transaction_config,
     )
     print(result)
@@ -563,10 +561,10 @@ def handle_set_slot_uri(args: argparse.Namespace) -> None:
         print(result.info())
 
 
-def handle_slot_is_unequippable(args: argparse.Namespace) -> None:
+def handle_slot_is_persistent(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = InventoryFacet(args.address)
-    result = contract.slot_is_unequippable(
+    result = contract.slot_is_persistent(
         slot_id=args.slot_id, block_number=args.block_number
     )
     print(result)
@@ -624,7 +622,7 @@ def generate_cli() -> argparse.ArgumentParser:
     create_slot_parser = subcommands.add_parser("create-slot")
     add_default_arguments(create_slot_parser, True)
     create_slot_parser.add_argument(
-        "--unequippable", required=True, help="Type: bool", type=boolean_argument_type
+        "--persistent", required=True, help="Type: bool", type=boolean_argument_type
     )
     create_slot_parser.add_argument(
         "--slot-uri", required=True, help="Type: string", type=str
@@ -785,15 +783,15 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     on_erc721_received_parser.set_defaults(func=handle_on_erc721_received)
 
-    set_slot_unequippable_parser = subcommands.add_parser("set-slot-unequippable")
-    add_default_arguments(set_slot_unequippable_parser, True)
-    set_slot_unequippable_parser.add_argument(
-        "--unquippable", required=True, help="Type: bool", type=boolean_argument_type
-    )
-    set_slot_unequippable_parser.add_argument(
+    set_slot_persistent_parser = subcommands.add_parser("set-slot-persistent")
+    add_default_arguments(set_slot_persistent_parser, True)
+    set_slot_persistent_parser.add_argument(
         "--slot-id", required=True, help="Type: uint256", type=int
     )
-    set_slot_unequippable_parser.set_defaults(func=handle_set_slot_unequippable)
+    set_slot_persistent_parser.add_argument(
+        "--persistent", required=True, help="Type: bool", type=boolean_argument_type
+    )
+    set_slot_persistent_parser.set_defaults(func=handle_set_slot_persistent)
 
     set_slot_uri_parser = subcommands.add_parser("set-slot-uri")
     add_default_arguments(set_slot_uri_parser, True)
@@ -805,12 +803,12 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     set_slot_uri_parser.set_defaults(func=handle_set_slot_uri)
 
-    slot_is_unequippable_parser = subcommands.add_parser("slot-is-unequippable")
-    add_default_arguments(slot_is_unequippable_parser, False)
-    slot_is_unequippable_parser.add_argument(
+    slot_is_persistent_parser = subcommands.add_parser("slot-is-persistent")
+    add_default_arguments(slot_is_persistent_parser, False)
+    slot_is_persistent_parser.add_argument(
         "--slot-id", required=True, help="Type: uint256", type=int
     )
-    slot_is_unequippable_parser.set_defaults(func=handle_slot_is_unequippable)
+    slot_is_persistent_parser.set_defaults(func=handle_slot_is_persistent)
 
     subject_parser = subcommands.add_parser("subject")
     add_default_arguments(subject_parser, False)

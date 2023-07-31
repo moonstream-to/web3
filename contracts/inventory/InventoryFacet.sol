@@ -92,7 +92,7 @@ Player flow:
 - [x] Equip ERC20 tokens in eligible inventory slots
 - [x] Equip ERC721 tokens in eligible inventory slots
 - [x] Equip ERC1155 tokens in eligible inventory slots
-- [x] Unequip items from unequippable slots
+- [x] Unequip items from persistent slots
 
 Batch endpoints:
 - [ ] Marking items as equippable
@@ -153,7 +153,7 @@ contract InventoryFacet is
     }
 
     function createSlot(
-        bool unequippable,
+        bool persistent,
         string memory slotURI
     ) external onlyAdmin returns (uint256) {
         LibInventory.InventoryStorage storage istore = LibInventory
@@ -165,11 +165,11 @@ contract InventoryFacet is
         // save the slot type!
         istore.SlotData[newSlot] = Slot({
             SlotURI: slotURI,
-            SlotIsUnequippable: unequippable,
+            SlotIsPersistent: persistent,
             SlotId: newSlot
         });
 
-        emit SlotCreated(msg.sender, newSlot, unequippable);
+        emit SlotCreated(msg.sender, newSlot, persistent);
         return newSlot;
     }
 
@@ -203,20 +203,20 @@ contract InventoryFacet is
         emit NewSlotURI(slotId);
     }
 
-    function slotIsUnequippable(uint256 slotId) external view returns (bool) {
+    function slotIsPersistent(uint256 slotId) external view returns (bool) {
         return
-            LibInventory.inventoryStorage().SlotData[slotId].SlotIsUnequippable;
+            LibInventory.inventoryStorage().SlotData[slotId].SlotIsPersistent;
     }
 
-    function setSlotUnequippable(
-        bool unquippable,
-        uint256 slotId
+    function setSlotPersistent(
+        uint256 slotId,
+        bool persistent
     ) external onlyAdmin {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
 
         Slot memory slot = istore.SlotData[slotId];
-        slot.SlotIsUnequippable = unquippable;
+        slot.SlotIsPersistent = persistent;
         istore.SlotData[slotId] = slot;
     }
 
@@ -296,8 +296,8 @@ contract InventoryFacet is
             .inventoryStorage();
 
         require(
-            istore.SlotData[slot].SlotIsUnequippable,
-            "InventoryFacet._unequip: That slot is not unequippable"
+            !istore.SlotData[slot].SlotIsPersistent,
+            "InventoryFacet._unequip: That slot is persistent. You cannot unequip items from it."
         );
 
         EquippedItem storage existingItem = istore.EquippedItems[

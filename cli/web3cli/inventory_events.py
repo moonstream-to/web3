@@ -50,7 +50,7 @@ SLOT_CREATED_ABI = {
         {
             "indexed": False,
             "internalType": "bool",
-            "name": "unequippable",
+            "name": "persistent",
             "type": "bool",
         },
     ],
