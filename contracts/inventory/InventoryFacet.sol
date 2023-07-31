@@ -23,7 +23,7 @@ proxy.
  */
 library LibInventory {
     bytes32 constant STORAGE_POSITION =
-        keccak256("g7dao.eth.storage.Inventory");
+        keccak256("moonstreamdao.eth.storage.Inventory");
 
     uint256 constant ERC20_ITEM_TYPE = 20;
     uint256 constant ERC721_ITEM_TYPE = 721;
@@ -62,12 +62,6 @@ library LibInventory {
         // slotId =>
         // EquippedItem struct
         mapping(address => mapping(uint256 => mapping(uint256 => EquippedItem))) EquippedItems;
-        // Subject contract address => subject token ID => Slot[]
-        mapping(address => mapping(uint256 => Slot[])) SubjectSlots;
-        // Subject contract address => subject token ID => slotNum
-        mapping(address => mapping(uint256 => uint256)) SubjectNumSlots;
-        // Subject contract address => subject token ID => slotId => bool
-        mapping(address => mapping(uint256 => mapping(uint256 => bool))) IsSubjectTokenBlackListedForSlot;
     }
 
     function inventoryStorage()
@@ -124,27 +118,6 @@ contract InventoryFacet is
                 1
             ),
             "InventoryFacet.onlyAdmin: The address is not an authorized administrator"
-        );
-        _;
-    }
-
-    modifier requireValidItemType(uint256 itemType) {
-        require(
-            itemType == LibInventory.ERC20_ITEM_TYPE ||
-                itemType == LibInventory.ERC721_ITEM_TYPE ||
-                itemType == LibInventory.ERC1155_ITEM_TYPE,
-            "InventoryFacet.requireValidItemType: Invalid item type"
-        );
-        _;
-    }
-
-    modifier onlyContractSubjectOwner(uint256 subjectTokenId) {
-        LibInventory.InventoryStorage storage istore = LibInventory
-            .inventoryStorage();
-        IERC721 subjectContract = IERC721(istore.ContractERC721Address);
-        require(
-            msg.sender == subjectContract.ownerOf(subjectTokenId),
-            "InventoryFacet.getSubjectTokenSlots: Message sender is not owner of subject token"
         );
         _;
     }
@@ -242,56 +215,6 @@ contract InventoryFacet is
         return istore.SlotTypes[slotType];
     }
 
-    function addBackpackToSubject(
-        uint256 slotQty,
-        uint256 toSubjectTokenId,
-        uint256 slotType,
-        string memory slotURI
-    ) external onlyAdmin {
-        require(
-            slotQty > 0,
-            "InventoryFacet.addBackpackToSubject: Slot quantity must be greater than 0"
-        );
-
-        LibInventory.InventoryStorage storage istore = LibInventory
-            .inventoryStorage();
-
-        uint256 previousSlotNumSubject = istore
-        .SubjectSlots[istore.ContractERC721Address][toSubjectTokenId].length;
-
-        for (uint256 i = 0; i < slotQty; i++) {
-            istore
-            .SubjectSlots[istore.ContractERC721Address][toSubjectTokenId].push(
-                    Slot({
-                        SlotType: slotType,
-                        SlotURI: slotURI,
-                        SlotIsUnequippable: false,
-                        SlotId: previousSlotNumSubject + i ==
-                            previousSlotNumSubject
-                            ? previousSlotNumSubject + 1
-                            : previousSlotNumSubject + i
-                    })
-                );
-        }
-
-        emit BackpackAdded(msg.sender, toSubjectTokenId, slotQty);
-    }
-
-    function getSubjectTokenSlots(
-        uint256 subjectTokenId
-    )
-        external
-        view
-        onlyContractSubjectOwner(subjectTokenId)
-        returns (Slot[] memory slots)
-    {
-        LibInventory.InventoryStorage storage istore = LibInventory
-            .inventoryStorage();
-        return
-            istore.SubjectSlots[istore.ContractERC721Address][subjectTokenId];
-    }
-
-    // COUNTER
     function numSlots() external view returns (uint256) {
         return LibInventory.inventoryStorage().NumSlots;
     }
@@ -345,7 +268,14 @@ contract InventoryFacet is
         address itemAddress,
         uint256 itemPoolId,
         uint256 maxAmount
-    ) external onlyAdmin requireValidItemType(itemType) {
+    ) external onlyAdmin {
+        require(
+            itemType == LibInventory.ERC20_ITEM_TYPE ||
+                itemType == LibInventory.ERC721_ITEM_TYPE ||
+                itemType == LibInventory.ERC1155_ITEM_TYPE,
+            "InventoryFacet.markItemAsEquippableInSlot: Invalid item type"
+        );
+
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
 
@@ -475,7 +405,14 @@ contract InventoryFacet is
         address itemAddress,
         uint256 itemTokenId,
         uint256 amount
-    ) external requireValidItemType(itemType) diamondNonReentrant {
+    ) external diamondNonReentrant {
+        require(
+            itemType == LibInventory.ERC20_ITEM_TYPE ||
+                itemType == LibInventory.ERC721_ITEM_TYPE ||
+                itemType == LibInventory.ERC1155_ITEM_TYPE,
+            "InventoryFacet.equip: Invalid item type"
+        );
+
         require(
             itemType == LibInventory.ERC721_ITEM_TYPE ||
                 itemType == LibInventory.ERC1155_ITEM_TYPE ||
