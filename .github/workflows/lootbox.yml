@@ -36,6 +36,8 @@ jobs:
                   pip install black moonworm
             - name: Install dependencies for CLI
               working-directory: cli/
+              env:
+                  BROWNIE_LIB: 1
               run: |
                   pip install -e .
             - name: Run lootbox tests
