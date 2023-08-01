@@ -528,7 +528,7 @@ class TestAdminFlow(InventoryTestCase):
             self.inventory.mark_item_as_equippable_in_slot(
                 slot,
                 erc721_type,
-                self.nft.address,
+                self.item_nft.address,
                 1,
                 1,
                 {"from": self.admin},
@@ -558,7 +558,7 @@ class TestAdminFlow(InventoryTestCase):
             self.inventory.mark_item_as_equippable_in_slot(
                 slot,
                 erc721_type,
-                self.nft.address,
+                self.item_nft.address,
                 0,
                 2,
                 {"from": self.admin},
