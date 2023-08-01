@@ -7,7 +7,7 @@ import sys
 import time
 from typing import Any, Dict, Optional, List, Set
 
-from enginecli.core import lootbox_item_to_tuple
+from .core import lootbox_item_to_tuple
 
 from .MockErc20 import MockErc20
 from brownie import network
