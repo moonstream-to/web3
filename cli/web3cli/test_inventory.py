@@ -2071,7 +2071,7 @@ class TestPlayerFlow(InventoryTestCase):
             self.player.address,
         )
 
-    def test_player_cannot_unequip_erc20_tokens_from_persistent_slot_but_can_increase_amount(self):
+    def test_player_cannot_unequip_erc20_tokens_from_persistent_slot(self):
         """
         Checks that, once a player has equipped eligible ERC20 tokens into a persistent slot, they
         cannot be unequipped without a change in persistence.
@@ -2142,7 +2142,7 @@ class TestPlayerFlow(InventoryTestCase):
         TODO(zomglings): There is currently a bug in the contract which prevents players from increasing
         the amount of ERC20 tokens in a persistent slot (even if the total amount would be below the
         maximum allowable amount for that token in that slot). Once this bug has been fixed, this test
-        should be extended with the following code:
+        should be extended with the following code (and should be renamed):
 
         self.inventory.equip(
             subject_token_id,
