@@ -155,6 +155,16 @@ def handle_create_metadata_from_csv(args: argparse.Namespace) -> None:
             item_rarity = row["Rarity"]
             item_image = row["Image Type"].lower()
             item_shadowcorn_id = row["Shadowcorn/Egg ID"]
+            base_descripton = "Standing proud in all of its terrifying glory, behold the Shadowcorn Figurine! Legends speak of how this mighty idol sprang forth from a dark and enigmatic Shadowcorn Egg that was crafted deep in the bustling crafting halls of IsmToys, where the master figurine-smiths practice the ancient techniques needed to adequately capture the menacing essence of  a Shadowcorn’s visage! Redeem this voucher via the https://unicorns-beryl.vercel.app/ and receive your very own Shadowcorn Figurine!"
+            related_shadowcorn_url = (
+                "https://www.hawku.com/details/crypto-unicorns/shadowcorn/{}".format(
+                    item_shadowcorn_id
+                )
+            )
+            description = (
+                base_descripton
+                + " This voucher will claim a Shadowcorn Figurine that mirrors the appearance and name of Shadowcorn [{}]({})."
+            ).format(item_shadowcorn_id, related_shadowcorn_url)
             if item_name != "":
                 config.append(
                     {
@@ -166,9 +176,7 @@ def handle_create_metadata_from_csv(args: argparse.Namespace) -> None:
                 )
                 metadata = {
                     "name": item_name + " Voucher",
-                    "description": "Standing proud in all of its terrifying glory, behold the Shadowcorn Figurine! Legends speak of how this mighty idol sprang forth from a dark and enigmatic Shadowcorn Egg that was crafted deep in the bustling crafting halls of IsmToys, where the master figurine-smiths practice the ancient techniques needed to adequately capture the menacing essence of  a Shadowcorn’s visage! Redeem this voucher via the https://unicorns-beryl.vercel.app/ and receive your very own Shadowcorn Figurine!\n\nRelated Shadowcorn: https://opensea.io/assets/matic/0xa7d50ee3d7485288107664cf758e877a0d351725/{}".format(
-                        item_shadowcorn_id
-                    ),
+                    "description": description,
                     "image": "https://badges.moonstream.to/cu-vouchers/images/{}.png".format(
                         item_image
                     ),
