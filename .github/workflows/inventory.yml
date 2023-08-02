@@ -1,16 +1,15 @@
-name: Garden of Forking Paths system tests
+name: Inventory system tests
 
 on:
     pull_request:
         paths:
-            - "contracts/mechanics/garden-of-forking-paths/**"
+            - "contracts/inventory/**"
             - "contracts/mock/**"
-            - "cli/web3cli/test_gofp.py"
-            - "cli/web3cli/GOFPFacet.py"
-            - "cli/web3cli/Mock*.py"
-            - "cli/web3cli/Diamond*"
-            - "cli/web3cli/OwnershipFacet.py"
-            - ".github/workflows/gofp.yml"
+            - "cli/web3cli/test_inventory.py"
+            - "cli/web3cli/InventoryFacet.py"
+            - "cli/web3cli/IInventory.py"
+            - "cli/web3cli/inventory_events.py"
+            - ".github/workflows/inventory.yml"
         branches:
             - main
 jobs:
@@ -41,4 +40,4 @@ jobs:
                   pip install -e .
             - name: Run tests
               working-directory: cli/
-              run: bash test.sh web3cli.test_gofp
+              run: bash test.sh web3cli.test_inventory

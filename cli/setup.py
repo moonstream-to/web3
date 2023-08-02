@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-with open("enginecli/version.txt") as ifp:
+with open("web3cli/version.txt") as ifp:
     VERSION = ifp.read().strip()
 
 long_description = ""
@@ -8,7 +8,7 @@ with open("README.md") as ifp:
     long_description = ifp.read()
 
 setup(
-    name="enginecli",
+    name="web3cli",
     version=VERSION,
     packages=find_packages(),
     install_requires=["boto3", "eth-brownie", "tqdm", "tabulate"],
@@ -30,7 +30,7 @@ setup(
     python_requires=">=3.6",
     entry_points={
         "console_scripts": [
-            "enginecli=enginecli.cli:main",
+            "web3cli=web3cli.cli:main",
         ]
     },
     include_package_data=True,

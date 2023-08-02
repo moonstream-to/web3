@@ -128,27 +128,32 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Custom
+# Moonstream
+
+# Python virtual envs
 .lootbox/
 .secrets/
 .vscode/
 .engine/
 .engineapi/
 .enginecli/
+.web3/
 
+# Environment variable definitions
 prod.env
 test.env
 dev.env
 prod.test.env
 dev.test.env
 
+# Alembic configs
 alembic.dev.ini
 alembic.prod.ini
 alembic.test.ini
 
+# Scratch directories
 scratch/
 outdir/
-
 
 #Node
 node_modules/
