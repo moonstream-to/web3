@@ -572,19 +572,40 @@ def dropper_gogogo(
     admin_terminus_address: str,
     admin_terminus_pool_id: int,
     transaction_config: Dict[str, Any],
+    diamond_cut_address: Optional[str] = None,
+    diamond_address: Optional[str] = None,
+    diamond_loupe_address: Optional[str] = None,
+    ownership_address: Optional[str] = None,
+    dropper_facet_address: Optional[str] = None,
+    verify_contracts: Optional[bool] = False,
 ) -> Dict[str, Any]:
     deployment_info = diamond_gogogo(
         owner_address=transaction_config["from"].address,
         transaction_config=transaction_config,
+        diamond_cut_address=diamond_cut_address,
+        diamond_address=diamond_address,
+        diamond_loupe_address=diamond_loupe_address,
+        ownership_address=ownership_address,
+        verify_contracts=verify_contracts,
     )
 
-    dropper_facet = DropperFacet.DropperFacet(None)
-    dropper_facet.deploy(transaction_config=transaction_config)
+    if dropper_facet_address is None:
+        dropper_facet = DropperFacet.DropperFacet(None)
+        dropper_facet.deploy(transaction_config=transaction_config)
+    else:
+        dropper_facet = DropperFacet.DropperFacet(dropper_facet_address)
+
     deployment_info["contracts"]["DropperFacet"] = dropper_facet.address
 
-    diamond_address = deployment_info["contracts"]["Diamond"]
+    if verify_contracts:
+        try:
+            dropper_facet.verify_contract()
+            deployment_info["verified"].append("DropperFacet")
+        except Exception as e:
+            deployment_info["verification_errors"].append(repr(e))
+
     facet_cut(
-        diamond_address,
+        deployment_info["contracts"]["Diamond"],
         "DropperFacet",
         dropper_facet.address,
         "add",
@@ -735,7 +756,15 @@ def handle_dropper_gogogo(args: argparse.Namespace) -> None:
     network.connect(args.network)
     transaction_config = MockTerminus.get_transaction_config(args)
     result = dropper_gogogo(
-        args.terminus_address, args.terminus_pool_id, transaction_config
+        admin_terminus_address=args.terminus_address,
+        admin_terminus_pool_id=args.terminus_pool_id,
+        transaction_config=transaction_config,
+        diamond_cut_address=args.diamond_cut_address,
+        diamond_address=args.diamond_address,
+        diamond_loupe_address=args.diamond_loupe_address,
+        ownership_address=args.ownership_address,
+        dropper_facet_address=args.dropper_facet_address,
+        verify_contracts=args.verify_contracts,
     )
     if args.outfile is not None:
         with args.outfile:
@@ -879,6 +908,41 @@ def generate_cli():
         required=True,
         type=int,
         help="Pool ID of Terminus pool for administrators of this dropper contract",
+    )
+    dropper_gogogo_parser.add_argument(
+        "--verify-contracts",
+        action="store_true",
+        help="Verify contracts",
+    )
+    dropper_gogogo_parser.add_argument(
+        "--diamond-cut-address",
+        required=False,
+        default=None,
+        help="Address to deployed DiamondCutFacet. If provided, this command skips deployment of a new DiamondCutFacet.",
+    )
+    dropper_gogogo_parser.add_argument(
+        "--diamond-address",
+        required=False,
+        default=None,
+        help="Address to deployed Diamond contract. If provided, this command skips deployment of a new Diamond contract and simply mounts the required facets onto the existing Diamond contract. Assumes that there is no collision of selectors.",
+    )
+    dropper_gogogo_parser.add_argument(
+        "--diamond-loupe-address",
+        required=False,
+        default=None,
+        help="Address to deployed DiamondLoupeFacet. If provided, this command skips deployment of a new DiamondLoupeFacet. It mounts the existing DiamondLoupeFacet onto the Diamond.",
+    )
+    dropper_gogogo_parser.add_argument(
+        "--ownership-address",
+        required=False,
+        default=None,
+        help="Address to deployed OwnershipFacet. If provided, this command skips deployment of a new OwnershipFacet. It mounts the existing OwnershipFacet onto the Diamond.",
+    )
+    dropper_gogogo_parser.add_argument(
+        "--dropper-facet-address",
+        required=False,
+        default=None,
+        help="Address to deployed DropperFacet. If provided, this command skips deployment of a new InventoryFacet. It mounts the existing InventoryFacet onto the Diamond.",
     )
     dropper_gogogo_parser.add_argument(
         "-o",
