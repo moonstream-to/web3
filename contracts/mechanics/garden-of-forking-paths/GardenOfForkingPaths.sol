@@ -210,6 +210,20 @@ contract GOFPFacet is
         uint256 indexed stage,
         uint256 path
     );
+    event StakingPredicateSet(
+        uint256 indexed sessionId,
+        address predicateAddress,
+        bytes4 functionSelector,
+        bytes initialArguments
+    );
+    event PathChoicePredicateSet(
+        uint256 indexed sessionId,
+        uint256 indexed stage,
+        uint256 indexed path,
+        address predicateAddress,
+        bytes4 functionSelector,
+        bytes initialArguments
+    );
 
     function init(
         address adminTerminusAddress,
@@ -684,6 +698,12 @@ contract GOFPFacet is
             functionSelector: functionSelector,
             initialArguments: initialArguments
         });
+        emit StakingPredicateSet(
+            sessionId,
+            predicateAddress,
+            functionSelector,
+            initialArguments
+        );
     }
 
     function getPathChoicePredicate(
@@ -709,6 +729,14 @@ contract GOFPFacet is
             functionSelector: functionSelector,
             initialArguments: initialArguments
         });
+        emit PathChoicePredicateSet(
+            path.sessionId,
+            path.stageNumber,
+            path.pathNumber,
+            predicateAddress,
+            functionSelector,
+            initialArguments
+        );
     }
 
     function _callPredicate(

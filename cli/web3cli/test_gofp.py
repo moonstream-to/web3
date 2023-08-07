@@ -257,6 +257,82 @@ PATH_CHOSEN_EVENT_ABI = {
     "type": "event",
 }
 
+STAKING_PREDICATE_SET_EVENT_ABI = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "sessionId",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "address",
+            "name": "predicateAddress",
+            "type": "address",
+        },
+        {
+            "indexed": False,
+            "internalType": "bytes4",
+            "name": "functionSelector",
+            "type": "bytes4",
+        },
+        {
+            "indexed": False,
+            "internalType": "bytes",
+            "name": "initialArguments",
+            "type": "bytes",
+        },
+    ],
+    "name": "StakingPredicateSet",
+    "type": "event",
+}
+
+PATH_CHOICE_PREDICATE_SET_EVENT_ABI = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "sessionId",
+            "type": "uint256",
+        },
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "stage",
+            "type": "uint256",
+        },
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "path",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "address",
+            "name": "predicateAddress",
+            "type": "address",
+        },
+        {
+            "indexed": False,
+            "internalType": "bytes4",
+            "name": "functionSelector",
+            "type": "bytes4",
+        },
+        {
+            "indexed": False,
+            "internalType": "bytes",
+            "name": "initialArguments",
+            "type": "bytes",
+        },
+    ],
+    "name": "PathChoicePredicateSet",
+    "type": "event",
+}
+
 ERC1155_TRANSFER_SINGLE_EVENT = {
     "anonymous": False,
     "inputs": [
@@ -3205,6 +3281,7 @@ class TestPlayerFlow(GOFPTestCase):
             self.assertEqual(erc1155_transfer_event["args"]["id"], self.reward_pool_id)
             self.assertEqual(
                 erc1155_transfer_event["args"]["value"],
+                # Reward for stage i path j is 2^i * 3^j
                 (2**1) * (3**2),
             )
 
@@ -4295,7 +4372,7 @@ class TestCallbacks(GOFPTestCase):
                 {"from": self.player},
             )
 
-        self.gofp.set_session_staking_predicate(
+        tx_receipt = self.gofp.set_session_staking_predicate(
             session_id,
             predicate_selector,
             self.gofp_predicates.address,
@@ -4311,6 +4388,30 @@ class TestCallbacks(GOFPTestCase):
                 predicate_selector,
                 f"0x{encoded_predicate_initial_args}",
             ),
+        )
+
+        staking_predicate_set_events = _fetch_events_chunk(
+            web3_client,
+            STAKING_PREDICATE_SET_EVENT_ABI,
+            from_block=tx_receipt.block_number,
+            to_block=tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(staking_predicate_set_events), 1)
+        self.assertEqual(
+            staking_predicate_set_events[0]["args"]["sessionId"], session_id
+        )
+        self.assertEqual(
+            staking_predicate_set_events[0]["args"]["predicateAddress"],
+            self.gofp_predicates.address,
+        )
+        self.assertEqual(
+            staking_predicate_set_events[0]["args"]["functionSelector"],
+            predicate_selector,
+        )
+        self.assertEqual(
+            staking_predicate_set_events[0]["args"]["initialArguments"],
+            f"0x{encoded_predicate_initial_args}",
         )
 
         num_nfts = self.nft.total_supply()
@@ -4425,7 +4526,7 @@ class TestCallbacks(GOFPTestCase):
                 {"from": self.player},
             )
 
-        self.gofp.set_path_choice_predicate(
+        tx_receipt = self.gofp.set_path_choice_predicate(
             (
                 session_id,
                 stage_with_path_choice_predicate,
@@ -4451,6 +4552,38 @@ class TestCallbacks(GOFPTestCase):
                 predicate_selector,
                 f"0x{encoded_predicate_initial_args}",
             ),
+        )
+
+        path_choice_predicate_set_events = _fetch_events_chunk(
+            web3_client,
+            PATH_CHOICE_PREDICATE_SET_EVENT_ABI,
+            from_block=tx_receipt.block_number,
+            to_block=tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(path_choice_predicate_set_events), 1)
+        self.assertEqual(
+            path_choice_predicate_set_events[0]["args"]["sessionId"], session_id
+        )
+        self.assertEqual(
+            path_choice_predicate_set_events[0]["args"]["stage"],
+            stage_with_path_choice_predicate,
+        )
+        self.assertEqual(
+            path_choice_predicate_set_events[0]["args"]["path"],
+            path_with_path_choice_predicate,
+        )
+        self.assertEqual(
+            path_choice_predicate_set_events[0]["args"]["predicateAddress"],
+            self.gofp_predicates.address,
+        )
+        self.assertEqual(
+            path_choice_predicate_set_events[0]["args"]["functionSelector"],
+            predicate_selector,
+        )
+        self.assertEqual(
+            path_choice_predicate_set_events[0]["args"]["initialArguments"],
+            f"0x{encoded_predicate_initial_args}",
         )
 
         num_nfts = self.nft.total_supply()
