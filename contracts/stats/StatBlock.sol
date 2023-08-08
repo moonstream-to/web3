@@ -40,6 +40,7 @@ contract StatBlock is IStatBlock {
         );
         statID = NumStats++;
         StatDescriptor[statID] = descriptor;
+        emit StatCreated(statID, descriptor);
     }
 
     function describeStat(
@@ -64,6 +65,7 @@ contract StatBlock is IStatBlock {
         );
         for (uint256 i = 0; i < statIDs.length; i++) {
             Stat[tokenAddress][tokenID][statIDs[i]] = values[i];
+            emit StatAssigned(tokenAddress, tokenID, statIDs[i], values[i]);
         }
     }
 

@@ -6,7 +6,7 @@ pragma solidity ^0.8.0;
  * GitHub: https://github.com/moonstream-to/web3
  */
 
-// Interface ID: 591ac2e1
+// Interface ID: 458bb0c0
 //
 // Calculated by solface: https://github.com/moonstream-to/solface
 // solface version: 0.1.0
@@ -14,6 +14,14 @@ pragma solidity ^0.8.0;
 // To recalculate from root directory of this repo:
 // $ jq .abi build/contracts/IStatBlock.json  | solface -name IStatBlock -annotations | grep "Interface ID:"
 interface IStatBlock {
+    event StatCreated(uint256 statID, string descriptor);
+    event StatAssigned(
+        address indexed tokenAddress,
+        uint256 indexed tokenID,
+        uint256 indexed statID,
+        uint256 value
+    );
+
     function isAdministrator(address account) external view returns (bool);
 
     function createStat(string memory descriptor) external returns (uint256);
