@@ -160,20 +160,38 @@ STAGE_REWARD_CHANGED_ABI = {
         },
         {
             "indexed": False,
+            "internalType": "uint256",
+            "name": "rewardType",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
             "internalType": "address",
-            "name": "terminusAddress",
+            "name": "rewardAddress",
             "type": "address",
         },
         {
             "indexed": False,
             "internalType": "uint256",
-            "name": "terminusPoolId",
+            "name": "rewardTokenID",
             "type": "uint256",
         },
         {
             "indexed": False,
             "internalType": "uint256",
             "name": "rewardAmount",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "address",
+            "name": "inventoryAddress",
+            "type": "address",
+        },
+        {
+            "indexed": False,
+            "internalType": "uint256",
+            "name": "inventorySlot",
             "type": "uint256",
         },
     ],
@@ -204,20 +222,38 @@ PATH_REWARD_CHANGED_ABI = {
         },
         {
             "indexed": False,
+            "internalType": "uint256",
+            "name": "rewardType",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
             "internalType": "address",
-            "name": "terminusAddress",
+            "name": "rewardAddress",
             "type": "address",
         },
         {
             "indexed": False,
             "internalType": "uint256",
-            "name": "terminusPoolId",
+            "name": "rewardTokenID",
             "type": "uint256",
         },
         {
             "indexed": False,
             "internalType": "uint256",
             "name": "rewardAmount",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "address",
+            "name": "inventoryAddress",
+            "type": "address",
+        },
+        {
+            "indexed": False,
+            "internalType": "uint256",
+            "name": "inventorySlot",
             "type": "uint256",
         },
     ],
@@ -1352,40 +1388,47 @@ class TestAdminFlow(GOFPTestCase):
 
         for i in range(1, len(stages) + 1):
             reward = self.gofp.get_stage_reward(session_id, i)
-            self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+            self.assertEqual(reward, (0, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, 0))
 
+        rewards_list = list(
+            zip(
+                [1 for _ in stages_with_rewards],
+                [self.terminus.address for _ in stages_with_rewards],
+                [self.reward_pool_id for _ in stages_with_rewards],
+                [i + 1 for i, _ in enumerate(stages_with_rewards)],
+                [ZERO_ADDRESS for _ in stages_with_rewards],
+                [0 for _ in stages_with_rewards],
+            )
+        )
         with self.assertRaises(VirtualMachineError):
             self.gofp.set_stage_rewards(
                 session_id,
                 stages_with_rewards,
-                [self.terminus.address for _ in stages_with_rewards],
-                [self.reward_pool_id for _ in stages_with_rewards],
-                [i + 1 for i, _ in enumerate(stages_with_rewards)],
+                rewards_list,
                 {"from": self.game_master},
             )
 
         for i in range(1, len(stages) + 1):
             reward = self.gofp.get_stage_reward(session_id, i)
-            self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+            self.assertEqual(reward, (0, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, 0))
 
         self.gofp.set_session_active(session_id, False, {"from": self.game_master})
 
         tx_receipt = self.gofp.set_stage_rewards(
             session_id,
             stages_with_rewards,
-            [self.terminus.address for _ in stages_with_rewards],
-            [self.reward_pool_id for _ in stages_with_rewards],
-            [i + 1 for i, _ in enumerate(stages_with_rewards)],
+            rewards_list,
             {"from": self.game_master},
         )
 
         reward = self.gofp.get_stage_reward(session_id, 1)
-        self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+        self.assertEqual(reward, (0, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, 0))
 
         for i in range(2, len(stages) + 1):
             reward = self.gofp.get_stage_reward(session_id, i)
             self.assertEqual(
-                reward, (self.terminus.address, self.reward_pool_id, i - 1)
+                reward,
+                (1, self.terminus.address, self.reward_pool_id, i - 1, ZERO_ADDRESS, 0),
             )
 
         events = _fetch_events_chunk(
@@ -1405,16 +1448,24 @@ class TestAdminFlow(GOFPTestCase):
             [stage for stage in stages_with_rewards],
         )
         self.assertListEqual(
-            [event["args"]["terminusAddress"] for event in events],
+            [event["args"]["rewardAddress"] for event in events],
             [self.terminus.address for _ in stages_with_rewards],
         )
         self.assertListEqual(
-            [event["args"]["terminusPoolId"] for event in events],
+            [event["args"]["rewardTokenID"] for event in events],
             [self.reward_pool_id for _ in stages_with_rewards],
         )
         self.assertListEqual(
             [event["args"]["rewardAmount"] for event in events],
             [i + 1 for i, _ in enumerate(stages_with_rewards)],
+        )
+        self.assertListEqual(
+            [event["args"]["inventoryAddress"] for event in events],
+            [ZERO_ADDRESS for _ in stages_with_rewards],
+        )
+        self.assertListEqual(
+            [event["args"]["inventorySlot"] for event in events],
+            [0 for _ in stages_with_rewards],
         )
 
     def test_non_game_master_cannot_set_stage_rewards(self):
@@ -1452,19 +1503,27 @@ class TestAdminFlow(GOFPTestCase):
             self.terminus.balance_of(self.player.address, self.admin_pool_id), 0
         )
 
+        rewards_list = list(
+            zip(
+                [1 for _ in stages_with_rewards],
+                [self.terminus.address for _ in stages_with_rewards],
+                [self.reward_pool_id for _ in stages_with_rewards],
+                [i + 1 for i, _ in enumerate(stages_with_rewards)],
+                [ZERO_ADDRESS for _ in stages_with_rewards],
+                [0 for _ in stages_with_rewards],
+            )
+        )
         with self.assertRaises(VirtualMachineError):
             self.gofp.set_stage_rewards(
                 session_id,
                 stages_with_rewards,
-                [self.terminus.address for _ in stages_with_rewards],
-                [self.reward_pool_id for _ in stages_with_rewards],
-                [i + 1 for i, _ in enumerate(stages_with_rewards)],
+                rewards_list,
                 {"from": self.player},
             )
 
         for i in range(1, len(stages) + 1):
             reward = self.gofp.get_stage_reward(session_id, i)
-            self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+            self.assertEqual(reward, (0, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, 0))
 
     def test_setting_same_stage_reward_twice_overwrites_first_value(self):
         """
@@ -1497,31 +1556,45 @@ class TestAdminFlow(GOFPTestCase):
 
         for i in range(1, len(stages) + 1):
             reward = self.gofp.get_stage_reward(session_id, i)
-            self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+            self.assertEqual(reward, (0, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, 0))
 
         stages_with_rewards = [1, 2, 3, 4, 5, 1]
         stage_rewards = list(range(1, len(stages_with_rewards) + 1))
+        rewards_list = list(
+            zip(
+                [1 for _ in stages_with_rewards],
+                [self.terminus.address for _ in stages_with_rewards],
+                [self.reward_pool_id for _ in stages_with_rewards],
+                stage_rewards,
+                [ZERO_ADDRESS for _ in stages_with_rewards],
+                [0 for _ in stages_with_rewards],
+            )
+        )
 
         self.gofp.set_stage_rewards(
             session_id,
             stages_with_rewards,
-            [self.terminus.address for _ in stages_with_rewards],
-            [self.reward_pool_id for _ in stages_with_rewards],
-            stage_rewards,
+            rewards_list,
             {"from": self.game_master},
         )
 
         for i in range(2, len(stages) + 1):
             reward = self.gofp.get_stage_reward(session_id, i)
-            self.assertEqual(reward, (self.terminus.address, self.reward_pool_id, i))
+            self.assertEqual(
+                reward,
+                (1, self.terminus.address, self.reward_pool_id, i, ZERO_ADDRESS, 0),
+            )
 
         first_stage_reward = self.gofp.get_stage_reward(session_id, 1)
         self.assertEqual(
             first_stage_reward,
             (
+                1,
                 self.terminus.address,
                 self.reward_pool_id,
                 stage_rewards[len(stage_rewards) - 1],
+                ZERO_ADDRESS,
+                0,
             ),
         )
 
@@ -1564,26 +1637,34 @@ class TestAdminFlow(GOFPTestCase):
         for i in range(1, len(stages) + 1):
             for j in range(1, stages[i - 1]):
                 reward = self.gofp.get_path_reward(session_id, i, j)
-                self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+                self.assertEqual(reward, (0, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, 0))
 
-        with self.assertRaises(VirtualMachineError):
-            self.gofp.set_path_rewards(
-                session_id,
-                stages_with_rewards,
-                paths_with_rewards,
+        path_rewards_list = list(
+            zip(
+                [1] * len(paths_with_rewards),
                 [self.terminus.address for _ in paths_with_rewards],
                 [self.reward_pool_id for _ in paths_with_rewards],
                 [
                     (2**stage) * (3**path)
                     for stage, path in zip(stages_with_rewards, paths_with_rewards)
                 ],
+                [ZERO_ADDRESS] * len(paths_with_rewards),
+                [0] * len(paths_with_rewards),
+            )
+        )
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.set_path_rewards(
+                session_id,
+                stages_with_rewards,
+                paths_with_rewards,
+                path_rewards_list,
                 {"from": self.game_master},
             )
 
         for i in range(1, len(stages) + 1):
             for j in range(1, stages[i - 1]):
                 reward = self.gofp.get_path_reward(session_id, i, j)
-                self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+                self.assertEqual(reward, (0, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, 0))
 
         self.gofp.set_session_active(session_id, False, {"from": self.game_master})
 
@@ -1591,12 +1672,7 @@ class TestAdminFlow(GOFPTestCase):
             session_id,
             stages_with_rewards,
             paths_with_rewards,
-            [self.terminus.address for _ in paths_with_rewards],
-            [self.reward_pool_id for _ in paths_with_rewards],
-            [
-                (2**stage) * (3**path)
-                for stage, path in zip(stages_with_rewards, paths_with_rewards)
-            ],
+            path_rewards_list,
             {"from": self.game_master},
         )
 
@@ -1605,9 +1681,12 @@ class TestAdminFlow(GOFPTestCase):
             self.assertEqual(
                 reward,
                 (
+                    1,
                     self.terminus.address,
                     self.reward_pool_id,
                     (2**stage) * (3**path),
+                    ZERO_ADDRESS,
+                    0,
                 ),
             )
 
@@ -1632,11 +1711,11 @@ class TestAdminFlow(GOFPTestCase):
             paths_with_rewards,
         )
         self.assertListEqual(
-            [event["args"]["terminusAddress"] for event in events],
+            [event["args"]["rewardAddress"] for event in events],
             [self.terminus.address for _ in paths_with_rewards],
         )
         self.assertListEqual(
-            [event["args"]["terminusPoolId"] for event in events],
+            [event["args"]["rewardTokenID"] for event in events],
             [self.reward_pool_id for _ in paths_with_rewards],
         )
         self.assertListEqual(
@@ -1645,6 +1724,14 @@ class TestAdminFlow(GOFPTestCase):
                 (2**stage) * (3**path)
                 for stage, path in zip(stages_with_rewards, paths_with_rewards)
             ],
+        )
+        self.assertListEqual(
+            [event["args"]["inventoryAddress"] for event in events],
+            [ZERO_ADDRESS for _ in paths_with_rewards],
+        )
+        self.assertListEqual(
+            [event["args"]["inventorySlot"] for event in events],
+            [0 for _ in paths_with_rewards],
         )
 
     def test_non_game_master_cannot_set_path_rewards(self):
@@ -1682,23 +1769,31 @@ class TestAdminFlow(GOFPTestCase):
             self.terminus.balance_of(self.player.address, self.admin_pool_id), 0
         )
 
-        with self.assertRaises(VirtualMachineError):
-            self.gofp.set_path_rewards(
-                session_id,
-                stages_with_rewards,
-                paths_with_rewards,
+        path_rewards_list = list(
+            zip(
+                [1] * len(stages_with_rewards),
                 [self.terminus.address for _ in stages_with_rewards],
                 [self.reward_pool_id for _ in stages_with_rewards],
                 [
                     (2**stage) * (3**path)
                     for stage, path in zip(stages_with_rewards, paths_with_rewards)
                 ],
+                [ZERO_ADDRESS] * len(stages_with_rewards),
+                [0] * len(stages_with_rewards),
+            )
+        )
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.set_path_rewards(
+                session_id,
+                stages_with_rewards,
+                paths_with_rewards,
+                path_rewards_list,
                 {"from": self.player},
             )
 
         for stage, path in zip(stages_with_rewards, paths_with_rewards):
             reward = self.gofp.get_path_reward(session_id, stage, path)
-            self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+            self.assertEqual(reward, (0, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, 0))
 
     def test_setting_same_path_reward_twice_overwrites_first_value(self):
         """
@@ -1732,20 +1827,29 @@ class TestAdminFlow(GOFPTestCase):
         for stage in range(1, len(stages) + 1):
             for path in range(1, stages[stage - 1] + 1):
                 reward = self.gofp.get_path_reward(session_id, stage, path)
-                self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+                self.assertEqual(reward, (0, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, 0))
 
         stages_with_rewards = [1, 1, 1, 1, 2, 1]
         paths_with_rewards = [1, 2, 3, 4, 1, 3]
         # Reward is path number except for stage 1 path 3
         path_rewards = [1, 2, 3, 4, 1, 5]
 
+        path_rewards_list = list(
+            zip(
+                [1] * len(stages_with_rewards),
+                [self.terminus.address for _ in stages_with_rewards],
+                [self.reward_pool_id for _ in stages_with_rewards],
+                path_rewards,
+                [ZERO_ADDRESS] * len(stages_with_rewards),
+                [0] * len(stages_with_rewards),
+            )
+        )
+
         self.gofp.set_path_rewards(
             session_id,
             stages_with_rewards,
             paths_with_rewards,
-            [self.terminus.address for _ in stages_with_rewards],
-            [self.reward_pool_id for _ in stages_with_rewards],
-            path_rewards,
+            path_rewards_list,
             {"from": self.game_master},
         )
 
@@ -1756,19 +1860,26 @@ class TestAdminFlow(GOFPTestCase):
                     self.assertEqual(
                         reward,
                         (
+                            1,
                             self.terminus.address,
                             self.reward_pool_id,
                             path,
+                            ZERO_ADDRESS,
+                            0,
                         ),
                     )
 
+        # Only path reward 3 isn't the same as the path number
         stage_1_path_3_reward = self.gofp.get_path_reward(session_id, 1, 3)
         self.assertEqual(
             stage_1_path_3_reward,
             (
+                1,
                 self.terminus.address,
                 self.reward_pool_id,
                 path_rewards[len(path_rewards) - 1],
+                ZERO_ADDRESS,
+                0,
             ),
         )
 
@@ -2834,12 +2945,20 @@ class TestPlayerFlow(GOFPTestCase):
 
         # Set stage reward for stage 2
         reward_amount = 7
+        rewards_list = list(
+            zip(
+                [1],
+                [self.terminus.address],
+                [self.reward_pool_id],
+                [reward_amount],
+                [ZERO_ADDRESS],
+                [0],
+            )
+        )
         self.gofp.set_stage_rewards(
             session_id,
             [2],
-            [self.terminus.address],
-            [self.reward_pool_id],
-            [reward_amount],
+            rewards_list,
             {"from": self.game_master},
         )
 
@@ -3070,12 +3189,20 @@ class TestPlayerFlow(GOFPTestCase):
         session_id = self.gofp.num_sessions()
 
         reward_amount = 5
+        stage_rewards_list = list(
+            zip(
+                [1],
+                [self.terminus.address],
+                [self.reward_pool_id],
+                [reward_amount],
+                [ZERO_ADDRESS],
+                [0],
+            )
+        )
         self.gofp.set_stage_rewards(
             session_id,
             [2],
-            [self.terminus.address],
-            [self.reward_pool_id],
-            [reward_amount],
+            stage_rewards_list,
             {"from": self.game_master},
         )
 
@@ -3215,17 +3342,24 @@ class TestPlayerFlow(GOFPTestCase):
         # Rewards for all paths except for stage 1 path 1 and stage 2 path 3.
         stages_with_rewards = [1, 2, 2, 3]
         paths_with_rewards = [2, 1, 2, 1]
-
+        path_rewards_list = list(
+            zip(
+                [1] * len(stages_with_rewards),
+                [self.terminus.address] * len(stages_with_rewards),
+                [self.reward_pool_id] * len(stages_with_rewards),
+                [
+                    (2**stage) * (3**path)
+                    for stage, path in zip(stages_with_rewards, paths_with_rewards)
+                ],
+                [ZERO_ADDRESS] * len(stages_with_rewards),
+                [0] * len(stages_with_rewards),
+            )
+        )
         self.gofp.set_path_rewards(
             session_id,
             stages_with_rewards,
             paths_with_rewards,
-            [self.terminus.address] * len(stages_with_rewards),
-            [self.reward_pool_id] * len(stages_with_rewards),
-            [
-                (2**stage) * (3**path)
-                for stage, path in zip(stages_with_rewards, paths_with_rewards)
-            ],
+            path_rewards_list,
             {"from": self.game_master},
         )
 
@@ -3400,17 +3534,35 @@ class TestPlayerFlow(GOFPTestCase):
         stages_with_rewards = [1, 2]
         stage_rewards_pool_ids = [self.reward_pool_id, self.reward_2_pool_id]
         stage_reward_amounts = [1, 2]
+        stage_rewards_list = list(
+            zip(
+                [1] * len(stages_with_rewards),
+                [self.terminus.address] * len(stages_with_rewards),
+                stage_rewards_pool_ids,
+                stage_reward_amounts,
+                [ZERO_ADDRESS] * len(stages_with_rewards),
+                [0] * len(stages_with_rewards),
+            )
+        )
 
         paths_with_rewards = [1, 1]
         path_reward_pool_ids = [self.reward_3_pool_id, self.reward_4_pool_id]
         path_reward_amounts = [3, 4]
+        path_rewards_list = list(
+            zip(
+                [1] * len(paths_with_rewards),
+                [self.terminus.address] * len(paths_with_rewards),
+                path_reward_pool_ids,
+                path_reward_amounts,
+                [ZERO_ADDRESS] * len(paths_with_rewards),
+                [0] * len(paths_with_rewards),
+            )
+        )
 
         self.gofp.set_stage_rewards(
             session_id,
             stages_with_rewards,
-            [self.terminus.address] * len(stages_with_rewards),
-            stage_rewards_pool_ids,
-            stage_reward_amounts,
+            stage_rewards_list,
             {"from": self.game_master},
         )
 
@@ -3418,9 +3570,7 @@ class TestPlayerFlow(GOFPTestCase):
             session_id,
             stages_with_rewards,
             paths_with_rewards,
-            [self.terminus.address] * len(stages_with_rewards),
-            path_reward_pool_ids,
-            path_reward_amounts,
+            path_rewards_list,
             {"from": self.game_master},
         )
 
@@ -3531,12 +3681,20 @@ class TestPlayerFlow(GOFPTestCase):
         session_id = self.gofp.num_sessions()
 
         reward_amount = 6
+        stage_rewards_list = list(
+            zip(
+                [1],
+                [self.terminus.address],
+                [self.reward_pool_id],
+                [reward_amount],
+                [ZERO_ADDRESS],
+                [0],
+            )
+        )
         self.gofp.set_stage_rewards(
             session_id,
             [1],
-            [self.terminus.address],
-            [self.reward_pool_id],
-            [reward_amount],
+            stage_rewards_list,
             {"from": self.game_master},
         )
 
@@ -3630,12 +3788,20 @@ class TestPlayerFlow(GOFPTestCase):
         session_id = self.gofp.num_sessions()
 
         reward_amount = 6
+        stage_rewards_list = list(
+            zip(
+                [1],
+                [self.terminus.address],
+                [self.reward_pool_id],
+                [reward_amount],
+                [ZERO_ADDRESS],
+                [0],
+            )
+        )
         self.gofp.set_stage_rewards(
             session_id,
             [1],
-            [self.terminus.address],
-            [self.reward_pool_id],
-            [reward_amount],
+            stage_rewards_list,
             {"from": self.game_master},
         )
 
@@ -3844,23 +4010,39 @@ class TestFullGames(GOFPTestCase):
 
         # We set rewards for each stage
         reward_amounts = [1, 2, 4]
+        stage_rewards_list = list(
+            zip(
+                [1] * len(reward_amounts),
+                [self.terminus.address] * len(reward_amounts),
+                [self.reward_pool_id] * len(reward_amounts),
+                reward_amounts,
+                [ZERO_ADDRESS] * len(reward_amounts),
+                [0] * len(reward_amounts),
+            )
+        )
         self.gofp.set_stage_rewards(
             session_id,
             [1, 2, 3],
-            [self.terminus.address] * 3,
-            [self.reward_pool_id] * 3,
-            reward_amounts,
+            stage_rewards_list,
             {"from": self.game_master},
         )
 
+        path_rewards_list = list(
+            zip(
+                [1] * 3,
+                [self.terminus.address] * 3,
+                [self.reward_pool_id] * 3,
+                [1, 1, 1],
+                [ZERO_ADDRESS] * 3,
+                [0] * 3,
+            )
+        )
         # First path has reward on each stage
         self.gofp.set_path_rewards(
             session_id,
             [1, 2, 3],
             [1, 1, 1],
-            [self.terminus.address] * 3,
-            [self.reward_pool_id] * 3,
-            [1, 1, 1],
+            path_rewards_list,
             {"from": self.game_master},
         )
 
@@ -4096,23 +4278,39 @@ class TestFullGames(GOFPTestCase):
 
         # We set rewards for each stage
         reward_amounts = [1, 2, 4]
+        stage_rewards_list = list(
+            zip(
+                [1] * len(reward_amounts),
+                [self.terminus.address] * len(reward_amounts),
+                [self.reward_pool_id] * len(reward_amounts),
+                reward_amounts,
+                [ZERO_ADDRESS] * len(reward_amounts),
+                [0] * len(reward_amounts),
+            )
+        )
         self.gofp.set_stage_rewards(
             session_id,
             [1, 2, 3],
-            [self.terminus.address] * 3,
-            [self.reward_pool_id] * 3,
-            reward_amounts,
+            stage_rewards_list,
             {"from": self.game_master},
         )
 
+        path_rewards_list = list(
+            zip(
+                [1] * 3,
+                [self.terminus.address] * 3,
+                [self.reward_pool_id] * 3,
+                [1, 1, 1],
+                [ZERO_ADDRESS] * 3,
+                [0] * 3,
+            )
+        )
         # First path has reward on each stage
         self.gofp.set_path_rewards(
             session_id,
             [1, 2, 3],
             [1, 1, 1],
-            [self.terminus.address] * 3,
-            [self.reward_pool_id] * 3,
-            [1, 1, 1],
+            path_rewards_list,
             {"from": self.game_master},
         )
 

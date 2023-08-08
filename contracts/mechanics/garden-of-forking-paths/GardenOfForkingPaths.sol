@@ -16,6 +16,11 @@ import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "../../diamond/libraries/LibDiamond.sol";
 import "../../diamond/security/DiamondReentrancyGuard.sol";
 
+uint256 constant ERC20_TYPE = 20;
+uint256 constant ERC721_TYPE = 721;
+uint256 constant ERC1155_TYPE = 1155;
+uint256 constant TERMINUS_MINTABLE_TYPE = 1;
+
 struct Session {
     address playerTokenAddress;
     address paymentTokenAddress;
@@ -38,9 +43,12 @@ The reward must be a Terminus token and the Garden of Forking Paths contract mus
 on the token pool.
  */
 struct Reward {
-    address terminusAddress;
-    uint256 terminusPoolId;
+    uint256 rewardType; // 1, 1155, 20, 721 - 1 means mint Terminus, 1155 means transfer 1155
+    address rewardAddress;
+    uint256 rewardTokenID;
     uint256 rewardAmount;
+    address inventoryAddress; // if 0, reward goes to player/staker, else to NFT
+    uint256 inventorySlot;
 }
 
 struct Predicate {
@@ -186,17 +194,23 @@ contract GOFPFacet is
     event StageRewardChanged(
         uint256 indexed sessionId,
         uint256 indexed stage,
-        address terminusAddress,
-        uint256 terminusPoolId,
-        uint256 rewardAmount
+        uint256 rewardType,
+        address rewardAddress,
+        uint256 rewardTokenID,
+        uint256 rewardAmount,
+        address inventoryAddress,
+        uint256 inventorySlot
     );
     event PathRewardChanged(
         uint256 indexed sessionId,
         uint256 indexed stage,
         uint256 indexed path,
-        address terminusAddress,
-        uint256 terminusPoolId,
-        uint256 rewardAmount
+        uint256 rewardType,
+        address rewardAddress,
+        uint256 rewardTokenID,
+        uint256 rewardAmount,
+        address inventoryAddress,
+        uint256 inventorySlot
     );
     event SessionUriChanged(uint256 indexed sessionId, string uri);
     event PathRegistered(
@@ -327,22 +341,12 @@ contract GOFPFacet is
     function setStageRewards(
         uint256 sessionId,
         uint256[] calldata stages,
-        address[] calldata terminusAddresses,
-        uint256[] calldata terminusPoolIds,
-        uint256[] calldata rewardAmounts
+        Reward[] calldata rewards
     ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
-            stages.length == terminusAddresses.length,
+            stages.length == rewards.length,
             "GOFPFacet.setStageRewards: terminusAddresses must have same length as stages"
-        );
-        require(
-            stages.length == terminusPoolIds.length,
-            "GOFPFacet.setStageRewards: terminusPoolIds must have same length as stages"
-        );
-        require(
-            stages.length == rewardAmounts.length,
-            "GOFPFacet.setStageRewards: rewardAmounts must have same length as stages"
         );
 
         Session storage session = gs.sessionById[sessionId];
@@ -357,16 +361,22 @@ contract GOFPFacet is
                 "GOFPFacet.setStageRewards: Invalid stage"
             );
             gs.sessionStageReward[sessionId][stages[i]] = Reward({
-                terminusAddress: terminusAddresses[i],
-                terminusPoolId: terminusPoolIds[i],
-                rewardAmount: rewardAmounts[i]
+                rewardType: rewards[i].rewardType,
+                rewardAddress: rewards[i].rewardAddress,
+                rewardTokenID: rewards[i].rewardTokenID,
+                rewardAmount: rewards[i].rewardAmount,
+                inventoryAddress: rewards[i].inventoryAddress,
+                inventorySlot: rewards[i].inventorySlot
             });
             emit StageRewardChanged(
                 sessionId,
                 stages[i],
-                terminusAddresses[i],
-                terminusPoolIds[i],
-                rewardAmounts[i]
+                rewards[i].rewardType,
+                rewards[i].rewardAddress,
+                rewards[i].rewardTokenID,
+                rewards[i].rewardAmount,
+                rewards[i].inventoryAddress,
+                rewards[i].inventorySlot
             );
         }
     }
@@ -383,9 +393,7 @@ contract GOFPFacet is
         uint256 sessionId,
         uint256[] memory stages,
         uint256[] memory paths,
-        address[] memory terminusAddresses,
-        uint256[] memory terminusPoolIds,
-        uint256[] memory rewardAmounts
+        Reward[] calldata rewards
     ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
@@ -393,16 +401,8 @@ contract GOFPFacet is
             "GOFPFacet.setPathRewards: paths must have same length as stages"
         );
         require(
-            stages.length == terminusAddresses.length,
+            stages.length == rewards.length,
             "GOFPFacet.setPathRewards: terminusAddresses must have same length as stages"
-        );
-        require(
-            stages.length == terminusPoolIds.length,
-            "GOFPFacet.setPathRewards: terminusPoolIds must have same length as stages"
-        );
-        require(
-            stages.length == rewardAmounts.length,
-            "GOFPFacet.setPathRewards: rewardAmounts must have same length as stages"
         );
 
         Session storage session = gs.sessionById[sessionId];
@@ -421,17 +421,23 @@ contract GOFPFacet is
                 "GOFPFacet.setPathRewards: Invalid path"
             );
             gs.sessionPathReward[sessionId][stages[i]][paths[i]] = Reward({
-                terminusAddress: terminusAddresses[i],
-                terminusPoolId: terminusPoolIds[i],
-                rewardAmount: rewardAmounts[i]
+                rewardType: rewards[i].rewardType,
+                rewardAddress: rewards[i].rewardAddress,
+                rewardTokenID: rewards[i].rewardTokenID,
+                rewardAmount: rewards[i].rewardAmount,
+                inventoryAddress: rewards[i].inventoryAddress,
+                inventorySlot: rewards[i].inventorySlot
             });
             emit PathRewardChanged(
                 sessionId,
                 stages[i],
                 paths[i],
-                terminusAddresses[i],
-                terminusPoolIds[i],
-                rewardAmounts[i]
+                rewards[i].rewardType,
+                rewards[i].rewardAddress,
+                rewards[i].rewardTokenID,
+                rewards[i].rewardAmount,
+                rewards[i].inventoryAddress,
+                rewards[i].inventorySlot
             );
         }
     }
@@ -1078,7 +1084,7 @@ contract GOFPFacet is
 
             // Calculate number of correct choices on last stage for reward distribution, but only if
             // there is a stage reward.
-            if (stageReward.terminusAddress != address(0)) {
+            if (stageReward.rewardAddress != address(0)) {
                 if (lastStage == 0) {
                     stageRewardAmount += stageReward.rewardAmount;
                 } else if (
@@ -1093,29 +1099,33 @@ contract GOFPFacet is
             Reward storage pathReward = gs.sessionPathReward[sessionId][
                 currentStage
             ][paths[i]];
-            if (pathReward.terminusAddress != address(0)) {
-                TerminusFacet rewardTerminus = TerminusFacet(
-                    pathReward.terminusAddress
-                );
-                rewardTerminus.mint(
-                    msg.sender,
-                    pathReward.terminusPoolId,
-                    pathReward.rewardAmount,
-                    ""
-                );
+            if (pathReward.rewardAddress != address(0)) {
+                if (pathReward.rewardType == TERMINUS_MINTABLE_TYPE) {
+                    TerminusFacet rewardTerminus = TerminusFacet(
+                        pathReward.rewardAddress
+                    );
+                    rewardTerminus.mint(
+                        msg.sender,
+                        pathReward.rewardTokenID,
+                        pathReward.rewardAmount,
+                        ""
+                    );
+                }
             }
         }
 
-        if (stageReward.terminusAddress != address(0)) {
-            TerminusFacet rewardTerminus = TerminusFacet(
-                stageReward.terminusAddress
-            );
-            rewardTerminus.mint(
-                msg.sender,
-                stageReward.terminusPoolId,
-                stageRewardAmount,
-                ""
-            );
+        if (stageReward.rewardAddress != address(0)) {
+            if (stageReward.rewardType == TERMINUS_MINTABLE_TYPE) {
+                TerminusFacet rewardTerminus = TerminusFacet(
+                    stageReward.rewardAddress
+                );
+                rewardTerminus.mint(
+                    msg.sender,
+                    stageReward.rewardTokenID,
+                    stageRewardAmount,
+                    ""
+                );
+            }
         }
     }
 }

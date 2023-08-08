@@ -361,20 +361,12 @@ class GOFPFacet:
         session_id: int,
         stages: List,
         paths: List,
-        terminus_addresses: List,
-        terminus_pool_ids: List,
-        reward_amounts: List,
+        rewards: List,
         transaction_config,
     ) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.setPathRewards(
-            session_id,
-            stages,
-            paths,
-            terminus_addresses,
-            terminus_pool_ids,
-            reward_amounts,
-            transaction_config,
+            session_id, stages, paths, rewards, transaction_config
         )
 
     def set_session_active(
@@ -413,22 +405,11 @@ class GOFPFacet:
         return self.contract.setSessionUri(session_id, uri, transaction_config)
 
     def set_stage_rewards(
-        self,
-        session_id: int,
-        stages: List,
-        terminus_addresses: List,
-        terminus_pool_ids: List,
-        reward_amounts: List,
-        transaction_config,
+        self, session_id: int, stages: List, rewards: List, transaction_config
     ) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.setStageRewards(
-            session_id,
-            stages,
-            terminus_addresses,
-            terminus_pool_ids,
-            reward_amounts,
-            transaction_config,
+            session_id, stages, rewards, transaction_config
         )
 
     def stake_tokens_into_session(
@@ -847,9 +828,7 @@ def handle_set_path_rewards(args: argparse.Namespace) -> None:
         session_id=args.session_id,
         stages=args.stages,
         paths=args.paths,
-        terminus_addresses=args.terminus_addresses,
-        terminus_pool_ids=args.terminus_pool_ids,
-        reward_amounts=args.reward_amounts,
+        rewards=args.rewards,
         transaction_config=transaction_config,
     )
     print(result)
@@ -920,9 +899,7 @@ def handle_set_stage_rewards(args: argparse.Namespace) -> None:
     result = contract.set_stage_rewards(
         session_id=args.session_id,
         stages=args.stages,
-        terminus_addresses=args.terminus_addresses,
-        terminus_pool_ids=args.terminus_pool_ids,
-        reward_amounts=args.reward_amounts,
+        rewards=args.rewards,
         transaction_config=transaction_config,
     )
     print(result)
@@ -1327,13 +1304,7 @@ def generate_cli() -> argparse.ArgumentParser:
         "--paths", required=True, help="Type: uint256[]", nargs="+"
     )
     set_path_rewards_parser.add_argument(
-        "--terminus-addresses", required=True, help="Type: address[]", nargs="+"
-    )
-    set_path_rewards_parser.add_argument(
-        "--terminus-pool-ids", required=True, help="Type: uint256[]", nargs="+"
-    )
-    set_path_rewards_parser.add_argument(
-        "--reward-amounts", required=True, help="Type: uint256[]", nargs="+"
+        "--rewards", required=True, help="Type: tuple[]", nargs="+"
     )
     set_path_rewards_parser.set_defaults(func=handle_set_path_rewards)
 
@@ -1409,13 +1380,7 @@ def generate_cli() -> argparse.ArgumentParser:
         "--stages", required=True, help="Type: uint256[]", nargs="+"
     )
     set_stage_rewards_parser.add_argument(
-        "--terminus-addresses", required=True, help="Type: address[]", nargs="+"
-    )
-    set_stage_rewards_parser.add_argument(
-        "--terminus-pool-ids", required=True, help="Type: uint256[]", nargs="+"
-    )
-    set_stage_rewards_parser.add_argument(
-        "--reward-amounts", required=True, help="Type: uint256[]", nargs="+"
+        "--rewards", required=True, help="Type: tuple[]", nargs="+"
     )
     set_stage_rewards_parser.set_defaults(func=handle_set_stage_rewards)
 
