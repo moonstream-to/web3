@@ -103,6 +103,10 @@ class StatBlock:
         contract_class = contract_from_build(self.contract_name)
         contract_class.publish_source(self.contract)
 
+    def num_stats(self, block_number: Optional[Union[str, int]] = "latest") -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.NumStats.call(block_identifier=block_number)
+
     def admin_terminus_info(
         self, block_number: Optional[Union[str, int]] = "latest"
     ) -> Any:
@@ -268,6 +272,13 @@ def handle_verify_contract(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_num_stats(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = StatBlock(args.address)
+    result = contract.num_stats(block_number=args.block_number)
+    print(result)
+
+
 def handle_admin_terminus_info(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = StatBlock(args.address)
@@ -379,6 +390,10 @@ def generate_cli() -> argparse.ArgumentParser:
     verify_contract_parser = subcommands.add_parser("verify-contract")
     add_default_arguments(verify_contract_parser, False)
     verify_contract_parser.set_defaults(func=handle_verify_contract)
+
+    num_stats_parser = subcommands.add_parser("num-stats")
+    add_default_arguments(num_stats_parser, False)
+    num_stats_parser.set_defaults(func=handle_num_stats)
 
     admin_terminus_info_parser = subcommands.add_parser("admin-terminus-info")
     add_default_arguments(admin_terminus_info_parser, False)

@@ -13,7 +13,7 @@ contract StatBlock is IStatBlock {
     address AdminTerminusAddress;
     uint256 AdminTerminusPoolID;
     // Stats are 0-indexed.
-    uint256 NumStats;
+    uint256 public NumStats;
     mapping(uint256 => string) StatDescriptor;
     mapping(address => mapping(uint256 => mapping(uint256 => uint256))) Stat;
 
