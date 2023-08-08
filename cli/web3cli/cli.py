@@ -18,6 +18,7 @@ from . import (
     GOFPFacet,
     GOFPPredicates,
     InventoryFacet,
+    StatBlock,
 )
 
 
@@ -79,8 +80,12 @@ def main() -> None:
     predicates_subparsers.add_parser(
         "gofp", parents=[gofp_predicates_parser], add_help=False
     )
+
     inventory_parser = InventoryFacet.generate_cli()
     subparsers.add_parser("inventory", parents=[inventory_parser], add_help=False)
+
+    statblock_parser = StatBlock.generate_cli()
+    subparsers.add_parser("statblock", parents=[statblock_parser], add_help=False)
 
     args = parser.parse_args()
     args.func(args)
