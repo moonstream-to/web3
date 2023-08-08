@@ -31,16 +31,29 @@ struct Session {
 }
 
 /**
-StageReward represents the reward an NFT owner can collect by making a choice with their NFT on the
+Reward represents the reward an NFT owner can collect by making a choice with their NFT on the
 corresponding stage in a given Garden of Forking Paths session.
 
 The reward must be a Terminus token and the Garden of Forking Paths contract must have minting privileges
 on the token pool.
  */
-struct StageReward {
+struct Reward {
     address terminusAddress;
     uint256 terminusPoolId;
     uint256 rewardAmount;
+}
+
+struct Predicate {
+    address predicateAddress;
+    bytes4 functionSelector;
+    // initialArguments is intended to be ABI encoded partial arguments to the predicate function.
+    bytes initialArguments;
+}
+
+struct PathDetails {
+    uint256 sessionId;
+    uint256 stageNumber;
+    uint256 pathNumber;
 }
 
 library LibGOFP {
@@ -63,7 +76,7 @@ library LibGOFP {
         uint256 numSessions;
         mapping(uint256 => Session) sessionById;
         // session => stage => stageReward
-        mapping(uint256 => mapping(uint256 => StageReward)) sessionStageReward;
+        mapping(uint256 => mapping(uint256 => Reward)) sessionStageReward;
         // session => stage => correct path for that stage
         mapping(uint256 => mapping(uint256 => uint256)) sessionStagePath;
         // nftAddress => tokenId => sessionId
@@ -84,6 +97,12 @@ library LibGOFP {
         // session => tokenId => was token ever staked into session?
         // This guards against a token being staked into a session multiple times.
         mapping(uint256 => mapping(uint256 => bool)) sessionTokenStakeGuard;
+        // GOFP v0.2: session => stage => path => reward
+        mapping(uint256 => mapping(uint256 => mapping(uint256 => Reward))) sessionPathReward;
+        // Predicate to check prior to staking into session
+        mapping(uint256 => Predicate) sessionStakingPredicate;
+        // Predicate to check prior to choosing path
+        mapping(uint256 => mapping(uint256 => mapping(uint256 => Predicate))) pathChoicePredicate;
     }
 
     function gofpStorage() internal pure returns (GOFPStorage storage gs) {
@@ -171,6 +190,14 @@ contract GOFPFacet is
         uint256 terminusPoolId,
         uint256 rewardAmount
     );
+    event PathRewardChanged(
+        uint256 indexed sessionId,
+        uint256 indexed stage,
+        uint256 indexed path,
+        address terminusAddress,
+        uint256 terminusPoolId,
+        uint256 rewardAmount
+    );
     event SessionUriChanged(uint256 indexed sessionId, string uri);
     event PathRegistered(
         uint256 indexed sessionId,
@@ -183,21 +210,39 @@ contract GOFPFacet is
         uint256 indexed stage,
         uint256 path
     );
+    event StakingPredicateSet(
+        uint256 indexed sessionId,
+        address predicateAddress,
+        bytes4 functionSelector,
+        bytes initialArguments
+    );
+    event PathChoicePredicateSet(
+        uint256 indexed sessionId,
+        uint256 indexed stage,
+        uint256 indexed path,
+        address predicateAddress,
+        bytes4 functionSelector,
+        bytes initialArguments
+    );
 
-    function init(address adminTerminusAddress, uint256 adminTerminusPoolID)
-        external
-    {
+    function init(
+        address adminTerminusAddress,
+        uint256 adminTerminusPoolID
+    ) external {
         LibDiamond.enforceIsContractOwner();
+
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         gs.AdminTerminusAddress = adminTerminusAddress;
         gs.AdminTerminusPoolID = adminTerminusPoolID;
     }
 
-    function getSession(uint256 sessionId)
-        external
-        view
-        returns (Session memory)
-    {
+    function gofpVersion() public pure returns (string memory, string memory) {
+        return ("Moonstream Garden of Forking Paths", "0.2.0");
+    }
+
+    function getSession(
+        uint256 sessionId
+    ) external view returns (Session memory) {
         return LibGOFP.gofpStorage().sessionById[sessionId];
     }
 
@@ -272,11 +317,10 @@ contract GOFPFacet is
         emit SessionUriChanged(gs.numSessions, uri);
     }
 
-    function getStageReward(uint256 sessionId, uint256 stage)
-        external
-        view
-        returns (StageReward memory)
-    {
+    function getStageReward(
+        uint256 sessionId,
+        uint256 stage
+    ) external view returns (Reward memory) {
         return LibGOFP.gofpStorage().sessionStageReward[sessionId][stage];
     }
 
@@ -312,7 +356,7 @@ contract GOFPFacet is
                 (1 <= stages[i]) && (stages[i] <= session.stages.length),
                 "GOFPFacet.setStageRewards: Invalid stage"
             );
-            gs.sessionStageReward[sessionId][stages[i]] = StageReward({
+            gs.sessionStageReward[sessionId][stages[i]] = Reward({
                 terminusAddress: terminusAddresses[i],
                 terminusPoolId: terminusPoolIds[i],
                 rewardAmount: rewardAmounts[i]
@@ -327,10 +371,75 @@ contract GOFPFacet is
         }
     }
 
-    function setSessionActive(uint256 sessionId, bool isActive)
-        external
-        onlyGameMaster
-    {
+    function getPathReward(
+        uint256 sessionId,
+        uint256 stage,
+        uint256 path
+    ) external view returns (Reward memory) {
+        return LibGOFP.gofpStorage().sessionPathReward[sessionId][stage][path];
+    }
+
+    function setPathRewards(
+        uint256 sessionId,
+        uint256[] memory stages,
+        uint256[] memory paths,
+        address[] memory terminusAddresses,
+        uint256[] memory terminusPoolIds,
+        uint256[] memory rewardAmounts
+    ) external onlyGameMaster {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        require(
+            stages.length == paths.length,
+            "GOFPFacet.setPathRewards: paths must have same length as stages"
+        );
+        require(
+            stages.length == terminusAddresses.length,
+            "GOFPFacet.setPathRewards: terminusAddresses must have same length as stages"
+        );
+        require(
+            stages.length == terminusPoolIds.length,
+            "GOFPFacet.setPathRewards: terminusPoolIds must have same length as stages"
+        );
+        require(
+            stages.length == rewardAmounts.length,
+            "GOFPFacet.setPathRewards: rewardAmounts must have same length as stages"
+        );
+
+        Session storage session = gs.sessionById[sessionId];
+        require(
+            !session.isActive,
+            "GOFPFacet.setPathRewards: Cannot set path rewards on active session"
+        );
+
+        for (uint256 i = 0; i < stages.length; i++) {
+            require(
+                (1 <= stages[i]) && (stages[i] <= session.stages.length),
+                "GOFPFacet.setPathRewards: Invalid stage"
+            );
+            require(
+                (1 <= paths[i]) && (paths[i] <= session.stages[stages[i] - 1]),
+                "GOFPFacet.setPathRewards: Invalid path"
+            );
+            gs.sessionPathReward[sessionId][stages[i]][paths[i]] = Reward({
+                terminusAddress: terminusAddresses[i],
+                terminusPoolId: terminusPoolIds[i],
+                rewardAmount: rewardAmounts[i]
+            });
+            emit PathRewardChanged(
+                sessionId,
+                stages[i],
+                paths[i],
+                terminusAddresses[i],
+                terminusPoolIds[i],
+                rewardAmounts[i]
+            );
+        }
+    }
+
+    function setSessionActive(
+        uint256 sessionId,
+        bool isActive
+    ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
             sessionId <= gs.numSessions,
@@ -340,11 +449,10 @@ contract GOFPFacet is
         emit SessionActivated(sessionId, isActive);
     }
 
-    function getCorrectPathForStage(uint256 sessionId, uint256 stage)
-        external
-        view
-        returns (uint256)
-    {
+    function getCorrectPathForStage(
+        uint256 sessionId,
+        uint256 stage
+    ) external view returns (uint256) {
         require(
             stage > 0,
             "GOFPFacet.getCorrectPathForStage: Stages are 1-indexed, 0 is not a valid stage"
@@ -402,10 +510,10 @@ contract GOFPFacet is
         emit SessionChoosingActivated(sessionId, setIsChoosingActive);
     }
 
-    function setSessionChoosingActive(uint256 sessionId, bool isChoosingActive)
-        external
-        onlyGameMaster
-    {
+    function setSessionChoosingActive(
+        uint256 sessionId,
+        bool isChoosingActive
+    ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
             sessionId <= gs.numSessions,
@@ -415,10 +523,10 @@ contract GOFPFacet is
         emit SessionChoosingActivated(sessionId, isChoosingActive);
     }
 
-    function setSessionUri(uint256 sessionId, string memory uri)
-        external
-        onlyGameMaster
-    {
+    function setSessionUri(
+        uint256 sessionId,
+        string memory uri
+    ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
             sessionId <= gs.numSessions,
@@ -436,11 +544,10 @@ contract GOFPFacet is
     If the token is not currently staked in the Garden of Forking Paths contract, this method returns
     0 for the sessionId and the 0 address as the staker.
      */
-    function getStakedTokenInfo(address nftAddress, uint256 tokenId)
-        external
-        view
-        returns (uint256, address)
-    {
+    function getStakedTokenInfo(
+        address nftAddress,
+        uint256 tokenId
+    ) external view returns (uint256, address) {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         return (
             gs.stakedTokenSession[nftAddress][tokenId],
@@ -448,19 +555,17 @@ contract GOFPFacet is
         );
     }
 
-    function getSessionTokenStakeGuard(uint256 sessionId, uint256 tokenId)
-        external
-        view
-        returns (bool)
-    {
+    function getSessionTokenStakeGuard(
+        uint256 sessionId,
+        uint256 tokenId
+    ) external view returns (bool) {
         return LibGOFP.gofpStorage().sessionTokenStakeGuard[sessionId][tokenId];
     }
 
-    function numTokensStakedIntoSession(uint256 sessionId, address staker)
-        external
-        view
-        returns (uint256)
-    {
+    function numTokensStakedIntoSession(
+        uint256 sessionId,
+        address staker
+    ) external view returns (uint256) {
         return
             LibGOFP.gofpStorage().numTokensStakedByOwnerInSession[sessionId][
                 staker
@@ -575,6 +680,166 @@ contract GOFPFacet is
         gs.numTokensStakedByOwnerInSession[sessionId][owner]--;
     }
 
+    function getSessionStakingPredicate(
+        uint256 sessionId
+    ) external view returns (Predicate memory) {
+        return LibGOFP.gofpStorage().sessionStakingPredicate[sessionId];
+    }
+
+    function setSessionStakingPredicate(
+        uint256 sessionId,
+        bytes4 functionSelector,
+        address predicateAddress,
+        bytes calldata initialArguments
+    ) external onlyGameMaster {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        gs.sessionStakingPredicate[sessionId] = Predicate({
+            predicateAddress: predicateAddress,
+            functionSelector: functionSelector,
+            initialArguments: initialArguments
+        });
+        emit StakingPredicateSet(
+            sessionId,
+            predicateAddress,
+            functionSelector,
+            initialArguments
+        );
+    }
+
+    function getPathChoicePredicate(
+        PathDetails calldata path
+    ) external view returns (Predicate memory) {
+        return
+            LibGOFP.gofpStorage().pathChoicePredicate[path.sessionId][
+                path.stageNumber
+            ][path.pathNumber];
+    }
+
+    function setPathChoicePredicate(
+        PathDetails calldata path,
+        bytes4 functionSelector,
+        address predicateAddress,
+        bytes calldata initialArguments
+    ) external onlyGameMaster {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        gs.pathChoicePredicate[path.sessionId][path.stageNumber][
+            path.pathNumber
+        ] = Predicate({
+            predicateAddress: predicateAddress,
+            functionSelector: functionSelector,
+            initialArguments: initialArguments
+        });
+        emit PathChoicePredicateSet(
+            path.sessionId,
+            path.stageNumber,
+            path.pathNumber,
+            predicateAddress,
+            functionSelector,
+            initialArguments
+        );
+    }
+
+    function _callPredicate(
+        Predicate memory predicate,
+        address player,
+        address tokenAddress,
+        uint256 tokenId
+    ) internal view returns (bool valid) {
+        // If there is no predicate registered, simply return true.
+        if (predicate.predicateAddress == address(0)) {
+            return true;
+        }
+
+        // require(predicate.predicateAddress != address(0), "Empty predicate.");
+
+        assembly {
+            let starting_position := mload(0x40)
+
+            // Layout of predicate in memory:
+            // predicate + 0x0 : predicate + 0x20 -- predicateAddress
+            // predicate + 0x20 : predicate + 0x40 -- functionSelector
+            // predicate + 0x40 : predicate + 0x60 -- memory position of initialArguments array
+            //
+            // We store the memory position as initial_arguments_position.
+            // initial_arguments_position + 0x0 : initial_arguments_position + 0x20 -- length of initialArguments
+            //
+            // We use this to iterate over the initial arguments and add them to the calldata we are
+            // constructing.
+            let initial_arguments_position := mload(add(predicate, 0x40))
+            let initial_arguments_length := mload(initial_arguments_position)
+            let initial_arguments_start := add(initial_arguments_position, 0x20)
+
+            let i := 0
+
+            mstore(starting_position, mload(add(predicate, 0x20)))
+            let post_selector := add(starting_position, 0x4)
+
+            for {
+                i := 0
+            } lt(i, initial_arguments_length) {
+                i := add(i, 0x20)
+            } {
+                mstore(
+                    add(post_selector, i),
+                    mload(add(initial_arguments_start, i))
+                )
+            }
+
+            i := add(post_selector, initial_arguments_length)
+            mstore(i, player)
+            i := add(i, 0x20)
+            mstore(i, tokenAddress)
+            i := add(i, 0x20)
+            mstore(i, tokenId)
+
+            let calldata_length := add(initial_arguments_length, 0x64)
+            let success := staticcall(
+                gas(),
+                mload(predicate),
+                starting_position,
+                calldata_length,
+                add(starting_position, calldata_length),
+                0x20
+            )
+
+            if eq(success, 0) {
+                revert(0, returndatasize())
+            }
+
+            valid := mload(add(starting_position, calldata_length))
+        }
+    }
+
+    function callSessionStakingPredicate(
+        uint256 sessionId,
+        address player,
+        uint256 tokenId
+    ) public view returns (bool valid) {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        address tokenAddress = gs.sessionById[sessionId].playerTokenAddress;
+
+        Predicate memory predicate = gs.sessionStakingPredicate[sessionId];
+
+        return _callPredicate(predicate, player, tokenAddress, tokenId);
+    }
+
+    function callPathChoicePredicate(
+        PathDetails memory path,
+        address player,
+        uint256 tokenId
+    ) public view returns (bool valid) {
+        LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
+        address tokenAddress = gs
+            .sessionById[path.sessionId]
+            .playerTokenAddress;
+
+        Predicate memory predicate = gs.pathChoicePredicate[path.sessionId][
+            path.stageNumber
+        ][path.pathNumber];
+
+        return _callPredicate(predicate, player, tokenAddress, tokenId);
+    }
+
     function stakeTokensIntoSession(
         uint256 sessionId,
         uint256[] calldata tokenIds
@@ -631,6 +896,12 @@ contract GOFPFacet is
                 !gs.sessionTokenStakeGuard[sessionId][tokenIds[i]],
                 "GOFPFacet.stakeTokensIntoSession: Token was previously staked into session"
             );
+
+            require(
+                callSessionStakingPredicate(sessionId, msg.sender, tokenIds[i]),
+                "GOFPFacet.stakeTokensIntoSession: Session staking predicate not satisfied"
+            );
+
             token.safeTransferFrom(msg.sender, address(this), tokenIds[i]);
             gs.sessionTokenStakeGuard[sessionId][tokenIds[i]] = true;
             _addTokenToEnumeration(
@@ -669,11 +940,9 @@ contract GOFPFacet is
     /**
     Returns the number of the current stage.
      */
-    function getCurrentStage(uint256 sessionId)
-        external
-        view
-        returns (uint256)
-    {
+    function getCurrentStage(
+        uint256 sessionId
+    ) external view returns (uint256) {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
             sessionId <= gs.numSessions,
@@ -759,8 +1028,8 @@ contract GOFPFacet is
         // This is just for convenience, saving one subtraction.
         uint256 numPaths = session.stages[lastStage];
 
-        uint256 rewardAmount = 0;
-        StageReward storage stageReward = gs.sessionStageReward[sessionId][
+        uint256 stageRewardAmount = 0;
+        Reward storage stageReward = gs.sessionStageReward[sessionId][
             currentStage
         ];
 
@@ -792,6 +1061,18 @@ contract GOFPFacet is
                 (paths[i] >= 1) && (paths[i] <= numPaths),
                 "GOFPFacet.chooseCurrentStagePaths: Invalid path"
             );
+            require(
+                callPathChoicePredicate(
+                    PathDetails({
+                        sessionId: sessionId,
+                        stageNumber: currentStage,
+                        pathNumber: paths[i]
+                    }),
+                    msg.sender,
+                    tokenIds[i]
+                ),
+                "GOFPFacet.chooseCurrentStagePaths: Path choice predicate not satisfied"
+            );
             gs.pathChoices[sessionId][tokenIds[i]][currentStage] = paths[i];
             emit PathChosen(sessionId, tokenIds[i], currentStage, paths[i]);
 
@@ -799,13 +1080,29 @@ contract GOFPFacet is
             // there is a stage reward.
             if (stageReward.terminusAddress != address(0)) {
                 if (lastStage == 0) {
-                    rewardAmount += stageReward.rewardAmount;
+                    stageRewardAmount += stageReward.rewardAmount;
                 } else if (
                     gs.pathChoices[sessionId][tokenIds[i]][lastStage] ==
                     lastStageCorrectPath
                 ) {
-                    rewardAmount += stageReward.rewardAmount;
+                    stageRewardAmount += stageReward.rewardAmount;
                 }
+            }
+
+            // Distribute path reward.
+            Reward storage pathReward = gs.sessionPathReward[sessionId][
+                currentStage
+            ][paths[i]];
+            if (pathReward.terminusAddress != address(0)) {
+                TerminusFacet rewardTerminus = TerminusFacet(
+                    pathReward.terminusAddress
+                );
+                rewardTerminus.mint(
+                    msg.sender,
+                    pathReward.terminusPoolId,
+                    pathReward.rewardAmount,
+                    ""
+                );
             }
         }
 
@@ -816,7 +1113,7 @@ contract GOFPFacet is
             rewardTerminus.mint(
                 msg.sender,
                 stageReward.terminusPoolId,
-                rewardAmount,
+                stageRewardAmount,
                 ""
             );
         }

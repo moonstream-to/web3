@@ -1,10 +1,13 @@
 import unittest
 
+import math
+
 from brownie import accounts, network, web3 as web3_client, ZERO_ADDRESS
 from brownie.exceptions import VirtualMachineError
 from moonworm.watch import _fetch_events_chunk
+import web3
 
-from . import GOFPFacet, MockTerminus, MockErc20, MockERC721
+from . import GOFPFacet, MockTerminus, MockErc20, MockERC721, GOFPPredicates
 from .core import gofp_gogogo
 
 MAX_UINT = 2**256 - 1
@@ -178,6 +181,50 @@ STAGE_REWARD_CHANGED_ABI = {
     "type": "event",
 }
 
+PATH_REWARD_CHANGED_ABI = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "sessionId",
+            "type": "uint256",
+        },
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "stage",
+            "type": "uint256",
+        },
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "path",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "address",
+            "name": "terminusAddress",
+            "type": "address",
+        },
+        {
+            "indexed": False,
+            "internalType": "uint256",
+            "name": "terminusPoolId",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "uint256",
+            "name": "rewardAmount",
+            "type": "uint256",
+        },
+    ],
+    "name": "PathRewardChanged",
+    "type": "event",
+}
+
 PATH_CHOSEN_EVENT_ABI = {
     "anonymous": False,
     "inputs": [
@@ -207,6 +254,82 @@ PATH_CHOSEN_EVENT_ABI = {
         },
     ],
     "name": "PathChosen",
+    "type": "event",
+}
+
+STAKING_PREDICATE_SET_EVENT_ABI = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "sessionId",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "address",
+            "name": "predicateAddress",
+            "type": "address",
+        },
+        {
+            "indexed": False,
+            "internalType": "bytes4",
+            "name": "functionSelector",
+            "type": "bytes4",
+        },
+        {
+            "indexed": False,
+            "internalType": "bytes",
+            "name": "initialArguments",
+            "type": "bytes",
+        },
+    ],
+    "name": "StakingPredicateSet",
+    "type": "event",
+}
+
+PATH_CHOICE_PREDICATE_SET_EVENT_ABI = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "sessionId",
+            "type": "uint256",
+        },
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "stage",
+            "type": "uint256",
+        },
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "path",
+            "type": "uint256",
+        },
+        {
+            "indexed": False,
+            "internalType": "address",
+            "name": "predicateAddress",
+            "type": "address",
+        },
+        {
+            "indexed": False,
+            "internalType": "bytes4",
+            "name": "functionSelector",
+            "type": "bytes4",
+        },
+        {
+            "indexed": False,
+            "internalType": "bytes",
+            "name": "initialArguments",
+            "type": "bytes",
+        },
+    ],
+    "name": "PathChoicePredicateSet",
     "type": "event",
 }
 
@@ -252,6 +375,9 @@ class GOFPTestCase(unittest.TestCase):
         cls.nft = MockERC721.MockERC721(None)
         cls.nft.deploy(cls.owner_tx_config)
 
+        cls.gofp_predicates = GOFPPredicates.GOFPPredicates(None)
+        cls.gofp_predicates.deploy(cls.owner_tx_config)
+
         cls.terminus = MockTerminus.MockTerminus(None)
         cls.terminus.deploy(cls.owner_tx_config)
 
@@ -273,6 +399,15 @@ class GOFPTestCase(unittest.TestCase):
         cls.terminus.create_pool_v1(MAX_UINT, True, True, cls.owner_tx_config)
         cls.reward_pool_id = cls.terminus.total_pools()
 
+        cls.terminus.create_pool_v1(MAX_UINT, True, True, cls.owner_tx_config)
+        cls.reward_2_pool_id = cls.terminus.total_pools()
+
+        cls.terminus.create_pool_v1(MAX_UINT, True, True, cls.owner_tx_config)
+        cls.reward_3_pool_id = cls.terminus.total_pools()
+
+        cls.terminus.create_pool_v1(MAX_UINT, True, True, cls.owner_tx_config)
+        cls.reward_4_pool_id = cls.terminus.total_pools()
+
         # It is important for some of the tests that the owner of the contract *not* be the game master.
         cls.terminus.mint(
             cls.game_master.address, cls.admin_pool_id, 1, "", cls.owner_tx_config
@@ -292,6 +427,15 @@ class GOFPTestCase(unittest.TestCase):
         # Set gofp as approved pool operator for reward pool
         cls.terminus.approve_for_pool(
             cls.reward_pool_id, cls.gofp.address, cls.owner_tx_config
+        )
+        cls.terminus.approve_for_pool(
+            cls.reward_2_pool_id, cls.gofp.address, cls.owner_tx_config
+        )
+        cls.terminus.approve_for_pool(
+            cls.reward_3_pool_id, cls.gofp.address, cls.owner_tx_config
+        )
+        cls.terminus.approve_for_pool(
+            cls.reward_4_pool_id, cls.gofp.address, cls.owner_tx_config
         )
 
     def test_admin_terminus_info(self):
@@ -401,9 +545,7 @@ class TestAdminFlow(GOFPTestCase):
         num_sessions_0 = self.gofp.num_sessions()
 
         expected_payment_amount = 42
-        expected_uri = (
-            "https://example.com/test_create_session_then_get_session_active.json"
-        )
+        expected_uri = "https://example.com/test_create_forgiving_session_then_get_session_active.json"
         expected_stages = (5, 5, 3, 3, 2)
         expected_is_active = True
         expected_is_forgiving = True
@@ -1323,6 +1465,312 @@ class TestAdminFlow(GOFPTestCase):
         for i in range(1, len(stages) + 1):
             reward = self.gofp.get_stage_reward(session_id, i)
             self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+
+    def test_setting_same_stage_reward_twice_overwrites_first_value(self):
+        """
+        Tests administrators' ability to set rewards for the stages in a session. Also tests anyone's
+        ability to view the rewards for a given stage in a given session.
+
+        Test actions:
+        1. Create inactive session
+        2. Check rewards have default values
+        3. Set stage rewards with a duplicate stage
+        7. Check that rewards were correctly set (stage reward set twice should use second value)
+        """
+        payment_amount = 132
+        uri = "https://example.com/test_setting_same_stage_reward_twice_overwrites_first_value.json"
+        stages = (5, 5, 3, 3, 2)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            False,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        for i in range(1, len(stages) + 1):
+            reward = self.gofp.get_stage_reward(session_id, i)
+            self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+
+        stages_with_rewards = [1, 2, 3, 4, 5, 1]
+        stage_rewards = list(range(1, len(stages_with_rewards) + 1))
+
+        self.gofp.set_stage_rewards(
+            session_id,
+            stages_with_rewards,
+            [self.terminus.address for _ in stages_with_rewards],
+            [self.reward_pool_id for _ in stages_with_rewards],
+            stage_rewards,
+            {"from": self.game_master},
+        )
+
+        for i in range(2, len(stages) + 1):
+            reward = self.gofp.get_stage_reward(session_id, i)
+            self.assertEqual(reward, (self.terminus.address, self.reward_pool_id, i))
+
+        first_stage_reward = self.gofp.get_stage_reward(session_id, 1)
+        self.assertEqual(
+            first_stage_reward,
+            (
+                self.terminus.address,
+                self.reward_pool_id,
+                stage_rewards[len(stage_rewards) - 1],
+            ),
+        )
+
+    def test_set_and_get_path_rewards(self):
+        """
+        Tests administrators' ability to set rewards for the paths in a session. Also tests anyone's
+        ability to view the rewards for a given path in a given stage in a given session.
+
+        Test actions:
+        1. Create active session
+        2. Check rewards have default values
+        3. Attempt to set rewards on active session should fail
+        4. Check rewards still have default values
+        5. Make session inactive
+        6. Set rewards for all but the first stage
+        7. Check that rewards were correctly set
+        8. Check that the extend StageRewardChanged events are fired
+        """
+        payment_amount = 132
+        uri = "https://example.com/test_set_and_get_path_rewards.json"
+        stages = (5, 5, 3, 3, 2)
+        is_active = True
+
+        stages_with_rewards = [2, 2, 3, 4, 5, 2]
+        paths_with_rewards = [2, 4, 1, 2, 1, 2]
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            False,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        for i in range(1, len(stages) + 1):
+            for j in range(1, stages[i - 1]):
+                reward = self.gofp.get_path_reward(session_id, i, j)
+                self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.set_path_rewards(
+                session_id,
+                stages_with_rewards,
+                paths_with_rewards,
+                [self.terminus.address for _ in paths_with_rewards],
+                [self.reward_pool_id for _ in paths_with_rewards],
+                [
+                    (2**stage) * (3**path)
+                    for stage, path in zip(stages_with_rewards, paths_with_rewards)
+                ],
+                {"from": self.game_master},
+            )
+
+        for i in range(1, len(stages) + 1):
+            for j in range(1, stages[i - 1]):
+                reward = self.gofp.get_path_reward(session_id, i, j)
+                self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+
+        self.gofp.set_session_active(session_id, False, {"from": self.game_master})
+
+        tx_receipt = self.gofp.set_path_rewards(
+            session_id,
+            stages_with_rewards,
+            paths_with_rewards,
+            [self.terminus.address for _ in paths_with_rewards],
+            [self.reward_pool_id for _ in paths_with_rewards],
+            [
+                (2**stage) * (3**path)
+                for stage, path in zip(stages_with_rewards, paths_with_rewards)
+            ],
+            {"from": self.game_master},
+        )
+
+        for stage, path in zip(stages_with_rewards, paths_with_rewards):
+            reward = self.gofp.get_path_reward(session_id, stage, path)
+            self.assertEqual(
+                reward,
+                (
+                    self.terminus.address,
+                    self.reward_pool_id,
+                    (2**stage) * (3**path),
+                ),
+            )
+
+        events = _fetch_events_chunk(
+            web3_client,
+            PATH_REWARD_CHANGED_ABI,
+            from_block=tx_receipt.block_number,
+            to_block=tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(events), len(paths_with_rewards))
+        self.assertListEqual(
+            [event["args"]["sessionId"] for event in events],
+            [session_id for _ in paths_with_rewards],
+        )
+        self.assertListEqual(
+            [event["args"]["stage"] for event in events],
+            stages_with_rewards,
+        )
+        self.assertListEqual(
+            [event["args"]["path"] for event in events],
+            paths_with_rewards,
+        )
+        self.assertListEqual(
+            [event["args"]["terminusAddress"] for event in events],
+            [self.terminus.address for _ in paths_with_rewards],
+        )
+        self.assertListEqual(
+            [event["args"]["terminusPoolId"] for event in events],
+            [self.reward_pool_id for _ in paths_with_rewards],
+        )
+        self.assertListEqual(
+            [event["args"]["rewardAmount"] for event in events],
+            [
+                (2**stage) * (3**path)
+                for stage, path in zip(stages_with_rewards, paths_with_rewards)
+            ],
+        )
+
+    def test_non_game_master_cannot_set_path_rewards(self):
+        """
+        Tests that non game master accounts cannot set path rewards on an inactive session.
+
+        Test actions:
+        1. Create inactive session
+        2. Check that player is not a game master (i.e. does not have game master badge)
+        3. Attempt by player to set rewards on active session should fail
+        4. Check rewards still have default values
+        """
+        payment_amount = 133
+        uri = "https://example.com/test_non_game_master_cannot_set_path_rewards.json"
+        stages = (5, 5, 3, 3, 2)
+        is_active = False
+
+        stages_with_rewards = [2, 2, 3, 4, 5, 2]
+        paths_with_rewards = [2, 4, 1, 2, 1, 2]
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            False,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        self.assertEqual(
+            self.terminus.balance_of(self.player.address, self.admin_pool_id), 0
+        )
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.set_path_rewards(
+                session_id,
+                stages_with_rewards,
+                paths_with_rewards,
+                [self.terminus.address for _ in stages_with_rewards],
+                [self.reward_pool_id for _ in stages_with_rewards],
+                [
+                    (2**stage) * (3**path)
+                    for stage, path in zip(stages_with_rewards, paths_with_rewards)
+                ],
+                {"from": self.player},
+            )
+
+        for stage, path in zip(stages_with_rewards, paths_with_rewards):
+            reward = self.gofp.get_path_reward(session_id, stage, path)
+            self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+
+    def test_setting_same_path_reward_twice_overwrites_first_value(self):
+        """
+        Tests administrators' ability to set rewards for the stages in a session. Also tests anyone's
+        ability to view the rewards for a given stage in a given session.
+
+        Test actions:
+        1. Create inactive session
+        2. Check path rewards have default values
+        3. Set path rewards with a duplicate path
+        7. Check that rewards were correctly set (path reward set twice should use second value)
+        """
+        payment_amount = 132
+        uri = "https://example.com/test_setting_same_path_reward_twice_overwrites_first_value.json"
+        stages = (4, 1)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            False,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        for stage in range(1, len(stages) + 1):
+            for path in range(1, stages[stage - 1] + 1):
+                reward = self.gofp.get_path_reward(session_id, stage, path)
+                self.assertEqual(reward, (ZERO_ADDRESS, 0, 0))
+
+        stages_with_rewards = [1, 1, 1, 1, 2, 1]
+        paths_with_rewards = [1, 2, 3, 4, 1, 3]
+        # Reward is path number except for stage 1 path 3
+        path_rewards = [1, 2, 3, 4, 1, 5]
+
+        self.gofp.set_path_rewards(
+            session_id,
+            stages_with_rewards,
+            paths_with_rewards,
+            [self.terminus.address for _ in stages_with_rewards],
+            [self.reward_pool_id for _ in stages_with_rewards],
+            path_rewards,
+            {"from": self.game_master},
+        )
+
+        for stage in range(1, len(stages) + 1):
+            for path in range(1, stages[stage - 1] + 1):
+                if stage != 1 or path != 3:
+                    reward = self.gofp.get_path_reward(session_id, stage, path)
+                    self.assertEqual(
+                        reward,
+                        (
+                            self.terminus.address,
+                            self.reward_pool_id,
+                            path,
+                        ),
+                    )
+
+        stage_1_path_3_reward = self.gofp.get_path_reward(session_id, 1, 3)
+        self.assertEqual(
+            stage_1_path_3_reward,
+            (
+                self.terminus.address,
+                self.reward_pool_id,
+                path_rewards[len(path_rewards) - 1],
+            ),
+        )
 
 
 class TestPlayerFlow(GOFPTestCase):
@@ -2725,6 +3173,344 @@ class TestPlayerFlow(GOFPTestCase):
             reward_amount * len(expected_correct_tokens),
         )
 
+    def test_player_is_rewarded_for_choosing_path_that_has_reward(
+        self,
+    ):
+        """
+        Tests that reward distribution works correctly when a player chooses a path that
+        has an associated path reward.
+
+        Also tests that no rewards are distributed when a player chooses a path that
+        does not have an associated reward.
+
+        Test actions:
+        1. Create inactive, forgiving session
+        2. Associate rewards with stage 1 path 2, stage 2 paths 1 and 2, stage 3 path 1.
+        3. Activate session.
+        4. Player chooses paths in stage 1
+        5. Check that appropriate ERC1155 Transfer events are fired in that transaction
+        6. Player chooses paths in stage 2
+        7. Check that appropriate ERC1155 Transfer events are fired in that transaction
+        8. Player chooses paths in stage 3
+        9. Check that appropriate ERC1155 Transfer events are fired in that transaction
+        """
+        payment_amount = 175
+        uri = "https://example.com/test_player_is_rewarded_for_choosing_path_that_has_reward.json"
+        stages = (2, 3, 1)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            True,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        # Rewards for all paths except for stage 1 path 1 and stage 2 path 3.
+        stages_with_rewards = [1, 2, 2, 3]
+        paths_with_rewards = [2, 1, 2, 1]
+
+        self.gofp.set_path_rewards(
+            session_id,
+            stages_with_rewards,
+            paths_with_rewards,
+            [self.terminus.address] * len(stages_with_rewards),
+            [self.reward_pool_id] * len(stages_with_rewards),
+            [
+                (2**stage) * (3**path)
+                for stage, path in zip(stages_with_rewards, paths_with_rewards)
+            ],
+            {"from": self.game_master},
+        )
+
+        self.gofp.set_session_active(session_id, True, {"from": self.game_master})
+
+        # Mint NFTs to the player
+        total_nfts = self.nft.total_supply()
+
+        num_nfts = 8
+        token_ids = [total_nfts + i for i in range(1, num_nfts + 1)]
+
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+
+        # Mint num_tokens*payment_amount of payment_token to player
+        self.payment_token.mint(
+            self.player.address, len(token_ids) * payment_amount, {"from": self.owner}
+        )
+
+        self.payment_token.approve(self.gofp.address, MAX_UINT, {"from": self.player})
+        self.nft.set_approval_for_all(self.gofp.address, True, {"from": self.player})
+
+        self.gofp.stake_tokens_into_session(
+            session_id, token_ids, {"from": self.player}
+        )
+
+        # First half (rounded up) of tokens will choose path 1. Rest will choose path 2.
+        first_stage_path_1_count = math.ceil(num_nfts / 2)
+        first_stage_path_2_count = math.floor(num_nfts / 2)
+        first_stage_path_choices = [1] * first_stage_path_1_count + [
+            2
+        ] * first_stage_path_2_count
+
+        first_stage_tx_receipt = self.gofp.choose_current_stage_paths(
+            session_id,
+            token_ids,
+            first_stage_path_choices,
+            {"from": self.player},
+        )
+
+        first_stage_events = _fetch_events_chunk(
+            web3_client,
+            ERC1155_TRANSFER_SINGLE_EVENT,
+            from_block=first_stage_tx_receipt.block_number,
+            to_block=first_stage_tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(first_stage_events), first_stage_path_2_count)
+
+        for i, erc1155_transfer_event in enumerate(first_stage_events):
+            self.assertEqual(erc1155_transfer_event["args"]["from"], ZERO_ADDRESS)
+            self.assertEqual(erc1155_transfer_event["args"]["to"], self.player.address)
+            self.assertEqual(erc1155_transfer_event["args"]["id"], self.reward_pool_id)
+            self.assertEqual(
+                erc1155_transfer_event["args"]["value"],
+                # Reward for stage i path j is 2^i * 3^j
+                (2**1) * (3**2),
+            )
+
+        self.gofp.set_session_choosing_active(
+            session_id, False, {"from": self.game_master}
+        )
+        self.gofp.set_correct_path_for_stage(
+            session_id, 1, 1, True, {"from": self.game_master}
+        )
+
+        # Check that current stage has progressed to stage 2
+        self.assertEqual(self.gofp.get_current_stage(session_id), 2)
+
+        second_stage_path_choices = list(
+            map(lambda x: (x % 3) if (x % 3) > 0 else 3, range(1, num_nfts + 1))
+        )
+
+        second_stage_tx_receipt = self.gofp.choose_current_stage_paths(
+            session_id,
+            token_ids,
+            second_stage_path_choices,
+            {"from": self.player},
+        )
+
+        second_stage_events = _fetch_events_chunk(
+            web3_client,
+            ERC1155_TRANSFER_SINGLE_EVENT,
+            from_block=second_stage_tx_receipt.block_number,
+            to_block=second_stage_tx_receipt.block_number,
+        )
+
+        # First two of three paths in second stage have rewards
+        self.assertEqual(len(second_stage_events), math.ceil(2 / 3 * num_nfts))
+
+        for i, erc1155_transfer_event in enumerate(second_stage_events):
+            self.assertEqual(erc1155_transfer_event["args"]["from"], ZERO_ADDRESS)
+            self.assertEqual(erc1155_transfer_event["args"]["to"], self.player.address)
+            self.assertEqual(erc1155_transfer_event["args"]["id"], self.reward_pool_id)
+            self.assertEqual(
+                erc1155_transfer_event["args"]["value"],
+                (2**2) * (3 ** (i % 2 + 1)),
+            )
+
+        self.gofp.set_session_choosing_active(
+            session_id, False, {"from": self.game_master}
+        )
+        # Correct path doesn't affect path rewards.
+        self.gofp.set_correct_path_for_stage(
+            session_id, 2, 1, True, {"from": self.game_master}
+        )
+
+        # Check that current stage has progressed to stage 3
+        self.assertEqual(self.gofp.get_current_stage(session_id), 3)
+
+        third_stage_tx_receipt = self.gofp.choose_current_stage_paths(
+            session_id,
+            token_ids,
+            [1] * num_nfts,
+            {"from": self.player},
+        )
+
+        third_stage_events = _fetch_events_chunk(
+            web3_client,
+            ERC1155_TRANSFER_SINGLE_EVENT,
+            from_block=third_stage_tx_receipt.block_number,
+            to_block=third_stage_tx_receipt.block_number,
+        )
+
+        # Only 1 path so all nfts get reward
+        self.assertEqual(len(third_stage_events), num_nfts)
+
+        for i, erc1155_transfer_event in enumerate(third_stage_events):
+            self.assertEqual(erc1155_transfer_event["args"]["from"], ZERO_ADDRESS)
+            self.assertEqual(erc1155_transfer_event["args"]["to"], self.player.address)
+            self.assertEqual(erc1155_transfer_event["args"]["id"], self.reward_pool_id)
+            self.assertEqual(
+                erc1155_transfer_event["args"]["value"],
+                (2**3) * (3**1),
+            )
+
+    def test_player_can_receive_different_pool_ids_in_stage_and_path_rewards(
+        self,
+    ):
+        """
+        Tests that reward distribution works correctly when a player receives rewards with different pool ids.
+
+        Test actions:
+        1. Create inactive, forgiving session
+        2. Associate different rewards with stages 1 and 2
+        3. Associate different rewards with stage 1 path 1 and stage 2 path 1
+        4. Activate session.
+        5. Player chooses path in stage 1
+        6. Check that appropriate ERC1155 Transfer events are fired in that transaction
+        7. Player chooses path in stage 2
+        8. Check that appropriate ERC1155 Transfer events are fired in that transaction
+        """
+        payment_amount = 175
+        uri = "https://example.com/test_player_can_receive_different_pool_ids_in_stage_and_path_rewards.json"
+        stages = (1, 1)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            True,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        # Rewards for all paths except for stage 1 path 1 and stage 2 path 3.
+        stages_with_rewards = [1, 2]
+        stage_rewards_pool_ids = [self.reward_pool_id, self.reward_2_pool_id]
+        stage_reward_amounts = [1, 2]
+
+        paths_with_rewards = [1, 1]
+        path_reward_pool_ids = [self.reward_3_pool_id, self.reward_4_pool_id]
+        path_reward_amounts = [3, 4]
+
+        self.gofp.set_stage_rewards(
+            session_id,
+            stages_with_rewards,
+            [self.terminus.address] * len(stages_with_rewards),
+            stage_rewards_pool_ids,
+            stage_reward_amounts,
+            {"from": self.game_master},
+        )
+
+        self.gofp.set_path_rewards(
+            session_id,
+            stages_with_rewards,
+            paths_with_rewards,
+            [self.terminus.address] * len(stages_with_rewards),
+            path_reward_pool_ids,
+            path_reward_amounts,
+            {"from": self.game_master},
+        )
+
+        self.gofp.set_session_active(session_id, True, {"from": self.game_master})
+
+        # Mint NFTs to the player
+        total_nfts = self.nft.total_supply()
+        token_id = total_nfts + 1
+
+        self.nft.mint(self.player.address, token_id, {"from": self.owner})
+
+        # Mint num_tokens*payment_amount of payment_token to player
+        self.payment_token.mint(
+            self.player.address, payment_amount, {"from": self.owner}
+        )
+
+        self.payment_token.approve(self.gofp.address, MAX_UINT, {"from": self.player})
+        self.nft.set_approval_for_all(self.gofp.address, True, {"from": self.player})
+
+        self.gofp.stake_tokens_into_session(
+            session_id, [token_id], {"from": self.player}
+        )
+
+        first_stage_tx_receipt = self.gofp.choose_current_stage_paths(
+            session_id,
+            [token_id],
+            [1],
+            {"from": self.player},
+        )
+
+        first_stage_events = _fetch_events_chunk(
+            web3_client,
+            ERC1155_TRANSFER_SINGLE_EVENT,
+            from_block=first_stage_tx_receipt.block_number,
+            to_block=first_stage_tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(first_stage_events), 2)
+
+        for i, erc1155_transfer_event in enumerate(first_stage_events):
+            self.assertEqual(erc1155_transfer_event["args"]["from"], ZERO_ADDRESS)
+            self.assertEqual(erc1155_transfer_event["args"]["to"], self.player.address)
+            pool_id = erc1155_transfer_event["args"]["id"]
+            value = erc1155_transfer_event["args"]["value"]
+            if pool_id == self.reward_pool_id:
+                self.assertEqual(value, 1)
+            elif pool_id == self.reward_3_pool_id:
+                self.assertEqual(value, 3)
+            else:
+                self.fail("Received incorrect pool id in reward event.")
+
+        self.gofp.set_session_choosing_active(
+            session_id, False, {"from": self.game_master}
+        )
+        self.gofp.set_correct_path_for_stage(
+            session_id, 1, 1, True, {"from": self.game_master}
+        )
+
+        # Check that current stage has progressed to stage 2
+        self.assertEqual(self.gofp.get_current_stage(session_id), 2)
+
+        second_stage_tx_receipt = self.gofp.choose_current_stage_paths(
+            session_id,
+            [token_id],
+            [1],
+            {"from": self.player},
+        )
+
+        second_stage_events = _fetch_events_chunk(
+            web3_client,
+            ERC1155_TRANSFER_SINGLE_EVENT,
+            from_block=second_stage_tx_receipt.block_number,
+            to_block=second_stage_tx_receipt.block_number,
+        )
+
+        # First two of three paths in second stage have rewards
+        self.assertEqual(len(second_stage_events), 2)
+
+        for i, erc1155_transfer_event in enumerate(second_stage_events):
+            self.assertEqual(erc1155_transfer_event["args"]["from"], ZERO_ADDRESS)
+            self.assertEqual(erc1155_transfer_event["args"]["to"], self.player.address)
+            pool_id = erc1155_transfer_event["args"]["id"]
+            value = erc1155_transfer_event["args"]["value"]
+            if pool_id == self.reward_2_pool_id:
+                self.assertEqual(value, 2)
+            elif pool_id == self.reward_4_pool_id:
+                self.assertEqual(value, 4)
+            else:
+                self.fail("Received incorrect pool id in reward event.")
+
     def test_player_cannnot_make_a_choice_with_same_token_twice(self):
         payment_amount = 176
         uri = "https://example.com/test_player_cannnot_make_a_choice_with_same_token_twice.json"
@@ -3066,6 +3852,18 @@ class TestFullGames(GOFPTestCase):
             reward_amounts,
             {"from": self.game_master},
         )
+
+        # First path has reward on each stage
+        self.gofp.set_path_rewards(
+            session_id,
+            [1, 2, 3],
+            [1, 1, 1],
+            [self.terminus.address] * 3,
+            [self.reward_pool_id] * 3,
+            [1, 1, 1],
+            {"from": self.game_master},
+        )
+
         self.gofp.set_session_active(session_id, True, {"from": self.game_master})
 
         # We create a second session to ensure that the NFTs are being staked into the right session.
@@ -3137,7 +3935,11 @@ class TestFullGames(GOFPTestCase):
         )
         self.assertEqual(
             player_reward_token_balance_1,
-            player_reward_token_balance_0 + int(reward_amounts[0] * len(token_ids)),
+            player_reward_token_balance_0
+            # stage rewards
+            + int(reward_amounts[0] * len(token_ids))
+            # path rewards
+            + int(1 * len(token_ids) / stages[0]),
         )
 
         self.gofp.set_session_choosing_active(
@@ -3188,7 +3990,10 @@ class TestFullGames(GOFPTestCase):
         self.assertEqual(
             player_reward_token_balance_2,
             player_reward_token_balance_1
-            + int(reward_amounts[1] * len(token_ids) / stages[0]),
+            # stage rewards
+            + int(reward_amounts[1] * len(token_ids) / stages[0])
+            # path rewards
+            + int(1 * len(first_stage_correct_token_ids) / stages[1]),
         )
 
         self.gofp.set_session_choosing_active(
@@ -3237,7 +4042,10 @@ class TestFullGames(GOFPTestCase):
         self.assertEqual(
             player_reward_token_balance_3,
             player_reward_token_balance_2
-            + int(reward_amounts[2] * len(token_ids) / (stages[0] * stages[1])),
+            # stage rewards
+            + int(reward_amounts[2] * len(token_ids) / (stages[0] * stages[1]))
+            # path rewards
+            + int(1 * len(second_stage_correct_token_ids) / stages[2]),
         )
 
         self.gofp.set_session_choosing_active(
@@ -3296,6 +4104,18 @@ class TestFullGames(GOFPTestCase):
             reward_amounts,
             {"from": self.game_master},
         )
+
+        # First path has reward on each stage
+        self.gofp.set_path_rewards(
+            session_id,
+            [1, 2, 3],
+            [1, 1, 1],
+            [self.terminus.address] * 3,
+            [self.reward_pool_id] * 3,
+            [1, 1, 1],
+            {"from": self.game_master},
+        )
+
         self.gofp.set_session_active(session_id, True, {"from": self.game_master})
 
         # We create a second session to ensure that the NFTs are being staked into the right session.
@@ -3367,7 +4187,11 @@ class TestFullGames(GOFPTestCase):
         )
         self.assertEqual(
             player_reward_token_balance_1,
-            player_reward_token_balance_0 + int(reward_amounts[0] * len(token_ids)),
+            player_reward_token_balance_0
+            # stage rewards
+            + int(reward_amounts[0] * len(token_ids))
+            # path rewards
+            + int(1 * len(token_ids) / stages[0]),
         )
 
         self.gofp.set_session_choosing_active(
@@ -3380,32 +4204,20 @@ class TestFullGames(GOFPTestCase):
         # Check that current stage has progressed to stage 2
         self.assertEqual(self.gofp.get_current_stage(session_id), 2)
 
-        first_stage_incorrect_token_ids = [
-            token_id
-            for token_id in token_ids
-            if token_id not in first_stage_correct_token_ids
-        ]
-
         # **Stage 2**
-        second_stage_path_choices = [
-            token_id % stages[1] + 1 for token_id in first_stage_correct_token_ids
-        ] + [correct_paths[1] for _ in first_stage_incorrect_token_ids]
+        second_stage_path_choices = [token_id % stages[1] + 1 for token_id in token_ids]
         second_stage_correct_token_ids = [
             token_id
-            for token_id in first_stage_correct_token_ids
+            for token_id in token_ids
             if token_id % stages[1] + 1 == correct_paths[1]
-        ] + first_stage_incorrect_token_ids
+        ]
 
         # Sanity check for test setup
-        self.assertEqual(
-            len(second_stage_correct_token_ids),
-            int(num_nfts / (stages[0] * stages[1]))
-            + len(first_stage_incorrect_token_ids),
-        )
+        self.assertEqual(len(second_stage_correct_token_ids), int(num_nfts / stages[1]))
 
         self.gofp.choose_current_stage_paths(
             session_id,
-            first_stage_correct_token_ids + first_stage_incorrect_token_ids,
+            token_ids,
             second_stage_path_choices,
             {"from": self.player},
         )
@@ -3416,7 +4228,10 @@ class TestFullGames(GOFPTestCase):
         self.assertEqual(
             player_reward_token_balance_2,
             player_reward_token_balance_1
-            + reward_amounts[1] * int(len(token_ids) / stages[0]),
+            # stage rewards
+            + reward_amounts[1] * int(len(token_ids) / stages[0])
+            # path rewards
+            + int(1 * len(token_ids) / stages[1]),
         )
 
         self.gofp.set_session_choosing_active(
@@ -3436,25 +4251,20 @@ class TestFullGames(GOFPTestCase):
         ]
 
         # **Stage 3**
-        third_stage_path_choices = [
-            token_id % stages[2] + 1 for token_id in second_stage_correct_token_ids
-        ] + [correct_paths[2] for _ in second_stage_incorrect_token_ids]
+        third_stage_path_choices = [token_id % stages[2] + 1 for token_id in token_ids]
 
         third_stage_correct_token_ids = [
             token_id
-            for token_id in second_stage_correct_token_ids
+            for token_id in token_ids
             if token_id % stages[2] + 1 == correct_paths[2]
-        ] + second_stage_incorrect_token_ids
+        ]
+
         # Sanity check for test setup
-        self.assertEqual(
-            len(third_stage_correct_token_ids),
-            int(len(second_stage_correct_token_ids) / stages[2])
-            + len(second_stage_incorrect_token_ids),
-        )
+        self.assertEqual(len(third_stage_correct_token_ids), int(num_nfts / stages[2]))
 
         self.gofp.choose_current_stage_paths(
             session_id,
-            second_stage_correct_token_ids + second_stage_incorrect_token_ids,
+            token_ids,
             third_stage_path_choices,
             {"from": self.player},
         )
@@ -3465,7 +4275,10 @@ class TestFullGames(GOFPTestCase):
         self.assertEqual(
             player_reward_token_balance_3,
             player_reward_token_balance_2
-            + reward_amounts[2] * len(second_stage_correct_token_ids),
+            # stage rewards
+            + reward_amounts[2] * int(len(token_ids) / stages[1])
+            # path rewards
+            + int(1 * len(token_ids) / stages[2]),
         )
 
         self.gofp.set_session_choosing_active(
@@ -3486,6 +4299,376 @@ class TestFullGames(GOFPTestCase):
                     [1],
                     {"from": self.player},
                 )
+
+
+class TestCallbacks(GOFPTestCase):
+    def test_session_staking_predicate(self):
+        """
+        Tests administrators' ability to register and view staking predicate for a given session.
+        The staking predicate is called once per token that a user tries to stake into the session.
+        It is called with three arguments appended to its calldata:
+        1. The address of player who is trying to stake the token.
+        2. The address of the ERC721 contract that the token belongs to.
+        3. The token ID.
+
+        The predicate is expected to return true/false.
+
+        Test actions:
+        1. Create inactive session
+        2. Check that no predicate is registered for that session.
+        3. Register a predicate for that session.
+        4. Check that predicate was registered correctly.
+        5. Call that predicate through the GOFP contract to make sure call logic functions as intended.
+        """
+        payment_amount = 0
+        uri = "https://example.com/test_session_staking_predicate.json"
+        stages = (4, 1)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            False,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        """
+        Predicate structure:
+        struct Predicate {
+            address predicateAddress;
+            bytes4 functionSelector;
+            // initialArguments is intended to be the ABIen
+            bytes initialArguments;
+            uint256 initialArgumentsLength;
+        }
+        """
+        initial_predicate = self.gofp.get_session_staking_predicate(session_id)
+        self.assertEqual(initial_predicate, (ZERO_ADDRESS, "0x0", "0x0"))
+
+        encoded_predicate_with_dummy_end_values = (
+            self.gofp_predicates.contract.doesNotExceedMaxTokensInSession.encode_input(
+                1, self.gofp.address, session_id, ZERO_ADDRESS, ZERO_ADDRESS, 0
+            )
+        )
+        encoded_predicate_initial_args = encoded_predicate_with_dummy_end_values[
+            10 : len(encoded_predicate_with_dummy_end_values) - 96 * 2
+        ]
+
+        # GOFPPredicates.doesNotExceedMaxTokensInSession selector - calculated using -annotations flag on solface: https://github.com/bugout-dev/solface.
+        predicate_selector = "0x52760e08"
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.set_session_staking_predicate(
+                session_id,
+                predicate_selector,
+                self.gofp_predicates.address,
+                encoded_predicate_initial_args,
+                {"from": self.player},
+            )
+
+        tx_receipt = self.gofp.set_session_staking_predicate(
+            session_id,
+            predicate_selector,
+            self.gofp_predicates.address,
+            encoded_predicate_initial_args,
+            {"from": self.game_master},
+        )
+
+        predicate = self.gofp.get_session_staking_predicate(session_id)
+        self.assertEqual(
+            predicate,
+            (
+                self.gofp_predicates.address,
+                predicate_selector,
+                f"0x{encoded_predicate_initial_args}",
+            ),
+        )
+
+        staking_predicate_set_events = _fetch_events_chunk(
+            web3_client,
+            STAKING_PREDICATE_SET_EVENT_ABI,
+            from_block=tx_receipt.block_number,
+            to_block=tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(staking_predicate_set_events), 1)
+        self.assertEqual(
+            staking_predicate_set_events[0]["args"]["sessionId"], session_id
+        )
+        self.assertEqual(
+            staking_predicate_set_events[0]["args"]["predicateAddress"],
+            self.gofp_predicates.address,
+        )
+        self.assertEqual(
+            staking_predicate_set_events[0]["args"]["functionSelector"],
+            predicate_selector,
+        )
+        self.assertEqual(
+            staking_predicate_set_events[0]["args"]["initialArguments"],
+            f"0x{encoded_predicate_initial_args}",
+        )
+
+        num_nfts = self.nft.total_supply()
+        token_ids = [num_nfts + 1, num_nfts + 2]
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+            self.nft.approve(self.gofp.address, token_id, {"from": self.player})
+
+        check_0 = self.gofp.call_session_staking_predicate(
+            session_id, self.player.address, token_ids[0]
+        )
+        self.assertTrue(check_0)
+
+        self.gofp.set_session_active(session_id, True, {"from": self.game_master})
+
+        self.gofp.stake_tokens_into_session(
+            session_id, [token_ids[0]], {"from": self.player}
+        )
+
+        check_1 = self.gofp.call_session_staking_predicate(
+            session_id, self.player.address, token_ids[1]
+        )
+        self.assertFalse(check_1)
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.stake_tokens_into_session(
+                session_id, [token_ids[1]], {"from": self.player}
+            )
+
+    def test_path_choice_predicate(self):
+        """
+        Tests administrators' ability to register and view path choice predicate for a specified path.
+        The path choice predicate is called when user tries to choice the specified path.
+        It is called with three arguments appended to its calldata:
+        1. The address of player who is trying to stake the token.
+        2. The address of the ERC721 contract that the token belongs to.
+        3. The token ID.
+
+        The predicate is expected to return true/false.
+
+        Test actions:
+        1. Create inactive session
+        2. Check that no predicate is registered for the specified path.
+        3. Register a predicate for specified path.
+        4. Check that predicate was registered correctly.
+        5. Call that predicate through the GOFP contract to make sure call logic functions as intended.
+        6. Verify path can be selected when predicate passes.
+        7. Verify path cannot be selected when predicate fails.
+        8. Verify that a different path can be selected when predicate fails.
+        """
+        payment_amount = 0
+        uri = "https://example.com/test_path_choice_predicate.json"
+        stages = (4, 1)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            False,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+        stage_with_path_choice_predicate = 1
+        path_without_predicate = 1
+        path_with_path_choice_predicate = 2
+        """
+        Predicate structure:
+        struct Predicate {
+            address predicateAddress;
+            bytes4 functionSelector;
+            // initialArguments is intended to be the ABIen
+            bytes initialArguments;
+            uint256 initialArgumentsLength;
+        }
+        """
+        initial_predicate = self.gofp.get_path_choice_predicate(
+            (
+                session_id,
+                stage_with_path_choice_predicate,
+                path_with_path_choice_predicate,
+            )
+        )
+        self.assertEqual(initial_predicate, (ZERO_ADDRESS, "0x0", "0x0"))
+
+        encoded_predicate_with_dummy_end_values = (
+            self.gofp_predicates.contract.doesNotExceedMaxTokensInSession.encode_input(
+                2, self.gofp.address, session_id, ZERO_ADDRESS, ZERO_ADDRESS, 0
+            )
+        )
+        encoded_predicate_initial_args = encoded_predicate_with_dummy_end_values[
+            10 : len(encoded_predicate_with_dummy_end_values) - 96 * 2
+        ]
+
+        # GOFPPredicates.doesNotExceedMaxTokensInSession selector - calculated using -annotations flag on solface: https://github.com/bugout-dev/solface.
+        predicate_selector = "0x52760e08"
+
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.set_path_choice_predicate(
+                (
+                    session_id,
+                    stage_with_path_choice_predicate,
+                    path_with_path_choice_predicate,
+                ),
+                predicate_selector,
+                self.gofp_predicates.address,
+                encoded_predicate_initial_args,
+                {"from": self.player},
+            )
+
+        tx_receipt = self.gofp.set_path_choice_predicate(
+            (
+                session_id,
+                stage_with_path_choice_predicate,
+                path_with_path_choice_predicate,
+            ),
+            predicate_selector,
+            self.gofp_predicates.address,
+            encoded_predicate_initial_args,
+            {"from": self.game_master},
+        )
+
+        predicate = self.gofp.get_path_choice_predicate(
+            (
+                session_id,
+                stage_with_path_choice_predicate,
+                path_with_path_choice_predicate,
+            )
+        )
+        self.assertEqual(
+            predicate,
+            (
+                self.gofp_predicates.address,
+                predicate_selector,
+                f"0x{encoded_predicate_initial_args}",
+            ),
+        )
+
+        path_choice_predicate_set_events = _fetch_events_chunk(
+            web3_client,
+            PATH_CHOICE_PREDICATE_SET_EVENT_ABI,
+            from_block=tx_receipt.block_number,
+            to_block=tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(path_choice_predicate_set_events), 1)
+        self.assertEqual(
+            path_choice_predicate_set_events[0]["args"]["sessionId"], session_id
+        )
+        self.assertEqual(
+            path_choice_predicate_set_events[0]["args"]["stage"],
+            stage_with_path_choice_predicate,
+        )
+        self.assertEqual(
+            path_choice_predicate_set_events[0]["args"]["path"],
+            path_with_path_choice_predicate,
+        )
+        self.assertEqual(
+            path_choice_predicate_set_events[0]["args"]["predicateAddress"],
+            self.gofp_predicates.address,
+        )
+        self.assertEqual(
+            path_choice_predicate_set_events[0]["args"]["functionSelector"],
+            predicate_selector,
+        )
+        self.assertEqual(
+            path_choice_predicate_set_events[0]["args"]["initialArguments"],
+            f"0x{encoded_predicate_initial_args}",
+        )
+
+        num_nfts = self.nft.total_supply()
+        token_ids = [num_nfts + 1, num_nfts + 2]
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+            self.nft.approve(self.gofp.address, token_id, {"from": self.player})
+
+        self.gofp.set_session_active(session_id, True, {"from": self.game_master})
+        self.gofp.set_session_choosing_active(
+            session_id, True, {"from": self.game_master}
+        )
+
+        # First token
+        self.gofp.stake_tokens_into_session(
+            session_id, [token_ids[0]], {"from": self.player}
+        )
+        check_0 = self.gofp.call_path_choice_predicate(
+            (
+                session_id,
+                stage_with_path_choice_predicate,
+                path_with_path_choice_predicate,
+            ),
+            self.player.address,
+            token_ids[0],
+        )
+        self.assertTrue(check_0)
+
+        # With one token staked predicate should still pass
+        self.gofp.choose_current_stage_paths(
+            session_id,
+            [token_ids[0]],
+            [path_with_path_choice_predicate],
+            {"from": self.player},
+        )
+        self.assertEqual(
+            self.gofp.get_path_choice(
+                session_id, token_ids[0], stage_with_path_choice_predicate
+            ),
+            path_with_path_choice_predicate,
+        )
+
+        # Second Token
+        self.gofp.stake_tokens_into_session(
+            session_id, [token_ids[1]], {"from": self.player}
+        )
+        check_1 = self.gofp.call_path_choice_predicate(
+            (
+                session_id,
+                stage_with_path_choice_predicate,
+                path_with_path_choice_predicate,
+            ),
+            self.player.address,
+            token_ids[1],
+        )
+        self.assertFalse(check_1)
+
+        # With two tokens staked predicate should fail
+        with self.assertRaises(VirtualMachineError):
+            self.gofp.choose_current_stage_paths(
+                session_id,
+                [token_ids[1]],
+                [path_with_path_choice_predicate],
+                {"from": self.player},
+            )
+        self.assertEqual(
+            self.gofp.get_path_choice(
+                session_id, token_ids[1], stage_with_path_choice_predicate
+            ),
+            0,
+        )
+
+        # A path without a predicate can still be selected.
+        self.gofp.choose_current_stage_paths(
+            session_id,
+            [token_ids[1]],
+            [path_without_predicate],
+            {"from": self.player},
+        )
+        self.assertEqual(
+            self.gofp.get_path_choice(
+                session_id, token_ids[1], stage_with_path_choice_predicate
+            ),
+            path_without_predicate,
+        )
 
 
 if __name__ == "__main__":

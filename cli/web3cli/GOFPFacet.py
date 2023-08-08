@@ -102,6 +102,30 @@ class GOFPFacet:
         self.assert_contract_is_instantiated()
         return self.contract.adminTerminusInfo.call(block_identifier=block_number)
 
+    def call_path_choice_predicate(
+        self,
+        path: tuple,
+        player: ChecksumAddress,
+        token_id: int,
+        block_number: Optional[Union[str, int]] = "latest",
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.callPathChoicePredicate.call(
+            path, player, token_id, block_identifier=block_number
+        )
+
+    def call_session_staking_predicate(
+        self,
+        session_id: int,
+        player: ChecksumAddress,
+        token_id: int,
+        block_number: Optional[Union[str, int]] = "latest",
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.callSessionStakingPredicate.call(
+            session_id, player, token_id, block_identifier=block_number
+        )
+
     def choose_current_stage_paths(
         self, session_id: int, token_ids: List, paths: List, transaction_config
     ) -> Any:
@@ -164,11 +188,39 @@ class GOFPFacet:
             session_id, token_id, stage, block_identifier=block_number
         )
 
+    def get_path_choice_predicate(
+        self, path: tuple, block_number: Optional[Union[str, int]] = "latest"
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.getPathChoicePredicate.call(
+            path, block_identifier=block_number
+        )
+
+    def get_path_reward(
+        self,
+        session_id: int,
+        stage: int,
+        path: int,
+        block_number: Optional[Union[str, int]] = "latest",
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.getPathReward.call(
+            session_id, stage, path, block_identifier=block_number
+        )
+
     def get_session(
         self, session_id: int, block_number: Optional[Union[str, int]] = "latest"
     ) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.getSession.call(session_id, block_identifier=block_number)
+
+    def get_session_staking_predicate(
+        self, session_id: int, block_number: Optional[Union[str, int]] = "latest"
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.getSessionStakingPredicate.call(
+            session_id, block_identifier=block_number
+        )
 
     def get_session_token_stake_guard(
         self,
@@ -202,6 +254,10 @@ class GOFPFacet:
         return self.contract.getStakedTokenInfo.call(
             nft_address, token_id, block_identifier=block_number
         )
+
+    def gofp_version(self, block_number: Optional[Union[str, int]] = "latest") -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.gofpVersion.call(block_identifier=block_number)
 
     def init(
         self,
@@ -283,6 +339,44 @@ class GOFPFacet:
             session_id, stage, path, set_is_choosing_active, transaction_config
         )
 
+    def set_path_choice_predicate(
+        self,
+        path: tuple,
+        function_selector: bytes,
+        predicate_address: ChecksumAddress,
+        initial_arguments: bytes,
+        transaction_config,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.setPathChoicePredicate(
+            path,
+            function_selector,
+            predicate_address,
+            initial_arguments,
+            transaction_config,
+        )
+
+    def set_path_rewards(
+        self,
+        session_id: int,
+        stages: List,
+        paths: List,
+        terminus_addresses: List,
+        terminus_pool_ids: List,
+        reward_amounts: List,
+        transaction_config,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.setPathRewards(
+            session_id,
+            stages,
+            paths,
+            terminus_addresses,
+            terminus_pool_ids,
+            reward_amounts,
+            transaction_config,
+        )
+
     def set_session_active(
         self, session_id: int, is_active: bool, transaction_config
     ) -> Any:
@@ -295,6 +389,23 @@ class GOFPFacet:
         self.assert_contract_is_instantiated()
         return self.contract.setSessionChoosingActive(
             session_id, is_choosing_active, transaction_config
+        )
+
+    def set_session_staking_predicate(
+        self,
+        session_id: int,
+        function_selector: bytes,
+        predicate_address: ChecksumAddress,
+        initial_arguments: bytes,
+        transaction_config,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.setSessionStakingPredicate(
+            session_id,
+            function_selector,
+            predicate_address,
+            initial_arguments,
+            transaction_config,
         )
 
     def set_session_uri(self, session_id: int, uri: str, transaction_config) -> Any:
@@ -448,6 +559,30 @@ def handle_admin_terminus_info(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_call_path_choice_predicate(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    result = contract.call_path_choice_predicate(
+        path=args.path,
+        player=args.player,
+        token_id=args.token_id,
+        block_number=args.block_number,
+    )
+    print(result)
+
+
+def handle_call_session_staking_predicate(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    result = contract.call_session_staking_predicate(
+        session_id=args.session_id,
+        player=args.player,
+        token_id=args.token_id,
+        block_number=args.block_number,
+    )
+    print(result)
+
+
 def handle_choose_current_stage_paths(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPFacet(args.address)
@@ -512,10 +647,40 @@ def handle_get_path_choice(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_get_path_choice_predicate(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    result = contract.get_path_choice_predicate(
+        path=args.path, block_number=args.block_number
+    )
+    print(result)
+
+
+def handle_get_path_reward(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    result = contract.get_path_reward(
+        session_id=args.session_id,
+        stage=args.stage,
+        path=args.path,
+        block_number=args.block_number,
+    )
+    print(result)
+
+
 def handle_get_session(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPFacet(args.address)
     result = contract.get_session(
+        session_id=args.session_id, block_number=args.block_number
+    )
+    print(result)
+
+
+def handle_get_session_staking_predicate(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    result = contract.get_session_staking_predicate(
         session_id=args.session_id, block_number=args.block_number
     )
     print(result)
@@ -550,6 +715,16 @@ def handle_get_staked_token_info(args: argparse.Namespace) -> None:
         block_number=args.block_number,
     )
     print(result)
+
+
+def handle_gofp_version(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.gofp_version(transaction_config=transaction_config)
+    print(result)
+    if args.verbose:
+        print(result.info())
 
 
 def handle_init(args: argparse.Namespace) -> None:
@@ -648,6 +823,40 @@ def handle_set_correct_path_for_stage(args: argparse.Namespace) -> None:
         print(result.info())
 
 
+def handle_set_path_choice_predicate(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.set_path_choice_predicate(
+        path=args.path,
+        function_selector=args.function_selector,
+        predicate_address=args.predicate_address,
+        initial_arguments=args.initial_arguments,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
+def handle_set_path_rewards(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.set_path_rewards(
+        session_id=args.session_id,
+        stages=args.stages,
+        paths=args.paths,
+        terminus_addresses=args.terminus_addresses,
+        terminus_pool_ids=args.terminus_pool_ids,
+        reward_amounts=args.reward_amounts,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
 def handle_set_session_active(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = GOFPFacet(args.address)
@@ -669,6 +878,22 @@ def handle_set_session_choosing_active(args: argparse.Namespace) -> None:
     result = contract.set_session_choosing_active(
         session_id=args.session_id,
         is_choosing_active=args.is_choosing_active,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
+def handle_set_session_staking_predicate(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = GOFPFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.set_session_staking_predicate(
+        session_id=args.session_id,
+        function_selector=args.function_selector,
+        predicate_address=args.predicate_address,
+        initial_arguments=args.initial_arguments,
         transaction_config=transaction_config,
     )
     print(result)
@@ -771,6 +996,40 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(admin_terminus_info_parser, False)
     admin_terminus_info_parser.set_defaults(func=handle_admin_terminus_info)
 
+    call_path_choice_predicate_parser = subcommands.add_parser(
+        "call-path-choice-predicate"
+    )
+    add_default_arguments(call_path_choice_predicate_parser, False)
+    call_path_choice_predicate_parser.add_argument(
+        "--path", required=True, help="Type: tuple", type=eval
+    )
+    call_path_choice_predicate_parser.add_argument(
+        "--player", required=True, help="Type: address"
+    )
+    call_path_choice_predicate_parser.add_argument(
+        "--token-id", required=True, help="Type: uint256", type=int
+    )
+    call_path_choice_predicate_parser.set_defaults(
+        func=handle_call_path_choice_predicate
+    )
+
+    call_session_staking_predicate_parser = subcommands.add_parser(
+        "call-session-staking-predicate"
+    )
+    add_default_arguments(call_session_staking_predicate_parser, False)
+    call_session_staking_predicate_parser.add_argument(
+        "--session-id", required=True, help="Type: uint256", type=int
+    )
+    call_session_staking_predicate_parser.add_argument(
+        "--player", required=True, help="Type: address"
+    )
+    call_session_staking_predicate_parser.add_argument(
+        "--token-id", required=True, help="Type: uint256", type=int
+    )
+    call_session_staking_predicate_parser.set_defaults(
+        func=handle_call_session_staking_predicate
+    )
+
     choose_current_stage_paths_parser = subcommands.add_parser(
         "choose-current-stage-paths"
     )
@@ -847,12 +1106,45 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     get_path_choice_parser.set_defaults(func=handle_get_path_choice)
 
+    get_path_choice_predicate_parser = subcommands.add_parser(
+        "get-path-choice-predicate"
+    )
+    add_default_arguments(get_path_choice_predicate_parser, False)
+    get_path_choice_predicate_parser.add_argument(
+        "--path", required=True, help="Type: tuple", type=eval
+    )
+    get_path_choice_predicate_parser.set_defaults(func=handle_get_path_choice_predicate)
+
+    get_path_reward_parser = subcommands.add_parser("get-path-reward")
+    add_default_arguments(get_path_reward_parser, False)
+    get_path_reward_parser.add_argument(
+        "--session-id", required=True, help="Type: uint256", type=int
+    )
+    get_path_reward_parser.add_argument(
+        "--stage", required=True, help="Type: uint256", type=int
+    )
+    get_path_reward_parser.add_argument(
+        "--path", required=True, help="Type: uint256", type=int
+    )
+    get_path_reward_parser.set_defaults(func=handle_get_path_reward)
+
     get_session_parser = subcommands.add_parser("get-session")
     add_default_arguments(get_session_parser, False)
     get_session_parser.add_argument(
         "--session-id", required=True, help="Type: uint256", type=int
     )
     get_session_parser.set_defaults(func=handle_get_session)
+
+    get_session_staking_predicate_parser = subcommands.add_parser(
+        "get-session-staking-predicate"
+    )
+    add_default_arguments(get_session_staking_predicate_parser, False)
+    get_session_staking_predicate_parser.add_argument(
+        "--session-id", required=True, help="Type: uint256", type=int
+    )
+    get_session_staking_predicate_parser.set_defaults(
+        func=handle_get_session_staking_predicate
+    )
 
     get_session_token_stake_guard_parser = subcommands.add_parser(
         "get-session-token-stake-guard"
@@ -887,6 +1179,10 @@ def generate_cli() -> argparse.ArgumentParser:
         "--token-id", required=True, help="Type: uint256", type=int
     )
     get_staked_token_info_parser.set_defaults(func=handle_get_staked_token_info)
+
+    gofp_version_parser = subcommands.add_parser("gofp-version")
+    add_default_arguments(gofp_version_parser, False)
+    gofp_version_parser.set_defaults(func=handle_gofp_version)
 
     init_parser = subcommands.add_parser("init")
     add_default_arguments(init_parser, True)
@@ -995,6 +1291,52 @@ def generate_cli() -> argparse.ArgumentParser:
         func=handle_set_correct_path_for_stage
     )
 
+    set_path_choice_predicate_parser = subcommands.add_parser(
+        "set-path-choice-predicate"
+    )
+    add_default_arguments(set_path_choice_predicate_parser, True)
+    set_path_choice_predicate_parser.add_argument(
+        "--path", required=True, help="Type: tuple", type=eval
+    )
+    set_path_choice_predicate_parser.add_argument(
+        "--function-selector",
+        required=True,
+        help="Type: bytes4",
+        type=bytes_argument_type,
+    )
+    set_path_choice_predicate_parser.add_argument(
+        "--predicate-address", required=True, help="Type: address"
+    )
+    set_path_choice_predicate_parser.add_argument(
+        "--initial-arguments",
+        required=True,
+        help="Type: bytes",
+        type=bytes_argument_type,
+    )
+    set_path_choice_predicate_parser.set_defaults(func=handle_set_path_choice_predicate)
+
+    set_path_rewards_parser = subcommands.add_parser("set-path-rewards")
+    add_default_arguments(set_path_rewards_parser, True)
+    set_path_rewards_parser.add_argument(
+        "--session-id", required=True, help="Type: uint256", type=int
+    )
+    set_path_rewards_parser.add_argument(
+        "--stages", required=True, help="Type: uint256[]", nargs="+"
+    )
+    set_path_rewards_parser.add_argument(
+        "--paths", required=True, help="Type: uint256[]", nargs="+"
+    )
+    set_path_rewards_parser.add_argument(
+        "--terminus-addresses", required=True, help="Type: address[]", nargs="+"
+    )
+    set_path_rewards_parser.add_argument(
+        "--terminus-pool-ids", required=True, help="Type: uint256[]", nargs="+"
+    )
+    set_path_rewards_parser.add_argument(
+        "--reward-amounts", required=True, help="Type: uint256[]", nargs="+"
+    )
+    set_path_rewards_parser.set_defaults(func=handle_set_path_rewards)
+
     set_session_active_parser = subcommands.add_parser("set-session-active")
     add_default_arguments(set_session_active_parser, True)
     set_session_active_parser.add_argument(
@@ -1020,6 +1362,32 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     set_session_choosing_active_parser.set_defaults(
         func=handle_set_session_choosing_active
+    )
+
+    set_session_staking_predicate_parser = subcommands.add_parser(
+        "set-session-staking-predicate"
+    )
+    add_default_arguments(set_session_staking_predicate_parser, True)
+    set_session_staking_predicate_parser.add_argument(
+        "--session-id", required=True, help="Type: uint256", type=int
+    )
+    set_session_staking_predicate_parser.add_argument(
+        "--function-selector",
+        required=True,
+        help="Type: bytes4",
+        type=bytes_argument_type,
+    )
+    set_session_staking_predicate_parser.add_argument(
+        "--predicate-address", required=True, help="Type: address"
+    )
+    set_session_staking_predicate_parser.add_argument(
+        "--initial-arguments",
+        required=True,
+        help="Type: bytes",
+        type=bytes_argument_type,
+    )
+    set_session_staking_predicate_parser.set_defaults(
+        func=handle_set_session_staking_predicate
     )
 
     set_session_uri_parser = subcommands.add_parser("set-session-uri")
