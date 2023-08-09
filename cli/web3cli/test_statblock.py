@@ -92,6 +92,24 @@ class StatBlockTests(unittest.TestCase):
         self.assertEqual(event["args"]["descriptor"], stat_name)
         self.assertEqual(event["address"], self.statblock.address)
 
+    def test_nonadmin_cannot_create_stat(self):
+        """
+        Tests that an account which is not a StatBlock administrator cannot create a stat on the StatBlock
+        contract.
+        """
+        # Test that player account does not own administrator badges.
+        self.assertEqual(
+            self.terminus.balance_of(self.player.address, self.admin_terminus_pool_id),
+            0,
+        )
+
+        num_stats_0 = self.statblock.num_stats()
+        stat_name = f"stat_{num_stats_0}"
+        with self.assertRaises(VirtualMachineError):
+            self.statblock.create_stat(stat_name, {"from": self.player})
+        num_stats_1 = self.statblock.num_stats()
+        self.assertEqual(num_stats_1, num_stats_0)
+
 
 if __name__ == "__main__":
     unittest.main()
