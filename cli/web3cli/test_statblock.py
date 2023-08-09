@@ -1,9 +1,10 @@
 import unittest
 
-from brownie import accounts, network
+from brownie import accounts, network, web3 as web3_client
 from brownie.exceptions import VirtualMachineError
+from moonworm.watch import _fetch_events_chunk
 
-from . import MockErc20, MockTerminus, StatBlock
+from . import MockErc20, MockTerminus, StatBlock, statblock_events
 
 MAX_UINT = 2**256 - 1
 
@@ -69,13 +70,27 @@ class StatBlockTests(unittest.TestCase):
         """
         num_stats_0 = self.statblock.num_stats()
         stat_name = f"stat_{num_stats_0}"
-        self.statblock.create_stat(stat_name, {"from": self.administrator})
+        tx_receipt = self.statblock.create_stat(stat_name, {"from": self.administrator})
         num_stats_1 = self.statblock.num_stats()
 
         self.assertEqual(num_stats_1, num_stats_0 + 1)
 
         stat_description = self.statblock.describe_stat(num_stats_0)
         self.assertEqual(stat_description, stat_name)
+
+        stat_created_events = _fetch_events_chunk(
+            web3_client,
+            statblock_events.STAT_CREATED_ABI,
+            tx_receipt.block_number,
+            tx_receipt.block_number,
+        )
+        self.assertEqual(len(stat_created_events), 1)
+
+        event = stat_created_events[0]
+        self.assertEqual(event["event"], "StatCreated")
+        self.assertEqual(event["args"]["statID"], num_stats_0)
+        self.assertEqual(event["args"]["descriptor"], stat_name)
+        self.assertEqual(event["address"], self.statblock.address)
 
 
 if __name__ == "__main__":
