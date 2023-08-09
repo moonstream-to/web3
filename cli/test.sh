@@ -26,7 +26,8 @@ fi
 
 TEST_COMMAND=${@:-discover}
 
-cd ..
+SCRIPT_DIR=$(realpath $(dirname $0))
+cd $SCRIPT_DIR/..
 brownie compile
 cd -
 set -x

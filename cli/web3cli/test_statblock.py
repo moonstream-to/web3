@@ -4,14 +4,31 @@ from brownie import accounts, network, web3 as web3_client
 from brownie.exceptions import VirtualMachineError
 from moonworm.watch import _fetch_events_chunk
 
-from . import MockErc20, MockTerminus, StatBlock, statblock_events
+from . import (
+    MockErc20,
+    MockERC721,
+    MockERC1155,
+    MockTerminus,
+    StatBlock,
+    statblock_events,
+)
 
 MAX_UINT = 2**256 - 1
 
 
 class StatBlockTests(unittest.TestCase):
+    """
+    StatBlockTests is the full suite of tests for the reference implementation of StatBlock.
+
+    To test a custom StatBlock implementation, inherit from this class and modify the setup_permissions
+    and setup_statblock methods to deploy that StatBlock implementation.
+    """
+
     @classmethod
-    def setup_permissions(cls):
+    def setup_statblock(cls):
+        """
+        Deploys the StatBlock contract being tested.
+        """
         cls.terminus = MockTerminus.MockTerminus(None)
         cls.terminus.deploy(cls.deployer_txconfig)
 
@@ -30,20 +47,23 @@ class StatBlockTests(unittest.TestCase):
         cls.terminus.create_pool_v1(1, False, True, cls.deployer_txconfig)
         cls.admin_terminus_pool_id = cls.terminus.total_pools()
 
+        cls.statblock = StatBlock.StatBlock(None)
+        cls.statblock.deploy(
+            cls.terminus.address,
+            cls.admin_terminus_pool_id,
+            cls.deployer_txconfig,
+        )
+
+    @classmethod
+    def setup_permissions(cls):
+        """
+        Grants administrator permissions to the administrator account.
+        """
         cls.terminus.mint(
             cls.administrator.address,
             cls.admin_terminus_pool_id,
             1,
             "",
-            cls.deployer_txconfig,
-        )
-
-    @classmethod
-    def setup_statblock(cls):
-        cls.statblock = StatBlock.StatBlock(None)
-        cls.statblock.deploy(
-            cls.terminus.address,
-            cls.admin_terminus_pool_id,
             cls.deployer_txconfig,
         )
 
@@ -61,12 +81,26 @@ class StatBlockTests(unittest.TestCase):
         cls.player = accounts[2]
         cls.random_person = accounts[3]
 
-        cls.setup_permissions()
         cls.setup_statblock()
+        cls.setup_permissions()
+
+        cls.erc20_contract = MockErc20.MockErc20(None)
+        cls.erc20_contract.deploy("ERC20 Token", "ERC20", cls.deployer_txconfig)
+
+        cls.erc721_contract = MockERC721.MockERC721(None)
+        cls.erc721_contract.deploy(cls.deployer_txconfig)
+
+        cls.erc1155_contract = MockERC1155.MockERC1155(None)
+        cls.erc1155_contract.deploy(cls.deployer_txconfig)
 
     def test_admin_can_create_stat(self):
         """
         Tests that an administrator can create stats on a StatBlock contract.
+
+        Tests:
+        - createStat
+        - NumStats
+        - describeStat
         """
         num_stats_0 = self.statblock.num_stats()
         stat_name = f"stat_{num_stats_0}"
@@ -96,6 +130,10 @@ class StatBlockTests(unittest.TestCase):
         """
         Tests that an account which is not a StatBlock administrator cannot create a stat on the StatBlock
         contract.
+
+        Tests:
+        - createStat
+        - NumStats
         """
         # Test that player account does not own administrator badges.
         self.assertEqual(
@@ -109,6 +147,145 @@ class StatBlockTests(unittest.TestCase):
             self.statblock.create_stat(stat_name, {"from": self.player})
         num_stats_1 = self.statblock.num_stats()
         self.assertEqual(num_stats_1, num_stats_0)
+
+    def test_admin_can_assign_stats(self):
+        """
+        Tests that administrator can assign a set of stats to a token
+
+        Tests:
+        - createStat
+        - NumStats
+        - assignStats
+        - getStats
+        - batchGetStats
+        """
+        # Setup phase: create the stats that we will assign to.
+        num_assignable_stats = 3
+        num_stats_0 = self.statblock.num_stats()
+
+        stat_ids = [i for i in range(num_stats_0, num_stats_0 + num_assignable_stats)]
+
+        for i in stat_ids:
+            stat_name = f"stat_{i}"
+            self.statblock.create_stat(stat_name, {"from": self.administrator})
+
+        num_stats_1 = self.statblock.num_stats()
+        self.assertEqual(num_stats_1, num_stats_0 + num_assignable_stats)
+
+        # Assign stats to ERC20 token. This is done by using 0 as the token_id.
+        expected_erc20_stats = [20 + i for i in stat_ids]
+        tx_receipt_0 = self.statblock.assign_stats(
+            self.erc20_contract.address,
+            0,
+            stat_ids,
+            expected_erc20_stats,
+            {"from": self.administrator},
+        )
+
+        # Assign stats to ERC721 token. The token need not yet be minted.
+        erc721_token_id = 42
+        expected_erc721_stats = [721 + 42 + i for i in stat_ids]
+        tx_receipt_1 = self.statblock.assign_stats(
+            self.erc721_contract.address,
+            erc721_token_id,
+            stat_ids,
+            expected_erc721_stats,
+            {"from": self.administrator},
+        )
+
+        # Assign stats to ERC1155 tokens by token_id.
+        erc1155_token_id = 1337
+        expected_erc1155_stats = [1155 + 1337 + i for i in stat_ids]
+        tx_receipt_2 = self.statblock.assign_stats(
+            self.erc1155_contract.address,
+            erc1155_token_id,
+            stat_ids,
+            expected_erc1155_stats,
+            {"from": self.administrator},
+        )
+
+        # Check for StatAssigned event emissions.
+        stat_assigned_events = _fetch_events_chunk(
+            web3_client,
+            statblock_events.STAT_ASSIGNED_ABI,
+            tx_receipt_0.block_number,
+            tx_receipt_2.block_number,
+        )
+
+        self.assertEqual(len(stat_assigned_events), 3 * num_assignable_stats)
+
+        for i in range(num_assignable_stats):
+            self.assertEqual(stat_assigned_events[i]["event"], "StatAssigned")
+            self.assertEqual(
+                stat_assigned_events[i]["args"]["tokenAddress"],
+                self.erc20_contract.address,
+            )
+            self.assertEqual(stat_assigned_events[i]["args"]["tokenID"], 0)
+            self.assertEqual(stat_assigned_events[i]["args"]["statID"], stat_ids[i])
+            self.assertEqual(
+                stat_assigned_events[i]["args"]["value"], expected_erc20_stats[i]
+            )
+
+        for i in range(num_assignable_stats):
+            self.assertEqual(
+                stat_assigned_events[num_assignable_stats + i]["event"], "StatAssigned"
+            )
+            self.assertEqual(
+                stat_assigned_events[num_assignable_stats + i]["args"]["tokenAddress"],
+                self.erc721_contract.address,
+            )
+            self.assertEqual(
+                stat_assigned_events[num_assignable_stats + i]["args"]["tokenID"],
+                erc721_token_id,
+            )
+            self.assertEqual(
+                stat_assigned_events[num_assignable_stats + i]["args"]["statID"],
+                stat_ids[i],
+            )
+            self.assertEqual(
+                stat_assigned_events[num_assignable_stats + i]["args"]["value"],
+                expected_erc721_stats[i],
+            )
+
+        for i in range(num_assignable_stats):
+            self.assertEqual(
+                stat_assigned_events[2 * num_assignable_stats + i]["event"],
+                "StatAssigned",
+            )
+            self.assertEqual(
+                stat_assigned_events[2 * num_assignable_stats + i]["args"][
+                    "tokenAddress"
+                ],
+                self.erc1155_contract.address,
+            )
+            self.assertEqual(
+                stat_assigned_events[2 * num_assignable_stats + i]["args"]["tokenID"],
+                erc1155_token_id,
+            )
+            self.assertEqual(
+                stat_assigned_events[2 * num_assignable_stats + i]["args"]["statID"],
+                stat_ids[i],
+            )
+            self.assertEqual(
+                stat_assigned_events[2 * num_assignable_stats + i]["args"]["value"],
+                expected_erc1155_stats[i],
+            )
+
+        # Get stats and make sure they are correct
+        actual_erc20_stats = self.statblock.get_stats(
+            self.erc20_contract.address, 0, stat_ids
+        )
+        self.assertEqual(actual_erc20_stats, tuple(expected_erc20_stats))
+
+        actual_erc721_stats = self.statblock.get_stats(
+            self.erc721_contract.address, erc721_token_id, stat_ids
+        )
+        self.assertEqual(actual_erc721_stats, tuple(expected_erc721_stats))
+
+        actual_erc1155_stats = self.statblock.get_stats(
+            self.erc1155_contract.address, erc1155_token_id, stat_ids
+        )
+        self.assertEqual(actual_erc1155_stats, tuple(expected_erc1155_stats))
 
 
 if __name__ == "__main__":
