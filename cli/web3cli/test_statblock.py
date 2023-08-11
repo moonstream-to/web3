@@ -430,6 +430,94 @@ class StatBlockTests(unittest.TestCase):
         )
         self.assertEqual(actual_erc1155_stats, tuple(expected_erc1155_stats))
 
+    def test_nonadmin_cannot_assign_stats(self):
+        """
+        Tests that a non-administrator cannot assign stats to tokens.
+
+        Tests:
+        - assignStats
+
+        Uses:
+        - createStat
+        - getStats
+        """
+        num_assignable_stats = 3
+        num_stats_0 = self.statblock.num_stats()
+
+        stat_ids = [i for i in range(num_stats_0, num_stats_0 + num_assignable_stats)]
+
+        for i in stat_ids:
+            stat_name = f"stat_{i}"
+            self.statblock.create_stat(stat_name, {"from": self.administrator})
+
+        num_stats_1 = self.statblock.num_stats()
+        self.assertEqual(num_stats_1, num_stats_0 + num_assignable_stats)
+
+        erc721_token_id = 43
+        expected_erc721_stats = [721 + erc721_token_id + i for i in stat_ids]
+
+        expected_erc721_stats = self.statblock.get_stats(
+            self.erc721_contract.address, erc721_token_id, stat_ids
+        )
+
+        with self.assertRaises(VirtualMachineError):
+            self.statblock.assign_stats(
+                self.erc721_contract.address,
+                erc721_token_id,
+                stat_ids,
+                expected_erc721_stats,
+                {"from": self.player},
+            )
+
+        actual_erc721_stats = self.statblock.get_stats(
+            self.erc721_contract.address, erc721_token_id, stat_ids
+        )
+        self.assertEqual(actual_erc721_stats, expected_erc721_stats)
+
+    def test_nonadmin_cannot_batch_assign_stats(self):
+        """
+        Tests that a non-administrator cannot assign stats to tokens in a batch.
+
+        Tests:
+        - batchAssignStats
+
+        Uses:
+        - createStat
+        - getStats
+        """
+        num_assignable_stats = 3
+        num_stats_0 = self.statblock.num_stats()
+
+        stat_ids = [i for i in range(num_stats_0, num_stats_0 + num_assignable_stats)]
+
+        for i in stat_ids:
+            stat_name = f"stat_{i}"
+            self.statblock.create_stat(stat_name, {"from": self.administrator})
+
+        num_stats_1 = self.statblock.num_stats()
+        self.assertEqual(num_stats_1, num_stats_0 + num_assignable_stats)
+
+        erc721_token_id = 44
+        expected_erc721_stats = [721 + erc721_token_id + i for i in stat_ids]
+
+        expected_erc721_stats = self.statblock.get_stats(
+            self.erc721_contract.address, erc721_token_id, stat_ids
+        )
+
+        with self.assertRaises(VirtualMachineError):
+            self.statblock.batch_assign_stats(
+                [self.erc721_contract.address],
+                [erc721_token_id],
+                [stat_ids],
+                [expected_erc721_stats],
+                {"from": self.player},
+            )
+
+        actual_erc721_stats = self.statblock.get_stats(
+            self.erc721_contract.address, erc721_token_id, stat_ids
+        )
+        self.assertEqual(actual_erc721_stats, expected_erc721_stats)
+
 
 if __name__ == "__main__":
     unittest.main()
