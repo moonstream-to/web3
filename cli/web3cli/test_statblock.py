@@ -150,7 +150,9 @@ class StatBlockTests(unittest.TestCase):
 
     def test_admin_can_assign_stats(self):
         """
-        Tests that administrator can assign a set of stats to a token
+        Tests that administrator can assign a set of stats to a token.
+
+        Also tests that batchGetStats calls are consistent with return values of multiple getStats calls.
 
         Tests:
         - createStat
@@ -210,6 +212,132 @@ class StatBlockTests(unittest.TestCase):
             statblock_events.STAT_ASSIGNED_ABI,
             tx_receipt_0.block_number,
             tx_receipt_2.block_number,
+        )
+
+        self.assertEqual(len(stat_assigned_events), 3 * num_assignable_stats)
+
+        for i in range(num_assignable_stats):
+            self.assertEqual(stat_assigned_events[i]["event"], "StatAssigned")
+            self.assertEqual(
+                stat_assigned_events[i]["args"]["tokenAddress"],
+                self.erc20_contract.address,
+            )
+            self.assertEqual(stat_assigned_events[i]["args"]["tokenID"], 0)
+            self.assertEqual(stat_assigned_events[i]["args"]["statID"], stat_ids[i])
+            self.assertEqual(
+                stat_assigned_events[i]["args"]["value"], expected_erc20_stats[i]
+            )
+
+        for i in range(num_assignable_stats):
+            self.assertEqual(
+                stat_assigned_events[num_assignable_stats + i]["event"], "StatAssigned"
+            )
+            self.assertEqual(
+                stat_assigned_events[num_assignable_stats + i]["args"]["tokenAddress"],
+                self.erc721_contract.address,
+            )
+            self.assertEqual(
+                stat_assigned_events[num_assignable_stats + i]["args"]["tokenID"],
+                erc721_token_id,
+            )
+            self.assertEqual(
+                stat_assigned_events[num_assignable_stats + i]["args"]["statID"],
+                stat_ids[i],
+            )
+            self.assertEqual(
+                stat_assigned_events[num_assignable_stats + i]["args"]["value"],
+                expected_erc721_stats[i],
+            )
+
+        for i in range(num_assignable_stats):
+            self.assertEqual(
+                stat_assigned_events[2 * num_assignable_stats + i]["event"],
+                "StatAssigned",
+            )
+            self.assertEqual(
+                stat_assigned_events[2 * num_assignable_stats + i]["args"][
+                    "tokenAddress"
+                ],
+                self.erc1155_contract.address,
+            )
+            self.assertEqual(
+                stat_assigned_events[2 * num_assignable_stats + i]["args"]["tokenID"],
+                erc1155_token_id,
+            )
+            self.assertEqual(
+                stat_assigned_events[2 * num_assignable_stats + i]["args"]["statID"],
+                stat_ids[i],
+            )
+            self.assertEqual(
+                stat_assigned_events[2 * num_assignable_stats + i]["args"]["value"],
+                expected_erc1155_stats[i],
+            )
+
+        # Get stats and make sure they are correct
+        actual_erc20_stats = self.statblock.get_stats(
+            self.erc20_contract.address, 0, stat_ids
+        )
+        self.assertEqual(actual_erc20_stats, tuple(expected_erc20_stats))
+
+        actual_erc721_stats = self.statblock.get_stats(
+            self.erc721_contract.address, erc721_token_id, stat_ids
+        )
+        self.assertEqual(actual_erc721_stats, tuple(expected_erc721_stats))
+
+        actual_erc1155_stats = self.statblock.get_stats(
+            self.erc1155_contract.address, erc1155_token_id, stat_ids
+        )
+        self.assertEqual(actual_erc1155_stats, tuple(expected_erc1155_stats))
+
+    def test_admin_can_batch_assign_stats(self):
+        """
+        Tests that administrator can assign a set of stats to multiple tokens in a single transaction.
+
+        Tests:
+        - createStat
+        - NumStats
+        - batchAssignStats
+        - getStats
+        """
+        # Setup phase: create the stats that we will assign to.
+        num_assignable_stats = 3
+        num_stats_0 = self.statblock.num_stats()
+
+        stat_ids = [i for i in range(num_stats_0, num_stats_0 + num_assignable_stats)]
+
+        for i in stat_ids:
+            stat_name = f"stat_{i}"
+            self.statblock.create_stat(stat_name, {"from": self.administrator})
+
+        num_stats_1 = self.statblock.num_stats()
+        self.assertEqual(num_stats_1, num_stats_0 + num_assignable_stats)
+
+        # Assign stats to ERC20, ERC721, and ERC1155 tokens all in one transaction.
+        erc721_token_id = 42
+        erc1155_token_id = 1337
+
+        expected_erc20_stats = [20 + i for i in stat_ids]
+        expected_erc721_stats = [721 + 42 + i for i in stat_ids]
+        expected_erc1155_stats = [1155 + 1337 + i for i in stat_ids]
+
+        tx_receipt = self.statblock.batch_assign_stats(
+            [
+                self.erc20_contract.address,
+                self.erc721_contract.address,
+                self.erc1155_contract.address,
+            ],
+            [0, erc721_token_id, erc1155_token_id],
+            [stat_ids, stat_ids, stat_ids],
+            [expected_erc20_stats, expected_erc721_stats, expected_erc1155_stats],
+            {"from": self.administrator},
+        )
+
+        # Check for StatAssigned event emissions.
+        stat_assigned_events = _fetch_events_chunk(
+            web3_client,
+            statblock_events.STAT_ASSIGNED_ABI,
+            tx_receipt.block_number,
+            tx_receipt.block_number,
         )
 
         self.assertEqual(len(stat_assigned_events), 3 * num_assignable_stats)
