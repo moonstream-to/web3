@@ -4,26 +4,51 @@
     "inputs": [
       {
         "indexed": true,
+        "internalType": "address",
+        "name": "adminTerminusAddress",
+        "type": "address"
+      },
+      {
+        "indexed": true,
         "internalType": "uint256",
-        "name": "dropId",
+        "name": "adminTerminusPoolId",
+        "type": "uint256"
+      }
+    ],
+    "name": "AdministratorDesignated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "subjectTokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "slot",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "itemType",
         "type": "uint256"
       },
       {
         "indexed": true,
         "internalType": "address",
-        "name": "claimant",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "signer",
+        "name": "itemAddress",
         "type": "address"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "requestID",
+        "name": "itemTokenId",
         "type": "uint256"
       },
       {
@@ -31,9 +56,15 @@
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "equippedBy",
+        "type": "address"
       }
     ],
-    "name": "Claimed",
+    "name": "ItemEquipped",
     "type": "event"
   },
   {
@@ -42,50 +73,68 @@
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "dropId",
+        "name": "slot",
         "type": "uint256"
       },
       {
-        "indexed": false,
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "itemType",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
         "internalType": "address",
-        "name": "terminusAddress",
+        "name": "itemAddress",
         "type": "address"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "poolId",
+        "name": "itemPoolId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "maxAmount",
         "type": "uint256"
       }
     ],
-    "name": "DropAuthorizationChanged",
+    "name": "ItemMarkedAsEquippableInSlot",
     "type": "event"
   },
   {
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
-        "name": "dropId",
+        "name": "subjectTokenId",
         "type": "uint256"
       },
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "tokenType",
+        "name": "slot",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "itemType",
         "type": "uint256"
       },
       {
         "indexed": true,
         "internalType": "address",
-        "name": "tokenAddress",
+        "name": "itemAddress",
         "type": "address"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "itemTokenId",
         "type": "uint256"
       },
       {
@@ -93,9 +142,15 @@
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "unequippedBy",
+        "type": "address"
       }
     ],
-    "name": "DropCreated",
+    "name": "ItemUnequipped",
     "type": "event"
   },
   {
@@ -104,17 +159,17 @@
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "dropId",
+        "name": "slotId",
         "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "bool",
-        "name": "status",
+        "name": "persistent",
         "type": "bool"
       }
     ],
-    "name": "DropStatusChanged",
+    "name": "NewSlotPersistence",
     "type": "event"
   },
   {
@@ -123,54 +178,43 @@
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "dropId",
+        "name": "slotId",
         "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "uri",
-        "type": "string"
       }
     ],
-    "name": "DropURIChanged",
+    "name": "NewSlotURI",
     "type": "event"
   },
   {
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
-        "internalType": "address",
-        "name": "recipient",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "tokenType",
-        "type": "uint256"
-      },
-      {
         "indexed": true,
         "internalType": "address",
-        "name": "tokenAddress",
+        "name": "contractAddress",
         "type": "address"
-      },
+      }
+    ],
+    "name": "NewSubjectAddress",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
       {
         "indexed": true,
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amount",
+        "name": "slot",
         "type": "uint256"
       }
     ],
-    "name": "Withdrawal",
+    "name": "SlotCreated",
     "type": "event"
   },
   {
@@ -194,37 +238,61 @@
   {
     "inputs": [
       {
+        "internalType": "bool",
+        "name": "persistent",
+        "type": "bool"
+      },
+      {
+        "internalType": "string",
+        "name": "slotURI",
+        "type": "string"
+      }
+    ],
+    "name": "createSlot",
+    "outputs": [
+      {
         "internalType": "uint256",
-        "name": "dropId",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "subjectTokenId",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "requestID",
+        "name": "slot",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "blockDeadline",
+        "name": "itemType",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "itemAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "itemTokenId",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "signer",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes",
-        "name": "signature",
-        "type": "bytes"
       }
     ],
-    "name": "claim",
+    "name": "equip",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -233,244 +301,42 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "dropId",
+        "name": "subjectTokenId",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "requestID",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "claimant",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "blockDeadline",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
+        "name": "slot",
         "type": "uint256"
       }
     ],
-    "name": "claimMessageHash",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "dropId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "requestId",
-        "type": "uint256"
-      }
-    ],
-    "name": "claimStatus",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tokenType",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "tokenAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "authorizationTokenAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "authorizationPoolId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "string",
-        "name": "uri",
-        "type": "string"
-      }
-    ],
-    "name": "createDrop",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "dropId",
-        "type": "uint256"
-      }
-    ],
-    "name": "dropStatus",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "dropId",
-        "type": "uint256"
-      }
-    ],
-    "name": "dropUri",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "dropperVersion",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "erc1155_type",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "erc20_type",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "erc721_type",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "dropId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getDrop",
+    "name": "getEquippedItem",
     "outputs": [
       {
         "components": [
           {
             "internalType": "uint256",
-            "name": "tokenType",
+            "name": "ItemType",
             "type": "uint256"
           },
           {
             "internalType": "address",
-            "name": "tokenAddress",
+            "name": "ItemAddress",
             "type": "address"
           },
           {
             "internalType": "uint256",
-            "name": "tokenId",
+            "name": "ItemTokenId",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "amount",
+            "name": "Amount",
             "type": "uint256"
           }
         ],
-        "internalType": "struct DroppableToken",
-        "name": "",
+        "internalType": "struct EquippedItem",
+        "name": "item",
         "type": "tuple"
       }
     ],
@@ -481,27 +347,27 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "dropId",
+        "name": "slotId",
         "type": "uint256"
       }
     ],
-    "name": "getDropAuthorization",
+    "name": "getSlotById",
     "outputs": [
       {
         "components": [
           {
-            "internalType": "address",
-            "name": "terminusAddress",
-            "type": "address"
+            "internalType": "string",
+            "name": "SlotURI",
+            "type": "string"
           },
           {
-            "internalType": "uint256",
-            "name": "poolId",
-            "type": "uint256"
+            "internalType": "bool",
+            "name": "SlotIsPersistent",
+            "type": "bool"
           }
         ],
-        "internalType": "struct TerminusAuthorization",
-        "name": "",
+        "internalType": "struct Slot",
+        "name": "slot",
         "type": "tuple"
       }
     ],
@@ -511,14 +377,38 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "slotId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getSlotURI",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
-        "name": "terminusAdminContractAddress",
+        "name": "adminTerminusAddress",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "terminusAdminPoolID",
+        "name": "adminTerminusPoolId",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "contractAddress",
+        "type": "address"
       }
     ],
     "name": "init",
@@ -527,8 +417,75 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "slot",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "itemType",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "itemAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "itemPoolId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "markItemAsEquippableInSlot",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "slot",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "itemType",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "itemAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "itemPoolId",
+        "type": "uint256"
+      }
+    ],
+    "name": "maxAmountOfItemInSlot",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
-    "name": "numDrops",
+    "name": "numSlots",
     "outputs": [
       {
         "internalType": "uint256",
@@ -621,22 +578,22 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "operator",
+        "name": "",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "from",
+        "name": "",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "",
         "type": "uint256"
       },
       {
         "internalType": "bytes",
-        "name": "data",
+        "name": "",
         "type": "bytes"
       }
     ],
@@ -655,39 +612,34 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "dropId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "terminusAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "poolId",
-        "type": "uint256"
-      }
-    ],
-    "name": "setDropAuthorization",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "dropId",
+        "name": "slotId",
         "type": "uint256"
       },
       {
         "internalType": "bool",
-        "name": "status",
+        "name": "persistent",
         "type": "bool"
       }
     ],
-    "name": "setDropStatus",
+    "name": "setSlotPersistent",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "newSlotURI",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "slotId",
+        "type": "uint256"
+      }
+    ],
+    "name": "setSlotURI",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -696,18 +648,32 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "dropId",
+        "name": "slotId",
         "type": "uint256"
-      },
-      {
-        "internalType": "string",
-        "name": "uri",
-        "type": "string"
       }
     ],
-    "name": "setDropUri",
-    "outputs": [],
-    "stateMutability": "nonpayable",
+    "name": "slotIsPersistent",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "subject",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -733,49 +699,18 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "poolId",
+        "name": "subjectTokenId",
         "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "terminusAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "newPoolController",
-        "type": "address"
-      }
-    ],
-    "name": "surrenderPoolControl",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "terminus_mintable_type",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "tokenAddress",
-        "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "slot",
         "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "unequipAll",
+        "type": "bool"
       },
       {
         "internalType": "uint256",
@@ -783,43 +718,7 @@
         "type": "uint256"
       }
     ],
-    "name": "withdrawERC1155",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "tokenAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdrawERC20",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "tokenAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdrawERC721",
+    "name": "unequip",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
