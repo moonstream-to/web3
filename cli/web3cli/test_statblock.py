@@ -289,6 +289,21 @@ class StatBlockTests(unittest.TestCase):
         )
         self.assertEqual(actual_erc1155_stats, tuple(expected_erc1155_stats))
 
+        # Test getting stats in a batch
+        stats_batch = self.statblock.batch_get_stats(
+            [
+                self.erc20_contract.address,
+                self.erc721_contract.address,
+                self.erc1155_contract.address,
+            ],
+            [0, erc721_token_id, erc1155_token_id],
+            stat_ids,
+        )
+        # Check for consistency with outputs of `getStats` for each `(tokenAddress, tokenID)` pair.
+        self.assertEqual(stats_batch[0], tuple(actual_erc20_stats))
+        self.assertEqual(stats_batch[1], tuple(actual_erc721_stats))
+        self.assertEqual(stats_batch[2], tuple(actual_erc1155_stats))
+
     def test_admin_can_batch_assign_stats(self):
         """
         Tests that administrator can assign a set of stats to multiple tokens in a single transaction.
