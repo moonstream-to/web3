@@ -15,6 +15,7 @@ import "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "../../diamond/libraries/LibDiamond.sol";
 import "../../diamond/security/DiamondReentrancyGuard.sol";
+import {InventoryFacet} from "../../inventory/InventoryFacet.sol";
 
 uint256 constant ERC20_TYPE = 20;
 uint256 constant ERC721_TYPE = 721;
@@ -346,7 +347,7 @@ contract GOFPFacet is
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
             stages.length == rewards.length,
-            "GOFPFacet.setStageRewards: terminusAddresses must have same length as stages"
+            "GOFPFacet.setStageRewards: rewards must have same length as stages"
         );
 
         Session storage session = gs.sessionById[sessionId];
@@ -402,7 +403,7 @@ contract GOFPFacet is
         );
         require(
             stages.length == rewards.length,
-            "GOFPFacet.setPathRewards: terminusAddresses must have same length as stages"
+            "GOFPFacet.setPathRewards: rewards must have same length as stages"
         );
 
         Session storage session = gs.sessionById[sessionId];
@@ -1032,10 +1033,9 @@ contract GOFPFacet is
         uint256 currentStage = lastStage + 1;
         // lastStage has no semantic meaning below. It would be more correct to say currentStage - 1.
         // This is just for convenience, saving one subtraction.
-        uint256 numPaths = session.stages[lastStage];
 
         uint256 stageRewardAmount = 0;
-        Reward storage stageReward = gs.sessionStageReward[sessionId][
+        Reward memory stageReward = gs.sessionStageReward[sessionId][
             currentStage
         ];
 
@@ -1064,7 +1064,7 @@ contract GOFPFacet is
                 "GOFPFacet.chooseCurrentStagePaths: Token has already chosen a path in the current stage"
             );
             require(
-                (paths[i] >= 1) && (paths[i] <= numPaths),
+                (paths[i] >= 1) && (paths[i] <= session.stages[lastStage]),
                 "GOFPFacet.chooseCurrentStagePaths: Invalid path"
             );
             require(
@@ -1085,46 +1085,67 @@ contract GOFPFacet is
             // Calculate number of correct choices on last stage for reward distribution, but only if
             // there is a stage reward.
             if (stageReward.rewardAddress != address(0)) {
-                if (lastStage == 0) {
-                    stageRewardAmount += stageReward.rewardAmount;
-                } else if (
+                if (
+                    lastStage == 0 ||
                     gs.pathChoices[sessionId][tokenIds[i]][lastStage] ==
                     lastStageCorrectPath
                 ) {
-                    stageRewardAmount += stageReward.rewardAmount;
+                    if (stageReward.inventoryAddress == address(0)) {
+                        stageRewardAmount += stageReward.rewardAmount;
+                    } else {
+                        _distributeReward(stageReward, tokenIds[i]);
+                    }
                 }
             }
 
             // Distribute path reward.
-            Reward storage pathReward = gs.sessionPathReward[sessionId][
+            Reward memory pathReward = gs.sessionPathReward[sessionId][
                 currentStage
             ][paths[i]];
-            if (pathReward.rewardAddress != address(0)) {
-                if (pathReward.rewardType == TERMINUS_MINTABLE_TYPE) {
-                    TerminusFacet rewardTerminus = TerminusFacet(
-                        pathReward.rewardAddress
+            _distributeReward(pathReward, tokenIds[i]);
+        }
+
+        if (stageReward.inventoryAddress == address(0)) {
+            stageReward.rewardAmount = stageRewardAmount;
+            _distributeReward(stageReward, 0);
+        }
+    }
+
+    function _distributeReward(Reward memory reward, uint256 tokenId) internal {
+        if (reward.rewardAddress != address(0)) {
+            if (reward.rewardType == TERMINUS_MINTABLE_TYPE) {
+                address inventoryAddress = reward.inventoryAddress;
+                TerminusFacet rewardTerminus = TerminusFacet(
+                    reward.rewardAddress
+                );
+                if (reward.inventoryAddress != address(0)) {
+                    rewardTerminus.mint(
+                        address(this),
+                        reward.rewardTokenID,
+                        reward.rewardAmount,
+                        ""
                     );
+                    InventoryFacet inventoryFacet = InventoryFacet(
+                        inventoryAddress
+                    );
+                    inventoryFacet.equip(
+                        tokenId,
+                        reward.inventorySlot,
+                        1155,
+                        reward.rewardAddress,
+                        reward.rewardTokenID,
+                        reward.rewardAmount
+                    );
+                } else {
                     rewardTerminus.mint(
                         msg.sender,
-                        pathReward.rewardTokenID,
-                        pathReward.rewardAmount,
+                        reward.rewardTokenID,
+                        reward.rewardAmount,
                         ""
                     );
                 }
-            }
-        }
-
-        if (stageReward.rewardAddress != address(0)) {
-            if (stageReward.rewardType == TERMINUS_MINTABLE_TYPE) {
-                TerminusFacet rewardTerminus = TerminusFacet(
-                    stageReward.rewardAddress
-                );
-                rewardTerminus.mint(
-                    msg.sender,
-                    stageReward.rewardTokenID,
-                    stageRewardAmount,
-                    ""
-                );
+            } else {
+                revert("Non-terminus rewards are not yet implemented");
             }
         }
     }
