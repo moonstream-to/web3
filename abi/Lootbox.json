@@ -7,6 +7,11 @@
         "type": "address"
       },
       {
+        "internalType": "address",
+        "name": "_administratorTerminusAddress",
+        "type": "address"
+      },
+      {
         "internalType": "uint256",
         "name": "_administratorPoolId",
         "type": "uint256"
@@ -366,6 +371,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "TERMINUS_MINTABLE_REWARD_TYPE",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -418,6 +436,19 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "administratorTerminusAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
