@@ -399,6 +399,15 @@ ERC1155_TRANSFER_SINGLE_EVENT = {
     "type": "event",
 }
 
+INVENTORY_ERROR_EVENT = {
+    "anonymous": False,
+    "inputs": [
+        {"indexed": False, "internalType": "string", "name": "error", "type": "string"}
+    ],
+    "name": "InventoryEquipError",
+    "type": "event",
+}
+
 
 class GOFPTestCase(unittest.TestCase):
     @classmethod
@@ -441,7 +450,7 @@ class GOFPTestCase(unittest.TestCase):
         cls.terminus.create_pool_v1(1, False, True, cls.owner_tx_config)
         cls.admin_pool_id = cls.terminus.total_pools()
 
-        cls.terminus.create_pool_v1(1, False, True, cls.owner_tx_config)
+        cls.terminus.create_pool_v1(2, False, True, cls.owner_tx_config)
         cls.inventory_admin_pool_id = cls.terminus.total_pools()
 
         cls.terminus.create_pool_v1(MAX_UINT, True, True, cls.owner_tx_config)
@@ -480,6 +489,15 @@ class GOFPTestCase(unittest.TestCase):
         )
         cls.gofp = GOFPFacet.GOFPFacet(cls.deployed_contracts["contracts"]["Diamond"])
 
+        # Garden should be an inventory admin
+        cls.terminus.mint(
+            cls.gofp.address,
+            cls.inventory_admin_pool_id,
+            1,
+            "",
+            cls.owner_tx_config,
+        )
+
         cls.deployed_inventory = inventory_gogogo(
             cls.terminus.address,
             cls.inventory_admin_pool_id,
@@ -514,9 +532,7 @@ class GOFPTestCase(unittest.TestCase):
         cls.terminus.approve_for_pool(
             cls.reward_3_pool_id, cls.inventory.address, cls.owner_tx_config
         )
-        cls.terminus.approve_for_pool(
-            cls.reward_4_pool_id, cls.inventory.address, cls.owner_tx_config
-        )
+        # Restricting access to reward_4_pool_id to create an error condition
 
     def test_admin_terminus_info(self):
         terminus_info = self.gofp.admin_terminus_info()
@@ -4182,6 +4198,383 @@ class TestPlayerFlow(GOFPTestCase):
                 equipped_item,
                 (0, ZERO_ADDRESS, 0, 0),
             )
+
+    def test_player_nft_receives_persistent_inventory_rewards(
+        self,
+    ):
+        """
+        Tests that reward distribution works correctly when a player chooses a path in a stage that
+        does have an associated reward.
+
+        Also tests that no rewards are distributed when a player chooses a path in a stage that does
+        not have an assocaited reward.
+
+        Test actions:
+        1. Create inactive session
+        2. Associate a reward with stage 2
+        3. Activate session.
+        4. Player chooses paths in stage 1
+        5. Check that no ERC1155 Transfer events fired in that transaction
+        6. Player chooses paths in stage 2
+        7. Check that appropriate ERC1155 Transfer event fired in that transaction
+        8. Check that correct tokens have inventory reward equipped and incorrect toekns do not.
+        """
+        payment_amount = 181
+        uri = "https://example.com/test_player_is_rewarded_for_making_a_choice_in_stages_that_have_rewards.json"
+        stages = (2, 2)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            True,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        # Create persistent slot for path reward
+        path_reward_pool_id = self.reward_2_pool_id
+        path_reward_amount = 3
+        self.inventory.create_slot(True, "", self.inventory_owner_tx_config)
+        path_reward_slot_number = self.inventory.num_slots()
+        self.inventory.mark_item_as_equippable_in_slot(
+            path_reward_slot_number,
+            1155,
+            self.terminus.address,
+            path_reward_pool_id,
+            path_reward_amount,
+            self.inventory_owner_tx_config,
+        )
+
+        # Set path reward
+        path_reward_list = [
+            (
+                1,
+                self.terminus.address,
+                path_reward_pool_id,
+                path_reward_amount,
+                self.inventory.address,
+                path_reward_slot_number,
+            )
+        ]
+
+        self.gofp.set_path_rewards(
+            session_id, [1], [1], path_reward_list, {"from": self.game_master}
+        )
+
+        # Create persistent slot for stage reward
+        stage_reward_pool_id = self.reward_3_pool_id
+        stage_reward_amount = 4
+        self.inventory.create_slot(True, "", self.inventory_owner_tx_config)
+        stage_reward_slot_number = self.inventory.num_slots()
+        self.inventory.mark_item_as_equippable_in_slot(
+            stage_reward_slot_number,
+            1155,
+            self.terminus.address,
+            self.reward_3_pool_id,
+            stage_reward_amount,
+            self.inventory_owner_tx_config,
+        )
+
+        # Set stage reward
+        stage_reward_list = [
+            (
+                1,
+                self.terminus.address,
+                stage_reward_pool_id,
+                stage_reward_amount,
+                self.inventory.address,
+                stage_reward_slot_number,
+            )
+        ]
+
+        self.gofp.set_stage_rewards(
+            session_id,
+            [2],
+            stage_reward_list,
+            {"from": self.game_master},
+        )
+
+        self.gofp.set_session_active(session_id, True, {"from": self.game_master})
+
+        # Mint NFTs to the player
+        total_nfts = self.nft.total_supply()
+
+        num_nfts = 6
+        token_ids = [total_nfts + i for i in range(1, num_nfts + 1)]
+
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+
+        # Mint num_tokens*payment_amount of payment_token to player
+        self.payment_token.mint(
+            self.player.address, len(token_ids) * payment_amount, {"from": self.owner}
+        )
+
+        self.payment_token.approve(self.gofp.address, MAX_UINT, {"from": self.player})
+        self.nft.set_approval_for_all(self.gofp.address, True, {"from": self.player})
+
+        self.gofp.stake_tokens_into_session(
+            session_id, token_ids, {"from": self.player}
+        )
+
+        # First half (rounded down) of tokens will make the correct choice. Rest will make an incorrect
+        # choice.
+        # Correct path: 2
+        first_stage_correct_path = 1
+        first_stage_incorrect_path = 2
+        num_correct = int(num_nfts / 2)
+        first_stage_path_choices = [first_stage_correct_path] * num_correct + [
+            first_stage_incorrect_path
+        ] * (num_nfts - num_correct)
+
+        first_stage_tx_receipt = self.gofp.choose_current_stage_paths(
+            session_id,
+            token_ids,
+            first_stage_path_choices,
+            {"from": self.player},
+        )
+
+        first_stage_events = _fetch_events_chunk(
+            web3_client,
+            ERC1155_TRANSFER_SINGLE_EVENT,
+            from_block=first_stage_tx_receipt.block_number,
+            to_block=first_stage_tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(first_stage_events), 2 * num_correct)
+        for i, erc1155_transfer_event in enumerate(first_stage_events):
+            if i % 2 == 0:
+                source = ZERO_ADDRESS
+                dest = self.gofp.address
+            else:
+                source = self.gofp.address
+                dest = self.inventory.address
+            self.assertEqual(erc1155_transfer_event["args"]["from"], source)
+            self.assertEqual(erc1155_transfer_event["args"]["to"], dest)
+            self.assertEqual(erc1155_transfer_event["args"]["id"], path_reward_pool_id)
+            self.assertEqual(
+                erc1155_transfer_event["args"]["value"], path_reward_amount
+            )
+
+        # Check that tokens choosing path 2 have an inventory reward equipped and that tokens choosing path 1 do not.
+        for i, token_id in enumerate(token_ids):
+            equipped_item = self.inventory.get_equipped_item(
+                token_id, path_reward_slot_number
+            )
+            if i < num_correct:
+                self.assertEqual(
+                    equipped_item,
+                    (
+                        1155,
+                        self.terminus.address,
+                        path_reward_pool_id,
+                        path_reward_amount,
+                    ),
+                )
+            else:
+                self.assertEqual(equipped_item, (0, ZERO_ADDRESS, 0, 0))
+
+        self.gofp.set_session_choosing_active(
+            session_id, False, {"from": self.game_master}
+        )
+        self.gofp.set_correct_path_for_stage(
+            session_id, 1, first_stage_correct_path, True, {"from": self.game_master}
+        )
+
+        # Check that current stage has progressed to stage 2
+        self.assertEqual(self.gofp.get_current_stage(session_id), 2)
+
+        second_stage_tx_receipt = self.gofp.choose_current_stage_paths(
+            session_id,
+            token_ids,
+            [1 for _ in token_ids],
+            {"from": self.player},
+        )
+
+        second_stage_events = _fetch_events_chunk(
+            web3_client,
+            ERC1155_TRANSFER_SINGLE_EVENT,
+            from_block=second_stage_tx_receipt.block_number,
+            to_block=second_stage_tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(second_stage_events), 2 * num_correct)
+        for i, erc1155_transfer_event in enumerate(second_stage_events):
+            if i % 2 == 0:
+                source = ZERO_ADDRESS
+                dest = self.gofp.address
+            else:
+                source = self.gofp.address
+                dest = self.inventory.address
+            self.assertEqual(erc1155_transfer_event["args"]["from"], source)
+            self.assertEqual(erc1155_transfer_event["args"]["to"], dest)
+            self.assertEqual(erc1155_transfer_event["args"]["id"], stage_reward_pool_id)
+            self.assertEqual(
+                erc1155_transfer_event["args"]["value"], stage_reward_amount
+            )
+
+        for i, token_id in enumerate(token_ids):
+            equipped_item = self.inventory.get_equipped_item(
+                token_id, stage_reward_slot_number
+            )
+            if i < num_correct:
+                self.assertEqual(
+                    equipped_item,
+                    (
+                        1155,
+                        self.terminus.address,
+                        stage_reward_pool_id,
+                        stage_reward_amount,
+                    ),
+                )
+            else:
+                self.assertEqual(equipped_item, (0, ZERO_ADDRESS, 0, 0))
+
+    def test_event_is_fired_but_path_choice_suceeds_when_inventory_equip_fails(
+        self,
+    ):
+        """
+        Tests that reward distribution works correctly when a player chooses a path in a stage that
+        does have an associated reward.
+
+        Also tests that no rewards are distributed when a player chooses a path in a stage that does
+        not have an assocaited reward.
+
+        Test actions:
+        1. Create inactive session
+        2. Associate a reward with stage 2
+        3. Activate session.
+        4. Player chooses paths in stage 1
+        5. Check that no ERC1155 Transfer events fired in that transaction
+        6. Player chooses paths in stage 2
+        7. Check that appropriate ERC1155 Transfer event fired in that transaction
+        8. Check that correct tokens have inventory reward equipped and incorrect toekns do not.
+        """
+        payment_amount = 182
+        uri = "https://example.com/test_player_is_rewarded_for_making_a_choice_in_stages_that_have_rewards.json"
+        stages = (2, 2)
+        is_active = False
+
+        self.gofp.create_session(
+            self.nft.address,
+            self.payment_token.address,
+            payment_amount,
+            is_active,
+            uri,
+            stages,
+            True,
+            {"from": self.game_master},
+        )
+
+        session_id = self.gofp.num_sessions()
+
+        # Create persistent slot for path reward
+        path_reward_pool_id = self.reward_4_pool_id
+        path_reward_amount = 6
+        self.inventory.create_slot(True, "", self.inventory_owner_tx_config)
+        path_reward_slot_number = self.inventory.num_slots()
+        self.inventory.mark_item_as_equippable_in_slot(
+            path_reward_slot_number,
+            1155,
+            self.terminus.address,
+            path_reward_pool_id,
+            path_reward_amount,
+            self.inventory_owner_tx_config,
+        )
+
+        # Set path reward
+        path_reward_list = [
+            (
+                1,
+                self.terminus.address,
+                path_reward_pool_id,
+                path_reward_amount,
+                self.inventory.address,
+                path_reward_slot_number,
+            )
+        ]
+
+        self.gofp.set_path_rewards(
+            session_id, [1], [1], path_reward_list, {"from": self.game_master}
+        )
+
+        self.gofp.set_session_active(session_id, True, {"from": self.game_master})
+
+        # Mint NFTs to the player
+        total_nfts = self.nft.total_supply()
+
+        num_nfts = 6
+        token_ids = [total_nfts + i for i in range(1, num_nfts + 1)]
+
+        for token_id in token_ids:
+            self.nft.mint(self.player.address, token_id, {"from": self.owner})
+
+        # Mint num_tokens*payment_amount of payment_token to player
+        self.payment_token.mint(
+            self.player.address, len(token_ids) * payment_amount, {"from": self.owner}
+        )
+
+        self.payment_token.approve(self.gofp.address, MAX_UINT, {"from": self.player})
+        self.nft.set_approval_for_all(self.gofp.address, True, {"from": self.player})
+
+        self.gofp.stake_tokens_into_session(
+            session_id, token_ids, {"from": self.player}
+        )
+
+        # First half (rounded down) of tokens will make the correct choice. Rest will make an incorrect
+        # choice.
+        # Correct path: 2
+        first_stage_correct_path = 1
+        first_stage_incorrect_path = 2
+        num_correct = int(num_nfts / 2)
+        first_stage_path_choices = [first_stage_correct_path] * num_correct + [
+            first_stage_incorrect_path
+        ] * (num_nfts - num_correct)
+
+        first_stage_tx_receipt = self.gofp.choose_current_stage_paths(
+            session_id,
+            token_ids,
+            first_stage_path_choices,
+            {"from": self.player},
+        )
+
+        first_stage_events = _fetch_events_chunk(
+            web3_client,
+            ERC1155_TRANSFER_SINGLE_EVENT,
+            from_block=first_stage_tx_receipt.block_number,
+            to_block=first_stage_tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(first_stage_events), num_correct)
+        for i, erc1155_transfer_event in enumerate(first_stage_events):
+            self.assertEqual(erc1155_transfer_event["args"]["from"], ZERO_ADDRESS)
+            self.assertEqual(erc1155_transfer_event["args"]["to"], self.gofp.address)
+            self.assertEqual(erc1155_transfer_event["args"]["id"], path_reward_pool_id)
+            self.assertEqual(
+                erc1155_transfer_event["args"]["value"], path_reward_amount
+            )
+
+        # Check that no tokens have items equipped
+        for i, token_id in enumerate(token_ids):
+            equipped_item = self.inventory.get_equipped_item(
+                token_id, path_reward_slot_number
+            )
+            self.assertEqual(equipped_item, (0, ZERO_ADDRESS, 0, 0))
+
+        error_events = _fetch_events_chunk(
+            web3_client,
+            INVENTORY_ERROR_EVENT,
+            from_block=first_stage_tx_receipt.block_number,
+            to_block=first_stage_tx_receipt.block_number,
+        )
+
+        self.assertEqual(len(error_events), num_correct)
 
     def test_player_cannnot_make_a_choice_with_same_token_twice(self):
         payment_amount = 176

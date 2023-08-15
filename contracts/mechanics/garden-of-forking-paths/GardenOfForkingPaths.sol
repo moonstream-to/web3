@@ -239,6 +239,7 @@ contract GOFPFacet is
         bytes4 functionSelector,
         bytes initialArguments
     );
+    event InventoryEquipError(string error);
 
     function init(
         address adminTerminusAddress,
@@ -1114,7 +1115,6 @@ contract GOFPFacet is
     function _distributeReward(Reward memory reward, uint256 tokenId) internal {
         if (reward.rewardAddress != address(0)) {
             if (reward.rewardType == TERMINUS_MINTABLE_TYPE) {
-                address inventoryAddress = reward.inventoryAddress;
                 TerminusFacet rewardTerminus = TerminusFacet(
                     reward.rewardAddress
                 );
@@ -1125,17 +1125,7 @@ contract GOFPFacet is
                         reward.rewardAmount,
                         ""
                     );
-                    InventoryFacet inventoryFacet = InventoryFacet(
-                        inventoryAddress
-                    );
-                    inventoryFacet.equip(
-                        tokenId,
-                        reward.inventorySlot,
-                        1155,
-                        reward.rewardAddress,
-                        reward.rewardTokenID,
-                        reward.rewardAmount
-                    );
+                    _equipInventoryReward(reward, tokenId);
                 } else {
                     rewardTerminus.mint(
                         msg.sender,
@@ -1147,6 +1137,33 @@ contract GOFPFacet is
             } else {
                 revert("Non-terminus rewards are not yet implemented");
             }
+        }
+    }
+
+    function _equipInventoryReward(
+        Reward memory reward,
+        uint256 tokenId
+    ) internal {
+        InventoryFacet inventoryFacet = InventoryFacet(reward.inventoryAddress);
+        uint256 slotId = reward.inventorySlot;
+        bool persistent = inventoryFacet.slotIsPersistent(slotId);
+        if (persistent) {
+            inventoryFacet.setSlotPersistent(slotId, false);
+        }
+        try
+            inventoryFacet.equip(
+                tokenId,
+                slotId,
+                1155,
+                reward.rewardAddress,
+                reward.rewardTokenID,
+                reward.rewardAmount
+            )
+        {} catch Error(string memory reason) {
+            emit InventoryEquipError(reason);
+        }
+        if (persistent) {
+            inventoryFacet.setSlotPersistent(slotId, true);
         }
     }
 }
