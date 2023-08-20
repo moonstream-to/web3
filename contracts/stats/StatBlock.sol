@@ -38,7 +38,7 @@ contract StatBlock is IStatBlock {
             isAdministrator(msg.sender),
             "StatBlock.createStat: msg.sender must be an administrator of the StatBlock"
         );
-        statID = NumStats++;
+        statID = ++NumStats;
         StatDescriptor[statID] = descriptor;
         emit StatCreated(statID, descriptor);
     }

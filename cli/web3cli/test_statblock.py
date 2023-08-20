@@ -103,13 +103,13 @@ class StatBlockTests(unittest.TestCase):
         - describeStat
         """
         num_stats_0 = self.statblock.num_stats()
-        stat_name = f"stat_{num_stats_0}"
+        stat_name = f"stat_{num_stats_0 + 1}"
         tx_receipt = self.statblock.create_stat(stat_name, {"from": self.administrator})
         num_stats_1 = self.statblock.num_stats()
 
         self.assertEqual(num_stats_1, num_stats_0 + 1)
 
-        stat_description = self.statblock.describe_stat(num_stats_0)
+        stat_description = self.statblock.describe_stat(num_stats_1)
         self.assertEqual(stat_description, stat_name)
 
         stat_created_events = _fetch_events_chunk(
@@ -122,7 +122,7 @@ class StatBlockTests(unittest.TestCase):
 
         event = stat_created_events[0]
         self.assertEqual(event["event"], "StatCreated")
-        self.assertEqual(event["args"]["statID"], num_stats_0)
+        self.assertEqual(event["args"]["statID"], num_stats_1)
         self.assertEqual(event["args"]["descriptor"], stat_name)
         self.assertEqual(event["address"], self.statblock.address)
 
@@ -165,7 +165,9 @@ class StatBlockTests(unittest.TestCase):
         num_assignable_stats = 3
         num_stats_0 = self.statblock.num_stats()
 
-        stat_ids = [i for i in range(num_stats_0, num_stats_0 + num_assignable_stats)]
+        stat_ids = [
+            i + 1 for i in range(num_stats_0, num_stats_0 + num_assignable_stats)
+        ]
 
         for i in stat_ids:
             stat_name = f"stat_{i}"
@@ -318,7 +320,9 @@ class StatBlockTests(unittest.TestCase):
         num_assignable_stats = 3
         num_stats_0 = self.statblock.num_stats()
 
-        stat_ids = [i for i in range(num_stats_0, num_stats_0 + num_assignable_stats)]
+        stat_ids = [
+            i + 1 for i in range(num_stats_0, num_stats_0 + num_assignable_stats)
+        ]
 
         for i in stat_ids:
             stat_name = f"stat_{i}"
@@ -444,7 +448,9 @@ class StatBlockTests(unittest.TestCase):
         num_assignable_stats = 3
         num_stats_0 = self.statblock.num_stats()
 
-        stat_ids = [i for i in range(num_stats_0, num_stats_0 + num_assignable_stats)]
+        stat_ids = [
+            i + 1 for i in range(num_stats_0, num_stats_0 + num_assignable_stats)
+        ]
 
         for i in stat_ids:
             stat_name = f"stat_{i}"
@@ -488,7 +494,9 @@ class StatBlockTests(unittest.TestCase):
         num_assignable_stats = 3
         num_stats_0 = self.statblock.num_stats()
 
-        stat_ids = [i for i in range(num_stats_0, num_stats_0 + num_assignable_stats)]
+        stat_ids = [
+            i + 1 for i in range(num_stats_0, num_stats_0 + num_assignable_stats)
+        ]
 
         for i in stat_ids:
             stat_name = f"stat_{i}"
