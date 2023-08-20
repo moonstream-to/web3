@@ -253,7 +253,7 @@ contract GOFPFacet is
     }
 
     function gofpVersion() public pure returns (string memory, string memory) {
-        return ("Moonstream Garden of Forking Paths", "0.2.0");
+        return ("Moonstream Garden of Forking Paths", "0.2.1");
     }
 
     function getSession(
