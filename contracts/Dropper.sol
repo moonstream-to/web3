@@ -7,7 +7,6 @@
 
 pragma solidity ^0.8.9;
 
-import "@moonstream/contracts/terminus/TerminusFacet.sol";
 import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol";
@@ -18,6 +17,8 @@ import "@openzeppelin-contracts/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin-contracts/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin-contracts/contracts/utils/cryptography/SignatureChecker.sol";
+
+import {TerminusFacet} from "./terminus/TerminusFacet.sol";
 
 /**
  * @title Moonstream Dropper
@@ -143,11 +144,9 @@ contract Dropper is
         return NumClaims;
     }
 
-    function getClaim(uint256 claimId)
-        external
-        view
-        returns (ClaimableToken memory)
-    {
+    function getClaim(
+        uint256 claimId
+    ) external view returns (ClaimableToken memory) {
         return ClaimToken[claimId];
     }
 
@@ -160,27 +159,24 @@ contract Dropper is
         return IsClaimActive[claimId];
     }
 
-    function setSignerForClaim(uint256 claimId, address signer)
-        public
-        onlyOwner
-    {
+    function setSignerForClaim(
+        uint256 claimId,
+        address signer
+    ) public onlyOwner {
         ClaimSigner[claimId] = signer;
         emit ClaimSignerChanged(claimId, signer);
     }
 
-    function getSignerForClaim(uint256 claimId)
-        external
-        view
-        returns (address)
-    {
+    function getSignerForClaim(
+        uint256 claimId
+    ) external view returns (address) {
         return ClaimSigner[claimId];
     }
 
-    function getClaimStatus(uint256 claimId, address claimant)
-        external
-        view
-        returns (uint256)
-    {
+    function getClaimStatus(
+        uint256 claimId,
+        address claimant
+    ) external view returns (uint256) {
         return ClaimCompleted[claimId][claimant];
     }
 
@@ -280,19 +276,19 @@ contract Dropper is
         emit Claimed(claimId, msg.sender);
     }
 
-    function withdrawERC20(address tokenAddress, uint256 amount)
-        public
-        onlyOwner
-    {
+    function withdrawERC20(
+        address tokenAddress,
+        uint256 amount
+    ) public onlyOwner {
         IERC20 erc20Contract = IERC20(tokenAddress);
         erc20Contract.transfer(_msgSender(), amount);
         emit Withdrawal(msg.sender, ERC20_TYPE, tokenAddress, 0, amount);
     }
 
-    function withdrawERC721(address tokenAddress, uint256 tokenId)
-        public
-        onlyOwner
-    {
+    function withdrawERC721(
+        address tokenAddress,
+        uint256 tokenId
+    ) public onlyOwner {
         address _owner = owner();
         IERC721 erc721Contract = IERC721(tokenAddress);
         erc721Contract.safeTransferFrom(address(this), _owner, tokenId, "");
@@ -335,10 +331,10 @@ contract Dropper is
         return ClaimURI[claimId];
     }
 
-    function setClaimUri(uint256 claimId, string memory uri)
-        external
-        onlyOwner
-    {
+    function setClaimUri(
+        uint256 claimId,
+        string memory uri
+    ) external onlyOwner {
         ClaimURI[claimId] = uri;
     }
 }

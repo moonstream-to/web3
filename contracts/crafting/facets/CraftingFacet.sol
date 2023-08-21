@@ -12,12 +12,12 @@ import "@openzeppelin-contracts/contracts/token/ERC1155/extensions/ERC1155Burnab
 import "@openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin-contracts/contracts/token/ERC721/utils/ERC721Holder.sol";
-import {TerminusPermissions} from "@moonstream/contracts/terminus/TerminusPermissions.sol";
 import {MockTerminus} from "../../mock/MockTerminus.sol";
 import {MockErc20} from "../../mock/MockErc20.sol";
 import "../libraries/LibCrafting.sol";
 import "../../diamond/libraries/LibDiamond.sol";
 import "../../diamond/security/DiamondReentrancyGuard.sol";
+import {TerminusPermissions} from "../../terminus/TerminusPermissions.sol";
 
 contract CraftingFacet is
     ERC1155Holder,
@@ -49,9 +49,10 @@ contract CraftingFacet is
         _;
     }
 
-    function setTerminusAuth(address terminusAddress, uint256 tokenId)
-        external
-    {
+    function setTerminusAuth(
+        address terminusAddress,
+        uint256 tokenId
+    ) external {
         LibDiamond.enforceIsContractOwner();
         LibCrafting.CraftingStorage storage cs = LibCrafting.craftingStorage();
         cs.authTerminusAddress = terminusAddress;
@@ -66,10 +67,10 @@ contract CraftingFacet is
         emit RecipeCreated(0, recipe, msg.sender);
     }
 
-    function updateRecipe(uint256 recipeId, Recipe calldata recipe)
-        external
-        onlyAuthorizedAddress
-    {
+    function updateRecipe(
+        uint256 recipeId,
+        Recipe calldata recipe
+    ) external onlyAuthorizedAddress {
         LibCrafting.CraftingStorage storage cs = LibCrafting.craftingStorage();
         cs.recipes[recipeId] = recipe;
         emit RecipeUpdated(recipeId, recipe, msg.sender);

@@ -7,7 +7,6 @@
 
 pragma solidity ^0.8.9;
 
-import {TerminusPermissions} from "@moonstream/contracts/terminus/TerminusPermissions.sol";
 import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol";
@@ -21,6 +20,7 @@ import "../interfaces/ITerminus.sol";
 import "../diamond/security/DiamondReentrancyGuard.sol";
 import "../diamond/libraries/LibDiamond.sol";
 import "../diamond/libraries/LibSignatures.sol";
+import {TerminusPermissions} from "../terminus/TerminusPermissions.sol";
 
 /**
  * @title Moonstream Dropper
