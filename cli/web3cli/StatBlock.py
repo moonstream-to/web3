@@ -189,6 +189,12 @@ class StatBlock:
         self.assert_contract_is_instantiated()
         return self.contract.setStatDescriptor(stat_id, descriptor, transaction_config)
 
+    def stat_block_version(
+        self, block_number: Optional[Union[str, int]] = "latest"
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.statBlockVersion.call(block_identifier=block_number)
+
 
 def get_transaction_config(args: argparse.Namespace) -> Dict[str, Any]:
     signer = network.accounts.load(args.sender, args.password)
@@ -392,6 +398,13 @@ def handle_set_stat_descriptor(args: argparse.Namespace) -> None:
         print(result.info())
 
 
+def handle_stat_block_version(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = StatBlock(args.address)
+    result = contract.stat_block_version(block_number=args.block_number)
+    print(result)
+
+
 def generate_cli() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="CLI for StatBlock")
     parser.set_defaults(func=lambda _: parser.print_help())
@@ -507,6 +520,10 @@ def generate_cli() -> argparse.ArgumentParser:
         "--descriptor", required=True, help="Type: string", type=str
     )
     set_stat_descriptor_parser.set_defaults(func=handle_set_stat_descriptor)
+
+    stat_block_version_parser = subcommands.add_parser("stat-block-version")
+    add_default_arguments(stat_block_version_parser, False)
+    stat_block_version_parser.set_defaults(func=handle_stat_block_version)
 
     return parser
 

@@ -10,6 +10,7 @@ import {IERC1155} from "@openzeppelin-contracts/contracts/token/ERC1155/IERC1155
 import {IStatBlock} from "./IStatBlock.sol";
 
 contract StatBlock is IStatBlock {
+    string public statBlockVersion = "0.0.1";
     address AdminTerminusAddress;
     uint256 AdminTerminusPoolID;
     // Stats are 0-indexed.
@@ -50,7 +51,7 @@ contract StatBlock is IStatBlock {
     function setStatDescriptor(
         uint256 statID,
         string memory descriptor
-    ) public {
+    ) external {
         require(
             isAdministrator(msg.sender),
             "StatBlock.setStatDescriptor: msg.sender must be an administrator of the StatBlock"

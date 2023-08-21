@@ -23,11 +23,18 @@ interface IStatBlock {
         uint256 value
     );
 
+    function statBlockVersion() external view returns (string memory);
+
     function isAdministrator(address account) external view returns (bool);
 
     function createStat(string memory descriptor) external returns (uint256);
 
     function describeStat(uint256) external view returns (string memory);
+
+    function setStatDescriptor(
+        uint256 statID,
+        string memory descriptor
+    ) external;
 
     function assignStats(
         address tokenAddress,

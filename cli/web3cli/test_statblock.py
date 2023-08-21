@@ -93,6 +93,9 @@ class StatBlockTests(unittest.TestCase):
         cls.erc1155_contract = MockERC1155.MockERC1155(None)
         cls.erc1155_contract.deploy(cls.deployer_txconfig)
 
+    def test_stat_block_version(self):
+        self.assertEqual(self.statblock.stat_block_version(), "0.0.1")
+
     def test_admin_can_create_stat(self):
         """
         Tests that an administrator can create stats on a StatBlock contract.
