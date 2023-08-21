@@ -6,7 +6,7 @@ pragma solidity ^0.8.0;
  * GitHub: https://github.com/moonstream-to/web3
  */
 
-// Interface ID: 458bb0c0
+// Interface ID: 9a7d8aed
 //
 // Calculated by solface: https://github.com/moonstream-to/solface
 // solface version: 0.1.0
