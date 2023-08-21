@@ -183,6 +183,12 @@ class StatBlock:
             account, block_identifier=block_number
         )
 
+    def set_stat_descriptor(
+        self, stat_id: int, descriptor: str, transaction_config
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.setStatDescriptor(stat_id, descriptor, transaction_config)
+
 
 def get_transaction_config(args: argparse.Namespace) -> Dict[str, Any]:
     signer = network.accounts.load(args.sender, args.password)
@@ -372,6 +378,20 @@ def handle_is_administrator(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_set_stat_descriptor(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = StatBlock(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.set_stat_descriptor(
+        stat_id=args.stat_id,
+        descriptor=args.descriptor,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
 def generate_cli() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="CLI for StatBlock")
     parser.set_defaults(func=lambda _: parser.print_help())
@@ -477,6 +497,16 @@ def generate_cli() -> argparse.ArgumentParser:
         "--account", required=True, help="Type: address"
     )
     is_administrator_parser.set_defaults(func=handle_is_administrator)
+
+    set_stat_descriptor_parser = subcommands.add_parser("set-stat-descriptor")
+    add_default_arguments(set_stat_descriptor_parser, True)
+    set_stat_descriptor_parser.add_argument(
+        "--stat-id", required=True, help="Type: uint256", type=int
+    )
+    set_stat_descriptor_parser.add_argument(
+        "--descriptor", required=True, help="Type: string", type=str
+    )
+    set_stat_descriptor_parser.set_defaults(func=handle_set_stat_descriptor)
 
     return parser
 

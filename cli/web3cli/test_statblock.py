@@ -123,8 +123,25 @@ class StatBlockTests(unittest.TestCase):
         event = stat_created_events[0]
         self.assertEqual(event["event"], "StatCreated")
         self.assertEqual(event["args"]["statID"], num_stats_1)
-        self.assertEqual(event["args"]["descriptor"], stat_name)
         self.assertEqual(event["address"], self.statblock.address)
+
+        stat_descriptor_updated_events = _fetch_events_chunk(
+            web3_client,
+            statblock_events.STAT_DESCRIPTOR_UPDATED_ABI,
+            tx_receipt.block_number,
+            tx_receipt.block_number,
+        )
+        self.assertEqual(len(stat_descriptor_updated_events), 1)
+
+        stat_descriptor_updated_event = stat_descriptor_updated_events[0]
+        self.assertEqual(
+            stat_descriptor_updated_event["event"], "StatDescriptorUpdated"
+        )
+        self.assertEqual(stat_descriptor_updated_event["args"]["statID"], num_stats_1)
+        self.assertEqual(stat_descriptor_updated_event["args"]["descriptor"], stat_name)
+        self.assertEqual(
+            stat_descriptor_updated_event["address"], self.statblock.address
+        )
 
     def test_nonadmin_cannot_create_stat(self):
         """
@@ -147,6 +164,120 @@ class StatBlockTests(unittest.TestCase):
             self.statblock.create_stat(stat_name, {"from": self.player})
         num_stats_1 = self.statblock.num_stats()
         self.assertEqual(num_stats_1, num_stats_0)
+
+    def test_admin_can_set_stat_descriptor(self):
+        """
+        Tests that an administrator can modify stat descriptors.
+
+        Note that since the stat does not have to be created before its descriptor is set, this test
+        works with a stat that does not yet exist.
+
+        It then creates the stat and checks that the stat descriptor was updated from the createStat
+        call, too.
+
+        Tests:
+        - setStatDescriptor
+        - createStat
+        - describeStat
+        """
+        num_stats = self.statblock.num_stats()
+        nonexistent_stat_id = num_stats + 1
+
+        expected_stat_descriptor = "nonexistent_stat"
+
+        tx_receipt_0 = self.statblock.set_stat_descriptor(
+            nonexistent_stat_id, expected_stat_descriptor, {"from": self.administrator}
+        )
+
+        actual_stat_descriptor = self.statblock.describe_stat(nonexistent_stat_id)
+        self.assertEqual(actual_stat_descriptor, expected_stat_descriptor)
+
+        stat_descriptor_updated_events_0 = _fetch_events_chunk(
+            web3_client,
+            statblock_events.STAT_DESCRIPTOR_UPDATED_ABI,
+            tx_receipt_0.block_number,
+            tx_receipt_0.block_number,
+        )
+        self.assertEqual(len(stat_descriptor_updated_events_0), 1)
+
+        stat_descriptor_updated_event_0 = stat_descriptor_updated_events_0[0]
+        self.assertEqual(
+            stat_descriptor_updated_event_0["event"], "StatDescriptorUpdated"
+        )
+        self.assertEqual(
+            stat_descriptor_updated_event_0["args"]["statID"], nonexistent_stat_id
+        )
+        self.assertEqual(
+            stat_descriptor_updated_event_0["args"]["descriptor"],
+            expected_stat_descriptor,
+        )
+        self.assertEqual(
+            stat_descriptor_updated_event_0["address"], self.statblock.address
+        )
+
+        expected_new_descriptor = f"stat_{nonexistent_stat_id}"
+
+        tx_receipt_1 = self.statblock.create_stat(
+            expected_new_descriptor, {"from": self.administrator}
+        )
+
+        actual_new_descriptor = self.statblock.describe_stat(nonexistent_stat_id)
+        self.assertEqual(actual_new_descriptor, expected_new_descriptor)
+
+        stat_descriptor_updated_events_1 = _fetch_events_chunk(
+            web3_client,
+            statblock_events.STAT_DESCRIPTOR_UPDATED_ABI,
+            tx_receipt_1.block_number,
+            tx_receipt_1.block_number,
+        )
+        self.assertEqual(len(stat_descriptor_updated_events_1), 1)
+
+        stat_descriptor_updated_event_1 = stat_descriptor_updated_events_1[0]
+        self.assertEqual(
+            stat_descriptor_updated_event_1["event"], "StatDescriptorUpdated"
+        )
+        self.assertEqual(
+            stat_descriptor_updated_event_1["args"]["statID"], nonexistent_stat_id
+        )
+        self.assertEqual(
+            stat_descriptor_updated_event_1["args"]["descriptor"],
+            expected_new_descriptor,
+        )
+        self.assertEqual(
+            stat_descriptor_updated_event_1["address"], self.statblock.address
+        )
+
+    def test_nonadmin_cannot_set_stat_descriptor(self):
+        """
+        Tests that a non-administrator cannot modify stat descriptors.
+
+        Checks with both non-existent and existent stats.
+
+        Tests:
+        - setStatDescriptor
+        """
+        num_stats = self.statblock.num_stats()
+        nonexistent_stat_id = num_stats + 1
+
+        attempted_stat_descriptor = "nonexistent_stat"
+
+        with self.assertRaises(VirtualMachineError):
+            self.statblock.set_stat_descriptor(
+                nonexistent_stat_id, attempted_stat_descriptor, {"from": self.player}
+            )
+
+        actual_stat_descriptor = self.statblock.describe_stat(nonexistent_stat_id)
+        self.assertEqual(actual_stat_descriptor, "")
+
+        stat_name = f"stat_{nonexistent_stat_id}"
+        self.statblock.create_stat(stat_name, {"from": self.administrator})
+        actual_new_descriptor = self.statblock.describe_stat(nonexistent_stat_id)
+        self.assertEqual(actual_new_descriptor, stat_name)
+
+        with self.assertRaises(VirtualMachineError):
+            self.statblock.set_stat_descriptor(
+                nonexistent_stat_id, attempted_stat_descriptor, {"from": self.player}
+            )
 
     def test_admin_can_assign_stats(self):
         """

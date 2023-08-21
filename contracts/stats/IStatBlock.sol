@@ -14,7 +14,8 @@ pragma solidity ^0.8.0;
 // To recalculate from root directory of this repo:
 // $ jq .abi build/contracts/IStatBlock.json  | solface -name IStatBlock -annotations | grep "Interface ID:"
 interface IStatBlock {
-    event StatCreated(uint256 statID, string descriptor);
+    event StatCreated(uint256 statID);
+    event StatDescriptorUpdated(uint256 indexed statID, string descriptor);
     event StatAssigned(
         address indexed tokenAddress,
         uint256 indexed tokenID,

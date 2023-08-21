@@ -7,6 +7,20 @@ STAT_CREATED_ABI = {
             "name": "statID",
             "type": "uint256",
         },
+    ],
+    "name": "StatCreated",
+    "type": "event",
+}
+
+STAT_DESCRIPTOR_UPDATED_ABI = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": True,
+            "internalType": "uint256",
+            "name": "statID",
+            "type": "uint256",
+        },
         {
             "indexed": False,
             "internalType": "string",
@@ -14,7 +28,7 @@ STAT_CREATED_ABI = {
             "type": "string",
         },
     ],
-    "name": "StatCreated",
+    "name": "StatDescriptorUpdated",
     "type": "event",
 }
 

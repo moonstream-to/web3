@@ -40,7 +40,23 @@ contract StatBlock is IStatBlock {
         );
         statID = ++NumStats;
         StatDescriptor[statID] = descriptor;
-        emit StatCreated(statID, descriptor);
+        emit StatCreated(statID);
+        emit StatDescriptorUpdated(statID, descriptor);
+    }
+
+    // NOTE: This method does not check that the statID has already been created. That check is
+    // unnecessary, but it means that checking if a description exists is not a correct way to check
+    // if the stat with the corresponding statID exists.
+    function setStatDescriptor(
+        uint256 statID,
+        string memory descriptor
+    ) public {
+        require(
+            isAdministrator(msg.sender),
+            "StatBlock.setStatDescriptor: msg.sender must be an administrator of the StatBlock"
+        );
+        StatDescriptor[statID] = descriptor;
+        emit StatDescriptorUpdated(statID, descriptor);
     }
 
     function describeStat(
