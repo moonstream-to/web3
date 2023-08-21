@@ -6,15 +6,17 @@
  */
 
 pragma solidity ^0.8.9;
-import "@moonstream/contracts/terminus/TerminusFacet.sol";
+import {TerminusFacet} from "./terminus/TerminusFacet.sol";
 import "@openzeppelin-contracts/contracts/access/Ownable.sol";
 
 abstract contract ControllableWithTerminus is Ownable {
     TerminusFacet private terminus;
     uint256 public administratorPoolId;
 
-    constructor(address _terminusContractAddress, uint256 _administratorPoolId)
-    {
+    constructor(
+        address _terminusContractAddress,
+        uint256 _administratorPoolId
+    ) {
         terminus = TerminusFacet(_terminusContractAddress);
         administratorPoolId = _administratorPoolId;
     }
@@ -32,10 +34,9 @@ abstract contract ControllableWithTerminus is Ownable {
         _;
     }
 
-    function changeAdministratorPoolId(uint256 _administratorPoolId)
-        public
-        onlyOwner
-    {
+    function changeAdministratorPoolId(
+        uint256 _administratorPoolId
+    ) public onlyOwner {
         administratorPoolId = _administratorPoolId;
     }
 
