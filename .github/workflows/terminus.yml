@@ -1,4 +1,4 @@
-name: Inventory system tests
+name: Terminus protocol tests
 
 on:
     pull_request:
