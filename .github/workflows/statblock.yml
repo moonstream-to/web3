@@ -1,0 +1,42 @@
+name: StatBlock tests
+
+on:
+    pull_request:
+        paths:
+            - "contracts/stats/**"
+            - "cli/web3cli/test_statblock.py"
+            - "cli/web3cli/StatBlock.py"
+            - "cli/web3cli/IStatBlock.py"
+            - "cli/web3cli/statblock_events.py"
+            - ".github/workflows/statblock.yml"
+        branches:
+            - main
+jobs:
+    build:
+        runs-on: ubuntu-20.04
+        steps:
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
+              with:
+                  node-version: "16"
+            - uses: actions/setup-python@v2
+              with:
+                  python-version: "3.9"
+            - name: Install ganache
+              run: npm install -g ganache-cli
+            - name: Upgrade pip
+              env:
+                  BROWNIE_LIB: 1
+              run: pip install -U pip
+            - name: Install additional dev dependencies
+              run: |
+                  pip install black moonworm
+            - name: Install dependencies for CLI
+              working-directory: cli/
+              env:
+                  BROWNIE_LIB: 1
+              run: |
+                  pip install -e .
+            - name: Run tests
+              working-directory: cli/
+              run: bash test.sh web3cli.test_statblock
