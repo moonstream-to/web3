@@ -13,8 +13,15 @@ import "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "../../diamond/libraries/LibDiamond.sol";
 import "../../diamond/security/DiamondReentrancyGuard.sol";
+
+import {InventoryFacet} from "../../inventory/InventoryFacet.sol";
 import {TerminusFacet} from "../../terminus/TerminusFacet.sol";
 import {TerminusPermissions} from "../../terminus/TerminusPermissions.sol";
+
+uint256 constant ERC20_TYPE = 20;
+uint256 constant ERC721_TYPE = 721;
+uint256 constant ERC1155_TYPE = 1155;
+uint256 constant TERMINUS_MINTABLE_TYPE = 1;
 
 struct Session {
     address playerTokenAddress;
@@ -38,9 +45,12 @@ The reward must be a Terminus token and the Garden of Forking Paths contract mus
 on the token pool.
  */
 struct Reward {
-    address terminusAddress;
-    uint256 terminusPoolId;
+    uint256 rewardType; // 1, 1155, 20, 721 - 1 means mint Terminus, 1155 means transfer 1155
+    address rewardAddress;
+    uint256 rewardTokenID;
     uint256 rewardAmount;
+    address inventoryAddress; // if 0, reward goes to player/staker, else to NFT
+    uint256 inventorySlot;
 }
 
 struct Predicate {
@@ -186,17 +196,23 @@ contract GOFPFacet is
     event StageRewardChanged(
         uint256 indexed sessionId,
         uint256 indexed stage,
-        address terminusAddress,
-        uint256 terminusPoolId,
-        uint256 rewardAmount
+        uint256 rewardType,
+        address rewardAddress,
+        uint256 rewardTokenID,
+        uint256 rewardAmount,
+        address inventoryAddress,
+        uint256 inventorySlot
     );
     event PathRewardChanged(
         uint256 indexed sessionId,
         uint256 indexed stage,
         uint256 indexed path,
-        address terminusAddress,
-        uint256 terminusPoolId,
-        uint256 rewardAmount
+        uint256 rewardType,
+        address rewardAddress,
+        uint256 rewardTokenID,
+        uint256 rewardAmount,
+        address inventoryAddress,
+        uint256 inventorySlot
     );
     event SessionUriChanged(uint256 indexed sessionId, string uri);
     event PathRegistered(
@@ -224,6 +240,7 @@ contract GOFPFacet is
         bytes4 functionSelector,
         bytes initialArguments
     );
+    event InventoryEquipError(string error);
 
     function init(
         address adminTerminusAddress,
@@ -237,7 +254,7 @@ contract GOFPFacet is
     }
 
     function gofpVersion() public pure returns (string memory, string memory) {
-        return ("Moonstream Garden of Forking Paths", "0.2.0");
+        return ("Moonstream Garden of Forking Paths", "0.2.1");
     }
 
     function getSession(
@@ -327,22 +344,12 @@ contract GOFPFacet is
     function setStageRewards(
         uint256 sessionId,
         uint256[] calldata stages,
-        address[] calldata terminusAddresses,
-        uint256[] calldata terminusPoolIds,
-        uint256[] calldata rewardAmounts
+        Reward[] calldata rewards
     ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
-            stages.length == terminusAddresses.length,
-            "GOFPFacet.setStageRewards: terminusAddresses must have same length as stages"
-        );
-        require(
-            stages.length == terminusPoolIds.length,
-            "GOFPFacet.setStageRewards: terminusPoolIds must have same length as stages"
-        );
-        require(
-            stages.length == rewardAmounts.length,
-            "GOFPFacet.setStageRewards: rewardAmounts must have same length as stages"
+            stages.length == rewards.length,
+            "GOFPFacet.setStageRewards: rewards must have same length as stages"
         );
 
         Session storage session = gs.sessionById[sessionId];
@@ -357,16 +364,22 @@ contract GOFPFacet is
                 "GOFPFacet.setStageRewards: Invalid stage"
             );
             gs.sessionStageReward[sessionId][stages[i]] = Reward({
-                terminusAddress: terminusAddresses[i],
-                terminusPoolId: terminusPoolIds[i],
-                rewardAmount: rewardAmounts[i]
+                rewardType: rewards[i].rewardType,
+                rewardAddress: rewards[i].rewardAddress,
+                rewardTokenID: rewards[i].rewardTokenID,
+                rewardAmount: rewards[i].rewardAmount,
+                inventoryAddress: rewards[i].inventoryAddress,
+                inventorySlot: rewards[i].inventorySlot
             });
             emit StageRewardChanged(
                 sessionId,
                 stages[i],
-                terminusAddresses[i],
-                terminusPoolIds[i],
-                rewardAmounts[i]
+                rewards[i].rewardType,
+                rewards[i].rewardAddress,
+                rewards[i].rewardTokenID,
+                rewards[i].rewardAmount,
+                rewards[i].inventoryAddress,
+                rewards[i].inventorySlot
             );
         }
     }
@@ -383,9 +396,7 @@ contract GOFPFacet is
         uint256 sessionId,
         uint256[] memory stages,
         uint256[] memory paths,
-        address[] memory terminusAddresses,
-        uint256[] memory terminusPoolIds,
-        uint256[] memory rewardAmounts
+        Reward[] calldata rewards
     ) external onlyGameMaster {
         LibGOFP.GOFPStorage storage gs = LibGOFP.gofpStorage();
         require(
@@ -393,16 +404,8 @@ contract GOFPFacet is
             "GOFPFacet.setPathRewards: paths must have same length as stages"
         );
         require(
-            stages.length == terminusAddresses.length,
-            "GOFPFacet.setPathRewards: terminusAddresses must have same length as stages"
-        );
-        require(
-            stages.length == terminusPoolIds.length,
-            "GOFPFacet.setPathRewards: terminusPoolIds must have same length as stages"
-        );
-        require(
-            stages.length == rewardAmounts.length,
-            "GOFPFacet.setPathRewards: rewardAmounts must have same length as stages"
+            stages.length == rewards.length,
+            "GOFPFacet.setPathRewards: rewards must have same length as stages"
         );
 
         Session storage session = gs.sessionById[sessionId];
@@ -421,17 +424,23 @@ contract GOFPFacet is
                 "GOFPFacet.setPathRewards: Invalid path"
             );
             gs.sessionPathReward[sessionId][stages[i]][paths[i]] = Reward({
-                terminusAddress: terminusAddresses[i],
-                terminusPoolId: terminusPoolIds[i],
-                rewardAmount: rewardAmounts[i]
+                rewardType: rewards[i].rewardType,
+                rewardAddress: rewards[i].rewardAddress,
+                rewardTokenID: rewards[i].rewardTokenID,
+                rewardAmount: rewards[i].rewardAmount,
+                inventoryAddress: rewards[i].inventoryAddress,
+                inventorySlot: rewards[i].inventorySlot
             });
             emit PathRewardChanged(
                 sessionId,
                 stages[i],
                 paths[i],
-                terminusAddresses[i],
-                terminusPoolIds[i],
-                rewardAmounts[i]
+                rewards[i].rewardType,
+                rewards[i].rewardAddress,
+                rewards[i].rewardTokenID,
+                rewards[i].rewardAmount,
+                rewards[i].inventoryAddress,
+                rewards[i].inventorySlot
             );
         }
     }
@@ -1026,10 +1035,9 @@ contract GOFPFacet is
         uint256 currentStage = lastStage + 1;
         // lastStage has no semantic meaning below. It would be more correct to say currentStage - 1.
         // This is just for convenience, saving one subtraction.
-        uint256 numPaths = session.stages[lastStage];
 
         uint256 stageRewardAmount = 0;
-        Reward storage stageReward = gs.sessionStageReward[sessionId][
+        Reward memory stageReward = gs.sessionStageReward[sessionId][
             currentStage
         ];
 
@@ -1058,7 +1066,7 @@ contract GOFPFacet is
                 "GOFPFacet.chooseCurrentStagePaths: Token has already chosen a path in the current stage"
             );
             require(
-                (paths[i] >= 1) && (paths[i] <= numPaths),
+                (paths[i] >= 1) && (paths[i] <= session.stages[lastStage]),
                 "GOFPFacet.chooseCurrentStagePaths: Invalid path"
             );
             require(
@@ -1078,44 +1086,85 @@ contract GOFPFacet is
 
             // Calculate number of correct choices on last stage for reward distribution, but only if
             // there is a stage reward.
-            if (stageReward.terminusAddress != address(0)) {
-                if (lastStage == 0) {
-                    stageRewardAmount += stageReward.rewardAmount;
-                } else if (
+            if (stageReward.rewardAddress != address(0)) {
+                if (
+                    lastStage == 0 ||
                     gs.pathChoices[sessionId][tokenIds[i]][lastStage] ==
                     lastStageCorrectPath
                 ) {
-                    stageRewardAmount += stageReward.rewardAmount;
+                    if (stageReward.inventoryAddress == address(0)) {
+                        stageRewardAmount += stageReward.rewardAmount;
+                    } else {
+                        _distributeReward(stageReward, tokenIds[i]);
+                    }
                 }
             }
 
             // Distribute path reward.
-            Reward storage pathReward = gs.sessionPathReward[sessionId][
+            Reward memory pathReward = gs.sessionPathReward[sessionId][
                 currentStage
             ][paths[i]];
-            if (pathReward.terminusAddress != address(0)) {
-                TerminusFacet rewardTerminus = TerminusFacet(
-                    pathReward.terminusAddress
-                );
-                rewardTerminus.mint(
-                    msg.sender,
-                    pathReward.terminusPoolId,
-                    pathReward.rewardAmount,
-                    ""
-                );
-            }
+            _distributeReward(pathReward, tokenIds[i]);
         }
 
-        if (stageReward.terminusAddress != address(0)) {
-            TerminusFacet rewardTerminus = TerminusFacet(
-                stageReward.terminusAddress
-            );
-            rewardTerminus.mint(
-                msg.sender,
-                stageReward.terminusPoolId,
-                stageRewardAmount,
-                ""
-            );
+        if (stageReward.inventoryAddress == address(0)) {
+            stageReward.rewardAmount = stageRewardAmount;
+            _distributeReward(stageReward, 0);
+        }
+    }
+
+    function _distributeReward(Reward memory reward, uint256 tokenId) internal {
+        if (reward.rewardAddress != address(0)) {
+            if (reward.rewardType == TERMINUS_MINTABLE_TYPE) {
+                TerminusFacet rewardTerminus = TerminusFacet(
+                    reward.rewardAddress
+                );
+                if (reward.inventoryAddress != address(0)) {
+                    rewardTerminus.mint(
+                        address(this),
+                        reward.rewardTokenID,
+                        reward.rewardAmount,
+                        ""
+                    );
+                    _equipInventoryReward(reward, tokenId);
+                } else {
+                    rewardTerminus.mint(
+                        msg.sender,
+                        reward.rewardTokenID,
+                        reward.rewardAmount,
+                        ""
+                    );
+                }
+            } else {
+                revert("Non-terminus rewards are not yet implemented");
+            }
+        }
+    }
+
+    function _equipInventoryReward(
+        Reward memory reward,
+        uint256 tokenId
+    ) internal {
+        InventoryFacet inventoryFacet = InventoryFacet(reward.inventoryAddress);
+        uint256 slotId = reward.inventorySlot;
+        bool persistent = inventoryFacet.slotIsPersistent(slotId);
+        if (persistent) {
+            inventoryFacet.setSlotPersistent(slotId, false);
+        }
+        try
+            inventoryFacet.equip(
+                tokenId,
+                slotId,
+                1155,
+                reward.rewardAddress,
+                reward.rewardTokenID,
+                reward.rewardAmount
+            )
+        {} catch Error(string memory reason) {
+            emit InventoryEquipError(reason);
+        }
+        if (persistent) {
+            inventoryFacet.setSlotPersistent(slotId, true);
         }
     }
 }
