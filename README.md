@@ -3,6 +3,85 @@
 This repository is home to [Moonstream](https://moonstream.to)'s smart contracts. It also contains
 a command-line interfaces to those smart contracts.
 
+## Structure
+
+### Smart contracts
+
+All smart contracts can be found in the [`contracts/`](./contracts/) directory.
+
+Currently, we use [`brownie`](https://github.com/eth-brownie/brownie) to compile and interact with our
+smart contracts.
+
+All external dependencies are registered in [`brownie-config.yaml`](./brownie-config.yaml). To learn more
+about how to use `brownie`, read the [`brownie` documentation](https://eth-brownie.readthedocs.io/en/latest/).
+
+If you want to help us add [`hardhat`](https://hardhat.org/) or [`foundry`](https://github.com/foundry-rs/foundry)
+support, your contributions will be very welcome.
+
+
+### Command-line interface: `web3cli`
+
+This repository also defines a command-line interface, `web3cli`, to Moonstream smart contracts. `web3cli`
+is set up to use the `brownie` build artifacts produced by `brownie compile`. It is intended to be used
+*from this repository*.
+
+To install `web3cli`, you will need to set up a Python environment.
+
+To do this, first [install Python 3](https://www.python.org/) (if you don't already have it installed),
+and create a virtual environment:
+
+```bash
+python3 -m venv .web3
+```
+
+Then, install `web3cli` by running the following command from the root of this repository:
+
+```bash
+export BROWNIE_LIB
+pip install -e cli/
+```
+
+Once this is finished:
+
+```
+$ web3cli --help
+usage: web3cli [-h] {core,flows,dropper-v1,dropper,lootbox,erc20,erc721,drop,terminus,crafting,gofp,setup-drop,predicates,inventory,statblock} ...
+
+dao: The command line interface to Moonstream DAO
+
+positional arguments:
+  {core,flows,dropper-v1,dropper,lootbox,erc20,erc721,drop,terminus,crafting,gofp,setup-drop,predicates,inventory,statblock}
+    predicates          Predicates for use with Moonstream game mechanics
+
+options:
+  -h, --help            show this help message and exit
+```
+
+### ABIs
+
+The [`abi/`](./abi/) directory contains current ABIs for all the smart contracts in this repository. You
+can use these ABIs to generate interfaces to any deployed Moonstream contract.
+
+
+### Tests
+
+All tests are currently in the [`cli/web3cli/`](./cli/web3cli/) directory. Just look for files matching
+`test_*.py`.
+
+You can run tests using [`cli/test.sh`](./cli/test.sh). For example, to run Dropper tests, you would invoke
+the following command (from the root of this repo):
+
+```bash
+cli/test.sh web3cli.test_dropper
+```
+
+Tests are executed against a [local Ganache network](https://github.com/trufflesuite/ganache). You will need
+to use [Node JS](https://nodejs.org/en) to install Ganache:
+
+```bash
+npm install --global ganache-cli
+```
+
 ## Contracts
 
 This repository contains many contracts. Some are immutable and others are implemented using the
@@ -211,83 +290,4 @@ the in-game properites of the in-game representations of those tokens.
     <td><a href="./abi/StatBlock.json"><pre>abi/StatBlock.json</pre></a></td>
   </tr>
 </table>
-
-## Structure
-
-### Smart contracts
-
-All smart contracts can be found in the [`contracts/`](./contracts/) directory.
-
-Currently, we use [`brownie`](https://github.com/eth-brownie/brownie) to compile and interact with our
-smart contracts.
-
-All external dependencies are registered in [`brownie-config.yaml`](./brownie-config.yaml). To learn more
-about how to use `brownie`, read the [`brownie` documentation](https://eth-brownie.readthedocs.io/en/latest/).
-
-If you want to help us add [`hardhat`](https://hardhat.org/) or [`foundry`](https://github.com/foundry-rs/foundry)
-support, your contributions will be very welcome.
-
-
-### Command-line interface: `web3cli`
-
-This repository also defines a command-line interface, `web3cli`, to Moonstream smart contracts. `web3cli`
-is set up to use the `brownie` build artifacts produced by `brownie compile`. It is intended to be used
-*from this repository*.
-
-To install `web3cli`, you will need to set up a Python environment.
-
-To do this, first [install Python 3](https://www.python.org/) (if you don't already have it installed),
-and create a virtual environment:
-
-```bash
-python3 -m venv .web3
-```
-
-Then, install `web3cli` by running the following command from the root of this repository:
-
-```bash
-export BROWNIE_LIB
-pip install -e cli/
-```
-
-Once this is finished:
-
-```
-$ web3cli --help
-usage: web3cli [-h] {core,flows,dropper-v1,dropper,lootbox,erc20,erc721,drop,terminus,crafting,gofp,setup-drop,predicates,inventory,statblock} ...
-
-dao: The command line interface to Moonstream DAO
-
-positional arguments:
-  {core,flows,dropper-v1,dropper,lootbox,erc20,erc721,drop,terminus,crafting,gofp,setup-drop,predicates,inventory,statblock}
-    predicates          Predicates for use with Moonstream game mechanics
-
-options:
-  -h, --help            show this help message and exit
-```
-
-### ABIs
-
-The [`abi/`](./abi/) directory contains current ABIs for all the smart contracts in this repository. You
-can use these ABIs to generate interfaces to any deployed Moonstream contract.
-
-
-### Tests
-
-All tests are currently in the [`cli/web3cli/`](./cli/web3cli/) directory. Just look for files matching
-`test_*.py`.
-
-You can run tests using [`cli/test.sh`](./cli/test.sh). For example, to run Dropper tests, you would invoke
-the following command (from the root of this repo):
-
-```bash
-cli/test.sh web3cli.test_dropper
-```
-
-Tests are executed against a [local Ganache network](https://github.com/trufflesuite/ganache). You will need
-to use [Node JS](https://nodejs.org/en) to install Ganache:
-
-```bash
-npm install --global ganache-cli
-```
 
