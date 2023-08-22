@@ -25,7 +25,7 @@ Terminus is an access control protocol based on the [ERC-1155 Multi Token standa
 
 <table>
   <tr>
-    <th></th>
+    <th>Contract name</th>
     <th>Immutable or Upgradable</th>
     <th>Deployment</th>
     <th>CLI</th>
@@ -52,7 +52,7 @@ tokens using an authorized claim workflow.
 
 <table>
   <tr>
-    <th></th>
+    <th>Contract name</th>
     <th>Immutable or Upgradable</th>
     <th>Deployment</th>
     <th>CLI</th>
@@ -86,7 +86,7 @@ Random lootboxes use decentralized, verifiable randomness to randomize the items
 
 <table>
   <tr>
-    <th></th>
+    <th>Contract name</th>
     <th>Immutable or Upgradable</th>
     <th>Deployment</th>
     <th>CLI</th>
@@ -112,7 +112,7 @@ Players can use those recipes by providing inputs in order to produce outputs.
 
 <table>
   <tr>
-    <th></th>
+    <th>Contract name</th>
     <th>Immutable or Upgradable</th>
     <th>Deployment</th>
     <th>CLI</th>
@@ -139,7 +139,7 @@ based on the paths they choose.
 
 <table>
   <tr>
-    <th></th>
+    <th>Contract name</th>
     <th>Immutable or Upgradable</th>
     <th>Deployment</th>
     <th>CLI</th>
@@ -170,7 +170,7 @@ Games can use the items equipped in a character's inventory to determine their a
 
 <table>
   <tr>
-    <th></th>
+    <th>Contract name</th>
     <th>Immutable or Upgradable</th>
     <th>Deployment</th>
     <th>CLI</th>
