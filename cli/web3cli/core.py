@@ -24,6 +24,8 @@ from . import (
     CraftingFacet,
     GOFPFacet,
     InventoryFacet,
+    TerminusFacet,
+    TerminusInitializer,
 )
 
 FACETS: Dict[str, Any] = {
@@ -35,6 +37,7 @@ FACETS: Dict[str, Any] = {
     "CraftingFacet": CraftingFacet,
     "GOFPFacet": GOFPFacet,
     "InventoryFacet": InventoryFacet,
+    "TerminusFacet": TerminusFacet,
 }
 
 FACET_INIT_CALLDATA: Dict[str, str] = {
@@ -45,6 +48,9 @@ FACET_INIT_CALLDATA: Dict[str, str] = {
         address
     ).contract.init.encode_input(*args),
     "InventoryFacet": lambda address, *args: InventoryFacet.InventoryFacet(
+        address
+    ).contract.init.encode_input(*args),
+    "TerminusFacet": lambda address, *args: TerminusInitializer.TerminusInitializer(
         address
     ).contract.init.encode_input(*args),
 }
@@ -66,6 +72,7 @@ class EngineFeatures(Enum):
     DROPPER = "DropperFacet"
     GOFP = "GOFPFacet"
     INVENTORY = "InventoryFacet"
+    TERMINUS = "TerminusFacet"
 
 
 def feature_from_facet_name(facet_name: str) -> Optional[EngineFeatures]:
@@ -79,12 +86,14 @@ FEATURE_FACETS: Dict[EngineFeatures, List[str]] = {
     EngineFeatures.DROPPER: ["DropperFacet"],
     EngineFeatures.GOFP: ["GOFPFacet"],
     EngineFeatures.INVENTORY: ["InventoryFacet"],
+    EngineFeatures.TERMINUS: ["TerminusFacet"],
 }
 
 FEATURE_IGNORES: Dict[EngineFeatures, List[str]] = {
     EngineFeatures.DROPPER: {"methods": ["init"], "selectors": []},
     EngineFeatures.GOFP: {"methods": ["init"], "selectors": []},
     EngineFeatures.INVENTORY: {"methods": ["init"], "selectors": []},
+    EngineFeatures.TERMINUS: {"methods": [], "selectors": []},
 }
 
 FACET_ACTIONS: Dict[str, int] = {"add": 0, "replace": 1, "remove": 2}
@@ -710,6 +719,67 @@ def inventory_gogogo(
     return deployment_info
 
 
+def terminus_gogogo(
+    transaction_config: Dict[str, Any],
+    diamond_cut_address: Optional[str] = None,
+    diamond_address: Optional[str] = None,
+    diamond_loupe_address: Optional[str] = None,
+    ownership_address: Optional[str] = None,
+    terminus_facet_address: Optional[str] = None,
+    terminus_initializer_address: Optional[str] = None,
+    verify_contracts: Optional[bool] = False,
+) -> Dict[str, Any]:
+    """
+    Deploys an EIP2535 Diamond contract and a TerminusFacet and mounts the TerminusFacet onto the Diamond contract.
+
+    Returns the addresses and attachments.
+    """
+    deployment_info = diamond_gogogo(
+        owner_address=transaction_config["from"].address,
+        transaction_config=transaction_config,
+        diamond_cut_address=diamond_cut_address,
+        diamond_address=diamond_address,
+        diamond_loupe_address=diamond_loupe_address,
+        ownership_address=ownership_address,
+        verify_contracts=verify_contracts,
+    )
+
+    if terminus_facet_address is None:
+        terminus_facet = TerminusFacet.TerminusFacet(None)
+        terminus_facet.deploy(transaction_config=transaction_config)
+    else:
+        terminus_facet = TerminusFacet.TerminusFacet(terminus_facet_address)
+
+    if terminus_initializer_address is None:
+        terminus_initializer = TerminusInitializer.TerminusInitializer(None)
+        terminus_initializer.deploy(transaction_config=transaction_config)
+        terminus_initializer_address = terminus_initializer.address
+
+    deployment_info["contracts"]["TerminusFacet"] = terminus_facet.address
+    deployment_info["contracts"]["TerminusInitializer"] = terminus_initializer_address
+
+    if verify_contracts:
+        try:
+            terminus_facet.verify_contract()
+            deployment_info["verified"].append("InventoryFacet")
+        except Exception as e:
+            deployment_info["verification_errors"].append(repr(e))
+
+    facet_cut(
+        deployment_info["contracts"]["Diamond"],
+        "TerminusFacet",
+        terminus_facet.address,
+        "add",
+        transaction_config,
+        initializer_address=terminus_initializer_address,
+        feature=EngineFeatures.TERMINUS,
+        initializer_args=[],
+    )
+    deployment_info["attached"].append("TerminusFacet")
+
+    return deployment_info
+
+
 def handle_facet_cut(args: argparse.Namespace) -> None:
     network.connect(args.network)
     diamond_address = args.address
@@ -797,6 +867,25 @@ def handle_inventory_gogogo(args: argparse.Namespace) -> None:
         diamond_loupe_address=args.diamond_loupe_address,
         ownership_address=args.ownership_address,
         inventory_facet_address=args.inventory_facet_address,
+        verify_contracts=args.verify_contracts,
+    )
+    if args.outfile is not None:
+        with args.outfile:
+            json.dump(result, args.outfile)
+    json.dump(result, sys.stdout, indent=4)
+
+
+def handle_terminus_gogogo(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    transaction_config = TerminusFacet.get_transaction_config(args)
+    result = terminus_gogogo(
+        transaction_config=transaction_config,
+        diamond_cut_address=args.diamond_cut_address,
+        diamond_address=args.diamond_address,
+        diamond_loupe_address=args.diamond_loupe_address,
+        ownership_address=args.ownership_address,
+        terminus_facet_address=args.terminus_facet_address,
+        terminus_initializer_address=args.terminus_initializer_address,
         verify_contracts=args.verify_contracts,
     )
     if args.outfile is not None:
@@ -1043,6 +1132,61 @@ def generate_cli():
         help="(Optional) file to write deployed addresses to",
     )
     inventory_gogogo_parser.set_defaults(func=handle_inventory_gogogo)
+
+    terminus_gogogo_parser = subcommands.add_parser(
+        "terminus-gogogo",
+        description="Deploy Terminus diamond contract",
+    )
+    Diamond.add_default_arguments(terminus_gogogo_parser, transact=True)
+    terminus_gogogo_parser.add_argument(
+        "--verify-contracts",
+        action="store_true",
+        help="Verify contracts",
+    )
+    terminus_gogogo_parser.add_argument(
+        "--diamond-cut-address",
+        required=False,
+        default=None,
+        help="Address to deployed DiamondCutFacet. If provided, this command skips deployment of a new DiamondCutFacet.",
+    )
+    terminus_gogogo_parser.add_argument(
+        "--diamond-address",
+        required=False,
+        default=None,
+        help="Address to deployed Diamond contract. If provided, this command skips deployment of a new Diamond contract and simply mounts the required facets onto the existing Diamond contract. Assumes that there is no collision of selectors.",
+    )
+    terminus_gogogo_parser.add_argument(
+        "--diamond-loupe-address",
+        required=False,
+        default=None,
+        help="Address to deployed DiamondLoupeFacet. If provided, this command skips deployment of a new DiamondLoupeFacet. It mounts the existing DiamondLoupeFacet onto the Diamond.",
+    )
+    terminus_gogogo_parser.add_argument(
+        "--ownership-address",
+        required=False,
+        default=None,
+        help="Address to deployed OwnershipFacet. If provided, this command skips deployment of a new OwnershipFacet. It mounts the existing OwnershipFacet onto the Diamond.",
+    )
+    terminus_gogogo_parser.add_argument(
+        "--terminus-facet-address",
+        required=False,
+        default=None,
+        help="Address to deployed TerminusFacet. If provided, this command skips deployment of a new TerminusFacet. It mounts the existing TerminusFacet onto the Diamond.",
+    )
+    terminus_gogogo_parser.add_argument(
+        "--terminus-initializer-address",
+        required=False,
+        default=None,
+        help="Address to deployed TerminusInitializer. If provided, this command skips deployment of a new TerminusInitializer. It uses the given TerminusInitializer to initialize the diamond upon the mounting of the TerminusFacet.",
+    )
+    terminus_gogogo_parser.add_argument(
+        "-o",
+        "--outfile",
+        type=argparse.FileType("w"),
+        default=None,
+        help="(Optional) file to write deployed addresses to",
+    )
+    terminus_gogogo_parser.set_defaults(func=handle_terminus_gogogo)
 
     lootbox_gogogo_parser = subcommands.add_parser(
         "lootbox-gogogo",

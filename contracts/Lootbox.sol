@@ -7,7 +7,6 @@
 
 pragma solidity ^0.8.9;
 
-import "@moonstream/contracts/terminus/TerminusFacet.sol";
 import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin-contracts/contracts/access/Ownable.sol";
@@ -17,6 +16,7 @@ import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol"
 
 import "./ControllableWithTerminus.sol";
 import "./LootboxRandomness.sol";
+import {TerminusFacet} from "./terminus/TerminusFacet.sol";
 
 /**
  * @title Moonstream Lootbox managing contract

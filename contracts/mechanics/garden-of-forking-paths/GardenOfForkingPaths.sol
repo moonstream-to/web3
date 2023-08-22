@@ -7,15 +7,16 @@
 
 pragma solidity ^0.8.0;
 
-import {TerminusFacet} from "@moonstream/contracts/terminus/TerminusFacet.sol";
-import {TerminusPermissions} from "@moonstream/contracts/terminus/TerminusPermissions.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin-contracts/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "../../diamond/libraries/LibDiamond.sol";
 import "../../diamond/security/DiamondReentrancyGuard.sol";
+
 import {InventoryFacet} from "../../inventory/InventoryFacet.sol";
+import {TerminusFacet} from "../../terminus/TerminusFacet.sol";
+import {TerminusPermissions} from "../../terminus/TerminusPermissions.sol";
 
 uint256 constant ERC20_TYPE = 20;
 uint256 constant ERC721_TYPE = 721;

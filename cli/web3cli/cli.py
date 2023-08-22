@@ -12,12 +12,13 @@ from . import (
     Lootbox,
     MockErc20,
     MockERC721,
-    ITerminus,
     setup_drop,
     CraftingFacet,
     GOFPFacet,
     GOFPPredicates,
     InventoryFacet,
+    TerminusFacet,
+    StatBlock,
 )
 
 
@@ -56,7 +57,7 @@ def main() -> None:
     drop_parser = drop.generate_cli()
     subparsers.add_parser("drop", parents=[drop_parser], add_help=False)
 
-    terminus_parser = ITerminus.generate_cli()
+    terminus_parser = TerminusFacet.generate_cli()
     subparsers.add_parser("terminus", parents=[terminus_parser], add_help=False)
 
     crafting_parser = CraftingFacet.generate_cli()
@@ -79,8 +80,12 @@ def main() -> None:
     predicates_subparsers.add_parser(
         "gofp", parents=[gofp_predicates_parser], add_help=False
     )
+
     inventory_parser = InventoryFacet.generate_cli()
     subparsers.add_parser("inventory", parents=[inventory_parser], add_help=False)
+
+    statblock_parser = StatBlock.generate_cli()
+    subparsers.add_parser("statblock", parents=[statblock_parser], add_help=False)
 
     args = parser.parse_args()
     args.func(args)
