@@ -3,6 +3,19 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "string",
+        "name": "error",
+        "type": "string"
+      }
+    ],
+    "name": "InventoryEquipError",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "uint256",
         "name": "sessionId",
@@ -121,20 +134,38 @@
       },
       {
         "indexed": false,
+        "internalType": "uint256",
+        "name": "rewardType",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
         "internalType": "address",
-        "name": "terminusAddress",
+        "name": "rewardAddress",
         "type": "address"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "terminusPoolId",
+        "name": "rewardTokenID",
         "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "uint256",
         "name": "rewardAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "inventoryAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "inventorySlot",
         "type": "uint256"
       }
     ],
@@ -264,20 +295,38 @@
       },
       {
         "indexed": false,
+        "internalType": "uint256",
+        "name": "rewardType",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
         "internalType": "address",
-        "name": "terminusAddress",
+        "name": "rewardAddress",
         "type": "address"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "terminusPoolId",
+        "name": "rewardTokenID",
         "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "uint256",
         "name": "rewardAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "inventoryAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "inventorySlot",
         "type": "uint256"
       }
     ],
@@ -622,18 +671,33 @@
       {
         "components": [
           {
+            "internalType": "uint256",
+            "name": "rewardType",
+            "type": "uint256"
+          },
+          {
             "internalType": "address",
-            "name": "terminusAddress",
+            "name": "rewardAddress",
             "type": "address"
           },
           {
             "internalType": "uint256",
-            "name": "terminusPoolId",
+            "name": "rewardTokenID",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
             "name": "rewardAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "inventoryAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inventorySlot",
             "type": "uint256"
           }
         ],
@@ -784,18 +848,33 @@
       {
         "components": [
           {
+            "internalType": "uint256",
+            "name": "rewardType",
+            "type": "uint256"
+          },
+          {
             "internalType": "address",
-            "name": "terminusAddress",
+            "name": "rewardAddress",
             "type": "address"
           },
           {
             "internalType": "uint256",
-            "name": "terminusPoolId",
+            "name": "rewardTokenID",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
             "name": "rewardAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "inventoryAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inventorySlot",
             "type": "uint256"
           }
         ],
@@ -1112,19 +1191,41 @@
         "type": "uint256[]"
       },
       {
-        "internalType": "address[]",
-        "name": "terminusAddresses",
-        "type": "address[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "terminusPoolIds",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "rewardAmounts",
-        "type": "uint256[]"
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "rewardType",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "rewardAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardTokenID",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "inventoryAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inventorySlot",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Reward[]",
+        "name": "rewards",
+        "type": "tuple[]"
       }
     ],
     "name": "setPathRewards",
@@ -1227,19 +1328,41 @@
         "type": "uint256[]"
       },
       {
-        "internalType": "address[]",
-        "name": "terminusAddresses",
-        "type": "address[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "terminusPoolIds",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "rewardAmounts",
-        "type": "uint256[]"
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "rewardType",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "rewardAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardTokenID",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "inventoryAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inventorySlot",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Reward[]",
+        "name": "rewards",
+        "type": "tuple[]"
       }
     ],
     "name": "setStageRewards",
