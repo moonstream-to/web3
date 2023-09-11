@@ -3,6 +3,62 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "string",
+        "name": "error",
+        "type": "string"
+      }
+    ],
+    "name": "InventoryEquipError",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "sessionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "stage",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "path",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "predicateAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes4",
+        "name": "functionSelector",
+        "type": "bytes4"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "initialArguments",
+        "type": "bytes"
+      }
+    ],
+    "name": "PathChoicePredicateSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "uint256",
         "name": "sessionId",
@@ -53,6 +109,67 @@
       }
     ],
     "name": "PathRegistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "sessionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "stage",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "path",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "rewardType",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "rewardAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "rewardTokenID",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "rewardAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "inventoryAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "inventorySlot",
+        "type": "uint256"
+      }
+    ],
+    "name": "PathRewardChanged",
     "type": "event"
   },
   {
@@ -178,14 +295,20 @@
       },
       {
         "indexed": false,
+        "internalType": "uint256",
+        "name": "rewardType",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
         "internalType": "address",
-        "name": "terminusAddress",
+        "name": "rewardAddress",
         "type": "address"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "terminusPoolId",
+        "name": "rewardTokenID",
         "type": "uint256"
       },
       {
@@ -193,9 +316,52 @@
         "internalType": "uint256",
         "name": "rewardAmount",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "inventoryAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "inventorySlot",
+        "type": "uint256"
       }
     ],
     "name": "StageRewardChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "sessionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "predicateAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes4",
+        "name": "functionSelector",
+        "type": "bytes4"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "initialArguments",
+        "type": "bytes"
+      }
+    ],
+    "name": "StakingPredicateSet",
     "type": "event"
   },
   {
@@ -211,6 +377,81 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "sessionId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "stageNumber",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "pathNumber",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct PathDetails",
+        "name": "path",
+        "type": "tuple"
+      },
+      {
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "callPathChoicePredicate",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "valid",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "sessionId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "callSessionStakingPredicate",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "valid",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -357,6 +598,120 @@
   {
     "inputs": [
       {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "sessionId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "stageNumber",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "pathNumber",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct PathDetails",
+        "name": "path",
+        "type": "tuple"
+      }
+    ],
+    "name": "getPathChoicePredicate",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "predicateAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes4",
+            "name": "functionSelector",
+            "type": "bytes4"
+          },
+          {
+            "internalType": "bytes",
+            "name": "initialArguments",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct Predicate",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "sessionId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "stage",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "path",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPathReward",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "rewardType",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "rewardAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardTokenID",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "inventoryAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inventorySlot",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Reward",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "sessionId",
         "type": "uint256"
@@ -421,6 +776,42 @@
         "internalType": "uint256",
         "name": "sessionId",
         "type": "uint256"
+      }
+    ],
+    "name": "getSessionStakingPredicate",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "predicateAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes4",
+            "name": "functionSelector",
+            "type": "bytes4"
+          },
+          {
+            "internalType": "bytes",
+            "name": "initialArguments",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct Predicate",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "sessionId",
+        "type": "uint256"
       },
       {
         "internalType": "uint256",
@@ -457,22 +848,37 @@
       {
         "components": [
           {
+            "internalType": "uint256",
+            "name": "rewardType",
+            "type": "uint256"
+          },
+          {
             "internalType": "address",
-            "name": "terminusAddress",
+            "name": "rewardAddress",
             "type": "address"
           },
           {
             "internalType": "uint256",
-            "name": "terminusPoolId",
+            "name": "rewardTokenID",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
             "name": "rewardAmount",
             "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "inventoryAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inventorySlot",
+            "type": "uint256"
           }
         ],
-        "internalType": "struct StageReward",
+        "internalType": "struct Reward",
         "name": "",
         "type": "tuple"
       }
@@ -507,6 +913,24 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "gofpVersion",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "pure",
     "type": "function"
   },
   {
@@ -707,6 +1131,111 @@
   {
     "inputs": [
       {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "sessionId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "stageNumber",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "pathNumber",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct PathDetails",
+        "name": "path",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes4",
+        "name": "functionSelector",
+        "type": "bytes4"
+      },
+      {
+        "internalType": "address",
+        "name": "predicateAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "initialArguments",
+        "type": "bytes"
+      }
+    ],
+    "name": "setPathChoicePredicate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "sessionId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "stages",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "paths",
+        "type": "uint256[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "rewardType",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "rewardAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardTokenID",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "inventoryAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inventorySlot",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Reward[]",
+        "name": "rewards",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "setPathRewards",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "sessionId",
         "type": "uint256"
@@ -748,6 +1277,34 @@
         "type": "uint256"
       },
       {
+        "internalType": "bytes4",
+        "name": "functionSelector",
+        "type": "bytes4"
+      },
+      {
+        "internalType": "address",
+        "name": "predicateAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "initialArguments",
+        "type": "bytes"
+      }
+    ],
+    "name": "setSessionStakingPredicate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "sessionId",
+        "type": "uint256"
+      },
+      {
         "internalType": "string",
         "name": "uri",
         "type": "string"
@@ -771,19 +1328,41 @@
         "type": "uint256[]"
       },
       {
-        "internalType": "address[]",
-        "name": "terminusAddresses",
-        "type": "address[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "terminusPoolIds",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "rewardAmounts",
-        "type": "uint256[]"
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "rewardType",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "rewardAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardTokenID",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "inventoryAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "inventorySlot",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Reward[]",
+        "name": "rewards",
+        "type": "tuple[]"
       }
     ],
     "name": "setStageRewards",
