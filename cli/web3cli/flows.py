@@ -52,8 +52,6 @@ def handle_create_items_lootbox_from_config(args: argparse.Namespace) -> None:
     if type(config) is not list:
         raise Exception("Config must be a list of equippable items.")
 
-    print(args.lootbox_pool_id)
-
     network.connect(args.network)
     transaction_config = ITerminus.get_transaction_config(args)
 
@@ -102,7 +100,7 @@ def handle_create_inventory_slots_from_config(args: argparse.Namespace) -> None:
 
     # No good way to search the existing slot types. This just starts creating slot types from id 11. Perhaps it could be a parameter, but really
     # needs a contract change to support slot type creation.
-    next_slot_type_id = 11
+    next_slot_type_id = 21
     for item in config:
         slot_type = item["type"]
         if not slot_type in slot_type_mapping:
@@ -207,6 +205,152 @@ def handle_create_metadata_from_csv(args: argparse.Namespace) -> None:
             if config_file is not None:
                 with open(config_file, "w") as conf:
                     json.dump(config, conf, indent=4)
+
+
+def handle_create_metadata_from_images(args: argparse.Namespace) -> None:
+    dir = args.source_dir
+    config = []
+
+    for filename in os.listdir(dir):
+        if filename[-4:] != ".png":
+            continue
+
+        f = os.path.join(dir, filename)
+        # checking if it is a file
+        if os.path.isfile(f):
+            item_name = get_name_from_filename(filename)
+            item_rarity = get_rarity_from_filename(filename)
+            item_type = get_type_from_filename(filename)
+            item_description = get_description_from_filename(filename)
+            item_image_url = build_s3path(filename)
+            item_points = get_points_from_filename(filename)
+
+            metadata = {
+                "name": item_name,
+                "description": item_description,
+                "image": item_image_url,
+                "external_url": "https://www.crypto-guilds.com/",
+                "metadata_version": 1,
+                "attributes": [
+                    {"trait_type": "token_type", "value": "equipment"},
+                    {"trait_type": "rarity", "value": item_rarity},
+                    {"trait_type": "slot", "value": item_type},
+                    {"trait_type": "points", "value": item_points},
+                    {"trait_type": "protocol", "value": "terminus"},
+                ],
+            }
+
+            if item_rarity != "":
+                meta_file = filename.replace("png", "json")
+
+                config.append(
+                    {
+                        "id": filename[:-4],
+                        "type": item_type,
+                        "metadata": build_s3path(meta_file),
+                        "weight": get_weight_from_rarity(item_rarity),
+                        "pool_id": 0,
+                    }
+                )
+
+                outfile = os.path.join(dir, meta_file)
+                if outfile is not None:
+                    with open(outfile, "w") as o:
+                        json.dump(metadata, o, indent=4)
+
+    if len(config) > 0:
+        config_file = os.path.join(dir, "config.json")
+        if config_file is not None:
+            with open(config_file, "w") as conf:
+                json.dump(config, conf, indent=4)
+
+
+def get_name_from_filename(name: str):
+    parts = map(lambda x: x.capitalize(), name.split("-"))
+    return " ".join(list(parts)[:-1])
+
+
+def get_rarity_from_filename(name: str):
+    legendary = "legendary"
+    epic = "epic"
+    rare = "rare"
+    common = "common"
+    if legendary in name:
+        return legendary
+    elif epic in name:
+        return epic
+    elif rare in name:
+        return rare
+    elif common in name:
+        return common
+    else:
+        return ""
+
+
+def get_type_from_filename(name: str):
+    if "girdle" in name:
+        return "belt"
+    elif "band" in name:
+        return "ring"
+    elif "leggings" in name:
+        return "leggings"
+    elif "cape" in name:
+        return "cape"
+    elif "shoulders" in name:
+        return "shoulders"
+    else:
+        return ""
+
+
+def get_description_from_filename(name: str):
+    loot_type = get_type_from_filename(name)
+    if loot_type == "belt":
+        return "Fasten the Warlord's Girdle, a battle-hardened belt imbued with the spirits of ancient warriors, granting you unmatched strength and indomitable will in the heat of combat."
+    elif loot_type == "ring":
+        return "Wield the Ring of Valor, a band of courage that magnifies your bravery and resilience, turning the tide of battle in your favor with each pulse of its radiant energy."
+    elif loot_type == "leggings":
+        return "Embrace the enigma of Cursed Leggings, a malevolent garment that grants eerie power at a price as unpredictable as its dark enchantments."
+    elif loot_type == "cape":
+        return "Unfurl the Vortex Cape, a swirling tapestry of cosmic fabric that not only shields you from harm but also distorts the very air around you, creating miniature whirlwinds in your wake."
+    elif loot_type == "shoulders":
+        return "Don the Etherguard Shoulders, a set of pauldrons infused with mystical aether, offering both formidable defense and a conduit for channeling ethereal energies."
+    else:
+        return ""
+
+
+def build_s3path(filename: str):
+    loot_type = get_type_from_filename(filename)
+    base = (
+        "https://badges.moonstream.to/crypto-guilds/meta-game-launch-items/equipment/"
+    )
+    return base + loot_type + "/" + filename
+
+
+def get_points_from_filename(name: str):
+    loot_rarity = get_rarity_from_filename(name)
+    if loot_rarity == "legendary":
+        return 10
+    elif loot_rarity == "epic":
+        return 5
+    elif loot_rarity == "rare":
+        return 2
+    elif loot_rarity == "common":
+        return 1
+    else:
+        return 0
+
+
+def get_weight_from_rarity(rarity: str):
+    if rarity == "legendary":
+        return 0.001
+    elif rarity == "epic":
+        return 0.009
+    elif rarity == "rare":
+        return 0.06
+    elif rarity == "common":
+        return 0.13
+    else:
+        return 0
 
 
 def generate_cli():
@@ -333,6 +477,21 @@ def generate_cli():
         type=str,
         required=True,
         help="Path to the csv file",
+    )
+
+    create_metadata_from_images = subcommands.add_parser(
+        "create-metadata-from-images",
+        help="Creates config file",
+        description="Creates config file with.",
+    )
+
+    create_metadata_from_images.set_defaults(func=handle_create_metadata_from_images)
+
+    create_metadata_from_images.add_argument(
+        "--source-dir",
+        type=str,
+        required=True,
+        help="Path to the images",
     )
 
     return parser
