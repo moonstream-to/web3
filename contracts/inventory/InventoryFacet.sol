@@ -1,78 +1,22 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: MIT
 
 /**
- * Authors: Moonstream Engineering (engineering@moonstream.to)
- * GitHub: https://github.com/moonstream-to/web3
+ * Authors: Omar Garcia<ogarciarevett>, Moonstream DAO (engineering@moonstream.to)
+ * GitHub: https://github.com/G7DAO/contracts
  */
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.17;
 
+import {TerminusPermissions} from "../terminus/TerminusPermissions.sol";
+import {DiamondReentrancyGuard} from "../diamond/security/DiamondReentrancyGuard.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin-contracts/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol";
 import "../diamond/libraries/LibDiamond.sol";
-import {DiamondReentrancyGuard} from "../diamond/security/DiamondReentrancyGuard.sol";
-import {Slot, EquippedItem, IInventory} from "./IInventory.sol";
-import {TerminusPermissions} from "../terminus/TerminusPermissions.sol";
-
-/**
-LibInventory defines the storage structure used by the Inventory contract as a facet for an EIP-2535 Diamond
-proxy.
- */
-library LibInventory {
-    bytes32 constant STORAGE_POSITION =
-        keccak256("moonstreamdao.eth.storage.Inventory");
-
-    uint256 constant ERC20_ITEM_TYPE = 20;
-    uint256 constant ERC721_ITEM_TYPE = 721;
-    uint256 constant ERC1155_ITEM_TYPE = 1155;
-
-    struct InventoryStorage {
-        address AdminTerminusAddress;
-        uint256 AdminTerminusPoolId;
-        address ContractERC721Address;
-        uint256 NumSlots;
-        // SlotId => slot data (URI, persistence)
-        mapping(uint256 => Slot) SlotData;
-        // Slot => item type => item address => item pool ID => maximum equippable
-        // For ERC20 and ERC721 tokens, item pool ID is assumed to be 0. No data will be stored under positive
-        // item pool IDs.
-        //
-        // NOTE: It is possible for the same contract to implement multiple of these ERCs (e.g. ERC20 and ERC721),
-        // so this data structure actually makes sense.
-        mapping(uint256 => mapping(uint256 => mapping(address => mapping(uint256 => uint256)))) SlotEligibleItems;
-        // Subject contract address => subject token ID => slot => EquippedItem
-        // Item type and Pool ID on EquippedItem have the same constraints as they do elsewhere (e.g. in SlotEligibleItems).
-        //
-        // NOTE: We have added the subject contract address as the first mapping key as a defense against
-        // future modifications which may allow administrators to modify the subject contract address.
-        // If such a modification were made, it could make it possible for a bad actor administrator
-        // to change the address of the subject token to the address to an ERC721 contract they control
-        // and drain all items from every subject token's inventory.
-        // If this contract is deployed as a Diamond proxy, the owner of the Diamond can pretty much
-        // do whatever they want in any case, but adding the subject contract address as a key protects
-        // users of non-Diamond deployments even under small variants of the current implementation.
-        // It also offers *some* protection to users of Diamond deployments of the Inventory.
-        // ERC721 Contract Address =>
-        // subjectTokenId =>
-        // slotId =>
-        // EquippedItem struct
-        mapping(address => mapping(uint256 => mapping(uint256 => EquippedItem))) EquippedItems;
-    }
-
-    function inventoryStorage()
-        internal
-        pure
-        returns (InventoryStorage storage istore)
-    {
-        bytes32 position = STORAGE_POSITION;
-        assembly {
-            istore.slot := position
-        }
-    }
-}
+import "./LibInventory.sol";
+import "./IInventory.sol";
 
 /**
 InventoryFacet is a smart contract that can either be used standalone or as part of an EIP-2535 Diamond
@@ -89,10 +33,10 @@ Admin flow:
 - [x] Define tokens as equippable in inventory slots
 
 Player flow:
-- [x] Equip ERC20 tokens in eligible inventory slots
-- [x] Equip ERC721 tokens in eligible inventory slots
-- [x] Equip ERC1155 tokens in eligible inventory slots
-- [x] Unequip items from persistent slots
+- [] Equip ERC20 tokens in eligible inventory slots
+- [] Equip ERC721 tokens in eligible inventory slots
+- [] Equip ERC1155 tokens in eligible inventory slots
+- [ ] Unequip items from unequippable slots
 
 Batch endpoints:
 - [ ] Marking items as equippable
@@ -106,11 +50,6 @@ contract InventoryFacet is
     TerminusPermissions,
     DiamondReentrancyGuard
 {
-    event AdministratorDesignated(
-        address indexed adminTerminusAddress,
-        uint256 indexed adminTerminusPoolId
-    );
-
     modifier onlyAdmin() {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
@@ -121,6 +60,27 @@ contract InventoryFacet is
                 1
             ),
             "InventoryFacet.onlyAdmin: The address is not an authorized administrator"
+        );
+        _;
+    }
+
+    modifier requireValidItemType(uint256 itemType) {
+        require(
+            itemType == LibInventory.ERC20_ITEM_TYPE ||
+                itemType == LibInventory.ERC721_ITEM_TYPE ||
+                itemType == LibInventory.ERC1155_ITEM_TYPE,
+            "InventoryFacet.requireValidItemType: Invalid item type"
+        );
+        _;
+    }
+
+    modifier onlyContractSubjectOwner(uint256 subjectTokenId) {
+        LibInventory.InventoryStorage storage istore = LibInventory
+            .inventoryStorage();
+        IERC721 subjectContract = IERC721(istore.ContractERC721Address);
+        require(
+            msg.sender == subjectContract.ownerOf(subjectTokenId),
+            "InventoryFacet.getSubjectTokenSlots: Message sender is not owner of subject token"
         );
         _;
     }
@@ -144,7 +104,7 @@ contract InventoryFacet is
         istore.ContractERC721Address = contractAddress;
 
         emit AdministratorDesignated(adminTerminusAddress, adminTerminusPoolId);
-        emit NewSubjectAddress(contractAddress);
+        emit ContractAddressDesignated(contractAddress);
     }
 
     function adminTerminusInfo() external view returns (address, uint256) {
@@ -158,7 +118,8 @@ contract InventoryFacet is
     }
 
     function createSlot(
-        bool persistent,
+        bool unequippable,
+        uint256 slotType,
         string memory slotURI
     ) external onlyAdmin returns (uint256) {
         LibInventory.InventoryStorage storage istore = LibInventory
@@ -168,24 +129,113 @@ contract InventoryFacet is
         istore.NumSlots += 1;
         uint256 newSlot = istore.NumSlots;
         // save the slot type!
-        istore.SlotData[newSlot] = Slot({
+        istore.SlotData[newSlot] = LibInventory.Slot({
+            SlotType: slotType,
             SlotURI: slotURI,
-            SlotIsPersistent: persistent
+            SlotIsUnequippable: unequippable,
+            SlotId: newSlot
         });
 
-        emit SlotCreated(msg.sender, newSlot);
-        emit NewSlotURI(newSlot);
-        emit NewSlotPersistence(newSlot, persistent);
+        emit SlotCreated(msg.sender, newSlot, unequippable, slotType);
         return newSlot;
     }
 
+    function createSlotType(
+        uint256 slotType,
+        string memory slotTypeName
+    ) external onlyAdmin {
+        require(
+            bytes(slotTypeName).length > 0,
+            "InventoryFacet.setSlotType: Slot type name must be non-empty"
+        );
+        require(
+            slotType > 0,
+            "InventoryFacet.setSlotType: Slot type must be greater than 0"
+        );
+        LibInventory.InventoryStorage storage istore = LibInventory
+            .inventoryStorage();
+        istore.SlotTypes[slotType] = slotTypeName;
+        emit NewSlotTypeAdded(msg.sender, slotType, slotTypeName);
+    }
+
+    function assignSlotType(uint256 slot, uint256 slotType) external onlyAdmin {
+        require(
+            slotType > 0,
+            "InventoryFacet.addSlotType: SlotType must be greater than 0"
+        );
+
+        LibInventory.InventoryStorage storage istore = LibInventory
+            .inventoryStorage();
+        istore.SlotData[slot].SlotType = slotType;
+        emit SlotTypeAdded(msg.sender, slot, slotType);
+    }
+
+    function getSlotType(
+        uint256 slotType
+    ) external view returns (string memory slotTypeName) {
+        LibInventory.InventoryStorage storage istore = LibInventory
+            .inventoryStorage();
+        return istore.SlotTypes[slotType];
+    }
+
+    //    TODO: @ogarciarevett change this to use a external backpack NFT
+    function addBackpackToSubject(
+        uint256 slotQty,
+        uint256 toSubjectTokenId,
+        uint256 slotType,
+        string memory slotURI
+    ) external onlyAdmin {
+        require(
+            slotQty > 0,
+            "InventoryFacet.addBackpackToSubject: Slot quantity must be greater than 0"
+        );
+
+        LibInventory.InventoryStorage storage istore = LibInventory
+            .inventoryStorage();
+
+        uint256 previousSlotNumSubject = istore
+        .SubjectSlots[istore.ContractERC721Address][toSubjectTokenId].length;
+
+        for (uint256 i = 0; i < slotQty; i++) {
+            istore
+            .SubjectSlots[istore.ContractERC721Address][toSubjectTokenId].push(
+                    LibInventory.Slot({
+                        SlotType: slotType,
+                        SlotURI: slotURI,
+                        SlotIsUnequippable: false,
+                        SlotId: previousSlotNumSubject + i ==
+                            previousSlotNumSubject
+                            ? previousSlotNumSubject + 1
+                            : previousSlotNumSubject + i
+                    })
+                );
+        }
+
+        emit BackpackAdded(msg.sender, toSubjectTokenId, slotQty);
+    }
+
+    function getSubjectTokenSlots(
+        uint256 subjectTokenId
+    )
+        external
+        view
+        onlyContractSubjectOwner(subjectTokenId)
+        returns (LibInventory.Slot[] memory slots)
+    {
+        LibInventory.InventoryStorage storage istore = LibInventory
+            .inventoryStorage();
+        return
+            istore.SubjectSlots[istore.ContractERC721Address][subjectTokenId];
+    }
+
+    // COUNTER
     function numSlots() external view returns (uint256) {
         return LibInventory.inventoryStorage().NumSlots;
     }
 
     function getSlotById(
         uint256 slotId
-    ) external view returns (Slot memory slot) {
+    ) external view returns (LibInventory.Slot memory slot) {
         return LibInventory.inventoryStorage().SlotData[slotId];
     }
 
@@ -196,36 +246,34 @@ contract InventoryFacet is
         return istore.SlotData[slotId].SlotURI;
     }
 
-    function setSlotURI(
+    function setSlotUri(
         string memory newSlotURI,
         uint slotId
     ) external onlyAdmin {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
 
-        Slot memory slot = istore.SlotData[slotId];
+        LibInventory.Slot memory slot = istore.SlotData[slotId];
         slot.SlotURI = newSlotURI;
         istore.SlotData[slotId] = slot;
         emit NewSlotURI(slotId);
     }
 
-    function slotIsPersistent(uint256 slotId) external view returns (bool) {
+    function slotIsUnequippable(uint256 slotId) external view returns (bool) {
         return
-            LibInventory.inventoryStorage().SlotData[slotId].SlotIsPersistent;
+            LibInventory.inventoryStorage().SlotData[slotId].SlotIsUnequippable;
     }
 
-    function setSlotPersistent(
-        uint256 slotId,
-        bool persistent
+    function setSlotUnequippable(
+        bool unquippable,
+        uint256 slotId
     ) external onlyAdmin {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
 
-        Slot memory slot = istore.SlotData[slotId];
-        slot.SlotIsPersistent = persistent;
+        LibInventory.Slot memory slot = istore.SlotData[slotId];
+        slot.SlotIsUnequippable = unquippable;
         istore.SlotData[slotId] = slot;
-
-        emit NewSlotPersistence(slotId, persistent);
     }
 
     function markItemAsEquippableInSlot(
@@ -234,14 +282,7 @@ contract InventoryFacet is
         address itemAddress,
         uint256 itemPoolId,
         uint256 maxAmount
-    ) external onlyAdmin {
-        require(
-            itemType == LibInventory.ERC20_ITEM_TYPE ||
-                itemType == LibInventory.ERC721_ITEM_TYPE ||
-                itemType == LibInventory.ERC1155_ITEM_TYPE,
-            "InventoryFacet.markItemAsEquippableInSlot: Invalid item type"
-        );
-
+    ) external onlyAdmin requireValidItemType(itemType) {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
 
@@ -304,11 +345,11 @@ contract InventoryFacet is
             .inventoryStorage();
 
         require(
-            !istore.SlotData[slot].SlotIsPersistent,
-            "InventoryFacet._unequip: That slot is persistent. You cannot unequip items from it."
+            istore.SlotData[slot].SlotIsUnequippable,
+            "InventoryFacet._unequip: That slot is not unequippable"
         );
 
-        EquippedItem storage existingItem = istore.EquippedItems[
+        LibInventory.EquippedItem storage existingItem = istore.EquippedItems[
             istore.ContractERC721Address
         ][subjectTokenId][slot];
 
@@ -371,20 +412,14 @@ contract InventoryFacet is
         address itemAddress,
         uint256 itemTokenId,
         uint256 amount
-    ) external diamondNonReentrant {
-        require(
-            itemType == LibInventory.ERC20_ITEM_TYPE ||
-                itemType == LibInventory.ERC721_ITEM_TYPE ||
-                itemType == LibInventory.ERC1155_ITEM_TYPE,
-            "InventoryFacet.equip: Invalid item type"
-        );
-
+    ) external requireValidItemType(itemType) diamondNonReentrant {
         require(
             itemType == LibInventory.ERC721_ITEM_TYPE ||
                 itemType == LibInventory.ERC1155_ITEM_TYPE ||
                 itemTokenId == 0,
             "InventoryFacet.equip: itemTokenId can only be non-zero for ERC721 or ERC1155 items"
         );
+
         require(
             itemType == LibInventory.ERC20_ITEM_TYPE ||
                 itemType == LibInventory.ERC1155_ITEM_TYPE ||
@@ -405,10 +440,6 @@ contract InventoryFacet is
         // increasing the amount of an existing token in the given slot. To increase gas-efficiency,
         // we could add more complex logic here to handle that situation by only equipping the difference
         // between the existing amount of the token and the target amount.
-        // TODO(zomglings): The current implementation makes it so that players cannot increase the
-        // number of tokens of a given type that are equipped into a persistent slot. I would consider
-        // this a bug. For more details, see comment at bottom of the following test:
-        // web3cli.test_inventory.TestPlayerFlow.test_player_cannot_unequip_erc20_tokens_from_persistent_slot_but_can_increase_amount
         if (
             istore
             .EquippedItems[istore.ContractERC721Address][subjectTokenId][slot]
@@ -466,15 +497,6 @@ contract InventoryFacet is
             );
         }
 
-        istore.EquippedItems[istore.ContractERC721Address][subjectTokenId][
-            slot
-        ] = EquippedItem({
-            ItemType: itemType,
-            ItemAddress: itemAddress,
-            ItemTokenId: itemTokenId,
-            Amount: amount
-        });
-
         emit ItemEquipped(
             subjectTokenId,
             slot,
@@ -484,6 +506,15 @@ contract InventoryFacet is
             amount,
             msg.sender
         );
+
+        istore.EquippedItems[istore.ContractERC721Address][subjectTokenId][
+            slot
+        ] = LibInventory.EquippedItem({
+            ItemType: itemType,
+            ItemAddress: itemAddress,
+            ItemTokenId: itemTokenId,
+            Amount: amount
+        });
     }
 
     function unequip(
@@ -507,7 +538,7 @@ contract InventoryFacet is
     function getEquippedItem(
         uint256 subjectTokenId,
         uint256 slot
-    ) external view returns (EquippedItem memory item) {
+    ) external view returns (LibInventory.EquippedItem memory item) {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
 
@@ -516,10 +547,64 @@ contract InventoryFacet is
             "InventoryFacet.getEquippedItem: Slot does not exist"
         );
 
-        EquippedItem memory equippedItem = istore.EquippedItems[
+        LibInventory.EquippedItem memory equippedItem = istore.EquippedItems[
             istore.ContractERC721Address
         ][subjectTokenId][slot];
 
         return equippedItem;
+    }
+
+    function getAllEquippedItems(
+        uint256 subjectTokenId,
+        uint256[] memory slots
+    ) external view returns (LibInventory.EquippedItem[] memory equippedItems) {
+        LibInventory.InventoryStorage storage istore = LibInventory
+            .inventoryStorage();
+
+        LibInventory.EquippedItem[]
+            memory items = new LibInventory.EquippedItem[](slots.length);
+
+        for (uint256 i = 0; i < slots.length; i++) {
+            require(
+                slots[i] <= this.numSlots(),
+                "InventoryFacet.getEquippedItem: Slot does not exist"
+            );
+            LibInventory.EquippedItem memory equippedItem = istore
+                .EquippedItems[istore.ContractERC721Address][subjectTokenId][
+                    slots[i]
+                ];
+            items[i] = equippedItem;
+        }
+
+        return items;
+    }
+
+    function equipBatch(
+        uint256 subjectTokenId,
+        uint256[] memory slots,
+        LibInventory.EquippedItem[] memory items
+    ) external diamondNonReentrant {
+        require(
+            items.length > 0,
+            "InventoryFacet.batchEquip: Must equip at least one item"
+        );
+        require(
+            slots.length == items.length,
+            "InventoryFacet.batchEquip: Must provide a slot for each item"
+        );
+        for (uint256 i = 0; i < items.length; i++) {
+            require(
+                slots[i] <= this.numSlots(),
+                "InventoryFacet.batchEquip: Slot does not exist"
+            );
+            this.equip(
+                subjectTokenId,
+                slots[i],
+                items[i].ItemType,
+                items[i].ItemAddress,
+                items[i].ItemTokenId,
+                items[i].Amount
+            );
+        }
     }
 }

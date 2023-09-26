@@ -1,33 +1,28 @@
-// SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
 
-struct Slot {
-    string SlotURI;
-    bool SlotIsPersistent;
-}
+import "./LibInventory.sol";
 
-// EquippedItem represents an item equipped in a specific inventory slot for a specific ERC721 token.
-struct EquippedItem {
-    uint256 ItemType;
-    address ItemAddress;
-    uint256 ItemTokenId;
-    uint256 Amount;
-}
-
-// Interface ID: 6e34096c
-//
-// Calculated by solface: https://github.com/moonstream-to/solface
-//
-// To recalculate from root directory of this repo:
-// $ jq .abi build/contracts/IInventory.json  | solface -name IInventory -annotations | grep "Interface ID:"
-//
-// Note: Change path to build/contracts/IInventory.json depending on where you are relative to the repo root.
 interface IInventory {
-    // This event should be emitted when the subject ERC721 contract address is set (or changes) on the
-    // Inventory contract.
-    event NewSubjectAddress(address indexed contractAddress);
+    event AdministratorDesignated(
+        address indexed adminTerminusAddress,
+        uint256 indexed adminTerminusPoolId
+    );
 
-    event SlotCreated(address indexed creator, uint256 slot);
+    event ContractAddressDesignated(address indexed contractAddress);
+
+    event SlotCreated(
+        address indexed creator,
+        uint256 indexed slot,
+        bool unequippable,
+        uint256 indexed slotType
+    );
+
+    event NewSlotTypeAdded(
+        address indexed creator,
+        uint256 indexed slotType,
+        string slotTypeName
+    );
 
     event ItemMarkedAsEquippableInSlot(
         uint256 indexed slot,
@@ -37,9 +32,19 @@ interface IInventory {
         uint256 maxAmount
     );
 
+    event BackpackAdded(
+        address indexed creator,
+        uint256 indexed toSubjectTokenId,
+        uint256 indexed slotQuantity
+    );
+
     event NewSlotURI(uint256 indexed slotId);
 
-    event NewSlotPersistence(uint256 indexed slotId, bool persistent);
+    event SlotTypeAdded(
+        address indexed creator,
+        uint256 indexed slotId,
+        uint256 indexed slotType
+    );
 
     event ItemEquipped(
         uint256 indexed subjectTokenId,
@@ -61,37 +66,26 @@ interface IInventory {
         address unequippedBy
     );
 
+    function init(
+        address adminTerminusAddress,
+        uint256 adminTerminusPoolId,
+        address subjectAddress
+    ) external;
+
     function adminTerminusInfo() external view returns (address, uint256);
 
     function subject() external view returns (address);
 
-    // Constraint: Admin
-    // Emits: SlotCreated, NewSlotURI, NewSlotPersistence
     function createSlot(
-        bool persistent,
+        bool unequippable,
+        uint256 slotType,
         string memory slotURI
     ) external returns (uint256);
 
     function numSlots() external view returns (uint256);
 
-    function getSlotById(
-        uint256 slotId
-    ) external view returns (Slot memory slots);
+    function slotIsUnequippable(uint256 slotId) external view returns (bool);
 
-    function getSlotURI(uint256 slotId) external view returns (string memory);
-
-    function slotIsPersistent(uint256 slotId) external view returns (bool);
-
-    // Constraint: Admin
-    // Emits: NewSlotURI
-    function setSlotURI(string memory newSlotURI, uint slotId) external;
-
-    // Constraint: Admin
-    // Emits: NewSlotPersistence
-    function setSlotPersistent(uint256 slotId, bool persistent) external;
-
-    // Constraint: Admin
-    // Emits: ItemMarkedAsEquippableInSlot
     function markItemAsEquippableInSlot(
         uint256 slot,
         uint256 itemType,
@@ -107,9 +101,6 @@ interface IInventory {
         uint256 itemPoolId
     ) external view returns (uint256);
 
-    // Constraint: Non-reentrant.
-    // Emits: ItemEquipped
-    // Optionally emits: ItemUnequipped (if the current item in that slot is being replaced)
     function equip(
         uint256 subjectTokenId,
         uint256 slot,
@@ -119,8 +110,6 @@ interface IInventory {
         uint256 amount
     ) external;
 
-    // Constraint: Non-reentrant.
-    // Emits: ItemUnequipped
     function unequip(
         uint256 subjectTokenId,
         uint256 slot,
@@ -131,5 +120,46 @@ interface IInventory {
     function getEquippedItem(
         uint256 subjectTokenId,
         uint256 slot
-    ) external view returns (EquippedItem memory item);
+    ) external view returns (LibInventory.EquippedItem memory item);
+
+    function getSlotById(
+        uint256 slotId
+    ) external view returns (LibInventory.Slot memory slots);
+
+    function getSubjectTokenSlots(
+        uint256 subjectTokenId
+    ) external view returns (LibInventory.Slot[] memory slot);
+
+    function addBackpackToSubject(
+        uint256 slotQty,
+        uint256 toSubjectTokenId,
+        uint256 slotType,
+        string memory slotURI
+    ) external;
+
+    function getSlotURI(uint256 slotId) external view returns (string memory);
+
+    function createSlotType(
+        uint256 slotType,
+        string memory slotTypeName
+    ) external;
+
+    function assignSlotType(uint256 slot, uint256 slotType) external;
+
+    function getSlotType(
+        uint256 slotType
+    ) external view returns (string memory slotTypeName);
+
+    function setSlotUnequippable(bool unquippable, uint256 slotId) external;
+
+    function getAllEquippedItems(
+        uint256 subjectTokenId,
+        uint256[] memory slots
+    ) external view returns (LibInventory.EquippedItem[] memory equippedItems);
+
+    function equipBatch(
+        uint256 subjectTokenId,
+        uint256[] memory slots,
+        LibInventory.EquippedItem[] memory items
+    ) external;
 }

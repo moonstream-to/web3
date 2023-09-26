@@ -19,6 +19,7 @@ from . import (
     InventoryFacet,
     TerminusFacet,
     StatBlock,
+    moonbound,
 )
 
 
@@ -86,6 +87,9 @@ def main() -> None:
 
     statblock_parser = StatBlock.generate_cli()
     subparsers.add_parser("statblock", parents=[statblock_parser], add_help=False)
+
+    moonbound_parser = moonbound.generate_cli()
+    subparsers.add_parser("moonbound", parents=[moonbound_parser], add_help=False)
 
     args = parser.parse_args()
     args.func(args)
