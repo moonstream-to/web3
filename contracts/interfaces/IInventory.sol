@@ -14,7 +14,7 @@ struct EquippedItem {
     uint256 Amount;
 }
 
-// Interface ID: 6e34096c
+// Interface ID: c8a97a5b
 //
 // Calculated by solface: https://github.com/moonstream-to/solface
 //
@@ -60,8 +60,6 @@ interface IInventory {
         uint256 amount,
         address unequippedBy
     );
-
-    function adminTerminusInfo() external view returns (address, uint256);
 
     function subject() external view returns (address);
 
