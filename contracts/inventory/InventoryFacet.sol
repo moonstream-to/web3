@@ -371,7 +371,7 @@ contract InventoryFacet is
         address itemAddress,
         uint256 itemTokenId,
         uint256 amount
-    ) external diamondNonReentrant {
+    ) public override diamondNonReentrant {
         require(
             itemType == LibInventory.ERC20_ITEM_TYPE ||
                 itemType == LibInventory.ERC721_ITEM_TYPE ||
@@ -408,7 +408,7 @@ contract InventoryFacet is
         // TODO(zomglings): The current implementation makes it so that players cannot increase the
         // number of tokens of a given type that are equipped into a persistent slot. I would consider
         // this a bug. For more details, see comment at bottom of the following test:
-        // web3cli.test_inventory.TestPlayerFlow.test_player_cannot_unequip_erc20_tokens_from_persistent_slot_but_can_increase_amount
+        // web3cli.test_inventory.TestPlayerFlow.test_player_cannot_unequip_erc20_tokens_from_persistent_slot
         if (
             istore
             .EquippedItems[istore.ContractERC721Address][subjectTokenId][slot]
@@ -491,7 +491,7 @@ contract InventoryFacet is
         uint256 slot,
         bool unequipAll,
         uint256 amount
-    ) external diamondNonReentrant {
+    ) public override diamondNonReentrant {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
 
