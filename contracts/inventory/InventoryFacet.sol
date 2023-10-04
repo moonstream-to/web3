@@ -14,7 +14,7 @@ import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol";
 import "../diamond/libraries/LibDiamond.sol";
 import {DiamondReentrancyGuard} from "../diamond/security/DiamondReentrancyGuard.sol";
-import {Slot, EquippedItem, IInventory} from "./IInventory.sol";
+import {Slot, EquippedItem, IInventory} from "../interfaces/IInventory.sol";
 import {TerminusPermissions} from "../terminus/TerminusPermissions.sol";
 
 /**
