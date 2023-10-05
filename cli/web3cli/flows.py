@@ -100,7 +100,7 @@ def handle_create_inventory_slots_from_config(args: argparse.Namespace) -> None:
 
     # No good way to search the existing slot types. This just starts creating slot types from id 11. Perhaps it could be a parameter, but really
     # needs a contract change to support slot type creation.
-    next_slot_type_id = 11
+    next_slot_type_id = 21
     for item in config:
         slot_type = item["type"]
         if not slot_type in slot_type_mapping:
