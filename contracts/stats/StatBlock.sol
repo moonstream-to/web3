@@ -9,27 +9,17 @@ pragma solidity ^0.8.0;
 import {IERC1155} from "@openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol";
 import {IStatBlock} from "./IStatBlock.sol";
 
-contract StatBlock is IStatBlock {
+contract StatBlockBase is IStatBlock {
     string public statBlockVersion = "0.0.1";
-    address AdminTerminusAddress;
-    uint256 AdminTerminusPoolID;
     // Stats are 0-indexed.
     uint256 public NumStats;
     mapping(uint256 => string) StatDescriptor;
     mapping(address => mapping(uint256 => mapping(uint256 => uint256))) Stat;
 
-    constructor(address adminTerminusAddress, uint256 adminTerminusPoolID) {
-        AdminTerminusAddress = adminTerminusAddress;
-        AdminTerminusPoolID = adminTerminusPoolID;
-    }
-
-    function adminTerminusInfo() external view returns (address, uint256) {
-        return (AdminTerminusAddress, AdminTerminusPoolID);
-    }
-
-    function isAdministrator(address account) public view returns (bool) {
-        IERC1155 terminus = IERC1155(AdminTerminusAddress);
-        return terminus.balanceOf(account, AdminTerminusPoolID) > 0;
+    function isAdministrator(
+        address account
+    ) public view virtual returns (bool) {
+        return false;
     }
 
     function createStat(
@@ -139,5 +129,26 @@ contract StatBlock is IStatBlock {
             values[i] = getStats(tokenAddresses[i], tokenIDs[i], statIDs);
         }
         return values;
+    }
+}
+
+contract StatBlock is StatBlockBase {
+    address AdminTerminusAddress;
+    uint256 AdminTerminusPoolID;
+
+    constructor(address adminTerminusAddress, uint256 adminTerminusPoolID) {
+        AdminTerminusAddress = adminTerminusAddress;
+        AdminTerminusPoolID = adminTerminusPoolID;
+    }
+
+    function adminTerminusInfo() external view returns (address, uint256) {
+        return (AdminTerminusAddress, AdminTerminusPoolID);
+    }
+
+    function isAdministrator(
+        address account
+    ) public view override returns (bool) {
+        IERC1155 terminus = IERC1155(AdminTerminusAddress);
+        return terminus.balanceOf(account, AdminTerminusPoolID) > 0;
     }
 }
