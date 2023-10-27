@@ -135,7 +135,7 @@ contract InventoryFacet is
         address adminTerminusAddress,
         uint256 adminTerminusPoolId,
         address contractAddress
-    ) external {
+    ) public {
         LibDiamond.enforceIsContractOwner();
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
@@ -160,7 +160,7 @@ contract InventoryFacet is
     function createSlot(
         bool persistent,
         string memory slotURI
-    ) external onlyAdmin returns (uint256) {
+    ) public onlyAdmin returns (uint256) {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
 
@@ -199,7 +199,7 @@ contract InventoryFacet is
     function setSlotURI(
         string memory newSlotURI,
         uint slotId
-    ) external onlyAdmin {
+    ) public onlyAdmin {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
 
@@ -217,7 +217,7 @@ contract InventoryFacet is
     function setSlotPersistent(
         uint256 slotId,
         bool persistent
-    ) external onlyAdmin {
+    ) public onlyAdmin {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
 
@@ -234,7 +234,7 @@ contract InventoryFacet is
         address itemAddress,
         uint256 itemPoolId,
         uint256 maxAmount
-    ) external onlyAdmin {
+    ) public onlyAdmin {
         require(
             itemType == LibInventory.ERC20_ITEM_TYPE ||
                 itemType == LibInventory.ERC721_ITEM_TYPE ||
@@ -371,7 +371,7 @@ contract InventoryFacet is
         address itemAddress,
         uint256 itemTokenId,
         uint256 amount
-    ) public override diamondNonReentrant {
+    ) public virtual override diamondNonReentrant {
         require(
             itemType == LibInventory.ERC20_ITEM_TYPE ||
                 itemType == LibInventory.ERC721_ITEM_TYPE ||
@@ -491,7 +491,7 @@ contract InventoryFacet is
         uint256 slot,
         bool unequipAll,
         uint256 amount
-    ) public override diamondNonReentrant {
+    ) public virtual override diamondNonReentrant {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
 
