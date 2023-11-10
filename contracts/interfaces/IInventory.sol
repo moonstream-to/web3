@@ -1,18 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
-
-struct Slot {
-    string SlotURI;
-    bool SlotIsPersistent;
-}
-
-// EquippedItem represents an item equipped in a specific inventory slot for a specific ERC721 token.
-struct EquippedItem {
-    uint256 ItemType;
-    address ItemAddress;
-    uint256 ItemTokenId;
-    uint256 Amount;
-}
+import "../libraries/LibInventory.sol";
 
 // Interface ID: c8a97a5b
 //
@@ -22,12 +10,17 @@ struct EquippedItem {
 // $ jq .abi build/contracts/IInventory.json  | solface -name IInventory -annotations | grep "Interface ID:"
 //
 // Note: Change path to build/contracts/IInventory.json depending on where you are relative to the repo root.
+
 interface IInventory {
     // This event should be emitted when the subject ERC721 contract address is set (or changes) on the
     // Inventory contract.
     event NewSubjectAddress(address indexed contractAddress);
 
     event SlotCreated(address indexed creator, uint256 slot);
+
+    event AdministratorDesignated(address indexed adminAddress);
+
+    event ContractAddressDesignated(address indexed contractAddress);
 
     event ItemMarkedAsEquippableInSlot(
         uint256 indexed slot,
@@ -74,7 +67,7 @@ interface IInventory {
 
     function getSlotById(
         uint256 slotId
-    ) external view returns (Slot memory slots);
+    ) external view returns (LibInventory.Slot memory slots);
 
     function getSlotURI(uint256 slotId) external view returns (string memory);
 
@@ -82,7 +75,7 @@ interface IInventory {
 
     // Constraint: Admin
     // Emits: NewSlotURI
-    function setSlotURI(string memory newSlotURI, uint slotId) external;
+    function setSlotURI(string memory newSlotURI, uint256 slotId) external;
 
     // Constraint: Admin
     // Emits: NewSlotPersistence
@@ -117,17 +110,12 @@ interface IInventory {
         uint256 amount
     ) external;
 
-    // Constraint: Non-reentrant.
-    // Emits: ItemUnequipped
-    function unequip(
-        uint256 subjectTokenId,
-        uint256 slot,
-        bool unequipAll,
-        uint256 amount
-    ) external;
-
     function getEquippedItem(
         uint256 subjectTokenId,
         uint256 slot
-    ) external view returns (EquippedItem memory item);
+    ) external view returns (LibInventory.EquippedItem memory item);
+
+    function getAllEquippedItems(
+        uint256 subjectTokenId
+    ) external view returns (LibInventory.EquippedItem[] memory items);
 }
