@@ -94,28 +94,16 @@ def handle_create_inventory_slots_from_config(args: argparse.Namespace) -> None:
     inventory = InventoryFacet.InventoryFacet(args.inventory_address)
     equipment_address = args.equipment_address
 
-    slot_type_mapping = dict()
     slot_mapping = dict()
     pool_mapping = dict()
 
-    # No good way to search the existing slot types. This just starts creating slot types from id 11. Perhaps it could be a parameter, but really
-    # needs a contract change to support slot type creation.
-    next_slot_type_id = 11
     for item in config:
         slot_type = item["type"]
-        if not slot_type in slot_type_mapping:
-            inventory.create_slot_type(next_slot_type_id, slot_type, transaction_config)
-            slot_type_mapping[slot_type] = next_slot_type_id
-            print(
-                "Created slot type " + slot_type + " with id " + str(next_slot_type_id)
-            )
-            inventory.create_slot(True, next_slot_type_id, "", transaction_config)
+        if not slot_type in slot_mapping:
+            inventory.create_slot(False, "", transaction_config)
             next_slot_id = inventory.num_slots()
             slot_mapping[slot_type] = next_slot_id
-            print(
-                "Created slot with type " + slot_type + " and id " + str(next_slot_id)
-            )
-            next_slot_type_id = next_slot_type_id + 1
+            print("Created slot id " + str(next_slot_id) + " for type " + slot_type)
         pool_id = item["pool_id"]
         slot_id = slot_mapping[slot_type]
         inventory.mark_item_as_equippable_in_slot(
@@ -133,7 +121,6 @@ def handle_create_inventory_slots_from_config(args: argparse.Namespace) -> None:
         }
         print(item["id"] + " is equippable in slot " + str(slot_id))
 
-    print(slot_type_mapping)
     print(slot_mapping)
     print(pool_mapping)
 

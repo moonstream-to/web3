@@ -659,9 +659,8 @@ def gofp_gogogo(
 
 
 def inventory_gogogo(
-    admin_terminus_address: str,
-    admin_terminus_pool_id: int,
-    subject_erc721_address: str,
+    admin_address: str,
+    contract_address: str,
     transaction_config: Dict[str, Any],
     diamond_cut_address: Optional[str] = None,
     diamond_address: Optional[str] = None,
@@ -709,9 +708,8 @@ def inventory_gogogo(
         initializer_address=inventory_facet.address,
         feature=EngineFeatures.INVENTORY,
         initializer_args=[
-            admin_terminus_address,
-            admin_terminus_pool_id,
-            subject_erc721_address,
+            admin_address,
+            contract_address,
         ],
     )
     deployment_info["attached"].append("InventoryFacet")
@@ -858,9 +856,8 @@ def handle_inventory_gogogo(args: argparse.Namespace) -> None:
     network.connect(args.network)
     transaction_config = InventoryFacet.get_transaction_config(args)
     result = inventory_gogogo(
-        admin_terminus_address=args.admin_terminus_address,
-        admin_terminus_pool_id=args.admin_terminus_pool_id,
-        subject_erc721_address=args.subject_erc721_address,
+        admin_address=args.admin_address,
+        contract_address=args.contract_address,
         transaction_config=transaction_config,
         diamond_cut_address=args.diamond_cut_address,
         diamond_address=args.diamond_address,
@@ -1079,18 +1076,12 @@ def generate_cli():
         help="Verify contracts",
     )
     inventory_gogogo_parser.add_argument(
-        "--admin-terminus-address",
+        "--admin-address",
         required=True,
-        help="Address of Terminus contract defining access control for this GardenOfForkingPaths contract",
+        help="Administrator address",
     )
     inventory_gogogo_parser.add_argument(
-        "--admin-terminus-pool-id",
-        required=True,
-        type=int,
-        help="Pool ID of Terminus pool for administrators of this GardenOfForkingPaths contract",
-    )
-    inventory_gogogo_parser.add_argument(
-        "--subject-erc721-address",
+        "--contract-address",
         required=True,
         help="Address of ERC721 contract that the Inventory modifies",
     )
