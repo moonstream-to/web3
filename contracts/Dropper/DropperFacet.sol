@@ -102,7 +102,7 @@ contract DropperFacet is
         LibDiamond.enforceIsContractOwner();
 
         // Set up server side signing parameters for EIP712
-        LibSignatures._setEIP712Parameters("Moonstream Dropper", "0.2.0");
+        LibSignatures._setEIP712Parameters("Moonstream Dropper", "0.3.0");
 
         // Initialize Terminus administration information
         LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
@@ -258,17 +258,17 @@ contract DropperFacet is
         return digest;
     }
 
-    function claim(
+    function _claim(
         uint256 dropId,
         uint256 requestID,
         uint256 blockDeadline,
         uint256 amount,
         address signer,
         bytes memory signature
-    ) public virtual diamondNonReentrant {
+    ) internal virtual {
         require(
             block.number <= blockDeadline,
-            "Dropper: claim -- Block deadline exceeded."
+            "Dropper: _claim -- Block deadline exceeded."
         );
 
         LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
@@ -281,17 +281,17 @@ contract DropperFacet is
                 signer,
                 ds.DropAuthorizations[dropId].poolId
             ) > 0,
-            "Dropper.claim: Unauthorized signer for drop"
+            "Dropper: _claim -- Unauthorized signer for drop"
         );
 
         require(
             ds.IsDropActive[dropId],
-            "Dropper: claim -- cannot claim inactive drop"
+            "Dropper: _claim -- cannot claim inactive drop"
         );
 
         require(
             !ds.DropRequestClaimed[dropId][requestID],
-            "Dropper.claim: That (dropID, requestID) pair has already been claimed"
+            "Dropper: _claim -- That (dropID, requestID) pair has already been claimed"
         );
 
         bytes32 hash = claimMessageHash(
@@ -303,7 +303,7 @@ contract DropperFacet is
         );
         require(
             SignatureChecker.isValidSignatureNow(signer, hash, signature),
-            "Dropper: claim -- Invalid signer for claim."
+            "Dropper: _claim -- Invalid signature for claim."
         );
 
         DroppableToken memory claimToken = ds.DropToken[dropId];
@@ -344,12 +344,65 @@ contract DropperFacet is
                 ""
             );
         } else {
-            revert("Dropper -- claim: Unknown token type in claim");
+            revert("Dropper: _claim -- Unknown token type in claim");
         }
 
         ds.DropRequestClaimed[dropId][requestID] = true;
 
         emit Claimed(dropId, msg.sender, signer, requestID, amount);
+    }
+
+    function claim(
+        uint256 dropId,
+        uint256 requestID,
+        uint256 blockDeadline,
+        uint256 amount,
+        address signer,
+        bytes memory signature
+    ) public virtual diamondNonReentrant {
+        _claim(dropId, requestID, blockDeadline, amount, signer, signature);
+    }
+
+    function batchClaim(
+        uint256[] memory dropIDList,
+        uint256[] memory requestIDList,
+        uint256[] memory blockDeadlineList,
+        uint256[] memory amountList,
+        address[] memory signerList,
+        bytes[] memory signatureList
+    ) public virtual diamondNonReentrant {
+        require(
+            dropIDList.length == requestIDList.length,
+            "Dropper: batchClaim -- dropIDList and requestIDList length mismatch"
+        );
+        require(
+            dropIDList.length == blockDeadlineList.length,
+            "Dropper: batchClaim -- dropIDList and blockDeadlineList length mismatch"
+        );
+        require(
+            dropIDList.length == amountList.length,
+            "Dropper: batchClaim -- dropIDList and amountList length mismatch"
+        );
+        require(
+            dropIDList.length == signerList.length,
+            "Dropper: batchClaim -- dropIDList and signerList length mismatch"
+        );
+        require(
+            dropIDList.length == signatureList.length,
+            "Dropper: batchClaim -- dropIDList and signatureList length mismatch"
+        );
+
+        uint256 i = 0;
+        for (i = 0; i < dropIDList.length; i++) {
+            _claim(
+                dropIDList[i],
+                requestIDList[i],
+                blockDeadlineList[i],
+                amountList[i],
+                signerList[i],
+                signatureList[i]
+            );
+        }
     }
 
     function claimStatus(
