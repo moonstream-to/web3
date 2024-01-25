@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 // Adapted from the Diamond 3 reference implementation by Nick Mudge:
 // https://github.com/mudgen/diamond-3-hardhat
 
-import {LibDiamond} from "./libraries/LibDiamond.sol";
+import {LibDiamondMoonstream as LibDiamond} from "./libraries/LibDiamondMoonstream.sol";
 import {IDiamondCut} from "./interfaces/IDiamondCut.sol";
 
 contract Diamond {

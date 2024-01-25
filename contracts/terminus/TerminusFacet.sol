@@ -23,7 +23,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "./ERC1155WithTerminusStorage.sol";
 import "./LibTerminus.sol";
-import "../diamond/libraries/LibDiamond.sol";
+import {LibDiamondMoonstream as LibDiamond} from "../diamond/libraries/LibDiamondMoonstream.sol";
 
 contract TerminusFacet is ERC1155WithTerminusStorage {
     constructor() {
@@ -155,27 +155,21 @@ contract TerminusFacet is ERC1155WithTerminusStorage {
         LibTerminus.setPoolController(poolID, newController);
     }
 
-    function terminusPoolController(uint256 poolID)
-        external
-        view
-        returns (address)
-    {
+    function terminusPoolController(
+        uint256 poolID
+    ) external view returns (address) {
         return LibTerminus.terminusStorage().poolController[poolID];
     }
 
-    function terminusPoolCapacity(uint256 poolID)
-        external
-        view
-        returns (uint256)
-    {
+    function terminusPoolCapacity(
+        uint256 poolID
+    ) external view returns (uint256) {
         return LibTerminus.terminusStorage().poolCapacity[poolID];
     }
 
-    function terminusPoolSupply(uint256 poolID)
-        external
-        view
-        returns (uint256)
-    {
+    function terminusPoolSupply(
+        uint256 poolID
+    ) external view returns (uint256) {
         return LibTerminus.terminusStorage().poolSupply[poolID];
     }
 
@@ -321,11 +315,7 @@ contract TerminusFacet is ERC1155WithTerminusStorage {
         _mintBatch(to, poolIDs, amounts, data);
     }
 
-    function burn(
-        address from,
-        uint256 poolID,
-        uint256 amount
-    ) external {
+    function burn(address from, uint256 poolID, uint256 amount) external {
         address operator = _msgSender();
         require(
             operator == from || isApprovedForPool(poolID, operator),
