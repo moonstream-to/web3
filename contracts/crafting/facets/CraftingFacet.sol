@@ -15,7 +15,7 @@ import "@openzeppelin-contracts/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {MockTerminus} from "../../mock/MockTerminus.sol";
 import {MockErc20} from "../../mock/MockErc20.sol";
 import "../libraries/LibCrafting.sol";
-import "../../diamond/libraries/LibDiamond.sol";
+import {LibDiamondMoonstream as LibDiamond} from "../../diamond/libraries/LibDiamondMoonstream.sol";
 import "../../diamond/security/DiamondReentrancyGuard.sol";
 import {TerminusPermissions} from "../../terminus/TerminusPermissions.sol";
 

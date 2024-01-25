@@ -18,7 +18,7 @@ import "./LibDropper.sol";
 import "../interfaces/IERC721Mint.sol";
 import "../interfaces/ITerminus.sol";
 import "../diamond/security/DiamondReentrancyGuard.sol";
-import "../diamond/libraries/LibDiamond.sol";
+import {LibDiamondMoonstream as LibDiamond} from "../diamond/libraries/LibDiamondMoonstream.sol";
 import "../diamond/libraries/LibSignatures.sol";
 import {TerminusPermissions} from "../terminus/TerminusPermissions.sol";
 
