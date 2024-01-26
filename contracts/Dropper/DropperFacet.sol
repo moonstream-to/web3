@@ -102,7 +102,7 @@ contract DropperFacet is
         LibDiamond.enforceIsContractOwner();
 
         // Set up server side signing parameters for EIP712
-        LibSignatures._setEIP712Parameters("Moonstream Dropper", "0.3.0");
+        LibSignatures._setEIP712Parameters("Moonstream Dropper", "0.2.0");
 
         // Initialize Terminus administration information
         LibDropper.DropperStorage storage ds = LibDropper.dropperStorage();
