@@ -12,9 +12,9 @@ import "@openzeppelin-contracts/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol";
-import "../diamond/libraries/LibDiamond.sol";
+import {LibDiamondMoonstream as LibDiamond} from "../diamond/libraries/LibDiamondMoonstream.sol";
 import {DiamondReentrancyGuard} from "../diamond/security/DiamondReentrancyGuard.sol";
-import {Slot, EquippedItem, IInventory} from "./IInventory.sol";
+import {Slot, EquippedItem, IInventory} from "../interfaces/IInventory.sol";
 import {TerminusPermissions} from "../terminus/TerminusPermissions.sol";
 
 /**
@@ -135,7 +135,7 @@ contract InventoryFacet is
         address adminTerminusAddress,
         uint256 adminTerminusPoolId,
         address contractAddress
-    ) external {
+    ) public {
         LibDiamond.enforceIsContractOwner();
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
@@ -160,7 +160,7 @@ contract InventoryFacet is
     function createSlot(
         bool persistent,
         string memory slotURI
-    ) external onlyAdmin returns (uint256) {
+    ) public onlyAdmin returns (uint256) {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
 
@@ -199,7 +199,7 @@ contract InventoryFacet is
     function setSlotURI(
         string memory newSlotURI,
         uint slotId
-    ) external onlyAdmin {
+    ) public onlyAdmin {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
 
@@ -217,7 +217,7 @@ contract InventoryFacet is
     function setSlotPersistent(
         uint256 slotId,
         bool persistent
-    ) external onlyAdmin {
+    ) public onlyAdmin {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
 
@@ -234,7 +234,7 @@ contract InventoryFacet is
         address itemAddress,
         uint256 itemPoolId,
         uint256 maxAmount
-    ) external onlyAdmin {
+    ) public onlyAdmin {
         require(
             itemType == LibInventory.ERC20_ITEM_TYPE ||
                 itemType == LibInventory.ERC721_ITEM_TYPE ||
@@ -371,7 +371,7 @@ contract InventoryFacet is
         address itemAddress,
         uint256 itemTokenId,
         uint256 amount
-    ) external diamondNonReentrant {
+    ) public virtual override diamondNonReentrant {
         require(
             itemType == LibInventory.ERC20_ITEM_TYPE ||
                 itemType == LibInventory.ERC721_ITEM_TYPE ||
@@ -408,7 +408,7 @@ contract InventoryFacet is
         // TODO(zomglings): The current implementation makes it so that players cannot increase the
         // number of tokens of a given type that are equipped into a persistent slot. I would consider
         // this a bug. For more details, see comment at bottom of the following test:
-        // web3cli.test_inventory.TestPlayerFlow.test_player_cannot_unequip_erc20_tokens_from_persistent_slot_but_can_increase_amount
+        // web3cli.test_inventory.TestPlayerFlow.test_player_cannot_unequip_erc20_tokens_from_persistent_slot
         if (
             istore
             .EquippedItems[istore.ContractERC721Address][subjectTokenId][slot]
@@ -491,7 +491,7 @@ contract InventoryFacet is
         uint256 slot,
         bool unequipAll,
         uint256 amount
-    ) external diamondNonReentrant {
+    ) public virtual override diamondNonReentrant {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
 

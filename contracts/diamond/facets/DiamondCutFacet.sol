@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 // https://github.com/mudgen/diamond-3-hardhat
 
 import {IDiamondCut} from "../interfaces/IDiamondCut.sol";
-import {LibDiamond} from "../libraries/LibDiamond.sol";
+import {LibDiamondMoonstream as LibDiamond} from "../libraries/LibDiamondMoonstream.sol";
 
 contract DiamondCutFacet is IDiamondCut {
     /// @notice Add/replace/remove any number of functions and optionally execute
