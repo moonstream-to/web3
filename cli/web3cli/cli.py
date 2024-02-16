@@ -9,6 +9,7 @@ from . import (
     drop,
     DropperFacet,
     Dropper,
+    EeseeHero,
     Lootbox,
     MockErc20,
     MockERC721,
@@ -86,6 +87,9 @@ def main() -> None:
 
     statblock_parser = StatBlock.generate_cli()
     subparsers.add_parser("statblock", parents=[statblock_parser], add_help=False)
+
+    eesee_hero_parser = EeseeHero.generate_cli()
+    subparsers.add_parser("eesee-hero", parents=[eesee_hero_parser], add_help=False)
 
     args = parser.parse_args()
     args.func(args)

@@ -94,26 +94,22 @@ def handle_create_inventory_slots_from_config(args: argparse.Namespace) -> None:
     inventory = InventoryFacet.InventoryFacet(args.inventory_address)
     equipment_address = args.equipment_address
 
-    slot_type_mapping = dict()
     slot_mapping = dict()
     pool_mapping = dict()
 
     # No good way to search the existing slot types. This just starts creating slot types from id 11. Perhaps it could be a parameter, but really
     # needs a contract change to support slot type creation.
-    next_slot_type_id = 21
+    next_slot_type_id = 1
     for item in config:
         slot_type = item["type"]
-        if not slot_type in slot_type_mapping:
-            inventory.create_slot_type(next_slot_type_id, slot_type, transaction_config)
-            slot_type_mapping[slot_type] = next_slot_type_id
-            print(
-                "Created slot type " + slot_type + " with id " + str(next_slot_type_id)
-            )
-            inventory.create_slot(True, next_slot_type_id, "", transaction_config)
+        if slot_type == "":
+            continue
+        if not slot_type in slot_mapping:
+            inventory.create_slot(False, "", transaction_config)
             next_slot_id = inventory.num_slots()
             slot_mapping[slot_type] = next_slot_id
             print(
-                "Created slot with type " + slot_type + " and id " + str(next_slot_id)
+                "Created slot for type " + slot_type + " with id " + str(next_slot_id)
             )
             next_slot_type_id = next_slot_type_id + 1
         pool_id = item["pool_id"]
@@ -133,7 +129,6 @@ def handle_create_inventory_slots_from_config(args: argparse.Namespace) -> None:
         }
         print(item["id"] + " is equippable in slot " + str(slot_id))
 
-    print(slot_type_mapping)
     print(slot_mapping)
     print(pool_mapping)
 
@@ -143,64 +138,60 @@ def handle_create_metadata_from_csv(args: argparse.Namespace) -> None:
 
     with open(args.csv_file, "r") as f:
         reader = csv.DictReader(f)
-        i = 0
         config = []
         for row in reader:
-            i = i + 1
-            item_voucher_id = row["Voucher ID"]
-            item_name = row["Name"]
-            item_class = row["Class"]
+            item_name = row["Item Name "]
             item_rarity = row["Rarity"]
-            item_image = row["Image Type"].lower()
-            item_shadowcorn_id = row["Shadowcorn/Egg ID"]
-            base_descripton = "Standing proud in all of its terrifying glory, behold the Shadowcorn Figurine! Legends speak of how this mighty idol sprang forth from a dark and enigmatic Shadowcorn Egg that was crafted deep in the bustling crafting halls of IsmToys, where the master figurine-smiths practice the ancient techniques needed to adequately capture the menacing essence of  a Shadowcorn’s visage! Redeem this voucher via the https://unicorns-beryl.vercel.app/ and receive your very own Shadowcorn Figurine!"
-            related_shadowcorn_url = (
-                "https://www.hawku.com/details/crypto-unicorns/shadowcorn/{}".format(
-                    item_shadowcorn_id
-                )
-            )
-            description = (
-                base_descripton
-                + " This voucher will claim a Shadowcorn Figurine that mirrors the appearance and name of Shadowcorn [{}]({})."
-            ).format(item_shadowcorn_id, related_shadowcorn_url)
+            item_image = row["Image"]
+            item_type = row["Item Type"]
+            item_slot = row["Item slot"]
+            item_description = row["Description"]
             if item_name != "":
                 config.append(
                     {
-                        "id": item_voucher_id,
-                        "metadata": "https://badges.moonstream.to/cu-vouchers/voucher-{}.json".format(
-                            item_voucher_id
+                        "id": item_image,
+                        "metadata": "https://badges.moonstream.to/cg-eesee/{}.json".format(
+                            item_image
                         ),
+                        "type": item_slot
                     }
                 )
                 metadata = {
-                    "name": item_name + " Voucher",
-                    "description": description,
-                    "image": "https://badges.moonstream.to/cu-vouchers/images/{}.png".format(
+                    "name": item_name,
+                    "description": item_description,
+                    "image": "https://badges.moonstream.to/cg-eesee/{}.png".format(
                         item_image
                     ),
-                    "external_url": "https://www.cryptounicorns.fun/",
+                    "external_url": "https://eesee.io/",
                     "metadata_version": 1,
                     "attributes": [
-                        {"trait_type": "token_type", "value": "voucher"},
+                        {"trait_type": "token_type", "value": item_type},
                         {"trait_type": "rarity", "value": item_rarity},
-                        {"trait_type": "class", "value": item_class},
-                        # {
-                        #     "trait_type": "related_shadowcorn_url",
-                        #     "value": "https://opensea.io/assets/matic/0xa7d50ee3d7485288107664cf758e877a0d351725/{}".format(
-                        #         item_shadowcorn_id
-                        #     ),
-                        # },
+                        {"trait_type": "slot", "value": item_slot},
                         {"trait_type": "protocol", "value": "terminus"},
                     ],
                 }
 
                 outfile = os.path.join(
-                    dir, "metadata", "voucher-{}.json".format(item_voucher_id)
+                    dir, "metadata", "{}.json".format(item_image)
                 )
                 if outfile is not None:
                     with open(outfile, "w") as o:
                         json.dump(metadata, o, indent=4)
         if len(config) > 0:
+            config.sort(
+                key=lambda x: x["id"]
+                            .replace("Common", "a")
+                            .replace("Rare", "b")
+                            .replace("Epic", "c")
+                            .replace("Legendary", "d"))
+            # def assign_pool_id(index, item) -> None:
+            #     index = index + 1
+            #     item["pool_id"] = index
+            # config = list(lambda map(assign_pool_id, enumerate(config)))
+            # Using for loop enumerate()
+            for i, item in enumerate(config):
+                item["pool_id"] = i + 1
             config_file = os.path.join(dir, "config.json")
             if config_file is not None:
                 with open(config_file, "w") as conf:
