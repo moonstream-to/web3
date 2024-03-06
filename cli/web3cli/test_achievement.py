@@ -36,11 +36,13 @@ class AchievementTestCase(unittest.TestCase):
         cls.admin = accounts[1]
         cls.admin_tx_config = {"from": cls.admin}
 
-        cls.player = accounts[2]
-        cls.player_tx_config = {"from": cls.player}
+        cls.player_1 = accounts[2]
 
         cls.random_person = accounts[3]
         cls.random_person_tx_config = {"from": cls.random_person}
+
+        cls.player_2 = accounts[4]
+        cls.player_3 = accounts[5]
 
         cls.nft = MockERC721.MockERC721(None)
         cls.nft.deploy(cls.owner_tx_config)
@@ -192,3 +194,102 @@ class TestAdminFlow(AchievementTestCase):
             initial_num_slots,
         )
         self.assertEqual(final_num_pools, final_num_slots)
+
+    def test_admin_can_batch_mint(self):
+        # Mint token to player
+        player_balance_0 = self.nft.balance_of(self.player_1.address)
+        token_id = self.nft.total_supply() + 1
+        self.nft.mint(self.player_1.address, token_id, self.owner_tx_config)
+        player_balance_1 = self.nft.balance_of(self.player_1.address)
+
+        self.assertEqual(player_balance_1, player_balance_0 + 1)
+
+        # Create slot
+        metadata_uri = "http://www.example.com/test_achievement_1"
+        self.achievement.create_achievement_slot(metadata_uri, self.admin_tx_config)
+        achievement_pool = self.terminus.total_pools()
+
+        self.assertEqual(self.terminus.uri(achievement_pool), metadata_uri)
+
+        #  Batch mint 1 achievement
+        self.assertEqual(self.terminus.balance_of(self.achievement.address, achievement_pool), 0)
+
+        self.achievement.admin_batch_mint_to_inventory([token_id], [achievement_pool], self.admin_tx_config)
+
+        self.assertEqual(self.terminus.balance_of(self.achievement.address, achievement_pool), 1)
+        equipped_item = self.achievement.get_equipped_item(token_id, achievement_pool)
+
+        # EquippedItem is (ItemType, ItemAddress, ItemTokenID, Amount)
+        self.assertEqual(equipped_item, (1155, self.achievement.address, achievement_pool, 1))
+
+    def test_non_admin_cannot_batch_mint(self):
+        # Mint token to player
+        player_balance_0 = self.nft.balance_of(self.player_1.address)
+        token_id = self.nft.total_supply() + 1
+        self.nft.mint(self.player_1.address, token_id, self.owner_tx_config)
+        player_balance_1 = self.nft.balance_of(self.player_1.address)
+
+        self.assertEqual(player_balance_1, player_balance_0 + 1)
+
+        # Create slot
+        metadata_uri = "http://www.example.com/test_achievement_2"
+        self.achievement.create_achievement_slot(metadata_uri, self.admin_tx_config)
+        achievement_pool = self.terminus.total_pools()
+
+        self.assertEqual(self.terminus.uri(achievement_pool), metadata_uri)
+
+        # Attempt batch mint
+        with self.assertRaises(VirtualMachineError):
+            self.achievement.admin_batch_mint_to_inventory([token_id], [achievement_pool], self.random_person_tx_config)
+            
+    def test_admin_can_mint_multiple_achievements_to_multiple_players(self):
+        # Mint tokens to 3 players
+        last_token_id = self.nft.total_supply()
+        player_list = [self.player_1, self.player_2, self.player_3]
+        player_balances_0 = list(map(lambda x: self.nft.balance_of(x), player_list))
+        token_id_list = []
+        for i, player in enumerate(player_list):
+            token_id = last_token_id + i + 1
+            self.nft.mint(player.address, last_token_id + i + 1, self.owner_tx_config)
+            token_id_list.append(token_id)
+
+        self.assertEqual(token_id_list, [last_token_id + 1, last_token_id + 2, last_token_id + 3])
+        player_balances_1 = list(map(lambda x: self.nft.balance_of(x), player_list))
+        self.assertEqual(player_balances_1, list(map(lambda x: x + 1, player_balances_0)))
+
+        # Create 2 slots
+        metadata_uri_1 = "http://www.example.com/test_achievement_3"
+        self.achievement.create_achievement_slot(metadata_uri_1, self.admin_tx_config)
+        achievement_pool_1 = self.terminus.total_pools()
+
+        self.assertEqual(self.terminus.uri(achievement_pool_1), metadata_uri_1)
+
+        metadata_uri_2 = "http://www.example.com/test_achievement_3"
+        self.achievement.create_achievement_slot(metadata_uri_2, self.admin_tx_config)
+        achievement_pool_2 = self.terminus.total_pools()
+
+        self.assertEqual(self.terminus.uri(achievement_pool_2), metadata_uri_2)
+
+        # Batch mint achievements to players
+        self.assertEqual(self.terminus.balance_of(self.achievement.address, achievement_pool_1), 0)
+        self.assertEqual(self.terminus.balance_of(self.achievement.address, achievement_pool_2), 0)
+
+        double_token_list = token_id_list + token_id_list
+        achievement_list = [achievement_pool_1] * 3 + [achievement_pool_2] * 3
+        self.achievement.admin_batch_mint_to_inventory(double_token_list, achievement_list, self.admin_tx_config)
+
+        self.assertEqual(self.terminus.balance_of(self.achievement.address, achievement_pool_1), 3)
+        self.assertEqual(self.terminus.balance_of(self.achievement.address, achievement_pool_2), 3)
+
+        for token_id in token_id_list:
+            equipped_item_1 = self.achievement.get_equipped_item(token_id, achievement_pool_1)
+
+            # EquippedItem is (ItemType, ItemAddress, ItemTokenID, Amount)
+            self.assertEqual(equipped_item_1, (1155, self.achievement.address, achievement_pool_1, 1))
+
+            equipped_item_2 = self.achievement.get_equipped_item(token_id, achievement_pool_2)
+
+            # EquippedItem is (ItemType, ItemAddress, ItemTokenID, Amount)
+            self.assertEqual(equipped_item_2, (1155, self.achievement.address, achievement_pool_2, 1))
+
+

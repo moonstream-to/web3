@@ -96,6 +96,14 @@ class AchievementFacet:
         contract_class = contract_from_build(self.contract_name)
         contract_class.publish_source(self.contract)
 
+    def admin_batch_mint_to_inventory(
+        self, subject_token_ids: List, pool_ids: List, transaction_config
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.adminBatchMintToInventory(
+            subject_token_ids, pool_ids, transaction_config
+        )
+
     def admin_terminus_info(
         self, block_number: Optional[Union[str, int]] = "latest"
     ) -> Any:
@@ -106,9 +114,9 @@ class AchievementFacet:
         self.assert_contract_is_instantiated()
         return self.contract.createAchievementSlot(metadata_uri, transaction_config)
 
-    def create_slot(self, persistent: bool, slot_uri: str, transaction_config) -> Any:
+    def create_slot(self, arg1: bool, arg2: str, transaction_config) -> Any:
         self.assert_contract_is_instantiated()
-        return self.contract.createSlot(persistent, slot_uri, transaction_config)
+        return self.contract.createSlot(arg1, arg2, transaction_config)
 
     def equip(
         self,
@@ -179,16 +187,16 @@ class AchievementFacet:
 
     def mark_item_as_equippable_in_slot(
         self,
-        slot: int,
-        item_type: int,
-        item_address: ChecksumAddress,
-        item_pool_id: int,
-        max_amount: int,
+        arg1: int,
+        arg2: int,
+        arg3: ChecksumAddress,
+        arg4: int,
+        arg5: int,
         transaction_config,
     ) -> Any:
         self.assert_contract_is_instantiated()
         return self.contract.markItemAsEquippableInSlot(
-            slot, item_type, item_address, item_pool_id, max_amount, transaction_config
+            arg1, arg2, arg3, arg4, arg5, transaction_config
         )
 
     def max_amount_of_item_in_slot(
@@ -381,6 +389,20 @@ def handle_verify_contract(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_admin_batch_mint_to_inventory(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = AchievementFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.admin_batch_mint_to_inventory(
+        subject_token_ids=args.subject_token_ids,
+        pool_ids=args.pool_ids,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
 def handle_admin_terminus_info(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = AchievementFacet(args.address)
@@ -405,9 +427,7 @@ def handle_create_slot(args: argparse.Namespace) -> None:
     contract = AchievementFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.create_slot(
-        persistent=args.persistent,
-        slot_uri=args.slot_uri,
-        transaction_config=transaction_config,
+        arg1=args.arg1, arg2=args.arg2, transaction_config=transaction_config
     )
     print(result)
     if args.verbose:
@@ -503,11 +523,11 @@ def handle_mark_item_as_equippable_in_slot(args: argparse.Namespace) -> None:
     contract = AchievementFacet(args.address)
     transaction_config = get_transaction_config(args)
     result = contract.mark_item_as_equippable_in_slot(
-        slot=args.slot,
-        item_type=args.item_type,
-        item_address=args.item_address,
-        item_pool_id=args.item_pool_id,
-        max_amount=args.max_amount,
+        arg1=args.arg1,
+        arg2=args.arg2,
+        arg3=args.arg3,
+        arg4=args.arg4,
+        arg5=args.arg5,
         transaction_config=transaction_config,
     )
     print(result)
@@ -679,6 +699,20 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(verify_contract_parser, False)
     verify_contract_parser.set_defaults(func=handle_verify_contract)
 
+    admin_batch_mint_to_inventory_parser = subcommands.add_parser(
+        "admin-batch-mint-to-inventory"
+    )
+    add_default_arguments(admin_batch_mint_to_inventory_parser, True)
+    admin_batch_mint_to_inventory_parser.add_argument(
+        "--subject-token-ids", required=True, help="Type: uint256[]", nargs="+"
+    )
+    admin_batch_mint_to_inventory_parser.add_argument(
+        "--pool-ids", required=True, help="Type: uint256[]", nargs="+"
+    )
+    admin_batch_mint_to_inventory_parser.set_defaults(
+        func=handle_admin_batch_mint_to_inventory
+    )
+
     admin_terminus_info_parser = subcommands.add_parser("admin-terminus-info")
     add_default_arguments(admin_terminus_info_parser, False)
     admin_terminus_info_parser.set_defaults(func=handle_admin_terminus_info)
@@ -693,10 +727,10 @@ def generate_cli() -> argparse.ArgumentParser:
     create_slot_parser = subcommands.add_parser("create-slot")
     add_default_arguments(create_slot_parser, True)
     create_slot_parser.add_argument(
-        "--persistent", required=True, help="Type: bool", type=boolean_argument_type
+        "--arg1", required=True, help="Type: bool", type=boolean_argument_type
     )
     create_slot_parser.add_argument(
-        "--slot-uri", required=True, help="Type: string", type=str
+        "--arg2", required=True, help="Type: string", type=str
     )
     create_slot_parser.set_defaults(func=handle_create_slot)
 
@@ -770,19 +804,19 @@ def generate_cli() -> argparse.ArgumentParser:
     )
     add_default_arguments(mark_item_as_equippable_in_slot_parser, True)
     mark_item_as_equippable_in_slot_parser.add_argument(
-        "--slot", required=True, help="Type: uint256", type=int
+        "--arg1", required=True, help="Type: uint256", type=int
     )
     mark_item_as_equippable_in_slot_parser.add_argument(
-        "--item-type", required=True, help="Type: uint256", type=int
+        "--arg2", required=True, help="Type: uint256", type=int
     )
     mark_item_as_equippable_in_slot_parser.add_argument(
-        "--item-address", required=True, help="Type: address"
+        "--arg3", required=True, help="Type: address"
     )
     mark_item_as_equippable_in_slot_parser.add_argument(
-        "--item-pool-id", required=True, help="Type: uint256", type=int
+        "--arg4", required=True, help="Type: uint256", type=int
     )
     mark_item_as_equippable_in_slot_parser.add_argument(
-        "--max-amount", required=True, help="Type: uint256", type=int
+        "--arg5", required=True, help="Type: uint256", type=int
     )
     mark_item_as_equippable_in_slot_parser.set_defaults(
         func=handle_mark_item_as_equippable_in_slot
