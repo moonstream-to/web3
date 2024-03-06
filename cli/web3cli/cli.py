@@ -7,6 +7,7 @@ from . import (
     core,
     flows,
     drop,
+    AchievementFacet,
     DropperFacet,
     Dropper,
     Lootbox,
@@ -65,6 +66,9 @@ def main() -> None:
 
     gofp_parser = GOFPFacet.generate_cli()
     subparsers.add_parser("gofp", parents=[gofp_parser], add_help=False)
+
+    achievement_parser = AchievementFacet.generate_cli()
+    subparsers.add_parser("achievement", parents=[achievement_parser], add_help=False)
 
     setup_drop_parser = setup_drop.generate_cli()
     subparsers.add_parser("setup-drop", parents=[setup_drop_parser], add_help=False)
