@@ -96,6 +96,12 @@ class AchievementFacet:
         contract_class = contract_from_build(self.contract_name)
         contract_class.publish_source(self.contract)
 
+    def achievement_version(
+        self, block_number: Optional[Union[str, int]] = "latest"
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.achievementVersion.call(block_identifier=block_number)
+
     def admin_batch_mint_to_inventory(
         self, subject_token_ids: List, pool_ids: List, transaction_config
     ) -> Any:
@@ -210,6 +216,30 @@ class AchievementFacet:
         self.assert_contract_is_instantiated()
         return self.contract.maxAmountOfItemInSlot.call(
             slot, item_type, item_address, item_pool_id, block_identifier=block_number
+        )
+
+    def mint_hash(
+        self,
+        subject_token_id: int,
+        pool_id: int,
+        block_number: Optional[Union[str, int]] = "latest",
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.mintHash.call(
+            subject_token_id, pool_id, block_identifier=block_number
+        )
+
+    def mint_to_inventory(
+        self,
+        subject_token_id: int,
+        pool_id: int,
+        signer: ChecksumAddress,
+        signature: bytes,
+        transaction_config,
+    ) -> Any:
+        self.assert_contract_is_instantiated()
+        return self.contract.mintToInventory(
+            subject_token_id, pool_id, signer, signature, transaction_config
         )
 
     def num_slots(self, block_number: Optional[Union[str, int]] = "latest") -> Any:
@@ -389,6 +419,13 @@ def handle_verify_contract(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_achievement_version(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = AchievementFacet(args.address)
+    result = contract.achievement_version(block_number=args.block_number)
+    print(result)
+
+
 def handle_admin_batch_mint_to_inventory(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = AchievementFacet(args.address)
@@ -548,6 +585,33 @@ def handle_max_amount_of_item_in_slot(args: argparse.Namespace) -> None:
     print(result)
 
 
+def handle_mint_hash(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = AchievementFacet(args.address)
+    result = contract.mint_hash(
+        subject_token_id=args.subject_token_id,
+        pool_id=args.pool_id,
+        block_number=args.block_number,
+    )
+    print(result)
+
+
+def handle_mint_to_inventory(args: argparse.Namespace) -> None:
+    network.connect(args.network)
+    contract = AchievementFacet(args.address)
+    transaction_config = get_transaction_config(args)
+    result = contract.mint_to_inventory(
+        subject_token_id=args.subject_token_id,
+        pool_id=args.pool_id,
+        signer=args.signer_arg,
+        signature=args.signature,
+        transaction_config=transaction_config,
+    )
+    print(result)
+    if args.verbose:
+        print(result.info())
+
+
 def handle_num_slots(args: argparse.Namespace) -> None:
     network.connect(args.network)
     contract = AchievementFacet(args.address)
@@ -699,6 +763,10 @@ def generate_cli() -> argparse.ArgumentParser:
     add_default_arguments(verify_contract_parser, False)
     verify_contract_parser.set_defaults(func=handle_verify_contract)
 
+    achievement_version_parser = subcommands.add_parser("achievement-version")
+    add_default_arguments(achievement_version_parser, False)
+    achievement_version_parser.set_defaults(func=handle_achievement_version)
+
     admin_batch_mint_to_inventory_parser = subcommands.add_parser(
         "admin-batch-mint-to-inventory"
     )
@@ -841,6 +909,32 @@ def generate_cli() -> argparse.ArgumentParser:
     max_amount_of_item_in_slot_parser.set_defaults(
         func=handle_max_amount_of_item_in_slot
     )
+
+    mint_hash_parser = subcommands.add_parser("mint-hash")
+    add_default_arguments(mint_hash_parser, False)
+    mint_hash_parser.add_argument(
+        "--subject-token-id", required=True, help="Type: uint256", type=int
+    )
+    mint_hash_parser.add_argument(
+        "--pool-id", required=True, help="Type: uint256", type=int
+    )
+    mint_hash_parser.set_defaults(func=handle_mint_hash)
+
+    mint_to_inventory_parser = subcommands.add_parser("mint-to-inventory")
+    add_default_arguments(mint_to_inventory_parser, True)
+    mint_to_inventory_parser.add_argument(
+        "--subject-token-id", required=True, help="Type: uint256", type=int
+    )
+    mint_to_inventory_parser.add_argument(
+        "--pool-id", required=True, help="Type: uint256", type=int
+    )
+    mint_to_inventory_parser.add_argument(
+        "--signer-arg", required=True, help="Type: address"
+    )
+    mint_to_inventory_parser.add_argument(
+        "--signature", required=True, help="Type: bytes", type=bytes_argument_type
+    )
+    mint_to_inventory_parser.set_defaults(func=handle_mint_to_inventory)
 
     num_slots_parser = subcommands.add_parser("num-slots")
     add_default_arguments(num_slots_parser, False)

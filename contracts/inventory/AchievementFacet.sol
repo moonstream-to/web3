@@ -6,9 +6,11 @@ import {Slot, EquippedItem} from "../interfaces/IInventory.sol";
 import {ITerminus} from "../interfaces/ITerminus.sol";
 import {LibTerminus} from "../terminus/LibTerminus.sol";
 import {LibDiamondMoonstream} from "../diamond/libraries/LibDiamondMoonstream.sol";
+import {LibSignatures} from "../diamond/libraries/LibSignatures.sol";
 
-import "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
+import {IERC721} from "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 import {ERC1155Receiver} from "@openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
+import {SignatureChecker} from "@openzeppelin-contracts/contracts/utils/cryptography/SignatureChecker.sol";
 
 library LibAchievement {
     bytes32 constant STORAGE_POSITION =
@@ -58,6 +60,9 @@ contract AchievementFacet is InventoryFacet {
     function initialize(address subjectAddress) external {
         LibDiamondMoonstream.enforceIsContractOwner();
 
+        // Set up server side signing parameters for EIP712
+        LibSignatures._setEIP712Parameters("Moonstream Achievement", "0.0.1");
+
         LibAchievement.AchievementStorage storage acs = LibAchievement
             .achievementStorage();
 
@@ -87,6 +92,16 @@ contract AchievementFacet is InventoryFacet {
 
         emit AdministratorDesignated(address(this), acs.adminTerminusPoolID);
         emit NewSubjectAddress(subjectAddress);
+    }
+
+    function achievementVersion()
+        public
+        view
+        returns (string memory, string memory)
+    {
+        LibSignatures.SignaturesStorage storage ss = LibSignatures
+            .signaturesStorage();
+        return (ss.name, ss.version);
     }
 
     // Grants an account the role of admin.
@@ -239,5 +254,54 @@ contract AchievementFacet is InventoryFacet {
         for (i = 0; i < subjectTokenIds.length; i++) {
             _mintToInventory(subjectTokenIds[i], poolIds[i]);
         }
+    }
+
+    function mintHash(
+        uint256 subjectTokenID,
+        uint256 poolID
+    ) public view returns (bytes32) {
+        bytes32 structHash = keccak256(
+            abi.encode(
+                keccak256(
+                    "MintToInventoryMessage(uint256 subjectTokenID,uint256 poolID)"
+                ),
+                subjectTokenID,
+                poolID
+            )
+        );
+        return LibSignatures._hashTypedDataV4(structHash);
+    }
+
+    function mintToInventory(
+        uint256 subjectTokenID,
+        uint256 poolID,
+        address signer,
+        bytes memory signature
+    ) public {
+        LibInventory.InventoryStorage storage istore = LibInventory
+            .inventoryStorage();
+        IERC721 nft = IERC721(istore.ContractERC721Address);
+
+        require(
+            msg.sender == nft.ownerOf(subjectTokenID),
+            "Achievement.mintToInventory: Message sender is not owner of subject token."
+        );
+
+        require(
+            _checkIsAdmin(signer),
+            "Achievement.mintToInventory: unauthorized signer"
+        );
+
+        bytes32 mintMessageHash = mintHash(subjectTokenID, poolID);
+        require(
+            SignatureChecker.isValidSignatureNow(
+                signer,
+                mintMessageHash,
+                signature
+            ),
+            "Achievement.mintToInventory: invalid signature"
+        );
+
+        _mintToInventory(subjectTokenID, poolID);
     }
 }

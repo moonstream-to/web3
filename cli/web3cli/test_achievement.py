@@ -3,6 +3,9 @@ import unittest
 from brownie import accounts, network, web3 as web3_client, ZERO_ADDRESS
 from brownie.exceptions import VirtualMachineError
 from brownie.network import chain
+from eth_account._utils.signing import sign_message_hash
+import eth_keys
+from hexbytes import HexBytes
 from moonworm.watch import _fetch_events_chunk
 
 from . import AchievementFacet, MockERC721, MockTerminus, inventory_events
@@ -10,6 +13,13 @@ from .core import achievement_gogogo
 
 MAX_UINT = 2**256 - 1
 
+def sign_message(message_hash, signer):
+    eth_private_key = eth_keys.keys.PrivateKey(HexBytes(signer.private_key))
+    message_hash_bytes = HexBytes(message_hash)
+    _, _, _, signed_message_bytes = sign_message_hash(
+        eth_private_key, message_hash_bytes
+    )
+    return signed_message_bytes.hex()
 
 class AchievementTestCase(unittest.TestCase):
     @classmethod
@@ -33,16 +43,16 @@ class AchievementTestCase(unittest.TestCase):
         cls.owner = accounts[0]
         cls.owner_tx_config = {"from": cls.owner}
 
-        cls.admin = accounts[1]
+        cls.admin = accounts.add()
         cls.admin_tx_config = {"from": cls.admin}
 
-        cls.player_1 = accounts[2]
+        cls.player_1 = accounts[1]
+        cls.player_2 = accounts[2]
+        cls.player_3 = accounts[3]
 
-        cls.random_person = accounts[3]
+        cls.random_person = accounts.add()
         cls.random_person_tx_config = {"from": cls.random_person}
 
-        cls.player_2 = accounts[4]
-        cls.player_3 = accounts[5]
 
         cls.nft = MockERC721.MockERC721(None)
         cls.nft.deploy(cls.owner_tx_config)
@@ -292,4 +302,115 @@ class TestAdminFlow(AchievementTestCase):
             # EquippedItem is (ItemType, ItemAddress, ItemTokenID, Amount)
             self.assertEqual(equipped_item_2, (1155, self.achievement.address, achievement_pool_2, 1))
 
+class TestPlayerFlow(AchievementTestCase):
+    def test_player_can_mint_to_inventory_with_signature(self):
+        # Mint token to player
+        player_balance_0 = self.nft.balance_of(self.player_1.address)
+        token_id = self.nft.total_supply() + 1
+        self.nft.mint(self.player_1.address, token_id, self.owner_tx_config)
+        player_balance_1 = self.nft.balance_of(self.player_1.address)
 
+        self.assertEqual(player_balance_1, player_balance_0 + 1)
+
+        # Create slot
+        metadata_uri = "http://www.example.com/test_achievement_4"
+        self.achievement.create_achievement_slot(metadata_uri, self.admin_tx_config)
+        achievement_pool = self.terminus.total_pools()
+
+        self.assertEqual(self.terminus.uri(achievement_pool), metadata_uri)
+
+        # Sign message
+        message_hash = self.achievement.mint_hash(token_id, achievement_pool)
+        signed_message = sign_message(message_hash, self.admin)
+
+        # Mint to inventory
+        self.achievement.mint_to_inventory(token_id, achievement_pool, self.admin.address, signed_message, {"from": self.player_1})
+
+        self.assertEqual(self.terminus.balance_of(self.achievement.address, achievement_pool), 1)
+        equipped_item = self.achievement.get_equipped_item(token_id, achievement_pool)
+
+        # EquippedItem is (ItemType, ItemAddress, ItemTokenID, Amount)
+        self.assertEqual(equipped_item, (1155, self.achievement.address, achievement_pool, 1))
+
+    def test_player_cannot_mint_with_signature_from_invalid_signer(self):
+        # Mint token to player
+        player_balance_0 = self.nft.balance_of(self.player_1.address)
+        token_id = self.nft.total_supply() + 1
+        self.nft.mint(self.player_1.address, token_id, self.owner_tx_config)
+        player_balance_1 = self.nft.balance_of(self.player_1.address)
+
+        self.assertEqual(player_balance_1, player_balance_0 + 1)
+
+        # Create slot
+        metadata_uri = "http://www.example.com/test_achievement_5"
+        self.achievement.create_achievement_slot(metadata_uri, self.admin_tx_config)
+        achievement_pool = self.terminus.total_pools()
+
+        self.assertEqual(self.terminus.uri(achievement_pool), metadata_uri)
+
+        # Sign message
+        message_hash = self.achievement.mint_hash(token_id, achievement_pool)
+        signed_message = sign_message(message_hash, self.random_person)
+
+        # Attempt mint "unauthorized signer"
+        with self.assertRaises(VirtualMachineError):
+            self.achievement.mint_to_inventory(token_id, achievement_pool, self.random_person.address, signed_message, {"from": self.player_1})
+  
+        # Attempt to lie about signer "invalid signature"
+        with self.assertRaises(VirtualMachineError):
+            self.achievement.mint_to_inventory(token_id, achievement_pool, self.admin.address, signed_message, {"from": self.player_1})
+
+    def test_player_cannot_mint_with_invalid_signature(self):
+        # Mint token to player
+        player_balance_0 = self.nft.balance_of(self.player_1.address)
+        token_id = self.nft.total_supply() + 1
+        self.nft.mint(self.player_1.address, token_id, self.owner_tx_config)
+        player_balance_1 = self.nft.balance_of(self.player_1.address)
+
+        self.assertEqual(player_balance_1, player_balance_0 + 1)
+
+        # Create slot
+        metadata_uri_1 = "http://www.example.com/test_achievement_6"
+        self.achievement.create_achievement_slot(metadata_uri_1, self.admin_tx_config)
+        achievement_pool_1 = self.terminus.total_pools()
+
+        self.assertEqual(self.terminus.uri(achievement_pool_1), metadata_uri_1)
+
+        # Create slot
+        metadata_uri_2 = "http://www.example.com/test_achievement_7"
+        self.achievement.create_achievement_slot(metadata_uri_2, self.admin_tx_config)
+        achievement_pool_2 = self.terminus.total_pools()
+
+        self.assertEqual(self.terminus.uri(achievement_pool_2), metadata_uri_2)
+
+        # Sign message with achievement 1
+        message_hash = self.achievement.mint_hash(token_id, achievement_pool_1)
+        signed_message = sign_message(message_hash, self.admin)
+
+        # Attempt to mint achievement 2
+        with self.assertRaises(VirtualMachineError):
+            self.achievement.mint_to_inventory(token_id, achievement_pool_2, self.admin.address, signed_message, {"from": self.player_1})
+
+    def test_player_cannot_mint_achievement_for_another_players_token(self):
+        # Mint token to player 2
+        player_balance_0 = self.nft.balance_of(self.player_2.address)
+        token_id = self.nft.total_supply() + 1
+        self.nft.mint(self.player_2.address, token_id, self.owner_tx_config)
+        player_balance_1 = self.nft.balance_of(self.player_2.address)
+
+        self.assertEqual(player_balance_1, player_balance_0 + 1)
+
+        # Create slot
+        metadata_uri = "http://www.example.com/test_achievement_8"
+        self.achievement.create_achievement_slot(metadata_uri, self.admin_tx_config)
+        achievement_pool = self.terminus.total_pools()
+
+        self.assertEqual(self.terminus.uri(achievement_pool), metadata_uri)
+
+        # Sign message
+        message_hash = self.achievement.mint_hash(token_id, achievement_pool)
+        signed_message = sign_message(message_hash, self.admin)
+
+        # Attempt to mint achievement with player 1 (owned by player 2)
+        with self.assertRaises(VirtualMachineError):
+            self.achievement.mint_to_inventory(token_id, achievement_pool, self.admin.address, signed_message, {"from": self.player_1})
