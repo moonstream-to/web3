@@ -160,7 +160,7 @@ contract InventoryFacet is
     function createSlot(
         bool persistent,
         string memory slotURI
-    ) public onlyAdmin returns (uint256) {
+    ) public virtual onlyAdmin returns (uint256) {
         LibInventory.InventoryStorage storage istore = LibInventory
             .inventoryStorage();
 
@@ -234,7 +234,7 @@ contract InventoryFacet is
         address itemAddress,
         uint256 itemPoolId,
         uint256 maxAmount
-    ) public onlyAdmin {
+    ) public virtual onlyAdmin {
         require(
             itemType == LibInventory.ERC20_ITEM_TYPE ||
                 itemType == LibInventory.ERC721_ITEM_TYPE ||
