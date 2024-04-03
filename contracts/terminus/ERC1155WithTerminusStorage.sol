@@ -18,7 +18,6 @@ pragma solidity ^0.8.9;
 import "@openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin-contracts/contracts/token/ERC1155/extensions/IERC1155MetadataURI.sol";
-import "@openzeppelin-contracts/contracts/utils/Address.sol";
 import "@openzeppelin-contracts/contracts/utils/Context.sol";
 import "@openzeppelin-contracts/contracts/utils/introspection/ERC165.sol";
 import "./LibTerminus.sol";
@@ -29,33 +28,23 @@ contract ERC1155WithTerminusStorage is
     IERC1155,
     IERC1155MetadataURI
 {
-    using Address for address;
-
     constructor() {}
 
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override(ERC165, IERC165)
-        returns (bool)
-    {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(ERC165, IERC165) returns (bool) {
         return
             interfaceId == type(IERC1155).interfaceId ||
             interfaceId == type(IERC1155MetadataURI).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 
-    function uri(uint256 poolID)
-        public
-        view
-        virtual
-        override
-        returns (string memory)
-    {
+    function uri(
+        uint256 poolID
+    ) public view virtual override returns (string memory) {
         return LibTerminus.terminusStorage().poolURI[poolID];
     }
 
@@ -66,13 +55,10 @@ contract ERC1155WithTerminusStorage is
      *
      * - `account` cannot be the zero address.
      */
-    function balanceOf(address account, uint256 id)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
+    function balanceOf(
+        address account,
+        uint256 id
+    ) public view virtual override returns (uint256) {
         require(
             account != address(0),
             "ERC1155WithTerminusStorage: balance query for the zero address"
@@ -87,13 +73,10 @@ contract ERC1155WithTerminusStorage is
      *
      * - `accounts` and `ids` must have the same length.
      */
-    function balanceOfBatch(address[] memory accounts, uint256[] memory ids)
-        public
-        view
-        virtual
-        override
-        returns (uint256[] memory)
-    {
+    function balanceOfBatch(
+        address[] memory accounts,
+        uint256[] memory ids
+    ) public view virtual override returns (uint256[] memory) {
         require(
             accounts.length == ids.length,
             "ERC1155WithTerminusStorage: accounts and ids length mismatch"
@@ -111,35 +94,30 @@ contract ERC1155WithTerminusStorage is
     /**
      * @dev See {IERC1155-setApprovalForAll}.
      */
-    function setApprovalForAll(address operator, bool approved)
-        public
-        virtual
-        override
-    {
+    function setApprovalForAll(
+        address operator,
+        bool approved
+    ) public virtual override {
         _setApprovalForAll(_msgSender(), operator, approved);
     }
 
     /**
      * @dev See {IERC1155-isApprovedForAll}.
      */
-    function isApprovedForAll(address account, address operator)
-        public
-        view
-        virtual
-        override
-        returns (bool)
-    {
+    function isApprovedForAll(
+        address account,
+        address operator
+    ) public view virtual override returns (bool) {
         return
             LibTerminus.terminusStorage().globalOperatorApprovals[account][
                 operator
             ];
     }
 
-    function isApprovedForPool(uint256 poolID, address operator)
-        public
-        view
-        returns (bool)
-    {
+    function isApprovedForPool(
+        uint256 poolID,
+        address operator
+    ) public view returns (bool) {
         return LibTerminus._isApprovedForPool(poolID, operator);
     }
 
@@ -419,11 +397,7 @@ contract ERC1155WithTerminusStorage is
      * - `from` cannot be the zero address.
      * - `from` must have at least `amount` tokens of token type `id`.
      */
-    function _burn(
-        address from,
-        uint256 id,
-        uint256 amount
-    ) internal virtual {
+    function _burn(address from, uint256 id, uint256 amount) internal virtual {
         require(
             from != address(0),
             "ERC1155WithTerminusStorage: burn from the zero address"
@@ -565,7 +539,7 @@ contract ERC1155WithTerminusStorage is
         uint256 amount,
         bytes memory data
     ) private {
-        if (to.isContract()) {
+        if (to.code.length > 0) {
             try
                 IERC1155Receiver(to).onERC1155Received(
                     operator,
@@ -598,7 +572,7 @@ contract ERC1155WithTerminusStorage is
         uint256[] memory amounts,
         bytes memory data
     ) private {
-        if (to.isContract()) {
+        if (to.code.length > 0) {
             try
                 IERC1155Receiver(to).onERC1155BatchReceived(
                     operator,
@@ -625,11 +599,9 @@ contract ERC1155WithTerminusStorage is
         }
     }
 
-    function _asSingletonArray(uint256 element)
-        private
-        pure
-        returns (uint256[] memory)
-    {
+    function _asSingletonArray(
+        uint256 element
+    ) private pure returns (uint256[] memory) {
         uint256[] memory array = new uint256[](1);
         array[0] = element;
 
