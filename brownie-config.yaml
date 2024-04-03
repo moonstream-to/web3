@@ -1,6 +1,6 @@
 dependencies:
   - "OpenZeppelin/openzeppelin-contracts@4.4.0"
-  - "smartcontractkit/chainlink@2.1.1"
+  - "smartcontractkit/chainlink@2.8.0"
 
 compiler:
   solc:
