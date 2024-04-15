@@ -36,6 +36,12 @@ contract EeseeHero is ERC721Enumerable, ReentrancyGuard {
         return metadataBaseURI;
     }
 
+    function tokenURI(
+        uint256 tokenID
+    ) public view override returns (string memory) {
+        return metadataBaseURI;
+    }
+
     function isAdmin(address account) public view returns (bool) {
         ITerminus adminTerminus = ITerminus(adminTerminusAddress);
         return adminTerminus.balanceOf(account, adminTerminusPoolID) > 0;
