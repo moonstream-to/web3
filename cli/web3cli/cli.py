@@ -7,6 +7,7 @@ from . import (
     core,
     flows,
     drop,
+    CGHeroV2,
     DropperFacet,
     Dropper,
     EeseeHero,
@@ -90,6 +91,9 @@ def main() -> None:
 
     eesee_hero_parser = EeseeHero.generate_cli()
     subparsers.add_parser("eesee-hero", parents=[eesee_hero_parser], add_help=False)
+
+    cg_hero_parser = CGHeroV2.generate_cli()
+    subparsers.add_parser("cg-hero", parents=[cg_hero_parser], add_help=False)
 
     args = parser.parse_args()
     args.func(args)
