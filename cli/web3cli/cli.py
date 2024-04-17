@@ -7,6 +7,7 @@ from . import (
     core,
     flows,
     drop,
+    AirDropper,
     CGHeroV2,
     DropperFacet,
     Dropper,
@@ -21,6 +22,7 @@ from . import (
     InventoryFacet,
     TerminusFacet,
     StatBlock,
+    VILToken,
 )
 
 
@@ -94,6 +96,12 @@ def main() -> None:
 
     cg_hero_parser = CGHeroV2.generate_cli()
     subparsers.add_parser("cg-hero", parents=[cg_hero_parser], add_help=False)
+
+    vil_token_parser = VILToken.generate_cli()
+    subparsers.add_parser("vil-token", parents=[vil_token_parser], add_help=False)
+
+    air_dropper_parser = AirDropper.generate_cli()
+    subparsers.add_parser("air-dropper", parents=[air_dropper_parser], add_help=False)
 
     args = parser.parse_args()
     args.func(args)
