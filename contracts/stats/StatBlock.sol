@@ -24,7 +24,7 @@ contract StatBlockBase is IStatBlock {
 
     function createStat(
         string memory descriptor
-    ) external returns (uint256 statID) {
+    ) public returns (uint256 statID) {
         require(
             isAdministrator(msg.sender),
             "StatBlock.createStat: msg.sender must be an administrator of the StatBlock"
@@ -41,7 +41,7 @@ contract StatBlockBase is IStatBlock {
     function setStatDescriptor(
         uint256 statID,
         string memory descriptor
-    ) external {
+    ) public {
         require(
             isAdministrator(msg.sender),
             "StatBlock.setStatDescriptor: msg.sender must be an administrator of the StatBlock"
@@ -52,7 +52,7 @@ contract StatBlockBase is IStatBlock {
 
     function describeStat(
         uint256 statID
-    ) external view returns (string memory) {
+    ) public view returns (string memory) {
         return StatDescriptor[statID];
     }
 
@@ -81,7 +81,7 @@ contract StatBlockBase is IStatBlock {
         uint256[] memory tokenIDs,
         uint256[][] memory statIDs,
         uint256[][] memory values
-    ) external {
+    ) public {
         require(
             isAdministrator(msg.sender),
             "StatBlock.batchAssignStats: msg.sender must be an administrator of the StatBlock"
@@ -119,7 +119,7 @@ contract StatBlockBase is IStatBlock {
         address[] memory tokenAddresses,
         uint256[] memory tokenIDs,
         uint256[] memory statIDs
-    ) external view returns (uint256[][] memory) {
+    ) public view returns (uint256[][] memory) {
         require(
             tokenAddresses.length == tokenIDs.length,
             "StatBlock.batchGetStats: tokenAddresses and tokenIDs must be the same length"
